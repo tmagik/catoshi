@@ -179,19 +179,19 @@ bool AppInit2(int argc, char* argv[])
             "  -testnet         \t\t  " + _("Use the test network\n") +
             "  -rpcuser=<user>  \t  "   + _("Username for JSON-RPC connections\n") +
             "  -rpcpassword=<pw>\t  "   + _("Password for JSON-RPC connections\n") +
-            "  -rpcport=<port>  \t\t  " + _("Listen for JSON-RPC connections on <port>\n") +
+            "  -rpcport=<port>  \t\t  " + _("Listen for JSON-RPC connections on <port> (default: 8332)\n") +
             "  -rpcallowip=<ip> \t\t  " + _("Allow JSON-RPC connections from specified IP address\n") +
-            "  -rpcconnect=<ip> \t  "   + _("Send commands to node running on <ip>\n") +
-            "  -keypool=<n>     \t  "   + _("Set key pool size to <n>\n") +
+            "  -rpcconnect=<ip> \t  "   + _("Send commands to node running on <ip> (default: 127.0.0.1)\n") +
+            "  -keypool=<n>     \t  "   + _("Set key pool size to <n> (default: 100)\n") +
             "  -nolisten        \t  "   + _("Don't accept connections from outside");
 
 #ifdef USE_SSL
         strUsage += string() +
             _("\nSSL options: (see the Bitcoin Wiki for SSL setup instructions)\n") +
-            "  -rpcssl=1                             \t  " + _("Use OpenSSL (https) for JSON-RPC connections\n") +
-            "  -rpcsslcertificatchainfile=<file.cert>\t  " + _("Server certificate file (default: server.cert)\n") +
-            "  -rpcsslprivatekeyfile=<file.pem>      \t  " + _("Server private key (default: server.pem)\n") +
-            "  -rpcsslciphers=<ciphers>              \t  " + _("Acceptable ciphers (default: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)\n");
+            "  -rpcssl=1                              \t  " + _("Use OpenSSL (https) for JSON-RPC connections\n") +
+            "  -rpcsslcertificatechainfile=<file.cert>\t  " + _("Server certificate file (default: server.cert)\n") +
+            "  -rpcsslprivatekeyfile=<file.pem>       \t  " + _("Server private key (default: server.pem)\n") +
+            "  -rpcsslciphers=<ciphers>               \t  " + _("Acceptable ciphers (default: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)\n");
 #endif
 
         strUsage += string() +
@@ -329,6 +329,13 @@ bool AppInit2(int argc, char* argv[])
     if (!LoadWallet(fFirstRun))
         strErrors += _("Error loading wallet.dat      \n");
     printf(" wallet      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+
+    if (GetBoolArg("-rescan"))
+    {
+        nStart = GetTimeMillis();
+        ScanForWalletTransactions(pindexGenesisBlock);
+        printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+    }
 
     printf("Done loading\n");
 
