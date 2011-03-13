@@ -65,7 +65,7 @@ int64 AmountFromValue(const Value& value)
     double dAmount = value.get_real();
     if (dAmount <= 0.0 || dAmount > 21000000.0)
         throw JSONRPCError(-3, "Invalid amount");
-    int64 nAmount = roundint64(dAmount * 100.00) * CENT;
+    int64 nAmount = roundint64(dAmount * COIN);
     if (!MoneyRange(nAmount))
         throw JSONRPCError(-3, "Invalid amount");
     return nAmount;
@@ -277,7 +277,7 @@ Value getinfo(const Array& params, bool fHelp)
 
     Object obj;
     obj.push_back(Pair("version",       (int)VERSION));
-    obj.push_back(Pair("balance",       (double)GetBalance() / (double)COIN));
+    obj.push_back(Pair("balance",       ValueFromAmount(GetBalance())));
     obj.push_back(Pair("blocks",        (int)nBestHeight));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (fUseProxy ? addrProxy.ToStringIPPort() : string())));
@@ -287,7 +287,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("hashespersec",  gethashespersec(params, false)));
     obj.push_back(Pair("testnet",       fTestNet));
     obj.push_back(Pair("keypoololdest", (boost::int64_t)GetOldestKeyPoolTime()));
-    obj.push_back(Pair("paytxfee",      (double)nTransactionFee / (double)COIN));
+    obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     return obj;
 }
@@ -381,6 +381,12 @@ Value setaccount(const Array& params, bool fHelp)
             "Sets the account associated with the given address.");
 
     string strAddress = params[0].get_str();
+    uint160 hash160;
+    bool isValid = AddressToHash160(strAddress, hash160);
+    if (!isValid)
+        throw JSONRPCError(-5, "Invalid bitcoin address");
+
+
     string strAccount;
     if (params.size() > 1)
         strAccount = AccountFromValue(params[1]);
@@ -513,7 +519,7 @@ Value getreceivedbyaddress(const Array& params, bool fHelp)
         }
     }
 
-    return (double)nAmount / (double)COIN;
+    return  ValueFromAmount(nAmount);
 }
 
 
@@ -619,7 +625,7 @@ Value getbalance(const Array& params, bool fHelp)
             "If [account] is specified, returns the balance in the account.");
 
     if (params.size() == 0)
-        return ((double)GetBalance() / (double)COIN);
+        return  ValueFromAmount(GetBalance());
 
     if (params[0].get_str() == "*") {
         // Calculate total balance a different way from GetBalance()
@@ -648,7 +654,7 @@ Value getbalance(const Array& params, bool fHelp)
             nBalance += allGenerated;
         }
         printf("Found %d accounts\n", vAccounts.size());
-        return (double)nBalance / (double)COIN;
+        return  ValueFromAmount(nBalance);
     }
 
     string strAccount = AccountFromValue(params[0]);
@@ -658,7 +664,7 @@ Value getbalance(const Array& params, bool fHelp)
 
     int64 nBalance = GetAccountBalance(strAccount, nMinDepth);
 
-    return (double)nBalance / (double)COIN;
+    return ValueFromAmount(nBalance);
 }
 
 
@@ -762,6 +768,69 @@ Value sendfrom(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+Value sendmany(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 2 || params.size() > 4)
+        throw runtime_error(
+            "sendmany <fromaccount> {address:amount,...} [minconf=1] [comment]\n"
+            "amounts are double-precision floating point numbers");
+
+    string strAccount = AccountFromValue(params[0]);
+    Object sendTo = params[1].get_obj();
+    int nMinDepth = 1;
+    if (params.size() > 2)
+        nMinDepth = params[2].get_int();
+
+    CWalletTx wtx;
+    wtx.strFromAccount = strAccount;
+    if (params.size() > 3 && params[3].type() != null_type && !params[3].get_str().empty())
+        wtx.mapValue["comment"] = params[3].get_str();
+
+    set<string> setAddress;
+    vector<pair<CScript, int64> > vecSend;
+
+    int64 totalAmount = 0;
+    foreach(const Pair& s, sendTo)
+    {
+        uint160 hash160;
+        string strAddress = s.name_;
+
+        if (setAddress.count(strAddress))
+            throw JSONRPCError(-8, string("Invalid parameter, duplicated address: ")+strAddress);
+        setAddress.insert(strAddress);
+
+        CScript scriptPubKey;
+        if (!scriptPubKey.SetBitcoinAddress(strAddress))
+            throw JSONRPCError(-5, string("Invalid bitcoin address:")+strAddress);
+        int64 nAmount = AmountFromValue(s.value_); 
+        totalAmount += nAmount;
+
+        vecSend.push_back(make_pair(scriptPubKey, nAmount));
+    }
+
+    CRITICAL_BLOCK(cs_mapWallet)
+    {
+        // Check funds
+        int64 nBalance = GetAccountBalance(strAccount, nMinDepth);
+        if (totalAmount > nBalance)
+            throw JSONRPCError(-6, "Account has insufficient funds");
+
+        // Send
+        CReserveKey keyChange;
+        int64 nFeeRequired = 0;
+        bool fCreated = CreateTransaction(vecSend, wtx, keyChange, nFeeRequired);
+        if (!fCreated)
+        {
+            if (totalAmount + nFeeRequired > GetBalance())
+                throw JSONRPCError(-6, "Insufficient funds");
+            throw JSONRPCError(-4, "Transaction creation failed");
+        }
+        if (!CommitTransaction(wtx, keyChange))
+            throw JSONRPCError(-4, "Transaction commit failed");
+    }
+
+    return wtx.GetHash().GetHex();
+}
 
 
 struct tallyitem
@@ -851,7 +920,7 @@ Value ListReceived(const Array& params, bool fByAccounts)
                 obj.push_back(Pair("address",       strAddress));
                 obj.push_back(Pair("account",       strAccount));
                 obj.push_back(Pair("label",         strAccount)); // deprecated
-                obj.push_back(Pair("amount",        (double)nAmount / (double)COIN));
+                obj.push_back(Pair("amount",        ValueFromAmount(nAmount)));
                 obj.push_back(Pair("confirmations", (nConf == INT_MAX ? 0 : nConf)));
                 ret.push_back(obj);
             }
@@ -867,7 +936,7 @@ Value ListReceived(const Array& params, bool fByAccounts)
             Object obj;
             obj.push_back(Pair("account",       (*it).first));
             obj.push_back(Pair("label",         (*it).first)); // deprecated
-            obj.push_back(Pair("amount",        (double)nAmount / (double)COIN));
+            obj.push_back(Pair("amount",        ValueFromAmount(nAmount)));
             obj.push_back(Pair("confirmations", (nConf == INT_MAX ? 0 : nConf)));
             ret.push_back(obj);
         }
@@ -1338,6 +1407,7 @@ pair<string, rpcfn_type> pCallTable[] =
     make_pair("getbalance",            &getbalance),
     make_pair("move",                  &movecmd),
     make_pair("sendfrom",              &sendfrom),
+    make_pair("sendmany",              &sendmany),
     make_pair("gettransaction",        &gettransaction),
     make_pair("listtransactions",      &listtransactions),
     make_pair("getwork",               &getwork),
@@ -1989,6 +2059,15 @@ int CommandLineRPC(int argc, char *argv[])
         if (strMethod == "sendfrom"               && n > 3) ConvertTo<boost::int64_t>(params[3]);
         if (strMethod == "listtransactions"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
         if (strMethod == "listaccounts"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
+        if (strMethod == "sendmany"               && n > 1)
+        {
+            string s = params[1].get_str();
+            Value v;
+            if (!read_string(s, v) || v.type() != obj_type)
+                throw runtime_error("type mismatch");
+            params[1] = v.get_obj();
+        }
+        if (strMethod == "sendmany"                && n > 2) ConvertTo<boost::int64_t>(params[2]);
 
         // Execute
         Object reply = CallRPC(strMethod, params);
