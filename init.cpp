@@ -78,7 +78,9 @@ int main(int argc, char* argv[])
     fRet = AppInit(argc, argv);
 
     if (fRet && fDaemon)
-        pthread_exit((void*)0);
+        return 0;
+
+    return 1;
 }
 #endif
 
@@ -157,9 +159,18 @@ bool AppInit2(int argc, char* argv[])
             "  -addnode=<ip>    \t  "   + _("Add a node to connect to\n") +
             "  -connect=<ip>    \t\t  " + _("Connect only to the specified node\n") +
             "  -nolisten        \t  "   + _("Don't accept connections from outside\n") +
+#ifdef USE_UPNP
+#if USE_UPNP
+            "  -noupnp          \t  "   + _("Don't attempt to use UPnP to map the listening port\n") +
+#else
+            "  -upnp            \t  "   + _("Attempt to use UPnP to map the listening port\n") +
+#endif
+#endif
             "  -paytxfee=<amt>  \t  "   + _("Fee per KB to add to transactions you send\n") +
 #ifdef GUI
             "  -server          \t\t  " + _("Accept command line and JSON-RPC commands\n") +
+#endif
+#ifndef __WXMSW__
             "  -daemon          \t\t  " + _("Run in the background as a daemon and accept commands\n") +
 #endif
             "  -testnet         \t\t  " + _("Use the test network\n") +
@@ -196,17 +207,20 @@ bool AppInit2(int argc, char* argv[])
 
     fDebug = GetBoolArg("-debug");
 
+#ifndef __WXMSW__
     fDaemon = GetBoolArg("-daemon");
+#else
+    fDaemon = false;
+#endif
 
     if (fDaemon)
         fServer = true;
     else
         fServer = GetBoolArg("-server");
 
-    /* force fServer and fDaemon when running without GUI */
+    /* force fServer when running without GUI */
 #ifndef GUI
     fServer = true;
-    fDaemon = true;
 #endif
 
     fPrintToConsole = GetBoolArg("-printtoconsole");
@@ -226,7 +240,7 @@ bool AppInit2(int argc, char* argv[])
         exit(ret);
     }
 
-#ifndef GUI
+#ifndef __WXMSW__
     if (fDaemon)
     {
         // Daemonize
@@ -449,6 +463,17 @@ bool AppInit2(int argc, char* argv[])
             wxMessageBox(_("Warning: -paytxfee is set very high.  This is the transaction fee you will pay if you send a transaction."), "Bitcoin", wxOK | wxICON_EXCLAMATION);
     }
 
+    if (fHaveUPnP)
+    {
+#if USE_UPNP
+    if (GetBoolArg("-noupnp"))
+        fUseUPnP = false;
+#else
+    if (GetBoolArg("-upnp"))
+        fUseUPnP = true;
+#endif
+    }
+
     //
     // Create the main window and start the node
     //
@@ -472,10 +497,11 @@ bool AppInit2(int argc, char* argv[])
     if (fFirstRun)
         SetStartOnSystemStartup(true);
 #endif
-    
-    if (fDaemon)
-        while (!fShutdown)
-            Sleep(5000);
+
+#ifndef GUI
+    while (1)
+        Sleep(5000);
+#endif
 
     return true;
 }
