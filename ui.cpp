@@ -1665,6 +1665,10 @@ COptionsDialog::COptionsDialog(wxWindow* parent) : COptionsDialogBase(parent)
     m_checkBoxStartOnSystemStartup->SetValue(fTmpStartOnSystemStartup = GetStartOnSystemStartup());
     m_checkBoxMinimizeToTray->SetValue(fMinimizeToTray);
     m_checkBoxMinimizeOnClose->SetValue(fMinimizeOnClose);
+    if (fHaveUPnP)
+        m_checkBoxUseUPnP->SetValue(fUseUPnP);
+    else
+        m_checkBoxUseUPnP->Enable(false);
     m_checkBoxUseProxy->SetValue(fUseProxy);
     m_textCtrlProxyIP->Enable(fUseProxy);
     m_textCtrlProxyPort->Enable(fUseProxy);
@@ -1782,6 +1786,13 @@ void COptionsDialog::OnButtonApply(wxCommandEvent& event)
     {
         fMinimizeOnClose = m_checkBoxMinimizeOnClose->GetValue();
         walletdb.WriteSetting("fMinimizeOnClose", fMinimizeOnClose);
+    }
+
+    if (fHaveUPnP && fUseUPnP != m_checkBoxUseUPnP->GetValue())
+    {
+        fUseUPnP = m_checkBoxUseUPnP->GetValue();
+        walletdb.WriteSetting("fUseUPnP", fUseUPnP);
+        MapPort(fUseUPnP);
     }
 
     fUseProxy = m_checkBoxUseProxy->GetValue();
@@ -2808,6 +2819,10 @@ bool CMyApp::Initialize(int& argc, wxChar** argv)
             }
             if (pid > 0)
                 pthread_exit((void*)0);
+
+            pid_t sid = setsid();
+            if (sid < 0)
+                fprintf(stderr, "Error: setsid() returned %d errno %d\n", sid, errno);
         }
 
         return true;
