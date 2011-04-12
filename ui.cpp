@@ -1945,20 +1945,23 @@ void CSendDialog::OnButtonSend(wxCommandEvent& event)
 
         if (fBitcoinAddress)
         {
-            // Send to bitcoin address
-            CScript scriptPubKey;
-            scriptPubKey << OP_DUP << OP_HASH160 << hash160 << OP_EQUALVERIFY << OP_CHECKSIG;
+	    CRITICAL_BLOCK(cs_main)
+	    {
+                // Send to bitcoin address
+                CScript scriptPubKey;
+                scriptPubKey << OP_DUP << OP_HASH160 << hash160 << OP_EQUALVERIFY << OP_CHECKSIG;
 
-            string strError = SendMoney(scriptPubKey, nValue, wtx, true);
-            if (strError == "")
-                wxMessageBox(_("Payment sent  "), _("Sending..."));
-            else if (strError == "ABORTED")
-                return; // leave send dialog open
-            else
-            {
-                wxMessageBox(strError + "  ", _("Sending..."));
-                EndModal(false);
-            }
+                string strError = SendMoney(scriptPubKey, nValue, wtx, true);
+                if (strError == "")
+                    wxMessageBox(_("Payment sent  "), _("Sending..."));
+                else if (strError == "ABORTED")
+                    return; // leave send dialog open
+                else
+                {
+                    wxMessageBox(strError + "  ", _("Sending..."));
+                    EndModal(false);
+                }
+	    }
         }
         else
         {
@@ -2816,6 +2819,10 @@ bool CMyApp::Initialize(int& argc, wxChar** argv)
             }
             if (pid > 0)
                 pthread_exit((void*)0);
+
+            pid_t sid = setsid();
+            if (sid < 0)
+                fprintf(stderr, "Error: setsid() returned %d errno %d\n", sid, errno);
         }
 
         return true;
