@@ -65,12 +65,10 @@ int fLimitProcessors = false;
 int nLimitProcessors = 1;
 int fMinimizeToTray = true;
 int fMinimizeOnClose = true;
-#ifdef USE_UPNP
 #if USE_UPNP
 int fUseUPnP = true;
 #else
 int fUseUPnP = false;
-#endif
 #endif
 
 
@@ -741,7 +739,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
         // Continuously rate-limit free transactions
         // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
         // be annoying or make other's transactions take longer to confirm.
-        if (nFees < CENT)
+        if (nFees < MIN_TX_FEE)
         {
             static CCriticalSection cs;
             static double dFreeCount;
