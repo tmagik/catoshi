@@ -1,14 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
-
 #include "headers.h"
 
-
-
-
-
-
+using namespace std;
+using namespace boost;
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -71,7 +67,6 @@ void HandleSIGTERM(int)
 //
 // Start
 //
-
 #ifndef GUI
 int main(int argc, char* argv[])
 {
@@ -158,6 +153,7 @@ bool AppInit2(int argc, char* argv[])
             "  -min             \t\t  " + _("Start minimized\n") +
             "  -datadir=<dir>   \t\t  " + _("Specify data directory\n") +
             "  -proxy=<ip:port> \t  "   + _("Connect through socks4 proxy\n") +
+            "  -dns             \t  "   + _("Allow DNS lookups for addnode and connect\n") +
             "  -addnode=<ip>    \t  "   + _("Add a node to connect to\n") +
             "  -connect=<ip>    \t\t  " + _("Connect only to the specified node\n") +
             "  -nolisten        \t  "   + _("Don't accept connections from outside\n") +
@@ -208,6 +204,7 @@ bool AppInit2(int argc, char* argv[])
     }
 
     fDebug = GetBoolArg("-debug");
+    fAllowDNS = GetBoolArg("-dns");
 
 #ifndef __WXMSW__
     fDaemon = GetBoolArg("-daemon");
@@ -456,9 +453,9 @@ bool AppInit2(int argc, char* argv[])
 
     if (mapArgs.count("-addnode"))
     {
-        foreach(string strAddr, mapMultiArgs["-addnode"])
+        BOOST_FOREACH(string strAddr, mapMultiArgs["-addnode"])
         {
-            CAddress addr(strAddr, NODE_NETWORK);
+            CAddress addr(strAddr, fAllowDNS);
             addr.nTime = 0; // so it won't relay unless successfully connected
             if (addr.IsValid())
                 AddAddress(addr);
