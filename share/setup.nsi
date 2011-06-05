@@ -9,7 +9,7 @@ RequestExecutionLevel highest
 !define URL http://www.bitcoin.org/
 
 # MUI Symbol Definitions
-!define MUI_ICON "src\rc\bitcoin.ico"
+!define MUI_ICON "../share/pixmaps/bitcoin.ico"
 !define MUI_FINISHPAGE_NOAUTOCLOSE
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT HKLM
 !define MUI_STARTMENUPAGE_REGISTRY_KEY ${REGKEY}
@@ -59,16 +59,15 @@ ShowUninstDetails show
 Section -Main SEC0000
     SetOutPath $INSTDIR
     SetOverwrite on
-    File bitcoin.exe
-    File libeay32.dll
-    File license.txt
-    File readme.txt
+    File ../src/bitcoin.exe
+    File /oname=license.txt ../COPYING
+    File /oname=readme.txt ../doc/README_windows.txt
     SetOutPath $INSTDIR\daemon
-    File /r daemon\*.*
+    File ../src/bitcoind.exe
     SetOutPath $INSTDIR\locale
-    File /r locale\*.*
+    File /r ../locale/*.*
     SetOutPath $INSTDIR\src
-    File /r src\*.*
+    File /r /x *.exe /x *.o ../src\*.*
     SetOutPath $INSTDIR
     WriteRegStr HKCU "${REGKEY}\Components" Main 1
 SectionEnd
@@ -108,7 +107,6 @@ done${UNSECTION_ID}:
 # Uninstaller sections
 Section /o -un.Main UNSEC0000
     Delete /REBOOTOK $INSTDIR\bitcoin.exe
-    Delete /REBOOTOK $INSTDIR\libeay32.dll
     Delete /REBOOTOK $INSTDIR\license.txt
     Delete /REBOOTOK $INSTDIR\readme.txt
     RMDir /r /REBOOTOK $INSTDIR\daemon
