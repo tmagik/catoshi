@@ -915,7 +915,7 @@ void ThreadSocketHandler2(void* parg)
                     CDataStream& vRecv = pnode->vRecv;
                     unsigned int nPos = vRecv.size();
 
-                    if (nPos > 1000*GetArg("-maxreceivebuffer", 10*1000)) {
+                    if (nPos > ReceiveBufferSize()) {
                         if (!pnode->fDisconnect)
                             printf("socket recv flood control disconnect (%d bytes)\n", vRecv.size());
                         pnode->CloseSocketDisconnect();
@@ -980,7 +980,7 @@ void ThreadSocketHandler2(void* parg)
                                 pnode->CloseSocketDisconnect();
                             }
                         }
-                        if (vSend.size() > 1000*GetArg("-maxsendbuffer", 10*1000)) {
+                        if (vSend.size() > SendBufferSize()) {
                             if (!pnode->fDisconnect)
                                 printf("socket send flood control disconnect (%d bytes)\n", vSend.size());
                             pnode->CloseSocketDisconnect();
@@ -1146,19 +1146,22 @@ void DNSAddressSeed()
 {
     int found = 0;
 
-    printf("Loading addresses from DNS seeds (could take a while)\n");
+    if (!fTestNet)
+    {
+        printf("Loading addresses from DNS seeds (could take a while)\n");
 
-    for (int seed_idx = 0; seed_idx < ARRAYLEN(strDNSSeed); seed_idx++) {
-        vector<CAddress> vaddr;
-        if (Lookup(strDNSSeed[seed_idx], vaddr, NODE_NETWORK, -1, true))
-        {
-            BOOST_FOREACH (CAddress& addr, vaddr)
+        for (int seed_idx = 0; seed_idx < ARRAYLEN(strDNSSeed); seed_idx++) {
+            vector<CAddress> vaddr;
+            if (Lookup(strDNSSeed[seed_idx], vaddr, NODE_NETWORK, -1, true))
             {
-                if (addr.GetByte(3) != 127)
+                BOOST_FOREACH (CAddress& addr, vaddr)
                 {
-                    addr.nTime = 0;
-                    AddAddress(addr);
-                    found++;
+                    if (addr.GetByte(3) != 127)
+                    {
+                        addr.nTime = 0;
+                        AddAddress(addr);
+                        found++;
+                    }
                 }
             }
         }
