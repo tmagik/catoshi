@@ -78,10 +78,6 @@ QString BitcoinAmountField::text() const
     {
         return QString();
     }
-    if(amount->text().isEmpty())
-    {
-        return QString("0.") + decimals->text();
-    }
     return amount->text() + QString(".") + decimals->text();
 }
 
