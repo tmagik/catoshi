@@ -528,7 +528,7 @@ bool CAddrDB::LoadAddresses()
                 char psz[1000];
                 while (fgets(psz, sizeof(psz), filein))
                 {
-                    CAddress addr(psz, NODE_NETWORK);
+                    CAddress addr(psz, false, NODE_NETWORK);
                     addr.nTime = 0; // so it won't relay unless successfully connected
                     if (addr.IsValid())
                         AddAddress(addr);
@@ -777,7 +777,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                     key.SetPrivKey(wkey.vchPrivKey);
                 }
                 if (!pwallet->LoadKey(key))
-                    return false;
+                    return DB_CORRUPT;
             }
             else if (strType == "mkey")
             {
@@ -786,7 +786,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                 CMasterKey kMasterKey;
                 ssValue >> kMasterKey;
                 if(pwallet->mapMasterKeys.count(nID) != 0)
-                    return false;
+                    return DB_CORRUPT;
                 pwallet->mapMasterKeys[nID] = kMasterKey;
                 if (pwallet->nMasterKeyMaxID < nID)
                     pwallet->nMasterKeyMaxID = nID;
@@ -798,7 +798,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                 vector<unsigned char> vchPrivKey;
                 ssValue >> vchPrivKey;
                 if (!pwallet->LoadCryptedKey(vchPubKey, vchPrivKey))
-                    return false;
+                    return DB_CORRUPT;
             }
             else if (strType == "defaultkey")
             {
