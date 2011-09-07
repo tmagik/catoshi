@@ -22,15 +22,15 @@ set<CWallet*> setpwalletRegistered;
 
 CCriticalSection cs_main;
 
-map<uint256, CTransaction> mapTransactions;
+static map<uint256, CTransaction> mapTransactions;
 CCriticalSection cs_mapTransactions;
 unsigned int nTransactionsUpdated = 0;
 map<COutPoint, CInPoint> mapNextTx;
 
 map<uint256, CBlockIndex*> mapBlockIndex;
 uint256 hashGenesisBlock("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
-CBigNum bnProofOfWorkLimit(~uint256(0) >> 32);
-const int nTotalBlocksEstimate = 134444; // Conservative estimate of total nr of blocks on main chain
+static CBigNum bnProofOfWorkLimit(~uint256(0) >> 32);
+const int nTotalBlocksEstimate = 140700; // Conservative estimate of total nr of blocks on main chain
 const int nInitialBlockThreshold = 120; // Regard blocks up until N-threshold as "initial download"
 CBlockIndex* pindexGenesisBlock = NULL;
 int nBestHeight = -1;
@@ -295,9 +295,10 @@ int CMerkleTx::SetMerkleBranch(const CBlock* pblock)
 bool CTransaction::CheckTransaction() const
 {
     // Basic checks that don't depend on any context
-    if (vin.empty() || vout.empty())
-        return error("CTransaction::CheckTransaction() : vin or vout empty");
-
+    if (vin.empty())
+        return error("CTransaction::CheckTransaction() : vin empty");
+    if (vout.empty())
+        return error("CTransaction::CheckTransaction() : vout empty");
     // Size limits
     if (::GetSerializeSize(*this, SER_NETWORK) > MAX_BLOCK_SIZE)
         return error("CTransaction::CheckTransaction() : size limits failed");
@@ -812,7 +813,7 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, map<uint256, CTxIndex>& mapTestPoo
             // Read txindex
             CTxIndex txindex;
             bool fFound = true;
-            if (fMiner && mapTestPool.count(prevout.hash))
+            if ((fBlock || fMiner) && mapTestPool.count(prevout.hash))
             {
                 // Get txindex from current proposed changes
                 txindex = mapTestPool[prevout.hash];
@@ -872,12 +873,7 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, map<uint256, CTxIndex>& mapTestPoo
             txindex.vSpent[prevout.n] = posThisTx;
 
             // Write back
-            if (fBlock)
-            {
-                if (!txdb.UpdateTxIndex(prevout.hash, txindex))
-                    return error("ConnectInputs() : UpdateTxIndex failed");
-            }
-            else if (fMiner)
+            if (fBlock || fMiner)
             {
                 mapTestPool[prevout.hash] = txindex;
             }
@@ -899,9 +895,8 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, map<uint256, CTxIndex>& mapTestPoo
 
     if (fBlock)
     {
-        // Add transaction to disk index
-        if (!txdb.AddTxIndex(*this, posThisTx, pindexBlock->nHeight))
-            return error("ConnectInputs() : AddTxPos failed");
+        // Add transaction to changes
+        mapTestPool[GetHash()] = CTxIndex(posThisTx, vout.size());
     }
     else if (fMiner)
     {
@@ -990,15 +985,21 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     //// issue here: it doesn't know the version
     unsigned int nTxPos = pindex->nBlockPos + ::GetSerializeSize(CBlock(), SER_DISK) - 1 + GetSizeOfCompactSize(vtx.size());
 
-    map<uint256, CTxIndex> mapUnused;
+    map<uint256, CTxIndex> mapQueuedChanges;
     int64 nFees = 0;
     BOOST_FOREACH(CTransaction& tx, vtx)
     {
         CDiskTxPos posThisTx(pindex->nFile, pindex->nBlockPos, nTxPos);
         nTxPos += ::GetSerializeSize(tx, SER_DISK);
 
-        if (!tx.ConnectInputs(txdb, mapUnused, posThisTx, pindex, nFees, true, false))
+        if (!tx.ConnectInputs(txdb, mapQueuedChanges, posThisTx, pindex, nFees, true, false))
             return false;
+    }
+    // Write queued txindex changes
+    for (map<uint256, CTxIndex>::iterator mi = mapQueuedChanges.begin(); mi != mapQueuedChanges.end(); ++mi)
+    {
+        if (!txdb.UpdateTxIndex((*mi).first, (*mi).second))
+            return error("ConnectBlock() : UpdateTxIndex failed");
     }
 
     if (vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
@@ -1301,7 +1302,8 @@ bool CBlock::AcceptBlock()
             (nHeight ==  74000 && hash != uint256("0x0000000000573993a3c9e41ce34471c079dcf5f52a0e824a81e7f953b8661a20")) ||
             (nHeight == 105000 && hash != uint256("0x00000000000291ce28027faea320c8d2b054b2e0fe44a773f3eefb151d6bdc97")) ||
             (nHeight == 118000 && hash != uint256("0x000000000000774a7f8a7a12dc906ddb9e17e75d684f15e00f8767f9e8f36553")) ||
-            (nHeight == 134444 && hash != uint256("0x00000000000005b12ffd4cd315cd34ffd4a594f430ac814c91184a0d42d2b0fe")))
+            (nHeight == 134444 && hash != uint256("0x00000000000005b12ffd4cd315cd34ffd4a594f430ac814c91184a0d42d2b0fe")) ||
+            (nHeight == 140700 && hash != uint256("0x000000000000033b512028abb90e1626d8b346fd0ed598ac0a3c371138dce2bd")))
             return error("AcceptBlock() : rejected by checkpoint lockin at %d", nHeight);
 
     // Write block to history file
@@ -1318,7 +1320,7 @@ bool CBlock::AcceptBlock()
     if (hashBestChain == hash)
         CRITICAL_BLOCK(cs_vNodes)
             BOOST_FOREACH(CNode* pnode, vNodes)
-                if (nBestHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : 134444))
+                if (nBestHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : 140700))
                     pnode->PushInventory(CInv(MSG_BLOCK, hash));
 
     return true;
@@ -1821,7 +1823,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
         // Ask the first connected node for block updates
         static int nAskedForBlocks;
-        if (!pfrom->fClient && (nAskedForBlocks < 1 || vNodes.size() <= 1))
+        if (!pfrom->fClient &&
+            (pfrom->nVersion < 32000 || pfrom->nVersion >= 32400) &&
+             (nAskedForBlocks < 1 || vNodes.size() <= 1))
         {
             nAskedForBlocks++;
             pfrom->PushGetBlocks(pindexBest, uint256(0));
@@ -2181,7 +2185,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
         // Keep giving the same key to the same ip until they use it
         if (!mapReuseKey.count(pfrom->addr.ip))
-            mapReuseKey[pfrom->addr.ip] = pwalletMain->GetOrReuseKeyFromPool();
+            pwalletMain->GetKeyFromPool(mapReuseKey[pfrom->addr.ip], true);
 
         // Send back approval of order and pubkey to use
         CScript scriptPubKey;
@@ -2623,7 +2627,7 @@ unsigned int static ScanHash_CryptoPP(char* pmidstate, char* pdata, char* phash1
     }
 }
 
-
+// Some explaining would be appreciated
 class COrphan
 {
 public:
@@ -2880,7 +2884,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
         reservekey.KeepKey();
 
         // Track how many getdata requests this block gets
-        CRITICAL_BLOCK(wallet.cs_mapRequestCount)
+        CRITICAL_BLOCK(wallet.cs_wallet)
             wallet.mapRequestCount[pblock->GetHash()] = 0;
 
         // Process this block the same as if we had received it from another node
