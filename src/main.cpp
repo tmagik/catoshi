@@ -1744,9 +1744,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 {
     static map<unsigned int, vector<unsigned char> > mapReuseKey;
     RandAddSeedPerfmon();
-    if (fDebug)
+    if (fDebug) {
         printf("%s ", DateTimeStrFormat("%x %H:%M:%S", GetTime()).c_str());
-    printf("received: %s (%d bytes)\n", strCommand.c_str(), vRecv.size());
+        printf("received: %s (%d bytes)\n", strCommand.c_str(), vRecv.size());
+    }
     if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
     {
         printf("dropmessagestest DROPPING RECV MESSAGE\n");
@@ -1934,7 +1935,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             pfrom->AddInventoryKnown(inv);
 
             bool fAlreadyHave = AlreadyHave(txdb, inv);
-            printf("  got inventory: %s  %s\n", inv.ToString().c_str(), fAlreadyHave ? "have" : "new");
+            if (fDebug)
+                printf("  got inventory: %s  %s\n", inv.ToString().c_str(), fAlreadyHave ? "have" : "new");
 
             if (!fAlreadyHave)
                 pfrom->AskFor(inv);
@@ -2798,16 +2800,17 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
 }
 
 
-void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce, int64& nPrevTime)
+void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
     // Update nExtraNonce
-    int64 nNow = max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-    if (++nExtraNonce >= 0x7f && nNow > nPrevTime+1)
+    static uint256 hashPrevBlock;
+    if (hashPrevBlock != pblock->hashPrevBlock)
     {
-        nExtraNonce = 1;
-        nPrevTime = nNow;
+        nExtraNonce = 0;
+        hashPrevBlock = pblock->hashPrevBlock;
     }
-    pblock->vtx[0].vin[0].scriptSig = CScript() << pblock->nBits << CBigNum(nExtraNonce);
+    ++nExtraNonce;
+    pblock->vtx[0].vin[0].scriptSig = CScript() << pblock->nTime << CBigNum(nExtraNonce);
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 }
 
@@ -2905,7 +2908,6 @@ void static BitcoinMiner(CWallet *pwallet)
     // Each thread has its own key and counter
     CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
-    int64 nPrevTime = 0;
 
     while (fGenerateBitcoins)
     {
@@ -2932,7 +2934,7 @@ void static BitcoinMiner(CWallet *pwallet)
         auto_ptr<CBlock> pblock(CreateNewBlock(reservekey));
         if (!pblock.get())
             return;
-        IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce, nPrevTime);
+        IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
         printf("Running BitcoinMiner with %d transactions in block\n", pblock->vtx.size());
 
