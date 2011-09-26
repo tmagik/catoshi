@@ -4,7 +4,7 @@
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #include "headers.h"
 #include "db.h"
-#include "rpc.h"
+#include "bitcoinrpc.h"
 #include "net.h"
 #include "init.h"
 #include "strlcpy.h"
@@ -80,7 +80,7 @@ void HandleSIGTERM(int)
 //
 // Start
 //
-#ifndef GUI
+#if !defined(QT_GUI) && !defined(GUI)
 int main(int argc, char* argv[])
 {
     bool fRet = false;
@@ -179,6 +179,8 @@ bool AppInit2(int argc, char* argv[])
             "  -addnode=<ip>    \t  "   + _("Add a node to connect to\n") +
             "  -connect=<ip>    \t\t  " + _("Connect only to the specified node\n") +
             "  -nolisten        \t  "   + _("Don't accept connections from outside\n") +
+            "  -banscore=<n>    \t  "   + _("Threshold for disconnecting misbehaving peers (default: 100)\n") +
+            "  -bantime=<n>     \t  "   + _("Number of seconds to keep misbehaving peers from reconnecting (default: 86400)\n") +
 #ifdef USE_UPNP
 #if USE_UPNP
             "  -noupnp          \t  "   + _("Don't attempt to use UPnP to map the listening port\n") +
@@ -240,10 +242,9 @@ bool AppInit2(int argc, char* argv[])
         fServer = GetBoolArg("-server");
 
     /* force fServer when running without GUI */
-#ifndef GUI
+#if !defined(QT_GUI) && !defined(GUI)
     fServer = true;
 #endif
-
     fPrintToConsole = GetBoolArg("-printtoconsole");
     fPrintToDebugger = GetBoolArg("-printtodebugger");
 
@@ -252,6 +253,7 @@ bool AppInit2(int argc, char* argv[])
     fNoListen = GetBoolArg("-nolisten") || fTOR;
     fLogTimestamps = GetBoolArg("-logtimestamps");
 
+#ifndef QT_GUI
     for (int i = 1; i < argc; i++)
         if (!IsSwitchChar(argv[i][0]))
             fCommandLine = true;
@@ -261,6 +263,7 @@ bool AppInit2(int argc, char* argv[])
         int ret = CommandLineRPC(argc, argv);
         exit(ret);
     }
+#endif
 
 #ifndef __WXMSW__
     if (fDaemon)
@@ -373,18 +376,21 @@ bool AppInit2(int argc, char* argv[])
     strErrors = "";
     int64 nStart;
 
+    InitMessage(_("Loading addresses..."));
     printf("Loading addresses...\n");
     nStart = GetTimeMillis();
     if (!LoadAddresses())
         strErrors += _("Error loading addr.dat      \n");
     printf(" addresses   %15"PRI64d"ms\n", GetTimeMillis() - nStart);
 
+    InitMessage(_("Loading block index..."));
     printf("Loading block index...\n");
     nStart = GetTimeMillis();
     if (!LoadBlockIndex())
         strErrors += _("Error loading blkindex.dat      \n");
     printf(" block index %15"PRI64d"ms\n", GetTimeMillis() - nStart);
 
+    InitMessage(_("Loading wallet..."));
     printf("Loading wallet...\n");
     nStart = GetTimeMillis();
     bool fFirstRun;
@@ -415,12 +421,14 @@ bool AppInit2(int argc, char* argv[])
     }
     if (pindexBest != pindexRescan)
     {
+        InitMessage(_("Rescanning..."));
         printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
         nStart = GetTimeMillis();
         pwalletMain->ScanForWalletTransactions(pindexRescan, true);
         printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
     }
 
+    InitMessage(_("Done loading"));
     printf("Done loading\n");
 
         //// debug print
@@ -543,7 +551,7 @@ bool AppInit2(int argc, char* argv[])
     RandAddSeedPerfmon();
 
     if (!CreateThread(StartNode, NULL))
-        wxMessageBox("Error: CreateThread(StartNode) failed", "Bitcoin");
+        wxMessageBox(_("Error: CreateThread(StartNode) failed"), "Bitcoin");
 
     if (fServer)
         CreateThread(ThreadRPCServer, NULL);
@@ -553,7 +561,7 @@ bool AppInit2(int argc, char* argv[])
         SetStartOnSystemStartup(true);
 #endif
 
-#ifndef GUI
+#if !defined(QT_GUI) && !defined(GUI)
     while (1)
         Sleep(5000);
 #endif
