@@ -32,7 +32,6 @@ uint256 hashGenesisBlock("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3
 static CBigNum bnProofOfWorkLimit(~uint256(0) >> 32);
 const int nTotalBlocksEstimate = 140700; // Conservative estimate of total nr of blocks on main chain
 const int nInitialBlockThreshold = 120; // Regard blocks up until N-threshold as "initial download"
-int nMaxBlocksOfPeers = 0; // Amount of blocks that other nodes claim to have
 CBlockIndex* pindexGenesisBlock = NULL;
 int nBestHeight = -1;
 CBigNum bnBestChainWork = 0;
@@ -40,6 +39,8 @@ CBigNum bnBestInvalidWork = 0;
 uint256 hashBestChain = 0;
 CBlockIndex* pindexBest = NULL;
 int64 nTimeBestReceived = 0;
+
+CMedianFilter<int> cPeerBlockCounts(5, 0); // Amount of blocks that other nodes claim to have
 
 map<uint256, CBlock*> mapOrphanBlocks;
 multimap<uint256, CBlock*> mapOrphanBlocksByPrev;
@@ -63,11 +64,6 @@ int fUseUPnP = true;
 #else
 int fUseUPnP = false;
 #endif
-
-
-
-
-
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -364,7 +360,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
     // 34 bytes because a TxOut is:
     //   20-byte address + 8 byte bitcoin amount + 5 bytes of ops + 1 byte script length
     if (GetSigOpCount() > nSize / 34 || nSize < 100)
-        return DoS(10, error("AcceptToMemoryPool() : transaction with out-of-bounds SigOpCount"));
+        return error("AcceptToMemoryPool() : transaction with out-of-bounds SigOpCount");
 
     // Rather not work on nonstandard transactions (unless -testnet)
     if (!fTestNet && !IsStandard())
@@ -730,7 +726,7 @@ int GetTotalBlocksEstimate()
 // Return maximum amount of blocks that other nodes claim to have
 int GetNumBlocksOfPeers()
 {
-    return std::max(nMaxBlocksOfPeers, GetTotalBlocksEstimate());
+    return std::max(cPeerBlockCounts.median(), GetTotalBlocksEstimate());
 }
 
 bool IsInitialBlockDownload()
@@ -864,7 +860,7 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, map<uint256, CTxIndex>& mapTestPoo
             if (txPrev.IsCoinBase())
                 for (CBlockIndex* pindex = pindexBlock; pindex && pindexBlock->nHeight - pindex->nHeight < COINBASE_MATURITY; pindex = pindex->pprev)
                     if (pindex->nBlockPos == txindex.pos.nBlockPos && pindex->nFile == txindex.pos.nFile)
-                        return DoS(10, error("ConnectInputs() : tried to spend coinbase at depth %d", pindexBlock->nHeight - pindex->nHeight));
+                        return error("ConnectInputs() : tried to spend coinbase at depth %d", pindexBlock->nHeight - pindex->nHeight);
 
             // Skip ECDSA signature verification when connecting blocks (fBlock=true) during initial download
             // (before the last blockchain checkpoint). This is safe because block merkle hashes are
@@ -1859,10 +1855,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         pfrom->fSuccessfullyConnected = true;
 
         printf("version message: version %d, blocks=%d\n", pfrom->nVersion, pfrom->nStartingHeight);
-        if(pfrom->nStartingHeight > nMaxBlocksOfPeers)
-        {
-            nMaxBlocksOfPeers = pfrom->nStartingHeight;
-        }
+
+        cPeerBlockCounts.input(pfrom->nStartingHeight);
     }
 
 
