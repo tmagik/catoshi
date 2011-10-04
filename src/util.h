@@ -178,6 +178,10 @@ bool ParseMoney(const std::string& str, int64& nRet);
 bool ParseMoney(const char* pszIn, int64& nRet);
 std::vector<unsigned char> ParseHex(const char* psz);
 std::vector<unsigned char> ParseHex(const std::string& str);
+std::vector<unsigned char> DecodeBase64(const char* p, bool* pfInvalid = NULL);
+std::string DecodeBase64(const std::string& str);
+std::string EncodeBase64(const unsigned char* pch, size_t len);
+std::string EncodeBase64(const std::string& str);
 void ParseParameters(int argc, char* argv[]);
 const char* wxGetTranslation(const char* psz);
 bool WildcardMatch(const char* psz, const char* mask);
@@ -565,6 +569,51 @@ inline uint160 Hash160(const std::vector<unsigned char>& vch)
     return hash2;
 }
 
+
+// Median filter over a stream of values
+// Returns the median of the last N numbers
+template <typename T> class CMedianFilter
+{
+private:
+    std::vector<T> vValues;
+    std::vector<T> vSorted;
+    int nSize;
+public:
+    CMedianFilter(int size, T initial_value):
+        nSize(size)
+    {
+        vValues.reserve(size);
+        vValues.push_back(initial_value);
+        vSorted = vValues;
+    }
+    
+    void input(T value)
+    {
+        if(vValues.size() == nSize)
+        {
+            vValues.erase(vValues.begin());
+        }
+        vValues.push_back(value);
+
+        vSorted.resize(vValues.size());
+        std::copy(vValues.begin(), vValues.end(), vSorted.begin());
+        std::sort(vSorted.begin(), vSorted.end());
+    }
+
+    T median() const
+    {
+        int size = vSorted.size();
+        assert(size>0);
+        if(size & 1) // Odd number of elements
+        {
+            return vSorted[size/2];
+        }
+        else // Even number of elements
+        {
+            return (vSorted[size/2-1] + vSorted[size/2]) / 2;
+        }
+    }
+};
 
 
 
