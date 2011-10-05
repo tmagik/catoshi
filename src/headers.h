@@ -1,4 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
+// Copyright (c) 2011 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
@@ -25,14 +26,6 @@
 #ifndef BSD
 #define BSD 1
 #endif
-#endif
-#ifdef GUI
-#include <wx/wx.h>
-#include <wx/stdpaths.h>
-#include <wx/snglinst.h>
-#include <wx/utils.h>
-#include <wx/clipbrd.h>
-#include <wx/taskbar.h>
 #endif
 #include <openssl/buffer.h>
 #include <openssl/ecdsa.h>
@@ -94,24 +87,8 @@
 #include "bignum.h"
 #include "base58.h"
 #include "main.h"
-#ifdef GUI
-#include "uibase.h"
-#include "ui.h"
+#ifdef QT_GUI
+#include "qtui.h"
 #else
 #include "noui.h"
-#endif
-
-#ifdef GUI
-#include "xpm/addressbook16.xpm"
-#include "xpm/addressbook20.xpm"
-#include "xpm/bitcoin16.xpm"
-#include "xpm/bitcoin20.xpm"
-#include "xpm/bitcoin32.xpm"
-#include "xpm/bitcoin48.xpm"
-#include "xpm/bitcoin80.xpm"
-#include "xpm/check.xpm"
-#include "xpm/send16.xpm"
-#include "xpm/send16noshadow.xpm"
-#include "xpm/send20.xpm"
-#include "xpm/about.xpm"
 #endif
