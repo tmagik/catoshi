@@ -65,7 +65,7 @@ typedef unsigned long long  uint64;
 #endif
 
 // This is needed because the foreach macro can't get over the comma in pair<t1, t2>
-#define PAIRTYPE(t1, t2)    pair<t1, t2>
+#define PAIRTYPE(t1, t2)    std::pair<t1, t2>
 
 // Align by increasing pointer, must have extra space at end of buffer
 template <size_t nBytes, typename T>
@@ -132,14 +132,12 @@ inline int myclosesocket(SOCKET& hSocket)
     return ret;
 }
 #define closesocket(s)      myclosesocket(s)
-
-#ifndef GUI
+#if !defined(QT_GUI)
 inline const char* _(const char* psz)
 {
     return psz;
 }
 #endif
-
 
 
 
@@ -169,8 +167,8 @@ void RandAddSeed();
 void RandAddSeedPerfmon();
 int OutputDebugStringF(const char* pszFormat, ...);
 int my_snprintf(char* buffer, size_t limit, const char* format, ...);
-std::string strprintf(const char* format, ...);
-bool error(const char* format, ...);
+std::string strprintf(const std::string &format, ...);
+bool error(const std::string &format, ...);
 void LogException(std::exception* pex, const char* pszThread);
 void PrintException(std::exception* pex, const char* pszThread);
 void PrintExceptionContinue(std::exception* pex, const char* pszThread);
@@ -180,6 +178,10 @@ bool ParseMoney(const std::string& str, int64& nRet);
 bool ParseMoney(const char* pszIn, int64& nRet);
 std::vector<unsigned char> ParseHex(const char* psz);
 std::vector<unsigned char> ParseHex(const std::string& str);
+std::vector<unsigned char> DecodeBase64(const char* p, bool* pfInvalid = NULL);
+std::string DecodeBase64(const std::string& str);
+std::string EncodeBase64(const unsigned char* pch, size_t len);
+std::string EncodeBase64(const std::string& str);
 void ParseParameters(int argc, char* argv[]);
 const char* wxGetTranslation(const char* psz);
 bool WildcardMatch(const char* psz, const char* mask);
@@ -199,6 +201,7 @@ void ShrinkDebugFile();
 int GetRandInt(int nMax);
 uint64 GetRand(uint64 nMax);
 int64 GetTime();
+void SetMockTime(int64 nMockTimeIn);
 int64 GetAdjustedTime();
 void AddTimeData(unsigned int ip, int64 nTime);
 std::string FormatFullVersion();
@@ -566,6 +569,51 @@ inline uint160 Hash160(const std::vector<unsigned char>& vch)
     return hash2;
 }
 
+
+// Median filter over a stream of values
+// Returns the median of the last N numbers
+template <typename T> class CMedianFilter
+{
+private:
+    std::vector<T> vValues;
+    std::vector<T> vSorted;
+    int nSize;
+public:
+    CMedianFilter(int size, T initial_value):
+        nSize(size)
+    {
+        vValues.reserve(size);
+        vValues.push_back(initial_value);
+        vSorted = vValues;
+    }
+    
+    void input(T value)
+    {
+        if(vValues.size() == nSize)
+        {
+            vValues.erase(vValues.begin());
+        }
+        vValues.push_back(value);
+
+        vSorted.resize(vValues.size());
+        std::copy(vValues.begin(), vValues.end(), vSorted.begin());
+        std::sort(vSorted.begin(), vSorted.end());
+    }
+
+    T median() const
+    {
+        int size = vSorted.size();
+        assert(size>0);
+        if(size & 1) // Odd number of elements
+        {
+            return vSorted[size/2];
+        }
+        else // Even number of elements
+        {
+            return (vSorted[size/2-1] + vSorted[size/2]) / 2;
+        }
+    }
+};
 
 
 
