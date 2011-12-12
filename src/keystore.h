@@ -7,20 +7,34 @@
 
 #include "crypter.h"
 
+// A virtual base class for key stores
 class CKeyStore
 {
-public:
+protected:
     mutable CCriticalSection cs_KeyStore;
 
+public:
+    // Add a key to the store.
     virtual bool AddKey(const CKey& key) =0;
+
+    // Check whether a key corresponding to a given address is present in the store.
     virtual bool HaveKey(const CBitcoinAddress &address) const =0;
+
+    // Retrieve a key corresponding to a given address from the store.
+    // Return true if succesful.
     virtual bool GetKey(const CBitcoinAddress &address, CKey& keyOut) const =0;
+
+    // Retrieve only the public key corresponding to a given address.
+    // This may succeed even if GetKey fails (e.g., encrypted wallets)
     virtual bool GetPubKey(const CBitcoinAddress &address, std::vector<unsigned char>& vchPubKeyOut) const;
+
+    // Generate a new key, and add it to the store
     virtual std::vector<unsigned char> GenerateNewKey();
 };
 
 typedef std::map<CBitcoinAddress, CSecret> KeyMap;
 
+// Basic key store, that keeps keys in an address->secret map
 class CBasicKeyStore : public CKeyStore
 {
 protected:
@@ -30,15 +44,21 @@ public:
     bool AddKey(const CKey& key);
     bool HaveKey(const CBitcoinAddress &address) const
     {
-        return (mapKeys.count(address) > 0);
+        bool result;
+        CRITICAL_BLOCK(cs_KeyStore)
+            result = (mapKeys.count(address) > 0);
+        return result;
     }
     bool GetKey(const CBitcoinAddress &address, CKey& keyOut) const
     {
-        KeyMap::const_iterator mi = mapKeys.find(address);
-        if (mi != mapKeys.end())
+        CRITICAL_BLOCK(cs_KeyStore)
         {
-            keyOut.SetSecret((*mi).second);
-            return true;
+            KeyMap::const_iterator mi = mapKeys.find(address);
+            if (mi != mapKeys.end())
+            {
+                keyOut.SetSecret((*mi).second);
+                return true;
+            }
         }
         return false;
     }
@@ -46,6 +66,8 @@ public:
 
 typedef std::map<CBitcoinAddress, std::pair<std::vector<unsigned char>, std::vector<unsigned char> > > CryptedKeyMap;
 
+// Keystore which keeps the private keys encrypted
+// It derives from the basic key store, which is used if no encryption is active.
 class CCryptoKeyStore : public CBasicKeyStore
 {
 private:
@@ -58,15 +80,7 @@ private:
     bool fUseCrypto;
 
 protected:
-    bool SetCrypted()
-    {
-        if (fUseCrypto)
-            return true;
-        if (!mapKeys.empty())
-            return false;
-        fUseCrypto = true;
-        return true;
-    }
+    bool SetCrypted();
 
     // will encrypt previously unencrypted keys
     bool EncryptKeys(CKeyingMaterial& vMasterKeyIn);
@@ -74,8 +88,6 @@ protected:
     bool Unlock(const CKeyingMaterial& vMasterKeyIn);
 
 public:
-    mutable CCriticalSection cs_vMasterKey; //No guarantees master key wont get locked before you can use it, so lock this first
-
     CCryptoKeyStore() : fUseCrypto(false)
     {
     }
@@ -89,18 +101,20 @@ public:
     {
         if (!IsCrypted())
             return false;
-        return vMasterKey.empty();
+        bool result;
+        CRITICAL_BLOCK(cs_KeyStore)
+            result = vMasterKey.empty();
+        return result;
     }
 
     bool Lock()
     {
-        CRITICAL_BLOCK(cs_vMasterKey)
-        {
-            if (!SetCrypted())
-                return false;
+        if (!SetCrypted())
+            return false;
 
+        CRITICAL_BLOCK(cs_KeyStore)
             vMasterKey.clear();
-        }
+
         return true;
     }
 
@@ -109,9 +123,13 @@ public:
     bool AddKey(const CKey& key);
     bool HaveKey(const CBitcoinAddress &address) const
     {
-        if (!IsCrypted())
-            return CBasicKeyStore::HaveKey(address);
-        return mapCryptedKeys.count(address) > 0;
+        CRITICAL_BLOCK(cs_KeyStore)
+        {
+            if (!IsCrypted())
+                return CBasicKeyStore::HaveKey(address);
+            return mapCryptedKeys.count(address) > 0;
+        }
+        return false;
     }
     bool GetKey(const CBitcoinAddress &address, CKey& keyOut) const;
     bool GetPubKey(const CBitcoinAddress &address, std::vector<unsigned char>& vchPubKeyOut) const;

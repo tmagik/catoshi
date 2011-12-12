@@ -30,7 +30,8 @@ typedef unsigned long long  uint64;
 #define for  if (false) ; else for
 #endif
 
-#ifdef __WXMSW__
+#ifdef WIN32
+#include <windows.h>
 // This is used to attempt to keep keying material out of swap
 // Note that VirtualLock does not provide this as a guarantee on Windows,
 // but, in practice, memory that has been VirtualLock'd almost never gets written to
@@ -59,14 +60,17 @@ class CDataStream;
 class CAutoFile;
 static const unsigned int MAX_SIZE = 0x02000000;
 
-static const int VERSION = 32500;
+static const int VERSION = 50100;
 static const char* pszSubVer = "";
 static const bool VERSION_IS_BETA = true;
 
-
-
-
-
+// Used to bypass the rule against non-const reference to temporary
+// where it makes sense with wrappers such as CFlatData or CTxDB
+template<typename T>
+inline T& REF(const T& val)
+{
+    return const_cast<T&>(val);
+}
 
 /////////////////////////////////////////////////////////////////
 //
