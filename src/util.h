@@ -183,7 +183,6 @@ std::string DecodeBase64(const std::string& str);
 std::string EncodeBase64(const unsigned char* pch, size_t len);
 std::string EncodeBase64(const std::string& str);
 void ParseParameters(int argc, char* argv[]);
-const char* wxGetTranslation(const char* psz);
 bool WildcardMatch(const char* psz, const char* mask);
 bool WildcardMatch(const std::string& str, const std::string& mask);
 int GetFilesize(FILE* file);
@@ -205,7 +204,7 @@ void SetMockTime(int64 nMockTimeIn);
 int64 GetAdjustedTime();
 void AddTimeData(unsigned int ip, int64 nTime);
 std::string FormatFullVersion();
-
+std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments);
 
 
 
@@ -559,7 +558,7 @@ inline uint256 Hash(const T1 p1begin, const T1 p1end,
 }
 
 template<typename T>
-uint256 SerializeHash(const T& obj, int nType=SER_GETHASH, int nVersion=VERSION)
+uint256 SerializeHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
 {
     // Most of the time is spent allocating and deallocating CDataStream's
     // buffer.  If this ever needs to be optimized further, make a CStaticStream
