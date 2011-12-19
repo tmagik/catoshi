@@ -10,7 +10,7 @@
 #include "init.h"
 #include "strlcpy.h"
 
-#ifdef __WXMSW__
+#ifdef WIN32
 #include <string.h>
 #endif
 
@@ -32,6 +32,7 @@ void ThreadOpenConnections2(void* parg);
 #ifdef USE_UPNP
 void ThreadMapPort2(void* parg);
 #endif
+void ThreadDNSAddressSeed2(void* parg);
 bool OpenNetworkConnection(const CAddress& addrConnect);
 
 
@@ -102,7 +103,7 @@ bool ConnectSocket(const CAddress& addrConnect, SOCKET& hSocketRet, int nTimeout
     bool fProxy = (fUseProxy && addrConnect.IsRoutable());
     struct sockaddr_in sockaddr = (fProxy ? addrProxy.GetSockAddr() : addrConnect.GetSockAddr());
 
-#ifdef __WXMSW__
+#ifdef WIN32
     u_long fNonblock = 1;
     if (ioctlsocket(hSocket, FIONBIO, &fNonblock) == SOCKET_ERROR)
 #else
@@ -141,7 +142,7 @@ bool ConnectSocket(const CAddress& addrConnect, SOCKET& hSocketRet, int nTimeout
                 return false;
             }
             socklen_t nRetSize = sizeof(nRet);
-#ifdef __WXMSW__
+#ifdef WIN32
             if (getsockopt(hSocket, SOL_SOCKET, SO_ERROR, (char*)(&nRet), &nRetSize) == SOCKET_ERROR)
 #else
             if (getsockopt(hSocket, SOL_SOCKET, SO_ERROR, &nRet, &nRetSize) == SOCKET_ERROR)
@@ -158,7 +159,7 @@ bool ConnectSocket(const CAddress& addrConnect, SOCKET& hSocketRet, int nTimeout
                 return false;
             }
         }
-#ifdef __WXMSW__
+#ifdef WIN32
         else if (WSAGetLastError() != WSAEISCONN)
 #else
         else
@@ -175,7 +176,7 @@ bool ConnectSocket(const CAddress& addrConnect, SOCKET& hSocketRet, int nTimeout
     CNode::ConnectNode immediately turns the socket back to non-blocking
     but we'll turn it back to blocking just in case
     */
-#ifdef __WXMSW__
+#ifdef WIN32
     fNonblock = 0;
     if (ioctlsocket(hSocket, FIONBIO, &fNonblock) == SOCKET_ERROR)
 #else
@@ -674,7 +675,7 @@ CNode* ConnectNode(CAddress addrConnect, int64 nTimeout)
         printf("connected %s\n", addrConnect.ToString().c_str());
 
         // Set to nonblocking
-#ifdef __WXMSW__
+#ifdef WIN32
         u_long nOne = 1;
         if (ioctlsocket(hSocket, FIONBIO, &nOne) == SOCKET_ERROR)
             printf("ConnectSocket() : ioctlsocket nonblocking setting failed, error %d\n", WSAGetLastError());
@@ -725,6 +726,67 @@ void CNode::Cleanup()
             CancelSubscribe(nChannel);
 }
 
+
+void CNode::PushVersion()
+{
+    /// when NTP implemented, change to just nTime = GetAdjustedTime()
+    int64 nTime = (fInbound ? GetAdjustedTime() : GetTime());
+    CAddress addrYou = (fUseProxy ? CAddress("0.0.0.0") : addr);
+    CAddress addrMe = (fUseProxy ? CAddress("0.0.0.0") : addrLocalHost);
+    RAND_bytes((unsigned char*)&nLocalHostNonce, sizeof(nLocalHostNonce));
+    PushMessage("version", PROTOCOL_VERSION, nLocalServices, nTime, addrYou, addrMe,
+                nLocalHostNonce, FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>()), nBestHeight);
+}
+
+
+
+
+
+std::map<unsigned int, int64> CNode::setBanned;
+CCriticalSection CNode::cs_setBanned;
+
+void CNode::ClearBanned()
+{
+    setBanned.clear();
+}
+
+bool CNode::IsBanned(unsigned int ip)
+{
+    bool fResult = false;
+    CRITICAL_BLOCK(cs_setBanned)
+    {
+        std::map<unsigned int, int64>::iterator i = setBanned.find(ip);
+        if (i != setBanned.end())
+        {
+            int64 t = (*i).second;
+            if (GetTime() < t)
+                fResult = true;
+        }
+    }
+    return fResult;
+}
+
+bool CNode::Misbehaving(int howmuch)
+{
+    if (addr.IsLocal())
+    {
+        printf("Warning: local node %s misbehaving\n", addr.ToString().c_str());
+        return false;
+    }
+
+    nMisbehavior += howmuch;
+    if (nMisbehavior >= GetArg("-banscore", 100))
+    {
+        int64 banTime = GetTime()+GetArg("-bantime", 60*60*24);  // Default 24-hour ban
+        CRITICAL_BLOCK(cs_setBanned)
+            if (setBanned[addr.ip] < banTime)
+                setBanned[addr.ip] = banTime;
+        CloseSocketDisconnect();
+        printf("Disconnected %s for misbehavior (score=%d)\n", addr.ToString().c_str(), nMisbehavior);
+        return true;
+    }
+    return false;
+}
 
 
 
@@ -894,6 +956,11 @@ void ThreadSocketHandler2(void* parg)
             }
             else if (nInbound >= GetArg("-maxconnections", 125) - MAX_OUTBOUND_CONNECTIONS)
             {
+                closesocket(hSocket);
+            }
+            else if (CNode::IsBanned(addr.ip))
+            {
+                printf("connetion from %s dropped (banned)\n", addr.ToString().c_str());
                 closesocket(hSocket);
             }
             else
@@ -1080,11 +1147,17 @@ void ThreadMapPort2(void* parg)
     const char * rootdescurl = 0;
     const char * multicastif = 0;
     const char * minissdpdpath = 0;
-    int error = 0;
     struct UPNPDev * devlist = 0;
     char lanaddr[64];
 
+#ifndef UPNPDISCOVER_SUCCESS
+    /* miniupnpc 1.5 */
+    devlist = upnpDiscover(2000, multicastif, minissdpdpath, 0);
+#else
+    /* miniupnpc 1.6 */
+    int error = 0;
     devlist = upnpDiscover(2000, multicastif, minissdpdpath, 0, 0, &error);
+#endif
 
     struct UPNPUrls urls;
     struct IGDdatas data;
@@ -1096,8 +1169,15 @@ void ThreadMapPort2(void* parg)
         char intClient[16];
         char intPort[6];
         string strDesc = "Bitcoin " + FormatFullVersion();
+#ifndef UPNPDISCOVER_SUCCESS
+    /* miniupnpc 1.5 */
+        r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
+	                        port, port, lanaddr, strDesc.c_str(), "TCP", 0);
+#else
+    /* miniupnpc 1.6 */
         r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
 	                        port, port, lanaddr, strDesc.c_str(), "TCP", 0, "0");
+#endif
 
         if(r!=UPNPCOMMAND_SUCCESS)
             printf("AddPortMapping(%s, %s, %s) failed with code %d (%s)\n",
@@ -1159,12 +1239,33 @@ void MapPort(bool /* unused fMapPort */)
 
 static const char *strDNSSeed[] = {
     "bitseed.xf2.org",
-    "bitseed.bitcoin.org.uk",
     "dnsseed.bluematt.me",
+    "seed.bitcoin.sipa.be",
+    "dnsseed.bitcoin.dashjr.org",
 };
 
-void DNSAddressSeed()
+void ThreadDNSAddressSeed(void* parg)
 {
+    IMPLEMENT_RANDOMIZE_STACK(ThreadDNSAddressSeed(parg));
+    try
+    {
+        vnThreadsRunning[6]++;
+        ThreadDNSAddressSeed2(parg);
+        vnThreadsRunning[6]--;
+    }
+    catch (std::exception& e) {
+        vnThreadsRunning[6]--;
+        PrintException(&e, "ThreadDNSAddressSeed()");
+    } catch (...) {
+        vnThreadsRunning[6]--;
+        throw; // support pthread_cancel()
+    }
+    printf("ThreadDNSAddressSeed exiting\n");
+}
+
+void ThreadDNSAddressSeed2(void* parg)
+{
+    printf("ThreadDNSAddressSeed started\n");
     int found = 0;
 
     if (!fTestNet)
@@ -1194,6 +1295,15 @@ void DNSAddressSeed()
 
     printf("%d addresses found from DNS seeds\n", found);
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1387,6 +1497,8 @@ void ThreadOpenConnections2(void* parg)
             BOOST_FOREACH(CNode* pnode, vNodes)
                 setConnected.insert(pnode->addr.ip & 0x0000ffff);
 
+        int64 nANow = GetAdjustedTime();
+
         CRITICAL_BLOCK(cs_mapAddresses)
         {
             BOOST_FOREACH(const PAIRTYPE(vector<unsigned char>, CAddress)& item, mapAddresses)
@@ -1394,8 +1506,8 @@ void ThreadOpenConnections2(void* parg)
                 const CAddress& addr = item.second;
                 if (!addr.IsIPv4() || !addr.IsValid() || setConnected.count(addr.ip & 0x0000ffff))
                     continue;
-                int64 nSinceLastSeen = GetAdjustedTime() - addr.nTime;
-                int64 nSinceLastTry = GetAdjustedTime() - addr.nLastTry;
+                int64 nSinceLastSeen = nANow - addr.nTime;
+                int64 nSinceLastTry = nANow - addr.nLastTry;
 
                 // Randomize the order in a deterministic way, putting the standard port first
                 int64 nRandomizer = (uint64)(nStart * 4951 + addr.nLastTry * 9567851 + addr.ip * 7789) % (2 * 60 * 60);
@@ -1454,7 +1566,8 @@ bool OpenNetworkConnection(const CAddress& addrConnect)
     //
     if (fShutdown)
         return false;
-    if (addrConnect.ip == addrLocalHost.ip || !addrConnect.IsIPv4() || FindNode(addrConnect.ip))
+    if (addrConnect.ip == addrLocalHost.ip || !addrConnect.IsIPv4() ||
+        FindNode(addrConnect.ip) || CNode::IsBanned(addrConnect.ip))
         return false;
 
     vnThreadsRunning[1]--;
@@ -1558,7 +1671,7 @@ bool BindListenPort(string& strError)
     int nOne = 1;
     addrLocalHost.port = htons(GetListenPort());
 
-#ifdef __WXMSW__
+#ifdef WIN32
     // Initialize Windows Sockets
     WSADATA wsadata;
     int ret = WSAStartup(MAKEWORD(2,2), &wsadata);
@@ -1584,13 +1697,13 @@ bool BindListenPort(string& strError)
     setsockopt(hListenSocket, SOL_SOCKET, SO_NOSIGPIPE, (void*)&nOne, sizeof(int));
 #endif
 
-#ifndef __WXMSW__
+#ifndef WIN32
     // Allow binding if the port is still in TIME_WAIT state after
     // the program was closed and restarted.  Not an issue on windows.
     setsockopt(hListenSocket, SOL_SOCKET, SO_REUSEADDR, (void*)&nOne, sizeof(int));
 #endif
 
-#ifdef __WXMSW__
+#ifdef WIN32
     // Set to nonblocking, incoming connections will also inherit this
     if (ioctlsocket(hListenSocket, FIONBIO, (u_long*)&nOne) == SOCKET_ERROR)
 #else
@@ -1637,7 +1750,7 @@ void StartNode(void* parg)
     if (pnodeLocalHost == NULL)
         pnodeLocalHost = new CNode(INVALID_SOCKET, CAddress("127.0.0.1", 0, false, nLocalServices));
 
-#ifdef __WXMSW__
+#ifdef WIN32
     // Get local host ip
     char pszHostName[1000] = "";
     if (gethostname(pszHostName, sizeof(pszHostName)) != SOCKET_ERROR)
@@ -1704,6 +1817,12 @@ void StartNode(void* parg)
     // Start threads
     //
 
+    if (GetBoolArg("-nodnsseed"))
+        printf("DNS seeding disabled\n");
+    else
+        if (!CreateThread(ThreadDNSAddressSeed, NULL))
+            printf("Error: CreateThread(ThreadDNSAddressSeed) failed\n");
+
     // Map ports with UPnP
     if (fHaveUPnP)
         MapPort(fUseUPnP);
@@ -1713,7 +1832,8 @@ void StartNode(void* parg)
         printf("Error: CreateThread(ThreadIRCSeed) failed\n");
 
     // Send and receive from sockets, accept connections
-    CreateThread(ThreadSocketHandler, NULL);
+    if (!CreateThread(ThreadSocketHandler, NULL))
+        printf("Error: CreateThread(ThreadSocketHandler) failed\n");
 
     // Initiate outbound connections
     if (!CreateThread(ThreadOpenConnections, NULL))
@@ -1749,6 +1869,7 @@ bool StopNode()
     if (vnThreadsRunning[3] > 0) printf("ThreadBitcoinMiner still running\n");
     if (vnThreadsRunning[4] > 0) printf("ThreadRPCServer still running\n");
     if (fHaveUPnP && vnThreadsRunning[5] > 0) printf("ThreadMapPort still running\n");
+    if (vnThreadsRunning[6] > 0) printf("ThreadDNSAddressSeed still running\n");
     while (vnThreadsRunning[2] > 0 || vnThreadsRunning[4] > 0)
         Sleep(20);
     Sleep(50);
@@ -1772,7 +1893,7 @@ public:
             if (closesocket(hListenSocket) == SOCKET_ERROR)
                 printf("closesocket(hListenSocket) failed with error %d\n", WSAGetLastError());
 
-#ifdef __WXMSW__
+#ifdef WIN32
         // Shutdown Windows Sockets
         WSACleanup();
 #endif
