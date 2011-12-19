@@ -27,6 +27,10 @@ class CRequestTracker;
 class CNode;
 class CBlockIndex;
 
+static const int CLIENT_VERSION = 59900;
+static const bool VERSION_IS_BETA = true;
+extern const std::string CLIENT_NAME;
+
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
@@ -85,6 +89,7 @@ class CTxIndex;
 
 void RegisterWallet(CWallet* pwalletIn);
 void UnregisterWallet(CWallet* pwalletIn);
+bool ProcessBlock(CNode* pfrom, CBlock* pblock);
 bool CheckDiskSpace(uint64 nAdditionalBytes=0);
 FILE* OpenBlockFile(unsigned int nFile, unsigned int nBlockPos, const char* pszMode="rb");
 FILE* AppendBlockFile(unsigned int& nFileRet);
@@ -98,7 +103,8 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash1);
 bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey);
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
-int GetTotalBlocksEstimate();
+unsigned int ComputeMinWork(unsigned int nBase, int64 nTime);
+int GetNumBlocksOfPeers();
 bool IsInitialBlockDownload();
 std::string GetWarnings(std::string strFor);
 
@@ -399,6 +405,9 @@ public:
     std::vector<CTxOut> vout;
     unsigned int nLockTime;
 
+    // Denial-of-service detection:
+    mutable int nDoS;
+    bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
 
     CTransaction()
     {
@@ -420,6 +429,7 @@ public:
         vin.clear();
         vout.clear();
         nLockTime = 0;
+        nDoS = 0;  // Denial-of-service prevention
     }
 
     bool IsNull() const
@@ -689,8 +699,8 @@ public:
 
 
     int SetMerkleBranch(const CBlock* pblock=NULL);
-    int GetDepthInMainChain(int& nHeightRet) const;
-    int GetDepthInMainChain() const { int nHeight; return GetDepthInMainChain(nHeight); }
+    int GetDepthInMainChain(CBlockIndex* &pindexRet) const;
+    int GetDepthInMainChain() const { CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet); }
     bool IsInMainChain() const { return GetDepthInMainChain() > 0; }
     int GetBlocksToMaturity() const;
     bool AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs=true);
@@ -752,6 +762,7 @@ public:
         return !(a == b);
     }
     int GetDepthInMainChain() const;
+ 
 };
 
 
@@ -786,6 +797,9 @@ public:
     // memory only
     mutable std::vector<uint256> vMerkleTree;
 
+    // Denial-of-service detection:
+    mutable int nDoS;
+    bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
 
     CBlock()
     {
@@ -819,6 +833,7 @@ public:
         nNonce = 0;
         vtx.clear();
         vMerkleTree.clear();
+        nDoS = 0;
     }
 
     bool IsNull() const
@@ -917,7 +932,7 @@ public:
         fflush(fileout);
         if (!IsInitialBlockDownload() || (nBestHeight+1) % 500 == 0)
         {
-#ifdef __WXMSW__
+#ifdef WIN32
             _commit(_fileno(fileout));
 #else
             fsync(fileno(fileout));
@@ -1253,6 +1268,11 @@ public:
             Set((*mi).second);
     }
 
+    CBlockLocator(const std::vector<uint256>& vHaveIn)
+    {
+        vHave = vHaveIn;
+    }
+
     IMPLEMENT_SERIALIZE
     (
         if (!(nType & SER_GETHASH))
@@ -1511,6 +1531,7 @@ public:
 
     bool AppliesTo(int nVersion, std::string strSubVerIn) const
     {
+        // TODO: rework for client-version-embedded-in-strSubVer ?
         return (IsInEffect() &&
                 nMinVer <= nVersion && nVersion <= nMaxVer &&
                 (setSubVer.empty() || setSubVer.count(strSubVerIn)));
@@ -1518,7 +1539,7 @@ public:
 
     bool AppliesToMe() const
     {
-        return AppliesTo(VERSION, ::pszSubVer);
+        return AppliesTo(PROTOCOL_VERSION, FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<std::string>()));
     }
 
     bool RelayTo(CNode* pnode) const
