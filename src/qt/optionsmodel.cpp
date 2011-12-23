@@ -2,6 +2,7 @@
 #include "bitcoinunits.h"
 
 #include "headers.h"
+#include "init.h"
 
 OptionsModel::OptionsModel(CWallet *wallet, QObject *parent) :
     QAbstractListModel(parent),
@@ -27,7 +28,7 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
         switch(index.row())
         {
         case StartAtStartup:
-            return QVariant();
+            return QVariant(GetStartOnSystemStartup());
         case MinimizeToTray:
             return QVariant(fMinimizeToTray);
         case MapPortUPnP:
@@ -62,7 +63,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         switch(index.row())
         {
         case StartAtStartup:
-            successful = false; /*TODO*/
+            successful = SetStartOnSystemStartup(value.toBool());
             break;
         case MinimizeToTray:
             fMinimizeToTray = value.toBool();
@@ -101,7 +102,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         case ProxyPort:
             {
                 int nPort = atoi(value.toString().toAscii().data());
-                if (nPort > 0 && nPort < USHRT_MAX)
+                if (nPort > 0 && nPort < std::numeric_limits<unsigned short>::max())
                 {
                     addrProxy.port = htons(nPort);
                     walletdb.WriteSetting("addrProxy", addrProxy);
