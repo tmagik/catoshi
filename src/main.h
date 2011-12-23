@@ -258,17 +258,17 @@ public:
 
     CTxIn()
     {
-        nSequence = UINT_MAX;
+        nSequence = std::numeric_limits<unsigned int>::max();
     }
 
-    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=UINT_MAX)
+    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
     {
         prevout = prevoutIn;
         scriptSig = scriptSigIn;
         nSequence = nSequenceIn;
     }
 
-    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=UINT_MAX)
+    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
     {
         prevout = COutPoint(hashPrevTx, nOut);
         scriptSig = scriptSigIn;
@@ -284,7 +284,7 @@ public:
 
     bool IsFinal() const
     {
-        return (nSequence == UINT_MAX);
+        return (nSequence == std::numeric_limits<unsigned int>::max());
     }
 
     friend bool operator==(const CTxIn& a, const CTxIn& b)
@@ -308,7 +308,7 @@ public:
             str += strprintf(", coinbase %s", HexStr(scriptSig).c_str());
         else
             str += strprintf(", scriptSig=%s", scriptSig.ToString().substr(0,24).c_str());
-        if (nSequence != UINT_MAX)
+        if (nSequence != std::numeric_limits<unsigned int>::max())
             str += strprintf(", nSequence=%u", nSequence);
         str += ")";
         return str;
@@ -393,6 +393,13 @@ public:
 
 
 
+enum GetMinFee_mode
+{
+    GMF_BLOCK,
+    GMF_RELAY,
+    GMF_SEND,
+};
+
 //
 // The basic transaction that is broadcasted on the network and contained in
 // blocks.  A transaction can contain multiple inputs and outputs.
@@ -468,7 +475,7 @@ public:
                 return false;
 
         bool fNewer = false;
-        unsigned int nLowest = UINT_MAX;
+        unsigned int nLowest = std::numeric_limits<unsigned int>::max();
         for (int i = 0; i < vin.size(); i++)
         {
             if (vin[i].nSequence != old.vin[i].nSequence)
@@ -493,26 +500,8 @@ public:
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
 
-    int GetSigOpCount() const
-    {
-        int n = 0;
-        BOOST_FOREACH(const CTxIn& txin, vin)
-            n += txin.scriptSig.GetSigOpCount();
-        BOOST_FOREACH(const CTxOut& txout, vout)
-            n += txout.scriptPubKey.GetSigOpCount();
-        return n;
-    }
-
-    bool IsStandard() const
-    {
-        BOOST_FOREACH(const CTxIn& txin, vin)
-            if (!txin.scriptSig.IsPushOnly())
-                return error("nonstandard txin: %s", txin.scriptSig.ToString().c_str());
-        BOOST_FOREACH(const CTxOut& txout, vout)
-            if (!::IsStandard(txout.scriptPubKey))
-                return error("nonstandard txout: %s", txout.scriptPubKey.ToString().c_str());
-        return true;
-    }
+    bool IsStandard() const;
+    bool AreInputsStandard(std::map<uint256, std::pair<CTxIndex, CTransaction> > mapInputs) const;
 
     int64 GetValueOut() const
     {
@@ -533,10 +522,10 @@ public:
         return dPriority > COIN * 144 / 250;
     }
 
-    int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, bool fForRelay=false) const
+    int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const
     {
         // Base fee is either MIN_TX_FEE or MIN_RELAY_TX_FEE
-        int64 nBaseFee = fForRelay ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
+        int64 nBaseFee = (mode == GMF_RELAY) ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
 
         unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK);
         unsigned int nNewBlockSize = nBlockSize + nBytes;
@@ -640,8 +629,13 @@ public:
     bool ReadFromDisk(CTxDB& txdb, COutPoint prevout);
     bool ReadFromDisk(COutPoint prevout);
     bool DisconnectInputs(CTxDB& txdb);
-    bool ConnectInputs(CTxDB& txdb, std::map<uint256, CTxIndex>& mapTestPool, CDiskTxPos posThisTx,
-                       CBlockIndex* pindexBlock, int64& nFees, bool fBlock, bool fMiner, int64 nMinFee=0);
+
+    // Fetch from memory and/or disk. inputsRet keys are transaction hashes.
+    bool FetchInputs(CTxDB& txdb, const std::map<uint256, CTxIndex>& mapTestPool,
+                     bool fBlock, bool fMiner, std::map<uint256, std::pair<CTxIndex, CTransaction> >& inputsRet);
+    bool ConnectInputs(std::map<uint256, std::pair<CTxIndex, CTransaction> > inputs,
+                       std::map<uint256, CTxIndex>& mapTestPool, CDiskTxPos posThisTx,
+                       CBlockIndex* pindexBlock, int64& nFees, bool fBlock, bool fMiner, int& nSigOpsRet, int64 nMinFee=0);
     bool ClientConnectInputs();
     bool CheckTransaction() const;
     bool AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs=true, bool* pfMissingInputs=NULL);
@@ -851,13 +845,6 @@ public:
         return (int64)nTime;
     }
 
-    int GetSigOpCount() const
-    {
-        int n = 0;
-        BOOST_FOREACH(const CTransaction& tx, vtx)
-            n += tx.GetSigOpCount();
-        return n;
-    }
 
 
     uint256 BuildMerkleTree() const

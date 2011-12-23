@@ -80,7 +80,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                     if(wallet->IsMine(txout))
                     {
                         CBitcoinAddress address;
-                        if (ExtractAddress(txout.scriptPubKey, wallet, address))
+                        if (ExtractAddress(txout.scriptPubKey, address) && wallet->HaveKey(address))
                         {
                             sub.address = address.ToString();
                         }
@@ -138,7 +138,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                         // Sent to Bitcoin Address
                         sub.type = TransactionRecord::SendToAddress;
                         CBitcoinAddress address;
-                        if (ExtractAddress(txout.scriptPubKey, 0, address))
+                        if (ExtractAddress(txout.scriptPubKey, address))
                         {
                             sub.address = address.ToString();
                         }
@@ -187,7 +187,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
 
     // Sort order, unrecorded transactions sort to the top
     status.sortKey = strprintf("%010d-%01d-%010u-%03d",
-        (pindex ? pindex->nHeight : INT_MAX),
+        (pindex ? pindex->nHeight : std::numeric_limits<int>::max()),
         (wtx.IsCoinBase() ? 1 : 0),
         wtx.nTimeReceived,
         idx);
