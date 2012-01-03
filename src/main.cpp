@@ -35,7 +35,6 @@ map<COutPoint, CInPoint> mapNextTx;
 map<uint256, CBlockIndex*> mapBlockIndex;
 uint256 hashGenesisBlock("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
 static CBigNum bnProofOfWorkLimit(~uint256(0) >> 32);
-const int nInitialBlockThreshold = 120; // Regard blocks up until N-threshold as "initial download"
 CBlockIndex* pindexGenesisBlock = NULL;
 int nBestHeight = -1;
 CBigNum bnBestChainWork = 0;
@@ -285,6 +284,7 @@ bool CTransaction::AreInputsStandard(std::map<uint256, std::pair<CTxIndex, CTran
         COutPoint prevout = vin[i].prevout;
         assert(mapInputs.count(prevout.hash) > 0);
         CTransaction& txPrev = mapInputs[prevout.hash].second;
+        assert(prevout.n < txPrev.vout.size());
 
         vector<vector<unsigned char> > vSolutions;
         txnouttype whichType;
@@ -826,7 +826,7 @@ int GetNumBlocksOfPeers()
 
 bool IsInitialBlockDownload()
 {
-    if (pindexBest == NULL || nBestHeight < (Checkpoints::GetTotalBlocksEstimate()-nInitialBlockThreshold))
+    if (pindexBest == NULL || nBestHeight < Checkpoints::GetTotalBlocksEstimate())
         return true;
     static int64 nLastUpdate;
     static CBlockIndex* pindexLastBest;
@@ -946,6 +946,17 @@ bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTes
                 return error("FetchInputs() : %s ReadFromDisk prev tx %s failed", GetHash().ToString().substr(0,10).c_str(),  prevout.hash.ToString().substr(0,10).c_str());
         }
     }
+
+    // Make sure all prevout.n's are valid:
+    for (int i = 0; i < vin.size(); i++)
+    {
+        const COutPoint prevout = vin[i].prevout;
+        const CTxIndex& txindex = inputsRet[prevout.hash].first;
+        const CTransaction& txPrev = inputsRet[prevout.hash].second;
+        if (prevout.n >= txPrev.vout.size() || prevout.n >= txindex.vSpent.size())
+            return DoS(100, error("FetchInputs() : %s prevout.n out of range %d %d %d prev tx %s\n%s", GetHash().ToString().substr(0,10).c_str(), prevout.n, txPrev.vout.size(), txindex.vSpent.size(), prevout.hash.ToString().substr(0,10).c_str(), txPrev.ToString().c_str()));
+    }
+
     return true;
 }
 
@@ -976,10 +987,10 @@ bool CTransaction::ConnectInputs(map<uint256, pair<CTxIndex, CTransaction> > inp
                     if (pindex->nBlockPos == txindex.pos.nBlockPos && pindex->nFile == txindex.pos.nFile)
                         return error("ConnectInputs() : tried to spend coinbase at depth %d", pindexBlock->nHeight - pindex->nHeight);
 
-            // Skip ECDSA signature verification when connecting blocks (fBlock=true) during initial download
-            // (before the last blockchain checkpoint). This is safe because block merkle hashes are
+            // Skip ECDSA signature verification when connecting blocks (fBlock=true)
+            // before the last blockchain checkpoint. This is safe because block merkle hashes are
             // still computed and checked, and any change will be caught at the next checkpoint.
-            if (!(fBlock && IsInitialBlockDownload()))
+            if (!(fBlock && (nBestHeight < Checkpoints::GetTotalBlocksEstimate())))
             {
                 bool fStrictOpEval = true;
                 // This code should be removed when OP_EVAL has
