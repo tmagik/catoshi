@@ -277,11 +277,8 @@ bool CTransaction::IsStandard() const
 //
 bool CTransaction::AreInputsStandard(const MapPrevTx& mapInputs) const
 {
-    if (fTestNet)
-        return true; // Allow non-standard on testnet
-
     if (IsCoinBase())
-        return true; // Coinbases are allowed to have any input
+        return true; // Coinbases don't use vin normally
 
     for (int i = 0; i < vin.size(); i++)
     {
@@ -492,15 +489,18 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
     {
         MapPrevTx mapInputs;
         map<uint256, CTxIndex> mapUnused;
-        if (!FetchInputs(txdb, mapUnused, false, false, mapInputs))
+        bool fInvalid = false;
+        if (!FetchInputs(txdb, mapUnused, false, false, mapInputs, fInvalid))
         {
+            if (fInvalid)
+                return error("AcceptToMemoryPool() : FetchInputs found invalid tx %s", hash.ToString().substr(0,10).c_str());
             if (pfMissingInputs)
                 *pfMissingInputs = true;
             return error("AcceptToMemoryPool() : FetchInputs failed %s", hash.ToString().substr(0,10).c_str());
         }
 
         // Check for non-standard pay-to-script-hash in inputs
-        if (!AreInputsStandard(mapInputs))
+        if (!AreInputsStandard(mapInputs) && !fTestNet)
             return error("AcceptToMemoryPool() : nonstandard transaction input");
 
         // Note: if you modify this code to accept non-standard transactions, then
@@ -543,8 +543,6 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
         if (!ConnectInputs(mapInputs, mapUnused, CDiskTxPos(1,1,1), pindexBest, false, false))
         {
-            if (pfMissingInputs)
-                *pfMissingInputs = true;
             return error("AcceptToMemoryPool() : ConnectInputs failed %s", hash.ToString().substr(0,10).c_str());
         }
     }
@@ -920,8 +918,14 @@ bool CTransaction::DisconnectInputs(CTxDB& txdb)
 
 
 bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTestPool,
-                               bool fBlock, bool fMiner, MapPrevTx& inputsRet)
+                               bool fBlock, bool fMiner, MapPrevTx& inputsRet, bool& fInvalid)
 {
+    // FetchInputs can return false either because we just haven't seen some inputs
+    // (in which case the transaction should be stored as an orphan)
+    // or because the transaction is malformed (in which case the transaction should
+    // be dropped).  If tx is definitely invalid, fInvalid will be set to true.
+    fInvalid = false;
+
     if (IsCoinBase())
         return true; // Coinbase transactions have no inputs to fetch.
 
@@ -977,7 +981,12 @@ bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTes
         const CTxIndex& txindex = inputsRet[prevout.hash].first;
         const CTransaction& txPrev = inputsRet[prevout.hash].second;
         if (prevout.n >= txPrev.vout.size() || prevout.n >= txindex.vSpent.size())
+        {
+            // Revisit this if/when transaction replacement is implemented and allows
+            // adding inputs:
+            fInvalid = true;
             return DoS(100, error("FetchInputs() : %s prevout.n out of range %d %d %d prev tx %s\n%s", GetHash().ToString().substr(0,10).c_str(), prevout.n, txPrev.vout.size(), txindex.vSpent.size(), prevout.hash.ToString().substr(0,10).c_str(), txPrev.ToString().c_str()));
+        }
     }
 
     return true;
@@ -1198,7 +1207,8 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
         MapPrevTx mapInputs;
         if (!tx.IsCoinBase())
         {
-            if (!tx.FetchInputs(txdb, mapQueuedChanges, true, false, mapInputs))
+            bool fInvalid;
+            if (!tx.FetchInputs(txdb, mapQueuedChanges, true, false, mapInputs, fInvalid))
                 return false;
 
             if (fStrictPayToScriptHash)
@@ -3056,7 +3066,8 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
             // because we're already processing them in order of dependency
             map<uint256, CTxIndex> mapTestPoolTmp(mapTestPool);
             MapPrevTx mapInputs;
-            if (!tx.FetchInputs(txdb, mapTestPoolTmp, false, true, mapInputs))
+            bool fInvalid;
+            if (!tx.FetchInputs(txdb, mapTestPoolTmp, false, true, mapInputs, fInvalid))
                 continue;
 
             int64 nFees = tx.GetValueIn(mapInputs)-tx.GetValueOut();
