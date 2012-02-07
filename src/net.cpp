@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
@@ -200,7 +200,7 @@ bool GetMyExternalIP(CNetAddr& ipRet)
 void ThreadGetMyExternalIP(void* parg)
 {
     // Wait for IRC to get it first
-    if (!GetBoolArg("-noirc"))
+    if (GetBoolArg("-irc", false))
     {
         for (int i = 0; i < 2 * 60; i++)
         {
@@ -1706,7 +1706,7 @@ void StartNode(void* parg)
     // Start threads
     //
 
-    if (GetBoolArg("-nodnsseed"))
+    if (!GetBoolArg("-dnsseed", true))
         printf("DNS seeding disabled\n");
     else
         if (!CreateThread(ThreadDNSAddressSeed, NULL))
