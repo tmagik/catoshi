@@ -57,22 +57,12 @@ CScript COINBASE_FLAGS;
 
 const string strMessageMagic = "Bitcoin Signed Message:\n";
 
-
 double dHashesPerSec;
 int64 nHPSTimerStart;
 
 // Settings
-int fGenerateBitcoins = false;
 int64 nTransactionFee = 0;
-int fLimitProcessors = false;
-int nLimitProcessors = 1;
-int fMinimizeToTray = true;
-int fMinimizeOnClose = true;
-#if USE_UPNP
-int fUseUPnP = true;
-#else
-int fUseUPnP = false;
-#endif
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1138,7 +1128,14 @@ bool CTransaction::ConnectInputs(MapPrevTx inputs,
             {
                 // Verify signature
                 if (!VerifySignature(txPrev, *this, i, fStrictPayToScriptHash, 0))
+                {
+                    // only during transition phase for P2SH: do not invoke anti-DoS code for
+                    // potentially old clients relaying bad P2SH transactions
+                    if (fStrictPayToScriptHash && VerifySignature(txPrev, *this, i, false, 0))
+                        return error("ConnectInputs() : %s P2SH VerifySignature failed", GetHash().ToString().substr(0,10).c_str());
+
                     return DoS(100,error("ConnectInputs() : %s VerifySignature failed", GetHash().ToString().substr(0,10).c_str()));
+                }
             }
 
             // Mark outpoints as spent
@@ -2107,7 +2104,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrMe;
         if (pfrom->nVersion < 209)
         {
-            // Since Februari 20, 2012, the protocol is initiated at version 209,
+            // Since February 20, 2012, the protocol is initiated at version 209,
             // and earlier versions are no longer supported
             printf("partner %s using obsolete version %i; disconnecting\n", pfrom->addr.ToString().c_str(), pfrom->nVersion);
             pfrom->fDisconnect = true;
@@ -3289,6 +3286,10 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
 void static ThreadBitcoinMiner(void* parg);
 
+static bool fGenerateBitcoins = false;
+static bool fLimitProcessors = false;
+static int nLimitProcessors = -1;
+
 void static BitcoinMiner(CWallet *pwallet)
 {
     printf("BitcoinMiner started\n");
@@ -3464,13 +3465,13 @@ void static ThreadBitcoinMiner(void* parg)
 
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 {
-    if (fGenerateBitcoins != fGenerate)
-    {
-        fGenerateBitcoins = fGenerate;
-        WriteSetting("fGenerateBitcoins", fGenerateBitcoins);
-        MainFrameRepaint();
-    }
-    if (fGenerateBitcoins)
+    fGenerateBitcoins = fGenerate;
+    nLimitProcessors = GetArg("-genproclimit", -1);
+    if (nLimitProcessors == 0)
+        fGenerateBitcoins = false;
+    fLimitProcessors = (nLimitProcessors != -1);
+
+    if (fGenerate)
     {
         int nProcessors = boost::thread::hardware_concurrency();
         printf("%d processors\n", nProcessors);
