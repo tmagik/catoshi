@@ -893,6 +893,8 @@ public:
         return n;
     }
 
+    void UpdateTime(const CBlockIndex* pindexPrev);
+
 
     uint256 BuildMerkleTree() const
     {
