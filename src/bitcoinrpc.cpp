@@ -36,6 +36,8 @@ void ThreadRPCServer2(void* parg);
 typedef Value(*rpcfn_type)(const Array& params, bool fHelp);
 extern map<string, rpcfn_type> mapCallTable;
 
+static std::string strRPCUserColonPass;
+
 static int64 nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
 
@@ -126,6 +128,7 @@ Value help(const Array& params, bool fHelp)
         // We already filter duplicates, but these deprecated screw up the sort order
         if (strMethod == "getamountreceived" ||
             strMethod == "getallreceived" ||
+            strMethod == "getblocknumber" || // deprecated
             (strMethod.find("label") != string::npos))
             continue;
         if (strCommand != "" && strMethod != strCommand)
@@ -181,12 +184,13 @@ Value getblockcount(const Array& params, bool fHelp)
 }
 
 
+// deprecated
 Value getblocknumber(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getblocknumber\n"
-            "Returns the block number of the latest block in the longest block chain.");
+            "Deprecated.  Use getblockcount.");
 
     return nBestHeight;
 }
@@ -1856,7 +1860,7 @@ string pAllowInSafeMode[] =
     "help",
     "stop",
     "getblockcount",
-    "getblocknumber",
+    "getblocknumber",  // deprecated
     "getconnectioncount",
     "getdifficulty",
     "getgenerate",
@@ -2027,12 +2031,7 @@ bool HTTPAuthorized(map<string, string>& mapHeaders)
         return false;
     string strUserPass64 = strAuth.substr(6); boost::trim(strUserPass64);
     string strUserPass = DecodeBase64(strUserPass64);
-    string::size_type nColon = strUserPass.find(":");
-    if (nColon == string::npos)
-        return false;
-    string strUser = strUserPass.substr(0, nColon);
-    string strPassword = strUserPass.substr(nColon+1);
-    return (strUser == mapArgs["-rpcuser"] && strPassword == mapArgs["-rpcpassword"]);
+    return strUserPass == strRPCUserColonPass;
 }
 
 //
@@ -2165,7 +2164,8 @@ void ThreadRPCServer2(void* parg)
 {
     printf("ThreadRPCServer started\n");
 
-    if (mapArgs["-rpcuser"] == "" && mapArgs["-rpcpassword"] == "")
+    strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
+    if (strRPCUserColonPass == ":")
     {
         unsigned char rand_pwd[32];
         RAND_bytes(rand_pwd, 32);
