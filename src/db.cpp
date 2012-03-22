@@ -84,8 +84,11 @@ CDB::CDB(const char* pszFile, const char* pszMode) : pdb(NULL)
             string strErrorFile = strDataDir + "/db.log";
             printf("dbenv.open strLogDir=%s strErrorFile=%s\n", strLogDir.c_str(), strErrorFile.c_str());
 
+            int nDbCache = GetArg("-dbcache", 25);
             dbenv.set_lg_dir(strLogDir.c_str());
-            dbenv.set_lg_max(10000000);
+            dbenv.set_cachesize(nDbCache / 1024, (nDbCache % 1024)*1048576, 1);
+            dbenv.set_lg_bsize(10485760);
+            dbenv.set_lg_max(104857600);
             dbenv.set_lk_max_locks(10000);
             dbenv.set_lk_max_objects(10000);
             dbenv.set_errfile(fopen(strErrorFile.c_str(), "a")); /// debug
@@ -156,7 +159,7 @@ void CDB::Close()
         nMinutes = 1;
     if (strFile == "addr.dat")
         nMinutes = 2;
-    if (strFile == "blkindex.dat" && IsInitialBlockDownload() && nBestHeight % 500 != 0)
+    if (strFile == "blkindex.dat" && IsInitialBlockDownload() && nBestHeight % 5000 != 0)
         nMinutes = 1;
     dbenv.txn_checkpoint(0, nMinutes, 0);
 
@@ -621,44 +624,65 @@ bool CAddrDB::WriteAddress(const CAddress& addr)
     return Write(make_pair(string("addr"), addr.GetKey()), addr);
 }
 
+bool CAddrDB::WriteAddrman(const CAddrMan& addrman)
+{
+    return Write(string("addrman"), addrman);
+}
+
 bool CAddrDB::EraseAddress(const CAddress& addr)
 {
     return Erase(make_pair(string("addr"), addr.GetKey()));
 }
 
-bool CAddrDB::LoadAddresses()
+bool CAddrDB::LoadAddresses(bool &fUpdate)
 {
-    CRITICAL_BLOCK(cs_mapAddresses)
+    bool fAddrMan = false;
+    if (Read(string("addrman"), addrman))
     {
-        // Get cursor
-        Dbc* pcursor = GetCursor();
-        if (!pcursor)
+        printf("Loaded %i addresses\n", addrman.size());
+        fAddrMan = true;
+    }
+
+    vector<CAddress> vAddr;
+
+    // Get cursor
+    Dbc* pcursor = GetCursor();
+    if (!pcursor)
+        return false;
+
+    loop
+    {
+        // Read next record
+        CDataStream ssKey;
+        CDataStream ssValue;
+        int ret = ReadAtCursor(pcursor, ssKey, ssValue);
+        if (ret == DB_NOTFOUND)
+            break;
+        else if (ret != 0)
             return false;
 
-        loop
+        // Unserialize
+        string strType;
+        ssKey >> strType;
+        if (strType == "addr")
         {
-            // Read next record
-            CDataStream ssKey;
-            CDataStream ssValue;
-            int ret = ReadAtCursor(pcursor, ssKey, ssValue);
-            if (ret == DB_NOTFOUND)
-                break;
-            else if (ret != 0)
-                return false;
-
-            // Unserialize
-            string strType;
-            ssKey >> strType;
-            if (strType == "addr")
+            if (fAddrMan)
+                fUpdate = true;
+            else
             {
                 CAddress addr;
                 ssValue >> addr;
-                mapAddresses.insert(make_pair(addr.GetKey(), addr));
+                vAddr.push_back(addr);
             }
-        }
-        pcursor->close();
 
-        printf("Loaded %d addresses\n", mapAddresses.size());
+        }
+    }
+    pcursor->close();
+
+    if (!fAddrMan)
+    {
+        addrman.Add(vAddr, CNetAddr("0.0.0.0"));
+        printf("Loaded %i addresses\n", addrman.size());
     }
 
     return true;
@@ -666,7 +690,11 @@ bool CAddrDB::LoadAddresses()
 
 bool LoadAddresses()
 {
-    return CAddrDB("cr+").LoadAddresses();
+    bool fUpdate = false;
+    bool fRet = CAddrDB("cr+").LoadAddresses(fUpdate);
+    if (fUpdate)
+        CDB::Rewrite("addr.dat", "\004addr");
+    return fRet;
 }
 
 

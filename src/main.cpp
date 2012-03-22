@@ -1278,12 +1278,9 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
                         return false;
         }
 
-    // To avoid being on the short end of a block-chain split,
-    // don't do secondary validation of pay-to-script-hash transactions
-    // until blocks with timestamps after paytoscripthashtime (see init.cpp for default).
-    // This code can be removed once a super-majority of the network has upgraded.
-    int64 nEvalSwitchTime = GetArg("-paytoscripthashtime", std::numeric_limits<int64_t>::max());
-    bool fStrictPayToScriptHash = (pindex->nTime >= nEvalSwitchTime);
+    // BIP16 didn't become active until Apr 1 2012 (Feb 15 on testnet)
+    int64 nBIP16SwitchTime = fTestNet ? 1329264000 : 1333238400;
+    bool fStrictPayToScriptHash = (pindex->nTime >= nBIP16SwitchTime);
 
     //// issue here: it doesn't know the version
     unsigned int nTxPos = pindex->nBlockPos + ::GetSerializeSize(CBlock(), SER_DISK) - 1 + GetSizeOfCompactSize(vtx.size());
@@ -2238,10 +2235,17 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             }
 
             // Get recent addresses
-            if (pfrom->nVersion >= 31402 || mapAddresses.size() < 1000)
+            if (pfrom->nVersion >= 31402 || addrman.size() < 1000)
             {
                 pfrom->PushMessage("getaddr");
                 pfrom->fGetAddr = true;
+            }
+            addrman.Good(pfrom->addr);
+        } else {
+            if (((CNetAddr)pfrom->addr) == (CNetAddr)addrFrom)
+            {
+                addrman.Add(addrFrom, addrFrom);
+                addrman.Good(addrFrom);
             }
         }
 
@@ -2288,7 +2292,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         vRecv >> vAddr;
 
         // Don't want addr from older versions unless seeding
-        if (pfrom->nVersion < 31402 && mapAddresses.size() > 1000)
+        if (pfrom->nVersion < 31402 && addrman.size() > 1000)
             return true;
         if (vAddr.size() > 1000)
         {
@@ -2297,8 +2301,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         }
 
         // Store the new addresses
-        CAddrDB addrDB;
-        addrDB.TxnBegin();
         int64 nNow = GetAdjustedTime();
         int64 nSince = nNow - 10 * 60;
         BOOST_FOREACH(CAddress& addr, vAddr)
@@ -2310,7 +2312,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                 continue;
             if (addr.nTime <= 100000000 || addr.nTime > nNow + 10 * 60)
                 addr.nTime = nNow - 5 * 24 * 60 * 60;
-            AddAddress(addr, 2 * 60 * 60, &addrDB);
             pfrom->AddAddressKnown(addr);
             if (addr.nTime > nSince && !pfrom->fGetAddr && vAddr.size() <= 10 && addr.IsRoutable())
             {
@@ -2342,7 +2343,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                 }
             }
         }
-        addrDB.TxnCommit();  // Save addresses (it's ok if this fails)
+        addrman.Add(vAddr, pfrom->addr, 2 * 60 * 60);
         if (vAddr.size() < 1000)
             pfrom->fGetAddr = false;
     }
@@ -2593,25 +2594,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
     else if (strCommand == "getaddr")
     {
-        // Nodes rebroadcast an addr every 24 hours
         pfrom->vAddrToSend.clear();
-        int64 nSince = GetAdjustedTime() - 3 * 60 * 60; // in the last 3 hours
-        CRITICAL_BLOCK(cs_mapAddresses)
-        {
-            unsigned int nCount = 0;
-            BOOST_FOREACH(const PAIRTYPE(vector<unsigned char>, CAddress)& item, mapAddresses)
-            {
-                const CAddress& addr = item.second;
-                if (addr.nTime > nSince)
-                    nCount++;
-            }
-            BOOST_FOREACH(const PAIRTYPE(vector<unsigned char>, CAddress)& item, mapAddresses)
-            {
-                const CAddress& addr = item.second;
-                if (addr.nTime > nSince && GetRand(nCount) < 2500)
-                    pfrom->PushAddress(addr);
-            }
-        }
+        vector<CAddress> vAddr = addrman.GetAddr();
+        BOOST_FOREACH(const CAddress &addr, vAddr)
+            pfrom->PushAddress(addr);
     }
 
 
@@ -2852,35 +2838,6 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             }
             nLastRebroadcast = GetTime();
         }
-
-        // Clear out old addresses periodically so it's not too much work at once
-        static int64 nLastClear;
-        if (nLastClear == 0)
-            nLastClear = GetTime();
-        if (GetTime() - nLastClear > 10 * 60 && vNodes.size() >= 3)
-        {
-            nLastClear = GetTime();
-            CRITICAL_BLOCK(cs_mapAddresses)
-            {
-                CAddrDB addrdb;
-                int64 nSince = GetAdjustedTime() - 14 * 24 * 60 * 60;
-                for (map<vector<unsigned char>, CAddress>::iterator mi = mapAddresses.begin();
-                     mi != mapAddresses.end();)
-                {
-                    const CAddress& addr = (*mi).second;
-                    if (addr.nTime < nSince)
-                    {
-                        if (mapAddresses.size() < 1000 || GetTime() > nLastClear + 20)
-                            break;
-                        addrdb.EraseAddress(addr);
-                        mapAddresses.erase(mi++);
-                    }
-                    else
-                        mi++;
-                }
-            }
-        }
-
 
         //
         // Message: addr
