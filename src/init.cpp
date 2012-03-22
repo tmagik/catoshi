@@ -177,6 +177,7 @@ bool AppInit2(int argc, char* argv[])
             "  -min             \t\t  " + _("Start minimized") + "\n" +
             "  -splash          \t\t  " + _("Show splash screen on startup (default: 1)") + "\n" +
             "  -datadir=<dir>   \t\t  " + _("Specify data directory") + "\n" +
+            "  -dbcache=<n>     \t\t  " + _("Set database cache size in megabytes (default: 25)") + "\n" +
             "  -timeout=<n>     \t  "   + _("Specify connection timeout (in milliseconds)") + "\n" +
             "  -proxy=<ip:port> \t  "   + _("Connect through socks4 proxy") + "\n" +
             "  -dns             \t  "   + _("Allow DNS lookups for addnode and connect") + "\n" +
@@ -489,24 +490,11 @@ bool AppInit2(int argc, char* argv[])
     fAllowDNS = GetBoolArg("-dns");
     fNoListen = !GetBoolArg("-listen", true);
 
-    // This code can be removed once a super-majority of the network has upgraded.
-    if (GetBoolArg("-bip16", true))
-    {
-        if (fTestNet)
-            SoftSetArg("-paytoscripthashtime", "1329264000"); // Feb 15
-        else
-            SoftSetArg("-paytoscripthashtime", "1333238400"); // April 1 2012
-
-        // Put "/P2SH/" in the coinbase so everybody can tell when
-        // a majority of miners support it
-        const char* pszP2SH = "/P2SH/";
-        COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
-    }
-    else
-    {
-        const char* pszP2SH = "NOP2SH";
-        COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
-    }
+    // Continue to put "/P2SH/" in the coinbase to monitor
+    // BIP16 support.
+    // This can be removed eventually...
+    const char* pszP2SH = "/P2SH/";
+    COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
 
     if (!fNoListen)
     {
@@ -525,7 +513,7 @@ bool AppInit2(int argc, char* argv[])
             CAddress addr(CService(strAddr, GetDefaultPort(), fAllowDNS));
             addr.nTime = 0; // so it won't relay unless successfully connected
             if (addr.IsValid())
-                AddAddress(addr);
+                addrman.Add(addr, CNetAddr("127.0.0.1"));
         }
     }
 
