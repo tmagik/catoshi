@@ -629,24 +629,6 @@ bool CAddrDB::LoadAddresses()
 {
     CRITICAL_BLOCK(cs_mapAddresses)
     {
-        // Load user provided addresses
-        CAutoFile filein = fopen((GetDataDir() + "/addr.txt").c_str(), "rt");
-        if (filein)
-        {
-            try
-            {
-                char psz[1000];
-                while (fgets(psz, sizeof(psz), filein))
-                {
-                    CAddress addr(psz, false, NODE_NETWORK);
-                    addr.nTime = 0; // so it won't relay unless successfully connected
-                    if (addr.IsValid())
-                        AddAddress(addr);
-                }
-            }
-            catch (...) { }
-        }
-
         // Get cursor
         Dbc* pcursor = GetCursor();
         if (!pcursor)
@@ -786,7 +768,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
     bool fIsEncrypted = false;
 
     // Modify defaults
-#ifndef __WXMSW__
+#ifndef WIN32
     // Tray icon sometimes disappears on 9.10 karmic koala 64-bit, leaving no way to access the program
     fMinimizeToTray = false;
     fMinimizeOnClose = false;
@@ -975,7 +957,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                 ssKey >> strKey;
 
                 // Options
-#ifndef GUI
+#ifndef QT_GUI
                 if (strKey == "fGenerateBitcoins")  ssValue >> fGenerateBitcoins;
 #endif
                 if (strKey == "nTransactionFee")    ssValue >> nTransactionFee;
