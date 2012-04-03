@@ -48,6 +48,7 @@
 #include <QMovie>
 #include <QFileDialog>
 #include <QDesktopServices>
+#include <QTimer>
 
 #include <QDragEnterEvent>
 #include <QUrl>
@@ -375,7 +376,7 @@ void BitcoinGUI::createTrayIcon()
     trayIcon = new QSystemTrayIcon(this);
     trayIconMenu = new QMenu(this);
     trayIcon->setContextMenu(trayIconMenu);
-    trayIcon->setToolTip("Bitcoin client");
+    trayIcon->setToolTip(tr("Bitcoin client"));
     trayIcon->setIcon(QIcon(":/icons/toolbar"));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
             this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
@@ -514,7 +515,7 @@ void BitcoinGUI::setNumBlocks(int count)
     }
 
     // Set icon state: spinning if catching up, tick otherwise
-    if(secs < 30*60)
+    if(secs < 90*60)
     {
         tooltip = tr("Up to date") + QString(".\n") + tooltip;
         labelBlocksIcon->setPixmap(QIcon(":/icons/synced").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
@@ -558,29 +559,21 @@ void BitcoinGUI::error(const QString &title, const QString &message)
 
 void BitcoinGUI::changeEvent(QEvent *e)
 {
+    QMainWindow::changeEvent(e);
 #ifndef Q_WS_MAC // Ignored on Mac
     if(e->type() == QEvent::WindowStateChange)
     {
         if(clientModel && clientModel->getOptionsModel()->getMinimizeToTray())
         {
             QWindowStateChangeEvent *wsevt = static_cast<QWindowStateChangeEvent*>(e);
-            bool wasMinimized = wsevt->oldState() & Qt::WindowMinimized;
-            bool isMinimized = windowState() & Qt::WindowMinimized;
-            if(!wasMinimized && isMinimized)
+            if(!(wsevt->oldState() & Qt::WindowMinimized) && isMinimized())
             {
-                // Minimized, hide the window from taskbar
-                setWindowFlags(windowFlags() | Qt::Tool);
-                return;
-            }
-            else if(wasMinimized && !isMinimized)
-            {
-                // Unminimized, show the window in taskbar
-                setWindowFlags(windowFlags() &~ Qt::Tool);
+                QTimer::singleShot(0, this, SLOT(hide()));
+                e->ignore();
             }
         }
     }
 #endif
-    QMainWindow::changeEvent(e);
 }
 
 void BitcoinGUI::closeEvent(QCloseEvent *event)
@@ -740,6 +733,11 @@ void BitcoinGUI::handleURL(QString strURL)
 {
     gotoSendCoinsPage();
     sendCoinsPage->handleURL(strURL);
+
+    if(!isActiveWindow())
+        activateWindow();
+
+    showNormalIfMinimized();
 }
 
 void BitcoinGUI::setEncryptionStatus(int status)
