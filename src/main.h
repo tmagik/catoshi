@@ -25,7 +25,10 @@ class CAddress;
 class CInv;
 class CRequestTracker;
 class CNode;
-class CBlockIndex;
+
+static const int CLIENT_VERSION = 60006;
+static const bool VERSION_IS_BETA = true;
+extern const std::string CLIENT_NAME;
 
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
@@ -47,6 +50,9 @@ static const int fHaveUPnP = false;
 #endif
 
 
+extern CScript COINBASE_FLAGS;
+
+
 
 
 
@@ -60,7 +66,11 @@ extern CBigNum bnBestChainWork;
 extern CBigNum bnBestInvalidWork;
 extern uint256 hashBestChain;
 extern CBlockIndex* pindexBest;
+extern uint64 nPooledTx;
 extern unsigned int nTransactionsUpdated;
+extern uint64 nLastBlockTx;
+extern uint64 nLastBlockSize;
+extern const std::string strMessageMagic;
 extern double dHashesPerSec;
 extern int64 nHPSTimerStart;
 extern int64 nTimeBestReceived;
@@ -68,13 +78,7 @@ extern CCriticalSection cs_setpwalletRegistered;
 extern std::set<CWallet*> setpwalletRegistered;
 
 // Settings
-extern int fGenerateBitcoins;
 extern int64 nTransactionFee;
-extern int fLimitProcessors;
-extern int nLimitProcessors;
-extern int fMinimizeToTray;
-extern int fMinimizeOnClose;
-extern int fUseUPnP;
 
 
 
@@ -118,21 +122,7 @@ std::string GetWarnings(std::string strFor);
 
 bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
 
-template<typename T>
-bool WriteSetting(const std::string& strKey, const T& value)
-{
-    bool fOk = false;
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-    {
-        std::string strWalletFile;
-        if (!GetWalletFile(pwallet, strWalletFile))
-            continue;
-        fOk |= CWalletDB(strWalletFile).WriteSetting(strKey, value);
-    }
-    return fOk;
-}
-
-
+/** Position on disk for a particular transaction. */
 class CDiskTxPos
 {
 public:
@@ -184,7 +174,7 @@ public:
 
 
 
-
+/** An inpoint - a combination of a transaction and an index n into its vin */
 class CInPoint
 {
 public:
@@ -199,7 +189,7 @@ public:
 
 
 
-
+/** An outpoint - a combination of a transaction hash and an index n into its vout */
 class COutPoint
 {
 public:
@@ -241,11 +231,10 @@ public:
 
 
 
-//
-// An input of a transaction.  It contains the location of the previous
-// transaction's output that it claims and a signature that matches the
-// output's public key.
-//
+/** An input of a transaction.  It contains the location of the previous
+ * transaction's output that it claims and a signature that matches the
+ * output's public key.
+ */
 class CTxIn
 {
 public:
@@ -255,17 +244,17 @@ public:
 
     CTxIn()
     {
-        nSequence = UINT_MAX;
+        nSequence = std::numeric_limits<unsigned int>::max();
     }
 
-    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=UINT_MAX)
+    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
     {
         prevout = prevoutIn;
         scriptSig = scriptSigIn;
         nSequence = nSequenceIn;
     }
 
-    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=UINT_MAX)
+    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
     {
         prevout = COutPoint(hashPrevTx, nOut);
         scriptSig = scriptSigIn;
@@ -281,7 +270,7 @@ public:
 
     bool IsFinal() const
     {
-        return (nSequence == UINT_MAX);
+        return (nSequence == std::numeric_limits<unsigned int>::max());
     }
 
     friend bool operator==(const CTxIn& a, const CTxIn& b)
@@ -305,7 +294,7 @@ public:
             str += strprintf(", coinbase %s", HexStr(scriptSig).c_str());
         else
             str += strprintf(", scriptSig=%s", scriptSig.ToString().substr(0,24).c_str());
-        if (nSequence != UINT_MAX)
+        if (nSequence != std::numeric_limits<unsigned int>::max())
             str += strprintf(", nSequence=%u", nSequence);
         str += ")";
         return str;
@@ -320,10 +309,9 @@ public:
 
 
 
-//
-// An output of a transaction.  It contains the public key that the next input
-// must be able to sign with to claim it.
-//
+/** An output of a transaction.  It contains the public key that the next input
+ * must be able to sign with to claim it.
+ */
 class CTxOut
 {
 public:
@@ -388,13 +376,20 @@ public:
 };
 
 
+
+
+enum GetMinFee_mode
+{
+    GMF_BLOCK,
+    GMF_RELAY,
+    GMF_SEND,
+};
+
 typedef std::map<uint256, std::pair<CTxIndex, CTransaction> > MapPrevTx;
 
-
-//
-// The basic transaction that is broadcasted on the network and contained in
-// blocks.  A transaction can contain multiple inputs and outputs.
-//
+/** The basic transaction that is broadcasted on the network and contained in
+ * blocks.  A transaction can contain multiple inputs and outputs.
+ */
 class CTransaction
 {
 public:
@@ -466,7 +461,7 @@ public:
                 return false;
 
         bool fNewer = false;
-        unsigned int nLowest = UINT_MAX;
+        unsigned int nLowest = std::numeric_limits<unsigned int>::max();
         for (int i = 0; i < vin.size(); i++)
         {
             if (vin[i].nSequence != old.vin[i].nSequence)
@@ -491,36 +486,35 @@ public:
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
 
-    int GetSigOpCount() const
-    {
-        int n = 0;
-        BOOST_FOREACH(const CTxIn& txin, vin)
-            n += txin.scriptSig.GetSigOpCount();
-        BOOST_FOREACH(const CTxOut& txout, vout)
-            n += txout.scriptPubKey.GetSigOpCount();
-        return n;
-    }
+    /** Check for standard transaction types
+        @return True if all outputs (scriptPubKeys) use only standard transaction forms
+    */
+    bool IsStandard() const;
 
-    /** Count ECDSA signature operations in pay-to-script-hash inputs.
-        This is a better measure of how expensive it is to process this transaction.
-
-        @param[in] mapInputsMap of previous transactions that have outputs we're spending
-        @return maximum number of sigops required to validate this transaction's inputs
+    /** Check for standard transaction types
+        @param[in] mapInputs	Map of previous transactions that have outputs we're spending
+        @return True if all inputs (scriptSigs) use only standard transaction forms
         @see CTransaction::FetchInputs
     */
+    bool AreInputsStandard(const MapPrevTx& mapInputs) const;
+
+    /** Count ECDSA signature operations the old-fashioned (pre-0.6) way
+        @return number of sigops this transaction's outputs will produce when spent
+        @see CTransaction::FetchInputs
+    */
+    int GetLegacySigOpCount() const;
+
+    /** Count ECDSA signature operations in pay-to-script-hash inputs.
+
+        @param[in] mapInputs	Map of previous transactions that have outputs we're spending
+        @return maximum number of sigops required to validate this transaction's inputs
+        @see CTransaction::FetchInputs
+     */
     int GetP2SHSigOpCount(const MapPrevTx& mapInputs) const;
 
-    bool IsStandard() const
-    {
-        BOOST_FOREACH(const CTxIn& txin, vin)
-            if (!txin.scriptSig.IsPushOnly())
-                return error("nonstandard txin: %s", txin.scriptSig.ToString().c_str());
-        BOOST_FOREACH(const CTxOut& txout, vout)
-            if (!::IsStandard(txout.scriptPubKey))
-                return error("nonstandard txout: %s", txout.scriptPubKey.ToString().c_str());
-        return true;
-    }
-
+    /** Amount of bitcoins spent by this transaction.
+        @return sum of all outputs (note: does not include fees)
+     */
     int64 GetValueOut() const
     {
         int64 nValueOut = 0;
@@ -537,10 +531,10 @@ public:
         Note that lightweight clients may not know anything besides the hash of previous transactions,
         so may not be able to calculate this.
 
-        @param[in] mapInputsMap of previous transactions that have outputs we're spending
-        @returnSum of value of all inputs (scriptSigs)
+        @param[in] mapInputs	Map of previous transactions that have outputs we're spending
+        @return	Sum of value of all inputs (scriptSigs)
         @see CTransaction::FetchInputs
-    */
+     */
     int64 GetValueIn(const MapPrevTx& mapInputs) const;
 
     static bool AllowFree(double dPriority)
@@ -550,10 +544,10 @@ public:
         return dPriority > COIN * 144 / 250;
     }
 
-    int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, bool fForRelay=false) const
+    int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const
     {
         // Base fee is either MIN_TX_FEE or MIN_RELAY_TX_FEE
-        int64 nBaseFee = fForRelay ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
+        int64 nBaseFee = (mode == GMF_RELAY) ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
 
         unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK);
         unsigned int nNewBlockSize = nBlockSize + nBytes;
@@ -674,15 +668,15 @@ public:
     /** Sanity check previous transactions, then, if all checks succeed,
         mark them as spent by this transaction.
 
-        @param[in] inputsPrevious transactions (from FetchInputs)
-        @param[out] mapTestPoolKeeps track of inputs that need to be updated on disk
-        @param[in] posThisTxPosition of this transaction on disk
+        @param[in] inputs	Previous transactions (from FetchInputs)
+        @param[out] mapTestPool	Keeps track of inputs that need to be updated on disk
+        @param[in] posThisTx	Position of this transaction on disk
         @param[in] pindexBlock
-        @param[in] fBlock  true if called from ConnectBlock
-        @param[in] fMiner  true if called from CreateNewBlock
-        @param[in] fStrictPayToScriptHash  true if fully validating p2sh transactions
+        @param[in] fBlock	true if called from ConnectBlock
+        @param[in] fMiner	true if called from CreateNewBlock
+        @param[in] fStrictPayToScriptHash	true if fully validating p2sh transactions
         @return Returns true if all checks succeed
-    */
+     */
     bool ConnectInputs(MapPrevTx inputs,
                        std::map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
                        const CBlockIndex* pindexBlock, bool fBlock, bool fMiner, bool fStrictPayToScriptHash=true);
@@ -690,6 +684,7 @@ public:
     bool CheckTransaction() const;
     bool AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs=true, bool* pfMissingInputs=NULL);
     bool AcceptToMemoryPool(bool fCheckInputs=true, bool* pfMissingInputs=NULL);
+
 protected:
     const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
     bool AddToMemoryPoolUnchecked();
@@ -701,9 +696,7 @@ public:
 
 
 
-//
-// A transaction with a merkle branch linking it to the block chain
-//
+/** A transaction with a merkle branch linking it to the block chain. */
 class CMerkleTx : public CTransaction
 {
 public:
@@ -744,8 +737,8 @@ public:
 
 
     int SetMerkleBranch(const CBlock* pblock=NULL);
-    int GetDepthInMainChain(int& nHeightRet) const;
-    int GetDepthInMainChain() const { int nHeight; return GetDepthInMainChain(nHeight); }
+    int GetDepthInMainChain(CBlockIndex* &pindexRet) const;
+    int GetDepthInMainChain() const { CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet); }
     bool IsInMainChain() const { return GetDepthInMainChain() > 0; }
     int GetBlocksToMaturity() const;
     bool AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs=true);
@@ -755,11 +748,10 @@ public:
 
 
 
-//
-// A txdb record that contains the disk location of a transaction and the
-// locations of transactions that spend its outputs.  vSpent is really only
-// used as a flag, but having the location is very helpful for debugging.
-//
+/**  A txdb record that contains the disk location of a transaction and the
+ * locations of transactions that spend its outputs.  vSpent is really only
+ * used as a flag, but having the location is very helpful for debugging.
+ */
 class CTxIndex
 {
 public:
@@ -807,23 +799,23 @@ public:
         return !(a == b);
     }
     int GetDepthInMainChain() const;
+ 
 };
 
 
 
 
 
-//
-// Nodes collect new transactions into a block, hash them into a hash tree,
-// and scan through nonce values to make the block's hash satisfy proof-of-work
-// requirements.  When they solve the proof-of-work, they broadcast the block
-// to everyone and the block is added to the block chain.  The first transaction
-// in the block is a special one that creates a new coin owned by the creator
-// of the block.
-//
-// Blocks are appended to blk0001.dat files on disk.  Their location on disk
-// is indexed by CBlockIndex objects in memory.
-//
+/** Nodes collect new transactions into a block, hash them into a hash tree,
+ * and scan through nonce values to make the block's hash satisfy proof-of-work
+ * requirements.  When they solve the proof-of-work, they broadcast the block
+ * to everyone and the block is added to the block chain.  The first transaction
+ * in the block is a special one that creates a new coin owned by the creator
+ * of the block.
+ *
+ * Blocks are appended to blk0001.dat files on disk.  Their location on disk
+ * is indexed by CBlockIndex objects in memory.
+ */
 class CBlock
 {
 public:
@@ -893,14 +885,6 @@ public:
     int64 GetBlockTime() const
     {
         return (int64)nTime;
-    }
-
-    int GetSigOpCount() const
-    {
-        int n = 0;
-        BOOST_FOREACH(const CTransaction& tx, vtx)
-            n += tx.GetSigOpCount();
-        return n;
     }
 
     void UpdateTime(const CBlockIndex* pindexPrev);
@@ -1039,6 +1023,9 @@ public:
     bool AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos);
     bool CheckBlock() const;
     bool AcceptBlock();
+
+private:
+    bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew);
 };
 
 
@@ -1046,14 +1033,13 @@ public:
 
 
 
-//
-// The block chain is a tree shaped structure starting with the
-// genesis block at the root, with each block potentially having multiple
-// candidates to be the next block.  pprev and pnext link a path through the
-// main/longest chain.  A blockindex may have multiple pprev pointing back
-// to it, but pnext will only point forward to the longest branch, or will
-// be null if the block is not part of the longest chain.
-//
+/** The block chain is a tree shaped structure starting with the
+ * genesis block at the root, with each block potentially having multiple
+ * candidates to be the next block.  pprev and pnext link a path through the
+ * main/longest chain.  A blockindex may have multiple pprev pointing back
+ * to it, but pnext will only point forward to the longest branch, or will
+ * be null if the block is not part of the longest chain.
+ */
 class CBlockIndex
 {
 public:
@@ -1210,9 +1196,7 @@ public:
 
 
 
-//
-// Used to marshal pointers into hashes for db storage.
-//
+/** Used to marshal pointers into hashes for db storage. */
 class CDiskBlockIndex : public CBlockIndex
 {
 public:
@@ -1287,11 +1271,10 @@ public:
 
 
 
-//
-// Describes a place in the block chain to another node such that if the
-// other node doesn't have the same branch, it can find a recent common trunk.
-// The further back it is, the further before the fork it may be.
-//
+/** Describes a place in the block chain to another node such that if the
+ * other node doesn't have the same branch, it can find a recent common trunk.
+ * The further back it is, the further before the fork it may be.
+ */
 class CBlockLocator
 {
 protected:
@@ -1312,6 +1295,11 @@ public:
         std::map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashBlock);
         if (mi != mapBlockIndex.end())
             Set((*mi).second);
+    }
+
+    CBlockLocator(const std::vector<uint256>& vHaveIn)
+    {
+        vHave = vHaveIn;
     }
 
     IMPLEMENT_SERIALIZE
@@ -1418,13 +1406,12 @@ public:
 
 
 
-//
-// Alerts are for notifying old versions if they become too obsolete and
-// need to upgrade.  The message is displayed in the status bar.
-// Alert messages are broadcast as a vector of signed data.  Unserializing may
-// not read the entire buffer if the alert is for a newer version, but older
-// versions can still relay the original data.
-//
+/** Alerts are for notifying old versions if they become too obsolete and
+ * need to upgrade.  The message is displayed in the status bar.
+ * Alert messages are broadcast as a vector of signed data.  Unserializing may
+ * not read the entire buffer if the alert is for a newer version, but older
+ * versions can still relay the original data.
+ */
 class CUnsignedAlert
 {
 public:
@@ -1524,6 +1511,7 @@ public:
     }
 };
 
+/** An alert is a combination of a serialized CUnsignedAlert and a signature. */
 class CAlert : public CUnsignedAlert
 {
 public:
@@ -1572,6 +1560,7 @@ public:
 
     bool AppliesTo(int nVersion, std::string strSubVerIn) const
     {
+        // TODO: rework for client-version-embedded-in-strSubVer ?
         return (IsInEffect() &&
                 nMinVer <= nVersion && nVersion <= nMaxVer &&
                 (setSubVer.empty() || setSubVer.count(strSubVerIn)));
@@ -1579,7 +1568,7 @@ public:
 
     bool AppliesToMe() const
     {
-        return AppliesTo(VERSION, ::pszSubVer);
+        return AppliesTo(PROTOCOL_VERSION, FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<std::string>()));
     }
 
     bool RelayTo(CNode* pnode) const
