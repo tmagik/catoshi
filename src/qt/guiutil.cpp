@@ -11,6 +11,10 @@
 #include <QFont>
 #include <QLineEdit>
 #include <QUrl>
+#include <QTextDocument> // For Qt::escape
+#include <QAbstractItemView>
+#include <QApplication>
+#include <QClipboard>
 #include <QFileDialog>
 #include <QDesktopServices>
 
@@ -47,26 +51,43 @@ void GUIUtil::setupAmountWidget(QLineEdit *widget, QWidget *parent)
     widget->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 }
 
-bool GUIUtil::parseBitcoinURL(const QUrl *url, SendCoinsRecipient *out)
+bool GUIUtil::parseBitcoinURL(const QUrl &url, SendCoinsRecipient *out)
 {
-    if(url->scheme() != QString("bitcoin"))
+    if(url.scheme() != QString("bitcoin"))
         return false;
 
     SendCoinsRecipient rv;
-    rv.address = url->path();
-    rv.label = url->queryItemValue("label");
-
-    QString amount = url->queryItemValue("amount");
-    if(amount.isEmpty())
+    rv.address = url.path();
+    rv.amount = 0;
+    QList<QPair<QString, QString> > items = url.queryItems();
+    for (QList<QPair<QString, QString> >::iterator i = items.begin(); i != items.end(); i++)
     {
-        rv.amount = 0;
-    }
-    else // Amount is non-empty
-    {
-        if(!BitcoinUnits::parse(BitcoinUnits::BTC, amount, &rv.amount))
+        bool fShouldReturnFalse = false;
+        if (i->first.startsWith("req-"))
         {
-            return false;
+            i->first.remove(0, 4);
+            fShouldReturnFalse = true;
         }
+
+        if (i->first == "label")
+        {
+            rv.label = i->second;
+            fShouldReturnFalse = false;
+        }
+        else if (i->first == "amount")
+        {
+            if(!i->second.isEmpty())
+            {
+                if(!BitcoinUnits::parse(BitcoinUnits::BTC, i->second, &rv.amount))
+                {
+                    return false;
+                }
+            }
+            fShouldReturnFalse = false;
+        }
+
+        if (fShouldReturnFalse)
+            return false;
     }
     if(out)
     {
@@ -86,7 +107,35 @@ bool GUIUtil::parseBitcoinURL(QString url, SendCoinsRecipient *out)
         url.replace(0, 10, "bitcoin:");
     }
     QUrl urlInstance(url);
-    return parseBitcoinURL(&urlInstance, out);
+    return parseBitcoinURL(urlInstance, out);
+}
+
+QString GUIUtil::HtmlEscape(const QString& str, bool fMultiLine)
+{
+    QString escaped = Qt::escape(str);
+    if(fMultiLine)
+    {
+        escaped = escaped.replace("\n", "<br>\n");
+    }
+    return escaped;
+}
+
+QString GUIUtil::HtmlEscape(const std::string& str, bool fMultiLine)
+{
+    return HtmlEscape(QString::fromStdString(str), fMultiLine);
+}
+
+void GUIUtil::copyEntryData(QAbstractItemView *view, int column, int role)
+{
+    if(!view || !view->selectionModel())
+        return;
+    QModelIndexList selection = view->selectionModel()->selectedRows(column);
+
+    if(!selection.isEmpty())
+    {
+        // Copy first item
+        QApplication::clipboard()->setText(selection.at(0).data(role).toString());
+    }
 }
 
 QString GUIUtil::getSaveFileName(QWidget *parent, const QString &caption,
