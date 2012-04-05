@@ -5,8 +5,8 @@
 #include "transactiontablemodel.h"
 
 #include "headers.h"
+#include "db.h" // for BackupWallet
 
-#include <QTimer>
 #include <QSet>
 
 WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
@@ -15,12 +15,6 @@ WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *p
     cachedBalance(0), cachedUnconfirmedBalance(0), cachedNumTransactions(0),
     cachedEncryptionStatus(Unencrypted)
 {
-    // Until signal notifications is built into the bitcoin core,
-    //  simply update everything after polling using a timer.
-    QTimer *timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->start(MODEL_UPDATE_DELAY);
-
     addressTableModel = new AddressTableModel(wallet, this);
     transactionTableModel = new TransactionTableModel(wallet, this);
 }
@@ -65,6 +59,11 @@ void WalletModel::update()
     cachedUnconfirmedBalance = newUnconfirmedBalance;
     cachedNumTransactions = newNumTransactions;
 
+    addressTableModel->update();
+}
+
+void WalletModel::updateAddressList()
+{
     addressTableModel->update();
 }
 
@@ -141,7 +140,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
             }
             return TransactionCreationFailed;
         }
-        if(!ThreadSafeAskFee(nFeeRequired, tr("Sending...").toStdString(), NULL))
+        if(!ThreadSafeAskFee(nFeeRequired, tr("Sending...").toStdString()))
         {
             return Aborted;
         }
@@ -162,9 +161,6 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
                 wallet->SetAddressBookName(strAddress, rcp.label.toStdString());
         }
     }
-
-    // Update our model of the address table
-    addressTableModel->updateList();
 
     return SendCoinsReturn(OK, 0, hex);
 }
@@ -200,7 +196,7 @@ WalletModel::EncryptionStatus WalletModel::getEncryptionStatus() const
     }
 }
 
-bool WalletModel::setWalletEncrypted(bool encrypted, const std::string &passphrase)
+bool WalletModel::setWalletEncrypted(bool encrypted, const SecureString &passphrase)
 {
     if(encrypted)
     {
@@ -214,7 +210,7 @@ bool WalletModel::setWalletEncrypted(bool encrypted, const std::string &passphra
     }
 }
 
-bool WalletModel::setWalletLocked(bool locked, const std::string &passPhrase)
+bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase)
 {
     if(locked)
     {
@@ -228,7 +224,7 @@ bool WalletModel::setWalletLocked(bool locked, const std::string &passPhrase)
     }
 }
 
-bool WalletModel::changePassphrase(const std::string &oldPass, const std::string &newPass)
+bool WalletModel::changePassphrase(const SecureString &oldPass, const SecureString &newPass)
 {
     bool retval;
     CRITICAL_BLOCK(wallet->cs_wallet)
@@ -237,6 +233,11 @@ bool WalletModel::changePassphrase(const std::string &oldPass, const std::string
         retval = wallet->ChangeWalletPassphrase(oldPass, newPass);
     }
     return retval;
+}
+
+bool WalletModel::backupWallet(const QString &filename)
+{
+    return BackupWallet(*wallet, filename.toLocal8Bit().data());
 }
 
 // WalletModel::UnlockContext implementation
