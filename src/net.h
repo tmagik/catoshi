@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_NET_H
@@ -14,33 +14,29 @@
 #include <arpa/inet.h>
 #endif
 
+#include "mruset.h"
+#include "netbase.h"
 #include "protocol.h"
+#include "addrman.h"
 
 class CAddrDB;
 class CRequestTracker;
 class CNode;
 class CBlockIndex;
 extern int nBestHeight;
-extern int nConnectTimeout;
 
 
 
 inline unsigned int ReceiveBufferSize() { return 1000*GetArg("-maxreceivebuffer", 10*1000); }
 inline unsigned int SendBufferSize() { return 1000*GetArg("-maxsendbuffer", 10*1000); }
-static const unsigned int PUBLISH_HOPS = 5;
 
-bool ConnectSocket(const CAddress& addrConnect, SOCKET& hSocketRet, int nTimeout=nConnectTimeout);
-bool Lookup(const char *pszName, std::vector<CAddress>& vaddr, int nServices, int nMaxSolutions, bool fAllowLookup = false, int portDefault = 0, bool fAllowPort = false);
-bool Lookup(const char *pszName, CAddress& addr, int nServices, bool fAllowLookup = false, int portDefault = 0, bool fAllowPort = false);
-bool GetMyExternalIP(unsigned int& ipRet);
-bool AddAddress(CAddress addr, int64 nTimePenalty=0, CAddrDB *pAddrDB=NULL);
-void AddressCurrentlyConnected(const CAddress& addr);
-CNode* FindNode(unsigned int ip);
+bool RecvLine(SOCKET hSocket, std::string& strLine);
+bool GetMyExternalIP(CNetAddr& ipRet);
+void AddressCurrentlyConnected(const CService& addr);
+CNode* FindNode(const CNetAddr& ip);
+CNode* FindNode(const CService& ip);
 CNode* ConnectNode(CAddress addrConnect, int64 nTimeout=0);
-void AbandonRequests(void (*fn)(void*, CDataStream&), void* param1);
-bool AnySubscribed(unsigned int nChannel);
 void MapPort(bool fMapPort);
-void DNSAddressSeed();
 bool BindListenPort(std::string& strError=REF(std::string()));
 void StartNode(void* parg);
 bool StopNode();
@@ -70,34 +66,43 @@ public:
 };
 
 
+/** Thread types */
+enum threadId
+{
+    THREAD_SOCKETHANDLER,
+    THREAD_OPENCONNECTIONS,
+    THREAD_MESSAGEHANDLER,
+    THREAD_MINER,
+    THREAD_RPCSERVER,
+    THREAD_UPNP,
+    THREAD_DNSSEED,
+    THREAD_ADDEDCONNECTIONS,
+    THREAD_DUMPADDRESS,
 
-
+    THREAD_MAX
+};
 
 extern bool fClient;
 extern bool fAllowDNS;
 extern uint64 nLocalServices;
 extern CAddress addrLocalHost;
 extern uint64 nLocalHostNonce;
-extern boost::array<int, 10> vnThreadsRunning;
+extern boost::array<int, THREAD_MAX> vnThreadsRunning;
+extern CAddrMan addrman;
 
 extern std::vector<CNode*> vNodes;
 extern CCriticalSection cs_vNodes;
-extern std::map<std::vector<unsigned char>, CAddress> mapAddresses;
-extern CCriticalSection cs_mapAddresses;
 extern std::map<CInv, CDataStream> mapRelay;
 extern std::deque<std::pair<int64, CInv> > vRelayExpiration;
 extern CCriticalSection cs_mapRelay;
 extern std::map<CInv, int64> mapAlreadyAskedFor;
 
-// Settings
-extern int fUseProxy;
-extern CAddress addrProxy;
 
 
 
 
 
-
+/** Information about a peer */
 class CNode
 {
 public:
@@ -127,7 +132,7 @@ protected:
 
     // Denial-of-service detection/prevention
     // Key is ip address, value is banned-until-time
-    static std::map<unsigned int, int64> setBanned;
+    static std::map<CNetAddr, int64> setBanned;
     static CCriticalSection cs_setBanned;
     int nMisbehavior;
 
@@ -147,28 +152,19 @@ public:
     std::set<uint256> setKnown;
 
     // inventory based relay
-    std::set<CInv> setInventoryKnown;
+    mruset<CInv> setInventoryKnown;
     std::vector<CInv> vInventoryToSend;
     CCriticalSection cs_inventory;
     std::multimap<int64, CInv> mapAskFor;
-
-    // publish and subscription
-    std::vector<char> vfSubscribe;
 
     CNode(SOCKET hSocketIn, CAddress addrIn, bool fInboundIn=false)
     {
         nServices = 0;
         hSocket = hSocketIn;
         vSend.SetType(SER_NETWORK);
-        vSend.SetVersion(0);
         vRecv.SetType(SER_NETWORK);
-        vRecv.SetVersion(0);
-        // Version 0.2 obsoletes 20 Feb 2012
-        if (GetTime() > 1329696000)
-        {
-            vSend.SetVersion(209);
-            vRecv.SetVersion(209);
-        }
+        vSend.SetVersion(209);
+        vRecv.SetVersion(209);
         nLastSend = 0;
         nLastRecv = 0;
         nLastSendEmpty = GetTime();
@@ -190,8 +186,8 @@ public:
         hashLastGetBlocksEnd = 0;
         nStartingHeight = -1;
         fGetAddr = false;
-        vfSubscribe.assign(256, false);
         nMisbehavior = 0;
+        setInventoryKnown.max_size(SendBufferSize() / 1000);
 
         // Be shy and don't send version until we hear
         if (!fInbound)
@@ -272,7 +268,9 @@ public:
         // Make sure not to reuse time indexes to keep things in the same order
         int64 nNow = (GetTime() - 1) * 1000000;
         static int64 nLastTime;
-        nLastTime = nNow = std::max(nNow, ++nLastTime);
+        ++nLastTime;
+        nNow = std::max(nNow, nLastTime);
+        nLastTime = nNow;
 
         // Each retry is 2 minutes after the last
         nRequestTime = std::max(nRequestTime + 2 * 60 * 1000000, nNow);
@@ -283,7 +281,7 @@ public:
 
     void BeginMessage(const char* pszCommand)
     {
-        cs_vSend.Enter("cs_vSend", __FILE__, __LINE__);
+        ENTER_CRITICAL_SECTION(cs_vSend);
         if (nHeaderStart != -1)
             AbortMessage();
         nHeaderStart = vSend.size();
@@ -302,7 +300,7 @@ public:
         vSend.resize(nHeaderStart);
         nHeaderStart = -1;
         nMessageStart = -1;
-        cs_vSend.Leave();
+        LEAVE_CRITICAL_SECTION(cs_vSend);
 
         if (fDebug)
             printf("(aborted)\n");
@@ -325,14 +323,11 @@ public:
         memcpy((char*)&vSend[nHeaderStart] + offsetof(CMessageHeader, nMessageSize), &nSize, sizeof(nSize));
 
         // Set the checksum
-        if (vSend.GetVersion() >= 209)
-        {
-            uint256 hash = Hash(vSend.begin() + nMessageStart, vSend.end());
-            unsigned int nChecksum = 0;
-            memcpy(&nChecksum, &hash, sizeof(nChecksum));
-            assert(nMessageStart - nHeaderStart >= offsetof(CMessageHeader, nChecksum) + sizeof(nChecksum));
-            memcpy((char*)&vSend[nHeaderStart] + offsetof(CMessageHeader, nChecksum), &nChecksum, sizeof(nChecksum));
-        }
+        uint256 hash = Hash(vSend.begin() + nMessageStart, vSend.end());
+        unsigned int nChecksum = 0;
+        memcpy(&nChecksum, &hash, sizeof(nChecksum));
+        assert(nMessageStart - nHeaderStart >= offsetof(CMessageHeader, nChecksum) + sizeof(nChecksum));
+        memcpy((char*)&vSend[nHeaderStart] + offsetof(CMessageHeader, nChecksum), &nChecksum, sizeof(nChecksum));
 
         if (fDebug) {
             printf("(%d bytes)\n", nSize);
@@ -340,7 +335,7 @@ public:
 
         nHeaderStart = -1;
         nMessageStart = -1;
-        cs_vSend.Leave();
+        LEAVE_CRITICAL_SECTION(cs_vSend);
     }
 
     void EndMessageAbortIfEmpty()
@@ -356,18 +351,7 @@ public:
 
 
 
-    void PushVersion()
-    {
-        /// when NTP implemented, change to just nTime = GetAdjustedTime()
-        int64 nTime = (fInbound ? GetAdjustedTime() : GetTime());
-        CAddress addrYou = (fUseProxy ? CAddress("0.0.0.0") : addr);
-        CAddress addrMe = (fUseProxy ? CAddress("0.0.0.0") : addrLocalHost);
-        RAND_bytes((unsigned char*)&nLocalHostNonce, sizeof(nLocalHostNonce));
-        PushMessage("version", VERSION, nLocalServices, nTime, addrYou, addrMe,
-                    nLocalHostNonce, std::string(pszSubVer), nBestHeight);
-    }
-
-
+    void PushVersion();
 
 
     void PushMessage(const char* pszCommand)
@@ -592,7 +576,7 @@ public:
     // between nodes running old code and nodes running
     // new code.
     static void ClearBanned(); // needed for unit testing
-    static bool IsBanned(unsigned int ip);
+    static bool IsBanned(CNetAddr ip);
     bool Misbehaving(int howmuch); // 1 == a little, 100 == a lot
 };
 
@@ -642,59 +626,5 @@ inline void RelayMessage<>(const CInv& inv, const CDataStream& ss)
     RelayInventory(inv);
 }
 
-
-
-
-
-
-
-
-//
-// Templates for the publish and subscription system.
-// The object being published as T& obj needs to have:
-//   a set<unsigned int> setSources member
-//   specializations of AdvertInsert and AdvertErase
-// Currently implemented for CTable and CProduct.
-//
-
-template<typename T>
-void AdvertStartPublish(CNode* pfrom, unsigned int nChannel, unsigned int nHops, T& obj)
-{
-    // Add to sources
-    obj.setSources.insert(pfrom->addr.ip);
-
-    if (!AdvertInsert(obj))
-        return;
-
-    // Relay
-    CRITICAL_BLOCK(cs_vNodes)
-        BOOST_FOREACH(CNode* pnode, vNodes)
-            if (pnode != pfrom && (nHops < PUBLISH_HOPS || pnode->IsSubscribed(nChannel)))
-                pnode->PushMessage("publish", nChannel, nHops, obj);
-}
-
-template<typename T>
-void AdvertStopPublish(CNode* pfrom, unsigned int nChannel, unsigned int nHops, T& obj)
-{
-    uint256 hash = obj.GetHash();
-
-    CRITICAL_BLOCK(cs_vNodes)
-        BOOST_FOREACH(CNode* pnode, vNodes)
-            if (pnode != pfrom && (nHops < PUBLISH_HOPS || pnode->IsSubscribed(nChannel)))
-                pnode->PushMessage("pub-cancel", nChannel, nHops, hash);
-
-    AdvertErase(obj);
-}
-
-template<typename T>
-void AdvertRemoveSource(CNode* pfrom, unsigned int nChannel, unsigned int nHops, T& obj)
-{
-    // Remove a source
-    obj.setSources.erase(pfrom->addr.ip);
-
-    // If no longer supported by any sources, cancel it
-    if (obj.setSources.empty())
-        AdvertStopPublish(pfrom, nChannel, nHops, obj);
-}
 
 #endif

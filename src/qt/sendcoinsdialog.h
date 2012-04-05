@@ -14,6 +14,7 @@ QT_BEGIN_NAMESPACE
 class QUrl;
 QT_END_NAMESPACE
 
+/** Dialog for sending bitcoins */
 class SendCoinsDialog : public QDialog
 {
     Q_OBJECT
@@ -24,12 +25,12 @@ public:
 
     void setModel(WalletModel *model);
 
-    // Qt messes up the tab chain by default in some cases (issue http://bugreports.qt.nokia.com/browse/QTBUG-10907)
-    // Hence we have to set it up manually
+    /** Set up the tab chain manually, as Qt messes up the tab chain by default in some cases (issue http://bugreports.qt.nokia.com/browse/QTBUG-10907).
+     */
     QWidget *setupTabChain(QWidget *prev);
 
     void pasteEntry(const SendCoinsRecipient &rv);
-    void handleURL(const QUrl *url);
+    void handleURL(const QString &url);
 
 public slots:
     void clear();
@@ -42,6 +43,7 @@ public slots:
 private:
     Ui::SendCoinsDialog *ui;
     WalletModel *model;
+    bool fNewRecipientAllowed;
 
 private slots:
     void on_sendButton_clicked();

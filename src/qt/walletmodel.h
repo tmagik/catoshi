@@ -2,21 +2,23 @@
 #define WALLETMODEL_H
 
 #include <QObject>
-#include <string>
+
+#include "allocators.h" /* for SecureString */
 
 class OptionsModel;
 class AddressTableModel;
 class TransactionTableModel;
 class CWallet;
 
-struct SendCoinsRecipient
+class SendCoinsRecipient
 {
+public:
     QString address;
     QString label;
     qint64 amount;
 };
 
-// Interface to Bitcoin wallet from Qt view code
+/** Interface to Bitcoin wallet from Qt view code. */
 class WalletModel : public QObject
 {
     Q_OBJECT
@@ -72,10 +74,12 @@ public:
     SendCoinsReturn sendCoins(const QList<SendCoinsRecipient> &recipients);
 
     // Wallet encryption
-    bool setWalletEncrypted(bool encrypted, const std::string &passphrase);
+    bool setWalletEncrypted(bool encrypted, const SecureString &passphrase);
     // Passphrase only needed when unlocking
-    bool setWalletLocked(bool locked, const std::string &passPhrase=std::string());
-    bool changePassphrase(const std::string &oldPass, const std::string &newPass);
+    bool setWalletLocked(bool locked, const SecureString &passPhrase=SecureString());
+    bool changePassphrase(const SecureString &oldPass, const SecureString &newPass);
+    // Wallet backup
+    bool backupWallet(const QString &filename);
 
     // RAI object for unlocking wallet, returned by requestUnlock()
     class UnlockContext
@@ -131,12 +135,11 @@ signals:
     void requireUnlock();
 
     // Asynchronous error notification
-    void error(const QString &title, const QString &message);
+    void error(const QString &title, const QString &message, bool modal);
 
 public slots:
-
-private slots:
     void update();
+    void updateAddressList();
 };
 
 

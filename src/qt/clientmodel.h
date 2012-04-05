@@ -12,7 +12,7 @@ QT_BEGIN_NAMESPACE
 class QDateTime;
 QT_END_NAMESPACE
 
-// Model for Bitcoin network client
+/** Model for Bitcoin network client. */
 class ClientModel : public QObject
 {
     Q_OBJECT
@@ -27,12 +27,14 @@ public:
 
     QDateTime getLastBlockDate() const;
 
-    // Return true if client connected to testnet
+    //! Return true if client connected to testnet
     bool isTestNet() const;
-    // Return true if core is doing initial block download
+    //! Return true if core is doing initial block download
     bool inInitialBlockDownload() const;
-    // Return conservative estimate of total number of blocks, or 0 if unknown
+    //! Return conservative estimate of total number of blocks, or 0 if unknown
     int getNumBlocksOfPeers() const;
+    //! Return warnings to be displayed in status bar
+    QString getStatusBarWarnings() const;
 
     QString formatFullVersion() const;
 
@@ -41,6 +43,7 @@ private:
 
     int cachedNumConnections;
     int cachedNumBlocks;
+    QString cachedStatusBar;
 
     int numBlocksAtStartup;
 
@@ -48,8 +51,8 @@ signals:
     void numConnectionsChanged(int count);
     void numBlocksChanged(int count);
 
-    // Asynchronous error notification
-    void error(const QString &title, const QString &message);
+    //! Asynchronous error notification
+    void error(const QString &title, const QString &message, bool modal);
 
 public slots:
 
