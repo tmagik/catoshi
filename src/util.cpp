@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #include "headers.h"
@@ -469,6 +469,23 @@ void ParseParameters(int argc, char* argv[])
     }
 }
 
+bool SoftSetArg(const std::string& strArg, const std::string& strValue)
+{
+    if (mapArgs.count(strArg))
+        return false;
+    mapArgs[strArg] = strValue;
+    return true;
+}
+
+bool SoftSetArg(const std::string& strArg, bool fValue)
+{
+    if (fValue)
+        return SoftSetArg(strArg, std::string("1"));
+    else
+        return SoftSetArg(strArg, std::string("0"));
+}
+
+
 string EncodeBase64(const unsigned char* pch, size_t len)
 {
     static const char *pbase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -720,26 +737,35 @@ string MyGetSpecialFolderPath(int nFolder, bool fCreate)
     {
         PSHGETSPECIALFOLDERPATHA pSHGetSpecialFolderPath =
             (PSHGETSPECIALFOLDERPATHA)GetProcAddress(hShell32, "SHGetSpecialFolderPathA");
+        bool fSuccess = false;
         if (pSHGetSpecialFolderPath)
+            fSuccess =
             (*pSHGetSpecialFolderPath)(NULL, pszPath, nFolder, fCreate);
         FreeModule(hShell32);
+        if (fSuccess)
+            return pszPath;
     }
 
     // Backup option
-    if (pszPath[0] == '\0')
+    std::string strPath;
     {
+        const char *pszEnv;
         if (nFolder == CSIDL_STARTUP)
         {
-            strcpy(pszPath, getenv("USERPROFILE"));
-            strcat(pszPath, "\\Start Menu\\Programs\\Startup");
+            pszEnv = getenv("USERPROFILE");
+            if (pszEnv)
+                strPath = pszEnv;
+            strPath += "\\Start Menu\\Programs\\Startup";
         }
         else if (nFolder == CSIDL_APPDATA)
         {
-            strcpy(pszPath, getenv("APPDATA"));
+            pszEnv = getenv("APPDATA");
+            if (pszEnv)
+                strPath = pszEnv;
         }
     }
 
-    return pszPath;
+    return strPath;
 }
 #endif
 

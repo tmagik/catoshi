@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #include "headers.h"
@@ -20,6 +20,7 @@ Q_IMPORT_PLUGIN(qcncodecs)
 Q_IMPORT_PLUGIN(qjpcodecs)
 Q_IMPORT_PLUGIN(qtwcodecs)
 Q_IMPORT_PLUGIN(qkrcodecs)
+Q_IMPORT_PLUGIN(qtaccessiblewidgets)
 #endif
 
 using namespace std;
@@ -172,10 +173,10 @@ bool AppInit2(int argc, char* argv[])
         string strUsage = string() +
           _("Bitcoin version") + " " + FormatFullVersion() + "\n\n" +
           _("Usage:") + "\t\t\t\t\t\t\t\t\t\t\n" +
-            "  bitcoin [options]                   \t  " + "\n" +
-            "  bitcoin [options] <command> [params]\t  " + _("Send command to -server or bitcoind\n") +
-            "  bitcoin [options] help              \t\t  " + _("List commands\n") +
-            "  bitcoin [options] help <command>    \t\t  " + _("Get help for a command\n") +
+            "  bitcoind [options]                   \t  " + "\n" +
+            "  bitcoind [options] <command> [params]\t  " + _("Send command to -server or bitcoind\n") +
+            "  bitcoind [options] help              \t\t  " + _("List commands\n") +
+            "  bitcoind [options] help <command>    \t\t  " + _("Get help for a command\n") +
           _("Options:\n") +
             "  -conf=<file>     \t\t  " + _("Specify configuration file (default: bitcoin.conf)\n") +
             "  -pid=<file>      \t\t  " + _("Specify pid file (default: bitcoind.pid)\n") +
@@ -186,11 +187,17 @@ bool AppInit2(int argc, char* argv[])
             "  -timeout=<n>     \t  "   + _("Specify connection timeout (in milliseconds)\n") +
             "  -proxy=<ip:port> \t  "   + _("Connect through socks4 proxy\n") +
             "  -dns             \t  "   + _("Allow DNS lookups for addnode and connect\n") +
+            "  -port=<port>     \t\t  " + _("Listen for connections on <port> (default: 8333 or testnet: 18333)\n") +
+            "  -maxconnections=<n>\t  " + _("Maintain at most <n> connections to peers (default: 125)\n") +
             "  -addnode=<ip>    \t  "   + _("Add a node to connect to\n") +
             "  -connect=<ip>    \t\t  " + _("Connect only to the specified node\n") +
+            "  -noirc           \t  "   + _("Don't find peers using internet relay chat\n") +
             "  -nolisten        \t  "   + _("Don't accept connections from outside\n") +
+            "  -nodnsseed       \t  "   + _("Don't bootstrap list of peers using DNS\n") +
             "  -banscore=<n>    \t  "   + _("Threshold for disconnecting misbehaving peers (default: 100)\n") +
             "  -bantime=<n>     \t  "   + _("Number of seconds to keep misbehaving peers from reconnecting (default: 86400)\n") +
+            "  -maxreceivebuffer=<n>\t  " + _("Maximum per-connection receive buffer, <n>*1000 bytes (default: 10000)\n") +
+            "  -maxsendbuffer=<n>\t  "   + _("Maximum per-connection send buffer, <n>*1000 bytes (default: 10000)\n") +
 #ifdef USE_UPNP
 #if USE_UPNP
             "  -noupnp          \t  "   + _("Don't attempt to use UPnP to map the listening port\n") +
@@ -198,14 +205,20 @@ bool AppInit2(int argc, char* argv[])
             "  -upnp            \t  "   + _("Attempt to use UPnP to map the listening port\n") +
 #endif
 #endif
-            "  -paytxfee=<amt>  \t  "   + _("Fee per KB to add to transactions you send\n") +
-#ifdef GUI
+            "  -paytxfee=<amt>  \t  "   + _("Fee per kB to add to transactions you send\n") +
+#ifdef QT_GUI
             "  -server          \t\t  " + _("Accept command line and JSON-RPC commands\n") +
 #endif
-#ifndef WIN32
+#if !defined(WIN32) && !defined(QT_GUI)
             "  -daemon          \t\t  " + _("Run in the background as a daemon and accept commands\n") +
 #endif
             "  -testnet         \t\t  " + _("Use the test network\n") +
+            "  -debug           \t\t  " + _("Output extra debugging information\n") +
+            "  -logtimestamps   \t  "   + _("Prepend debug output with timestamp\n") +
+            "  -printtoconsole  \t  "   + _("Send trace/debug info to console instead of debug.log file\n") +
+#ifdef WIN32
+            "  -printtodebugger \t  "   + _("Send trace/debug info to debugger\n") +
+#endif
             "  -rpcuser=<user>  \t  "   + _("Username for JSON-RPC connections\n") +
             "  -rpcpassword=<pw>\t  "   + _("Password for JSON-RPC connections\n") +
             "  -rpcport=<port>  \t\t  " + _("Listen for JSON-RPC connections on <port> (default: 8332)\n") +
@@ -228,14 +241,19 @@ bool AppInit2(int argc, char* argv[])
 
         // Remove tabs
         strUsage.erase(std::remove(strUsage.begin(), strUsage.end(), '\t'), strUsage.end());
+#if defined(QT_GUI) && defined(WIN32)
+        // On windows, show a message box, as there is no stderr
+        wxMessageBox(strUsage, "Usage");
+#else
         fprintf(stderr, "%s", strUsage.c_str());
+#endif
         return false;
     }
 
+    fTestNet = GetBoolArg("-testnet");
     fDebug = GetBoolArg("-debug");
-    fAllowDNS = GetBoolArg("-dns");
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(QT_GUI)
     fDaemon = GetBoolArg("-daemon");
 #else
     fDaemon = false;
@@ -252,10 +270,6 @@ bool AppInit2(int argc, char* argv[])
 #endif
     fPrintToConsole = GetBoolArg("-printtoconsole");
     fPrintToDebugger = GetBoolArg("-printtodebugger");
-
-    fTestNet = GetBoolArg("-testnet");
-    bool fTOR = (fUseProxy && addrProxy.port == htons(9050));
-    fNoListen = GetBoolArg("-nolisten") || fTOR;
     fLogTimestamps = GetBoolArg("-logtimestamps");
 
 #ifndef QT_GUI
@@ -270,7 +284,7 @@ bool AppInit2(int argc, char* argv[])
     }
 #endif
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(QT_GUI)
     if (fDaemon)
     {
         // Daemonize
@@ -317,16 +331,7 @@ bool AppInit2(int argc, char* argv[])
         return false;
     }
 
-    // Bind to the port early so we can tell if another instance is already running.
     string strErrors;
-    if (!fNoListen)
-    {
-        if (!BindListenPort(strErrors))
-        {
-            wxMessageBox(strErrors, "Bitcoin");
-            return false;
-        }
-    }
 
     //
     // Load data files
@@ -365,12 +370,14 @@ bool AppInit2(int argc, char* argv[])
         else if (nLoadWalletRet == DB_NEED_REWRITE)
         {
             strErrors += _("Wallet needed to be rewritten: restart Bitcoin to complete    \n");
+            printf("%s", strErrors.c_str());
             wxMessageBox(strErrors, "Bitcoin", wxOK | wxICON_ERROR);
             return false;
         }
         else
             strErrors += _("Error loading wallet.dat      \n");
     }
+    printf("%s", strErrors.c_str());
     printf(" wallet      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
 
     RegisterWallet(pwalletMain);
@@ -412,6 +419,10 @@ bool AppInit2(int argc, char* argv[])
 
     // Add wallet transactions that aren't already in a block to mapTransactions
     pwalletMain->ReacceptWalletTransactions();
+
+    // Note: Bitcoin-QT stores several settings in the wallet, so we want
+    // to load the wallet BEFORE parsing command-line arguments, so
+    // the command-line/bitcoin.conf settings override GUI setting.
 
     //
     // Parameters
@@ -465,6 +476,37 @@ bool AppInit2(int argc, char* argv[])
         }
     }
 
+    bool fTor = (fUseProxy && addrProxy.port == htons(9050));
+    if (fTor)
+    {
+        // Use SoftSetArg here so user can override any of these if they wish.
+        // Note: the GetBoolArg() calls for all of these must happen later.
+        SoftSetArg("-nolisten", true);
+        SoftSetArg("-noirc", true);
+        SoftSetArg("-nodnsseed", true);
+        SoftSetArg("-noupnp", true);
+        SoftSetArg("-upnp", false);
+        SoftSetArg("-dns", false);
+    }
+
+    fAllowDNS = GetBoolArg("-dns");
+    fNoListen = GetBoolArg("-nolisten");
+
+    // Command-line args override in-wallet settings:
+    if (mapArgs.count("-upnp"))
+        fUseUPnP = GetBoolArg("-upnp");
+    else if (mapArgs.count("-noupnp"))
+        fUseUPnP = !GetBoolArg("-noupnp");
+
+    if (!fNoListen)
+    {
+        if (!BindListenPort(strErrors))
+        {
+            wxMessageBox(strErrors, "Bitcoin");
+            return false;
+        }
+    }
+
     if (mapArgs.count("-addnode"))
     {
         BOOST_FOREACH(string strAddr, mapMultiArgs["-addnode"])
@@ -476,11 +518,6 @@ bool AppInit2(int argc, char* argv[])
         }
     }
 
-    if (GetBoolArg("-nodnsseed"))
-        printf("DNS seeding disabled\n");
-    else
-        DNSAddressSeed();
-
     if (mapArgs.count("-paytxfee"))
     {
         if (!ParseMoney(mapArgs["-paytxfee"], nTransactionFee))
@@ -490,17 +527,6 @@ bool AppInit2(int argc, char* argv[])
         }
         if (nTransactionFee > 0.25 * COIN)
             wxMessageBox(_("Warning: -paytxfee is set very high.  This is the transaction fee you will pay if you send a transaction."), "Bitcoin", wxOK | wxICON_EXCLAMATION);
-    }
-
-    if (fHaveUPnP)
-    {
-#if USE_UPNP
-    if (GetBoolArg("-noupnp"))
-        fUseUPnP = false;
-#else
-    if (GetBoolArg("-upnp"))
-        fUseUPnP = true;
-#endif
     }
 
     //

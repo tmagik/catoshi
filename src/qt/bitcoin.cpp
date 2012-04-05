@@ -41,12 +41,19 @@ int MyMessageBox(const std::string& message, const std::string& caption, int sty
 
 int ThreadSafeMessageBox(const std::string& message, const std::string& caption, int style, wxWindow* parent, int x, int y)
 {
+    bool modal = style & wxMODAL;
+
+    if (modal)
+        while (!guiref)
+            sleep(1);
+
     // Message from network thread
     if(guiref)
     {
         QMetaObject::invokeMethod(guiref, "error", Qt::QueuedConnection,
                                    Q_ARG(QString, QString::fromStdString(caption)),
-                                   Q_ARG(QString, QString::fromStdString(message)));
+                                   Q_ARG(QString, QString::fromStdString(message)),
+                                   Q_ARG(bool, modal));
     }
     else
     {
@@ -91,6 +98,8 @@ void UIThreadCall(boost::function0<void> fn)
 
 void MainFrameRepaint()
 {
+    if(guiref)
+        QMetaObject::invokeMethod(guiref, "refreshStatusBar", Qt::QueuedConnection);
 }
 
 void InitMessage(const std::string &message)
@@ -145,9 +154,12 @@ int main(int argc, char *argv[])
     app.setApplicationName(QApplication::translate("main", "Bitcoin-Qt"));
 
     QSplashScreen splash(QPixmap(":/images/splash"), 0);
-    splash.show();
-    splash.setAutoFillBackground(true);
-    splashref = &splash;
+    if (!GetBoolArg("-min"))
+    {
+        splash.show();
+        splash.setAutoFillBackground(true);
+        splashref = &splash;
+    }
 
     app.processEvents();
 
@@ -161,7 +173,8 @@ int main(int argc, char *argv[])
                 // Put this in a block, so that BitcoinGUI is cleaned up properly before
                 // calling Shutdown().
                 BitcoinGUI window;
-                splash.finish(&window);
+                if (splashref)
+                    splash.finish(&window);
                 OptionsModel optionsModel(pwalletMain);
                 ClientModel clientModel(&optionsModel);
                 WalletModel walletModel(pwalletMain, &optionsModel);
