@@ -62,12 +62,6 @@ contains(USE_DBUS, 1) {
     QT += dbus
 }
 
-# use: qmake "USE_SSL=1"
-contains(USE_SSL, 1) {
-    message(Building with SSL support for RPC)
-    DEFINES += USE_SSL
-}
-
 # use: qmake "FIRST_CLASS_MESSAGING=1"
 contains(FIRST_CLASS_MESSAGING, 1) {
     message(Building with first-class messaging)
@@ -87,7 +81,7 @@ contains(BITCOIN_NEED_QT_PLUGINS, 1) {
 }
 
 # disable quite some warnings because bitcoin core "sins" a lot
-QMAKE_CXXFLAGS_WARN_ON = -fdiagnostics-show-option -Wall -Wno-strict-aliasing -Wno-invalid-offsetof -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-char-subscripts  -Wno-unused-value -Wno-sequence-point -Wno-parentheses -Wno-unknown-pragmas -Wno-switch
+QMAKE_CXXFLAGS_WARN_ON = -fdiagnostics-show-option -Wall -Wno-strict-aliasing -Wno-invalid-offsetof -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-char-subscripts -Wno-unused-value -Wno-sequence-point -Wno-parentheses -Wno-unknown-pragmas -Wno-switch
 
 # Input
 DEPENDPATH += src/qt src src json/include
