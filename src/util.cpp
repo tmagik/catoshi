@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
+
 #include "headers.h"
 #include "strlcpy.h"
 #include <boost/algorithm/string/join.hpp>
@@ -195,8 +196,8 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
         static CCriticalSection cs_OutputDebugStringF;
 
         // accumulate a line at a time
-        CRITICAL_BLOCK(cs_OutputDebugStringF)
         {
+            LOCK(cs_OutputDebugStringF);
             static char pszBuffer[50000];
             static char* pend;
             if (pend == NULL)
@@ -858,10 +859,11 @@ string GetDataDir()
 string GetConfigFile()
 {
     namespace fs = boost::filesystem;
-    fs::path pathConfig(GetArg("-conf", "bitcoin.conf"));
-    if (!pathConfig.is_complete())
-        pathConfig = fs::path(GetDataDir()) / pathConfig;
-    return pathConfig.string();
+
+    fs::path pathConfigFile(GetArg("-conf", "bitcoin.conf"));
+    if (!pathConfigFile.is_complete()) pathConfigFile = fs::path(GetDataDir()) / pathConfigFile;
+    pathConfigFile.make_preferred();
+    return pathConfigFile.string();
 }
 
 bool ReadConfigFile(map<string, string>& mapSettingsRet,
@@ -874,7 +876,9 @@ bool ReadConfigFile(map<string, string>& mapSettingsRet,
     {
         if (fs::is_directory(fs::system_complete(mapSettingsRet["-datadir"])))
         {
-            fs::path pathDataDir = fs::system_complete(mapSettingsRet["-datadir"]);
+            fs::path pathDataDir(fs::system_complete(mapSettingsRet["-datadir"]));
+            pathDataDir.make_preferred();
+
             strlcpy(pszSetDataDir, pathDataDir.string().c_str(), sizeof(pszSetDataDir));
         }
         else
@@ -908,10 +912,11 @@ bool ReadConfigFile(map<string, string>& mapSettingsRet,
 string GetPidFile()
 {
     namespace fs = boost::filesystem;
-    fs::path pathConfig(GetArg("-pid", "bitcoind.pid"));
-    if (!pathConfig.is_complete())
-        pathConfig = fs::path(GetDataDir()) / pathConfig;
-    return pathConfig.string();
+
+    fs::path pathPidFile(GetArg("-pid", "bitcoind.pid"));
+    if (!pathPidFile.is_complete()) pathPidFile = fs::path(GetDataDir()) / pathPidFile;
+    pathPidFile.make_preferred();
+    return pathPidFile.string();
 }
 
 void CreatePidFile(string pidFile, pid_t pid)
@@ -1115,25 +1120,25 @@ private:
     int sourceLine;
 };
 
-typedef std::vector< std::pair<CCriticalSection*, CLockLocation> > LockStack;
+typedef std::vector< std::pair<void*, CLockLocation> > LockStack;
 
 static boost::interprocess::interprocess_mutex dd_mutex;
-static std::map<std::pair<CCriticalSection*, CCriticalSection*>, LockStack> lockorders;
+static std::map<std::pair<void*, void*>, LockStack> lockorders;
 static boost::thread_specific_ptr<LockStack> lockstack;
 
 
-static void potential_deadlock_detected(const std::pair<CCriticalSection*, CCriticalSection*>& mismatch, const LockStack& s1, const LockStack& s2)
+static void potential_deadlock_detected(const std::pair<void*, void*>& mismatch, const LockStack& s1, const LockStack& s2)
 {
     printf("POTENTIAL DEADLOCK DETECTED\n");
     printf("Previous lock order was:\n");
-    BOOST_FOREACH(const PAIRTYPE(CCriticalSection*, CLockLocation)& i, s2)
+    BOOST_FOREACH(const PAIRTYPE(void*, CLockLocation)& i, s2)
     {
         if (i.first == mismatch.first) printf(" (1)");
         if (i.first == mismatch.second) printf(" (2)");
         printf(" %s\n", i.second.ToString().c_str());
     }
     printf("Current lock order is:\n");
-    BOOST_FOREACH(const PAIRTYPE(CCriticalSection*, CLockLocation)& i, s1)
+    BOOST_FOREACH(const PAIRTYPE(void*, CLockLocation)& i, s1)
     {
         if (i.first == mismatch.first) printf(" (1)");
         if (i.first == mismatch.second) printf(" (2)");
@@ -1141,7 +1146,7 @@ static void potential_deadlock_detected(const std::pair<CCriticalSection*, CCrit
     }
 }
 
-static void push_lock(CCriticalSection* c, const CLockLocation& locklocation)
+static void push_lock(void* c, const CLockLocation& locklocation, bool fTry)
 {
     bool fOrderOK = true;
     if (lockstack.get() == NULL)
@@ -1152,16 +1157,16 @@ static void push_lock(CCriticalSection* c, const CLockLocation& locklocation)
 
     (*lockstack).push_back(std::make_pair(c, locklocation));
 
-    BOOST_FOREACH(const PAIRTYPE(CCriticalSection*, CLockLocation)& i, (*lockstack))
+    if (!fTry) BOOST_FOREACH(const PAIRTYPE(void*, CLockLocation)& i, (*lockstack))
     {
         if (i.first == c) break;
 
-        std::pair<CCriticalSection*, CCriticalSection*> p1 = std::make_pair(i.first, c);
+        std::pair<void*, void*> p1 = std::make_pair(i.first, c);
         if (lockorders.count(p1))
             continue;
         lockorders[p1] = (*lockstack);
 
-        std::pair<CCriticalSection*, CCriticalSection*> p2 = std::make_pair(c, i.first);
+        std::pair<void*, void*> p2 = std::make_pair(c, i.first);
         if (lockorders.count(p2))
         {
             potential_deadlock_detected(p1, lockorders[p2], lockorders[p1]);
@@ -1183,62 +1188,14 @@ static void pop_lock()
     dd_mutex.unlock();
 }
 
-void CCriticalSection::Enter(const char* pszName, const char* pszFile, int nLine)
+void EnterCritical(const char* pszName, const char* pszFile, int nLine, void* cs, bool fTry)
 {
-    push_lock(this, CLockLocation(pszName, pszFile, nLine));
-#ifdef DEBUG_LOCKCONTENTION
-    bool result = mutex.try_lock();
-    if (!result)
-    {
-        printf("LOCKCONTENTION: %s\n", pszName);
-        printf("Locker: %s:%d\n", pszFile, nLine);
-        mutex.lock();
-        printf("Locked\n");
-    }
-#else
-    mutex.lock();
-#endif
+    push_lock(cs, CLockLocation(pszName, pszFile, nLine), fTry);
 }
-void CCriticalSection::Leave()
+
+void LeaveCritical()
 {
-    mutex.unlock();
     pop_lock();
-}
-bool CCriticalSection::TryEnter(const char* pszName, const char* pszFile, int nLine)
-{
-    push_lock(this, CLockLocation(pszName, pszFile, nLine));
-    bool result = mutex.try_lock();
-    if (!result) pop_lock();
-    return result;
-}
-
-#else
-
-void CCriticalSection::Enter(const char* pszName, const char* pszFile, int nLine)
-{
-#ifdef DEBUG_LOCKCONTENTION
-    bool result = mutex.try_lock();
-    if (!result)
-    {
-        printf("LOCKCONTENTION: %s\n", pszName);
-        printf("Locker: %s:%d\n", pszFile, nLine);
-        mutex.lock();
-    }
-#else
-    mutex.lock();
-#endif
-}
-
-void CCriticalSection::Leave()
-{
-    mutex.unlock();
-}
-
-bool CCriticalSection::TryEnter(const char*, const char*, int)
-{
-    bool result = mutex.try_lock();
-    return result;
 }
 
 #endif /* DEBUG_LOCKORDER */
-
