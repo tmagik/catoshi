@@ -592,12 +592,6 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
     return true;
 }
 
-bool CTransaction::AcceptToMemoryPool(bool fCheckInputs, bool* pfMissingInputs)
-{
-    CTxDB txdb("r");
-    return AcceptToMemoryPool(txdb, fCheckInputs, pfMissingInputs);
-}
-
 uint64 nPooledTx = 0;
 
 bool CTransaction::AddToMemoryPoolUnchecked()
@@ -1267,14 +1261,18 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     // This rule applies to all blocks whose timestamp is after March 15, 2012, 0:00 UTC.
     // On testnet it is enabled as of februari 20, 2012, 0:00 UTC.
     if (pindex->nTime > 1331769600 || (fTestNet && pindex->nTime > 1329696000))
+    {
         BOOST_FOREACH(CTransaction& tx, vtx)
         {
             CTxIndex txindexOld;
             if (txdb.ReadTxIndex(tx.GetHash(), txindexOld))
+            {
                 BOOST_FOREACH(CDiskTxPos &pos, txindexOld.vSpent)
                     if (pos.IsNull())
                         return false;
+            }
         }
+    }
 
     // BIP16 didn't become active until Apr 1 2012 (Feb 15 on testnet)
     int64 nBIP16SwitchTime = fTestNet ? 1329264000 : 1333238400;
@@ -2522,6 +2520,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
     {
         vector<uint256> vWorkQueue;
         CDataStream vMsg(vRecv);
+        CTxDB txdb("r");
         CTransaction tx;
         vRecv >> tx;
 
@@ -2529,7 +2528,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         pfrom->AddInventoryKnown(inv);
 
         bool fMissingInputs = false;
-        if (tx.AcceptToMemoryPool(true, &fMissingInputs))
+        if (tx.AcceptToMemoryPool(txdb, true, &fMissingInputs))
         {
             SyncWithWallets(tx, NULL, true);
             RelayMessage(inv, vMsg);
@@ -2549,7 +2548,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                     CDataStream(vMsg) >> tx;
                     CInv inv(MSG_TX, tx.GetHash());
 
-                    if (tx.AcceptToMemoryPool(true))
+                    if (tx.AcceptToMemoryPool(txdb, true))
                     {
                         printf("   accepted orphan tx %s\n", inv.hash.ToString().substr(0,10).c_str());
                         SyncWithWallets(tx, NULL, true);
