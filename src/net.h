@@ -117,7 +117,7 @@ public:
     int64 nLastRecv;
     int64 nLastSendEmpty;
     int64 nTimeConnected;
-    unsigned int nHeaderStart;
+    int nHeaderStart;
     unsigned int nMessageStart;
     CAddress addr;
     int nVersion;
@@ -157,14 +157,10 @@ public:
     CCriticalSection cs_inventory;
     std::multimap<int64, CInv> mapAskFor;
 
-    CNode(SOCKET hSocketIn, CAddress addrIn, bool fInboundIn=false)
+    CNode(SOCKET hSocketIn, CAddress addrIn, bool fInboundIn=false) : vSend(SER_NETWORK, MIN_PROTO_VERSION), vRecv(SER_NETWORK, MIN_PROTO_VERSION)
     {
         nServices = 0;
         hSocket = hSocketIn;
-        vSend.SetType(SER_NETWORK);
-        vRecv.SetType(SER_NETWORK);
-        vSend.SetVersion(209);
-        vRecv.SetVersion(209);
         nLastSend = 0;
         nLastRecv = 0;
         nLastSendEmpty = GetTime();
@@ -299,7 +295,7 @@ public:
 
     void AbortMessage()
     {
-        if (nHeaderStart == -1)
+        if (nHeaderStart < 0)
             return;
         vSend.resize(nHeaderStart);
         nHeaderStart = -1;
@@ -319,7 +315,7 @@ public:
             return;
         }
 
-        if (nHeaderStart == -1)
+        if (nHeaderStart < 0)
             return;
 
         // Set the size
@@ -344,7 +340,7 @@ public:
 
     void EndMessageAbortIfEmpty()
     {
-        if (nHeaderStart == -1)
+        if (nHeaderStart < 0)
             return;
         int nSize = vSend.size() - nMessageStart;
         if (nSize > 0)
@@ -612,7 +608,7 @@ inline void RelayInventory(const CInv& inv)
 template<typename T>
 void RelayMessage(const CInv& inv, const T& a)
 {
-    CDataStream ss(SER_NETWORK);
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss.reserve(10000);
     ss << a;
     RelayMessage(inv, ss);
@@ -631,7 +627,7 @@ inline void RelayMessage<>(const CInv& inv, const CDataStream& ss)
         }
 
         // Save original serialized message so newer versions are preserved
-        mapRelay[inv] = ss;
+        mapRelay.insert(std::make_pair(inv, ss));
         vRelayExpiration.push_back(std::make_pair(GetTime() + 15 * 60, inv));
     }
 
