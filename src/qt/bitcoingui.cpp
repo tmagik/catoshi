@@ -143,15 +143,12 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     progressBarLabel = new QLabel();
     progressBarLabel->setVisible(false);
     progressBar = new QProgressBar();
+    progressBar->setAlignment(Qt::AlignCenter);
     progressBar->setVisible(false);
 
     statusBar()->addWidget(progressBarLabel);
     statusBar()->addWidget(progressBar);
     statusBar()->addPermanentWidget(frameBlocks);
-
-    // define OS independent progress bar style (has to be placed after addWidget(), otherwise we crash)
-    // we did this, because with some OSes default style, text on the progress bar is unreadable
-    progressBar->setStyleSheet("QProgressBar { background-color: transparent; border: 1px solid grey; border-radius: 2px; padding: 1px; text-align: center; } QProgressBar::chunk { background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #FF8000, stop: 1 orange); margin: 0px; }");
 
     syncIconMovie = new QMovie(":/movies/update_spinner", "mng", this);
 
@@ -241,7 +238,7 @@ void BitcoinGUI::createActions()
     optionsAction->setToolTip(tr("Modify configuration options for bitcoin"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
     toggleHideAction = new QAction(QIcon(":/icons/bitcoin"), tr("Show/Hide &Bitcoin"), this);
-    toggleHideAction->setToolTip(tr("Show or Hide the Bitcoin window"));
+    toggleHideAction->setToolTip(tr("Show or hide the Bitcoin window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet"), this);
@@ -416,7 +413,7 @@ void BitcoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if(reason == QSystemTrayIcon::Trigger)
     {
-        // Click on system tray icon triggers "open bitcoin"
+        // Click on system tray icon triggers "show/hide bitcoin"
         toggleHideAction->trigger();
     }
 }
@@ -425,17 +422,17 @@ void BitcoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 void BitcoinGUI::toggleHidden()
 {
     // activateWindow() (sometimes) helps with keyboard focus on Windows
-    if(isHidden())
+    if (isHidden())
     {
         show();
         activateWindow();
     }
-    else if(isMinimized())
+    else if (isMinimized())
     {
         showNormal();
         activateWindow();
     }
-    else if(GUIUtil::isObscured(this))
+    else if (GUIUtil::isObscured(this))
     {
         raise();
         activateWindow();
@@ -552,10 +549,10 @@ void BitcoinGUI::setNumBlocks(int count)
     }
 
     // Set icon state: spinning if catching up, tick otherwise
-    if(secs < 90*60)
+    if(secs < 90*60 && count >= nTotalBlocks)
     {
         tooltip = tr("Up to date") + QString(".\n") + tooltip;
-        labelBlocksIcon->setPixmap(QIcon(":/icons/synced").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
+        labelBlocksIcon->setPixmap(QIcon(":/icons/synced").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
     }
     else
     {
