@@ -1,9 +1,10 @@
-// Copyright (c) 2011 The Bitcoin Developers
+// Copyright (c) 2009-2012 The Bitcoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef __CRYPTER_H__
 #define __CRYPTER_H__
 
+#include "util.h" /* for SecureString */
 #include "key.h"
 
 const unsigned int WALLET_CRYPTO_KEY_SIZE = 32;
@@ -24,6 +25,7 @@ with the double-sha256 of the public key as the IV, and the
 master key's key as the encryption key (see keystore.[ch]).
 */
 
+/** Master key for wallet encryption */
 class CMasterKey
 {
 public:
@@ -57,6 +59,7 @@ public:
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
 
+/** Encryption/decryption context with key information */
 class CCrypter
 {
 private:
