@@ -30,7 +30,6 @@ public:
     QWidget *setupTabChain(QWidget *prev);
 
     void pasteEntry(const SendCoinsRecipient &rv);
-    void handleURI(const QUrl *uri);
     void handleURI(const QString &uri);
 
 public slots:
@@ -44,6 +43,7 @@ public slots:
 private:
     Ui::SendCoinsDialog *ui;
     WalletModel *model;
+    bool fNewRecipientAllowed;
 
 private slots:
     void on_sendButton_clicked();

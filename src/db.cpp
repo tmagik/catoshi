@@ -6,6 +6,7 @@
 #include "headers.h"
 #include "db.h"
 #include "net.h"
+#include <boost/version.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
@@ -27,6 +28,7 @@ static bool fDbEnvInit = false;
 DbEnv dbenv(0);
 static map<string, int> mapFileUseCount;
 static map<string, Db*> mapDb;
+static int64 nTxn = 0;
 
 static void EnvShutdown()
 {
@@ -83,12 +85,16 @@ CDB::CDB(const char* pszFile, const char* pszMode) : pdb(NULL)
             string strErrorFile = strDataDir + "/db.log";
             printf("dbenv.open strLogDir=%s strErrorFile=%s\n", strLogDir.c_str(), strErrorFile.c_str());
 
+            int nDbCache = GetArg("-dbcache", 25);
             dbenv.set_lg_dir(strLogDir.c_str());
-            dbenv.set_lg_max(10000000);
+            dbenv.set_cachesize(nDbCache / 1024, (nDbCache % 1024)*1048576, 1);
+            dbenv.set_lg_bsize(1048576);
+            dbenv.set_lg_max(10485760);
             dbenv.set_lk_max_locks(10000);
             dbenv.set_lk_max_objects(10000);
             dbenv.set_errfile(fopen(strErrorFile.c_str(), "a")); /// debug
             dbenv.set_flags(DB_AUTO_COMMIT, 1);
+            dbenv.log_set_config(DB_LOG_AUTO_REMOVE, 1);
             ret = dbenv.open(strDataDir.c_str(),
                              DB_CREATE     |
                              DB_INIT_LOCK  |
@@ -131,7 +137,7 @@ CDB::CDB(const char* pszFile, const char* pszMode) : pdb(NULL)
             {
                 bool fTmp = fReadOnly;
                 fReadOnly = false;
-                WriteVersion(VERSION);
+                WriteVersion(CLIENT_VERSION);
                 fReadOnly = fTmp;
             }
 
@@ -155,8 +161,15 @@ void CDB::Close()
         nMinutes = 1;
     if (strFile == "addr.dat")
         nMinutes = 2;
-    if (strFile == "blkindex.dat" && IsInitialBlockDownload() && nBestHeight % 500 != 0)
-        nMinutes = 1;
+    if (strFile == "blkindex.dat" && IsInitialBlockDownload())
+        nMinutes = 5;
+
+    if (nMinutes == 0 || nTxn > 200000)
+    {
+        nTxn = 0;
+        nMinutes = 0;
+    }
+
     dbenv.txn_checkpoint(0, nMinutes, 0);
 
     CRITICAL_BLOCK(cs_db)
@@ -236,7 +249,7 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                             {
                                 // Update version:
                                 ssValue.clear();
-                                ssValue << VERSION;
+                                ssValue << CLIENT_VERSION;
                             }
                             Dbt datKey(&ssKey[0], ssKey.size());
                             Dbt datValue(&ssValue[0], ssValue.size());
@@ -331,6 +344,7 @@ bool CTxDB::ReadTxIndex(uint256 hash, CTxIndex& txindex)
 bool CTxDB::UpdateTxIndex(uint256 hash, const CTxIndex& txindex)
 {
     assert(!fClient);
+    nTxn++;
     return Write(make_pair(string("tx"), hash), txindex);
 }
 
@@ -341,6 +355,7 @@ bool CTxDB::AddTxIndex(const CTransaction& tx, const CDiskTxPos& pos, int nHeigh
     // Add to tx index
     uint256 hash = tx.GetHash();
     CTxIndex txindex(pos, tx.vout.size());
+    nTxn++;
     return Write(make_pair(string("tx"), hash), txindex);
 }
 
@@ -579,18 +594,117 @@ bool CTxDB::LoadBlockIndex()
     ReadBestInvalidWork(bnBestInvalidWork);
 
     // Verify blocks in the best chain
+    int nCheckLevel = GetArg("-checklevel", 1);
+    int nCheckDepth = GetArg( "-checkblocks", 2500);
+    if (nCheckDepth == 0)
+        nCheckDepth = 1000000000; // suffices until the year 19000
+    if (nCheckDepth > nBestHeight)
+        nCheckDepth = nBestHeight;
+    printf("Verifying last %i blocks at level %i\n", nCheckDepth, nCheckLevel);
     CBlockIndex* pindexFork = NULL;
+    map<pair<unsigned int, unsigned int>, CBlockIndex*> mapBlockPos;
     for (CBlockIndex* pindex = pindexBest; pindex && pindex->pprev; pindex = pindex->pprev)
     {
-        if (pindex->nHeight < nBestHeight-2500 && !mapArgs.count("-checkblocks"))
+        if (pindex->nHeight < nBestHeight-nCheckDepth)
             break;
         CBlock block;
         if (!block.ReadFromDisk(pindex))
             return error("LoadBlockIndex() : block.ReadFromDisk failed");
-        if (!block.CheckBlock())
+        // check level 1: verify block validity
+        if (nCheckLevel>0 && !block.CheckBlock())
         {
             printf("LoadBlockIndex() : *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString().c_str());
             pindexFork = pindex->pprev;
+        }
+        // check level 2: verify transaction index validity
+        if (nCheckLevel>1)
+        {
+            pair<unsigned int, unsigned int> pos = make_pair(pindex->nFile, pindex->nBlockPos);
+            mapBlockPos[pos] = pindex;
+            BOOST_FOREACH(const CTransaction &tx, block.vtx)
+            {
+                uint256 hashTx = tx.GetHash();
+                CTxIndex txindex;
+                if (ReadTxIndex(hashTx, txindex))
+                {
+                    // check level 3: checker transaction hashes
+                    if (nCheckLevel>2 || pindex->nFile != txindex.pos.nFile || pindex->nBlockPos != txindex.pos.nBlockPos)
+                    {
+                        // either an error or a duplicate transaction
+                        CTransaction txFound;
+                        if (!txFound.ReadFromDisk(txindex.pos))
+                        {
+                            printf("LoadBlockIndex() : *** cannot read mislocated transaction %s\n", hashTx.ToString().c_str());
+                            pindexFork = pindex->pprev;
+                        }
+                        else
+                            if (txFound.GetHash() != hashTx) // not a duplicate tx
+                            {
+                                printf("LoadBlockIndex(): *** invalid tx position for %s\n", hashTx.ToString().c_str());
+                                pindexFork = pindex->pprev;
+                            }
+                    }
+                    // check level 4: check whether spent txouts were spent within the main chain
+                    int nOutput = 0;
+                    if (nCheckLevel>3)
+                    {
+                        BOOST_FOREACH(const CDiskTxPos &txpos, txindex.vSpent)
+                        {
+                            if (!txpos.IsNull())
+                            {
+                                pair<unsigned int, unsigned int> posFind = make_pair(txpos.nFile, txpos.nBlockPos);
+                                if (!mapBlockPos.count(posFind))
+                                {
+                                    printf("LoadBlockIndex(): *** found bad spend at %d, hashBlock=%s, hashTx=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString().c_str(), hashTx.ToString().c_str());
+                                    pindexFork = pindex->pprev;
+                                }
+                                // check level 6: check whether spent txouts were spent by a valid transaction that consume them
+                                if (nCheckLevel>5)
+                                {
+                                    CTransaction txSpend;
+                                    if (!txSpend.ReadFromDisk(txpos))
+                                    {
+                                        printf("LoadBlockIndex(): *** cannot read spending transaction of %s:%i from disk\n", hashTx.ToString().c_str(), nOutput);
+                                        pindexFork = pindex->pprev;
+                                    }
+                                    else if (!txSpend.CheckTransaction())
+                                    {
+                                        printf("LoadBlockIndex(): *** spending transaction of %s:%i is invalid\n", hashTx.ToString().c_str(), nOutput);
+                                        pindexFork = pindex->pprev;
+                                    }
+                                    else
+                                    {
+                                        bool fFound = false;
+                                        BOOST_FOREACH(const CTxIn &txin, txSpend.vin)
+                                            if (txin.prevout.hash == hashTx && txin.prevout.n == nOutput)
+                                                fFound = true;
+                                        if (!fFound)
+                                        {
+                                            printf("LoadBlockIndex(): *** spending transaction of %s:%i does not spend it\n", hashTx.ToString().c_str(), nOutput);
+                                            pindexFork = pindex->pprev;
+                                        }
+                                    }
+                                }
+                            }
+                            nOutput++;
+                        }
+                    }
+                }
+                // check level 5: check whether all prevouts are marked spent
+                if (nCheckLevel>4)
+                {
+                     BOOST_FOREACH(const CTxIn &txin, tx.vin)
+                     {
+                          CTxIndex txindex;
+                          if (ReadTxIndex(txin.prevout.hash, txindex))
+                              if (txindex.vSpent.size()-1 < txin.prevout.n || txindex.vSpent[txin.prevout.n].IsNull())
+                              {
+                                  printf("LoadBlockIndex(): *** found unspent prevout %s:%i in %s\n", txin.prevout.hash.ToString().c_str(), txin.prevout.n, hashTx.ToString().c_str());
+                                  pindexFork = pindex->pprev;
+                              }
+                     }
+                }
+            }
         }
     }
     if (pindexFork)
@@ -615,50 +729,58 @@ bool CTxDB::LoadBlockIndex()
 // CAddrDB
 //
 
-bool CAddrDB::WriteAddress(const CAddress& addr)
+bool CAddrDB::WriteAddrman(const CAddrMan& addrman)
 {
-    return Write(make_pair(string("addr"), addr.GetKey()), addr);
-}
-
-bool CAddrDB::EraseAddress(const CAddress& addr)
-{
-    return Erase(make_pair(string("addr"), addr.GetKey()));
+    return Write(string("addrman"), addrman);
 }
 
 bool CAddrDB::LoadAddresses()
 {
-    CRITICAL_BLOCK(cs_mapAddresses)
+    if (Read(string("addrman"), addrman))
     {
-        // Get cursor
-        Dbc* pcursor = GetCursor();
-        if (!pcursor)
+        printf("Loaded %i addresses\n", addrman.size());
+        return true;
+    }
+    
+    // Read pre-0.6 addr records
+
+    vector<CAddress> vAddr;
+    vector<vector<unsigned char> > vDelete;
+
+    // Get cursor
+    Dbc* pcursor = GetCursor();
+    if (!pcursor)
+        return false;
+
+    loop
+    {
+        // Read next record
+        CDataStream ssKey;
+        CDataStream ssValue;
+        int ret = ReadAtCursor(pcursor, ssKey, ssValue);
+        if (ret == DB_NOTFOUND)
+            break;
+        else if (ret != 0)
             return false;
 
-        loop
+        // Unserialize
+        string strType;
+        ssKey >> strType;
+        if (strType == "addr")
         {
-            // Read next record
-            CDataStream ssKey;
-            CDataStream ssValue;
-            int ret = ReadAtCursor(pcursor, ssKey, ssValue);
-            if (ret == DB_NOTFOUND)
-                break;
-            else if (ret != 0)
-                return false;
-
-            // Unserialize
-            string strType;
-            ssKey >> strType;
-            if (strType == "addr")
-            {
-                CAddress addr;
-                ssValue >> addr;
-                mapAddresses.insert(make_pair(addr.GetKey(), addr));
-            }
+            CAddress addr;
+            ssValue >> addr;
+            vAddr.push_back(addr);
         }
-        pcursor->close();
-
-        printf("Loaded %d addresses\n", mapAddresses.size());
     }
+    pcursor->close();
+
+    addrman.Add(vAddr, CNetAddr("0.0.0.0"));
+    printf("Loaded %i addresses\n", addrman.size());
+
+    // Note: old records left; we ran into hangs-on-startup
+    // bugs for some users who (we think) were running after
+    // an unclean shutdown.
 
     return true;
 }
@@ -767,21 +889,15 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
     vector<uint256> vWalletUpgrade;
     bool fIsEncrypted = false;
 
-    // Modify defaults
-#ifndef WIN32
-    // Tray icon sometimes disappears on 9.10 karmic koala 64-bit, leaving no way to access the program
-    fMinimizeToTray = false;
-    fMinimizeOnClose = false;
-#endif
-
     //// todo: shouldn't we catch exceptions and try to recover and continue?
     CRITICAL_BLOCK(pwallet->cs_wallet)
     {
         int nMinVersion = 0;
         if (Read((string)"minversion", nMinVersion))
         {
-            if (nMinVersion > VERSION)
+            if (nMinVersion > CLIENT_VERSION)
                 return DB_TOO_NEW;
+            pwallet->LoadMinVersion(nMinVersion);
         }
 
         // Get cursor
@@ -823,7 +939,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                 ssKey >> hash;
                 CWalletTx& wtx = pwallet->mapWallet[hash];
                 ssValue >> wtx;
-                wtx.pwallet = pwallet;
+                wtx.BindWallet(pwallet);
 
                 if (wtx.GetHash() != hash)
                     printf("Error in wallet.dat, hash mismatch\n");
@@ -873,6 +989,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                 {
                     CPrivKey pkey;
                     ssValue >> pkey;
+                    key.SetPubKey(vchPubKey);
                     key.SetPrivKey(pkey);
                     if (key.GetPubKey() != vchPubKey)
                     {
@@ -889,6 +1006,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                 {
                     CWalletKey wkey;
                     ssValue >> wkey;
+                    key.SetPubKey(vchPubKey);
                     key.SetPrivKey(wkey.vchPrivKey);
                     if (key.GetPubKey() != vchPubKey)
                     {
@@ -951,23 +1069,17 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                 if (nFileVersion == 10300)
                     nFileVersion = 300;
             }
-            else if (strType == "setting")
+            else if (strType == "cscript")
             {
-                string strKey;
-                ssKey >> strKey;
-
-                // Options
-#ifndef QT_GUI
-                if (strKey == "fGenerateBitcoins")  ssValue >> fGenerateBitcoins;
-#endif
-                if (strKey == "nTransactionFee")    ssValue >> nTransactionFee;
-                if (strKey == "fLimitProcessors")   ssValue >> fLimitProcessors;
-                if (strKey == "nLimitProcessors")   ssValue >> nLimitProcessors;
-                if (strKey == "fMinimizeToTray")    ssValue >> fMinimizeToTray;
-                if (strKey == "fMinimizeOnClose")   ssValue >> fMinimizeOnClose;
-                if (strKey == "fUseProxy")          ssValue >> fUseProxy;
-                if (strKey == "addrProxy")          ssValue >> addrProxy;
-                if (fHaveUPnP && strKey == "fUseUPnP")           ssValue >> fUseUPnP;
+                uint160 hash;
+                ssKey >> hash;
+                CScript script;
+                ssValue >> script;
+                if (!pwallet->LoadCScript(script))
+                {
+                    printf("Error reading wallet database: LoadCScript failed\n");
+                    return DB_CORRUPT;
+                }
             }
         }
         pcursor->close();
@@ -977,27 +1089,19 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
         WriteTx(hash, pwallet->mapWallet[hash]);
 
     printf("nFileVersion = %d\n", nFileVersion);
-    printf("fGenerateBitcoins = %d\n", fGenerateBitcoins);
-    printf("nTransactionFee = %"PRI64d"\n", nTransactionFee);
-    printf("fMinimizeToTray = %d\n", fMinimizeToTray);
-    printf("fMinimizeOnClose = %d\n", fMinimizeOnClose);
-    printf("fUseProxy = %d\n", fUseProxy);
-    printf("addrProxy = %s\n", addrProxy.ToString().c_str());
-    if (fHaveUPnP)
-        printf("fUseUPnP = %d\n", fUseUPnP);
 
 
     // Rewrite encrypted wallets of versions 0.4.0 and 0.5.0rc:
     if (fIsEncrypted && (nFileVersion == 40000 || nFileVersion == 50000))
         return DB_NEED_REWRITE;
 
-    if (nFileVersion < VERSION) // Update
+    if (nFileVersion < CLIENT_VERSION) // Update
     {
         // Get rid of old debug.log file in current directory
         if (nFileVersion <= 105 && !pszSetDataDir[0])
             unlink("debug.log");
 
-        WriteVersion(VERSION);
+        WriteVersion(CLIENT_VERSION);
     }
 
     return DB_LOAD_OK;
@@ -1010,7 +1114,7 @@ void ThreadFlushWalletDB(void* parg)
     if (fOneThread)
         return;
     fOneThread = true;
-    if (mapArgs.count("-noflushwallet"))
+    if (!GetBoolArg("-flushwallet", true))
         return;
 
     unsigned int nLastSeen = nWalletDBUpdated;
@@ -1084,14 +1188,19 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
                 filesystem::path pathDest(strDest);
                 if (filesystem::is_directory(pathDest))
                     pathDest = pathDest / wallet.strWalletFile;
-#if BOOST_VERSION >= 104000
-                filesystem::copy_file(pathSrc, pathDest, filesystem::copy_option::overwrite_if_exists);
-#else
-                filesystem::copy_file(pathSrc, pathDest);
-#endif
-                printf("copied wallet.dat to %s\n", pathDest.string().c_str());
 
-                return true;
+                try {
+#if BOOST_VERSION >= 104000
+                    filesystem::copy_file(pathSrc, pathDest, filesystem::copy_option::overwrite_if_exists);
+#else
+                    filesystem::copy_file(pathSrc, pathDest);
+#endif
+                    printf("copied wallet.dat to %s\n", pathDest.string().c_str());
+                    return true;
+                } catch(const filesystem::filesystem_error &e) {
+                    printf("error copying wallet.dat to %s - %s\n", pathDest.string().c_str(), e.what());
+                    return false;
+                }
             }
         }
         Sleep(100);
