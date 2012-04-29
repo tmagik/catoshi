@@ -283,7 +283,7 @@ int my_snprintf(char* buffer, size_t limit, const char* format, ...)
     va_start(arg_ptr, format);
     int ret = _vsnprintf(buffer, limit, format, arg_ptr);
     va_end(arg_ptr);
-    if (ret < 0 || ret >= limit)
+    if (ret < 0 || ret >= (int)limit)
     {
         ret = limit - 1;
         buffer[limit-1] = 0;
@@ -870,7 +870,11 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
     LOCK(csPathCached);
 
     if (mapArgs.count("-datadir")) {
-        path = mapArgs["-datadir"];
+        path = fs::system_complete(mapArgs["-datadir"]);
+        if (!fs::is_directory(path)) {
+            path = "";
+            return path;
+        }
     } else {
         path = GetDefaultDataDir();
     }
@@ -892,7 +896,7 @@ boost::filesystem::path GetConfigFile()
     return pathConfigFile;
 }
 
-bool ReadConfigFile(map<string, string>& mapSettingsRet,
+void ReadConfigFile(map<string, string>& mapSettingsRet,
                     map<string, vector<string> >& mapMultiSettingsRet)
 {
     namespace fs = boost::filesystem;
@@ -900,7 +904,7 @@ bool ReadConfigFile(map<string, string>& mapSettingsRet,
 
     fs::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-        return true; // No bitcoin.conf file is OK
+        return; // No bitcoin.conf file is OK
 
     set<string> setOptions;
     setOptions.insert("*");
@@ -917,7 +921,6 @@ bool ReadConfigFile(map<string, string>& mapSettingsRet,
         }
         mapMultiSettingsRet[strKey].push_back(it->value[0]);
     }
-    return true;
 }
 
 boost::filesystem::path GetPidFile()

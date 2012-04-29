@@ -150,11 +150,12 @@ bool AppInit2(int argc, char* argv[])
     // If Qt is used, parameters/bitcoin.conf are parsed in qt/bitcoin.cpp's main()
 #if !defined(QT_GUI)
     ParseParameters(argc, argv);
-    if (!ReadConfigFile(mapArgs, mapMultiArgs))
+    if (!boost::filesystem::is_directory(GetDataDir(false)))
     {
         fprintf(stderr, "Error: Specified directory does not exist\n");
         Shutdown(NULL);
     }
+    ReadConfigFile(mapArgs, mapMultiArgs);
 #endif
 
     if (mapArgs.count("-?") || mapArgs.count("--help"))
@@ -199,6 +200,7 @@ bool AppInit2(int argc, char* argv[])
 #else
             "  -upnp            \t  "   + _("Use Universal Plug and Play to map the listening port (default: 0)") + "\n" +
 #endif
+            "  -detachdb        \t  "   + _("Detach block and address databases. Increases shutdown time (default: 0)") + "\n" +
 #endif
             "  -paytxfee=<amt>  \t  "   + _("Fee per KB to add to transactions you send") + "\n" +
 #ifdef QT_GUI
@@ -254,6 +256,7 @@ bool AppInit2(int argc, char* argv[])
     }
 
     fDebug = GetBoolArg("-debug");
+    fDetachDB = GetBoolArg("-detachdb", false);
 
 #if !defined(WIN32) && !defined(QT_GUI)
     fDaemon = GetBoolArg("-daemon");
