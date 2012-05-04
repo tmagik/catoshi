@@ -5,7 +5,6 @@
 
 #include "headers.h"
 #include "db.h"
-#include "cryptopp/sha.h"
 #include "crypter.h"
 
 using namespace std;
@@ -43,7 +42,7 @@ bool CWallet::AddCryptedKey(const vector<unsigned char> &vchPubKey, const vector
     return false;
 }
 
-bool CWallet::Unlock(const string& strWalletPassphrase)
+bool CWallet::Unlock(const SecureString& strWalletPassphrase)
 {
     if (!IsLocked())
         return false;
@@ -64,7 +63,7 @@ bool CWallet::Unlock(const string& strWalletPassphrase)
     return false;
 }
 
-bool CWallet::ChangeWalletPassphrase(const string& strOldWalletPassphrase, const string& strNewWalletPassphrase)
+bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase, const SecureString& strNewWalletPassphrase)
 {
     bool fWasLocked = IsLocked();
 
@@ -123,7 +122,7 @@ public:
     )
 };
 
-bool CWallet::EncryptWallet(const string& strWalletPassphrase)
+bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
 {
     if (IsCrypted())
         return false;
@@ -268,7 +267,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
         if (fInsertedNew || fUpdated)
             if (!wtx.WriteToDisk())
                 return false;
-
+#ifndef QT_GUI
         // If default receiving address gets used, replace it with a new one
         CScript scriptDefaultKey;
         scriptDefaultKey.SetBitcoinAddress(vchDefaultKey);
@@ -284,7 +283,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
                 }
             }
         }
-
+#endif
         // Notify UI
         vWalletUpdated.push_back(hash);
 
@@ -297,6 +296,9 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
     return true;
 }
 
+// Add a transaction to the wallet, or update it.
+// pblock is optional, but should be provided if the transaction is known to be in a block.
+// If fUpdate is true, existing transactions will be updated.
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
     uint256 hash = tx.GetHash();
@@ -561,6 +563,9 @@ bool CWalletTx::WriteToDisk()
     return CWalletDB(pwallet->strWalletFile).WriteTx(GetHash(), *this);
 }
 
+// Scan the block chain (starting in pindexStart) for transactions
+// from or to us. If fUpdate is true, found transactions that already
+// exist in the wallet will be updated.
 int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 {
     int ret = 0;
@@ -738,6 +743,21 @@ int64 CWallet::GetBalance() const
     return nTotal;
 }
 
+int64 CWallet::GetUnconfirmedBalance() const
+{
+    int64 nTotal = 0;
+    CRITICAL_BLOCK(cs_wallet)
+    {
+        for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+        {
+            const CWalletTx* pcoin = &(*it).second;
+            if (pcoin->IsFinal() && pcoin->IsConfirmed())
+                continue;
+            nTotal += pcoin->GetAvailableCredit();
+        }
+    }
+    return nTotal;
+}
 
 bool CWallet::SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfTheirs, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const
 {

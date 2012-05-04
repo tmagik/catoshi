@@ -10,7 +10,7 @@
 #ifndef __INCLUDED_PROTOCOL_H__
 #define __INCLUDED_PROTOCOL_H__
 
-#ifndef __WXMSW__
+#ifndef WIN32
 #include <netinet/in.h>
 #endif
 
