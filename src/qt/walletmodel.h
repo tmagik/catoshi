@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include "util.h"
+#include "allocators.h" /* for SecureString */
 
 class OptionsModel;
 class AddressTableModel;
@@ -35,8 +35,7 @@ public:
         DuplicateAddress,
         TransactionCreationFailed, // Error returned when wallet is still locked
         TransactionCommitFailed,
-        Aborted,
-        MiscError
+        Aborted
     };
 
     enum EncryptionStatus
@@ -135,12 +134,11 @@ signals:
     void requireUnlock();
 
     // Asynchronous error notification
-    void error(const QString &title, const QString &message);
+    void error(const QString &title, const QString &message, bool modal);
 
 public slots:
-
-private slots:
     void update();
+    void updateAddressList();
 };
 
 
