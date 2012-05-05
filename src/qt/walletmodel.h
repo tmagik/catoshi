@@ -3,15 +3,16 @@
 
 #include <QObject>
 
-#include "util.h"
+#include "allocators.h" /* for SecureString */
 
 class OptionsModel;
 class AddressTableModel;
 class TransactionTableModel;
 class CWallet;
 
-struct SendCoinsRecipient
+class SendCoinsRecipient
 {
+public:
     QString address;
     QString label;
     qint64 amount;
@@ -133,12 +134,11 @@ signals:
     void requireUnlock();
 
     // Asynchronous error notification
-    void error(const QString &title, const QString &message);
+    void error(const QString &title, const QString &message, bool modal);
 
 public slots:
-
-private slots:
     void update();
+    void updateAddressList();
 };
 
 
