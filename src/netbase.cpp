@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
@@ -22,7 +22,7 @@ int nConnectTimeout = 5000;
 
 static const unsigned char pchIPv4[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };
 
-bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, int nMaxSolutions, bool fAllowLookup)
+bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions, bool fAllowLookup)
 {
     vIP.clear();
     struct addrinfo aiHint;
@@ -77,7 +77,7 @@ bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, int nM
     return (vIP.size() > 0);
 }
 
-bool LookupHost(const char *pszName, std::vector<CNetAddr>& vIP, int nMaxSolutions, bool fAllowLookup)
+bool LookupHost(const char *pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions, bool fAllowLookup)
 {
     if (pszName[0] == 0)
         return false;
@@ -93,12 +93,12 @@ bool LookupHost(const char *pszName, std::vector<CNetAddr>& vIP, int nMaxSolutio
     return LookupIntern(pszHost, vIP, nMaxSolutions, fAllowLookup);
 }
 
-bool LookupHostNumeric(const char *pszName, std::vector<CNetAddr>& vIP, int nMaxSolutions)
+bool LookupHostNumeric(const char *pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions)
 {
     return LookupHost(pszName, vIP, nMaxSolutions, false);
 }
 
-bool Lookup(const char *pszName, std::vector<CService>& vAddr, int portDefault, bool fAllowLookup, int nMaxSolutions)
+bool Lookup(const char *pszName, std::vector<CService>& vAddr, int portDefault, bool fAllowLookup, unsigned int nMaxSolutions)
 {
     if (pszName[0] == 0)
         return false;
@@ -136,7 +136,7 @@ bool Lookup(const char *pszName, std::vector<CService>& vAddr, int portDefault, 
     if (!fRet)
         return false;
     vAddr.resize(vIP.size());
-    for (int i = 0; i < vIP.size(); i++)
+    for (unsigned int i = 0; i < vIP.size(); i++)
         vAddr[i] = CService(vIP[i], port);
     return true;
 }
@@ -402,7 +402,7 @@ bool CNetAddr::IsRFC6145() const
 
 bool CNetAddr::IsRFC4843() const
 {
-    return (GetByte(15) == 0x20 && GetByte(14) == 0x01 && GetByte(13) == 0x00 && GetByte(12) & 0xF0 == 0x10);
+    return (GetByte(15) == 0x20 && GetByte(14) == 0x01 && GetByte(13) == 0x00 && (GetByte(12) & 0xF0) == 0x10);
 }
 
 bool CNetAddr::IsLocal() const
@@ -519,15 +519,22 @@ bool CNetAddr::GetIn6Addr(struct in6_addr* pipv6Addr) const
 std::vector<unsigned char> CNetAddr::GetGroup() const
 {
     std::vector<unsigned char> vchRet;
-    int nClass = 0; // 0=IPv6, 1=IPv4, 255=unroutable
+    int nClass = 0; // 0=IPv6, 1=IPv4, 254=local, 255=unroutable
     int nStartByte = 0;
     int nBits = 16;
 
-    // for unroutable addresses, each address is considered different
+    // all local addresses belong to the same group
+    if (IsLocal())
+    {
+        nClass = 254;
+        nBits = 0;
+    }
+
+    // all unroutable addresses belong to the same group
     if (!IsRoutable())
     {
         nClass = 255;
-        nBits = 128;
+        nBits = 0;
     }
     // for IPv4 addresses, '1' + the 16 higher-order bits of the IP
     // includes mapped IPv4, SIIT translated IPv4, and the well-known prefix
