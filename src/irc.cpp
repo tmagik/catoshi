@@ -1,12 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
-#include "headers.h"
 #include "irc.h"
 #include "net.h"
 #include "strlcpy.h"
+#include "base58.h"
 
 using namespace std;
 using namespace boost;
@@ -76,57 +76,6 @@ static bool Send(SOCKET hSocket, const char* pszSend)
     return true;
 }
 
-bool RecvLine(SOCKET hSocket, string& strLine)
-{
-    strLine = "";
-    loop
-    {
-        char c;
-        int nBytes = recv(hSocket, &c, 1, 0);
-        if (nBytes > 0)
-        {
-            if (c == '\n')
-                continue;
-            if (c == '\r')
-                return true;
-            strLine += c;
-            if (strLine.size() >= 9000)
-                return true;
-        }
-        else if (nBytes <= 0)
-        {
-            if (fShutdown)
-                return false;
-            if (nBytes < 0)
-            {
-                int nErr = WSAGetLastError();
-                if (nErr == WSAEMSGSIZE)
-                    continue;
-                if (nErr == WSAEWOULDBLOCK || nErr == WSAEINTR || nErr == WSAEINPROGRESS)
-                {
-                    Sleep(10);
-                    continue;
-                }
-            }
-            if (!strLine.empty())
-                return true;
-            if (nBytes == 0)
-            {
-                // socket closed
-                printf("IRC socket closed\n");
-                return false;
-            }
-            else
-            {
-                // socket error
-                int nErr = WSAGetLastError();
-                printf("IRC recv failed: %d\n", nErr);
-                return false;
-            }
-        }
-    }
-}
-
 bool RecvLineIRC(SOCKET hSocket, string& strLine)
 {
     loop
@@ -159,13 +108,13 @@ int RecvUntil(SOCKET hSocket, const char* psz1, const char* psz2=NULL, const cha
         if (!RecvLineIRC(hSocket, strLine))
             return 0;
         printf("IRC %s\n", strLine.c_str());
-        if (psz1 && strLine.find(psz1) != -1)
+        if (psz1 && strLine.find(psz1) != string::npos)
             return 1;
-        if (psz2 && strLine.find(psz2) != -1)
+        if (psz2 && strLine.find(psz2) != string::npos)
             return 2;
-        if (psz3 && strLine.find(psz3) != -1)
+        if (psz3 && strLine.find(psz3) != string::npos)
             return 3;
-        if (psz4 && strLine.find(psz4) != -1)
+        if (psz4 && strLine.find(psz4) != string::npos)
             return 4;
     }
 }
@@ -261,8 +210,9 @@ void ThreadIRCSeed2(void* parg)
     if (mapArgs.count("-connect") || fNoListen)
         return;
 
-    if (GetBoolArg("-noirc"))
+    if (!GetBoolArg("-irc", false))
         return;
+
     printf("ThreadIRCSeed started\n");
     int nErrorWait = 10;
     int nRetryWait = 10;
@@ -391,7 +341,7 @@ void ThreadIRCSeed2(void* parg)
                 if (DecodeAddress(pszName, addr))
                 {
                     addr.nTime = GetAdjustedTime();
-                    if (AddAddress(addr, 51 * 60))
+                    if (addrman.Add(addr, addrConnect, 51 * 60))
                         printf("IRC got new address: %s\n", addr.ToString().c_str());
                     nGotIRCAddresses++;
                 }

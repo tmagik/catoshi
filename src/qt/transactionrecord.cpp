@@ -1,6 +1,6 @@
 #include "transactionrecord.h"
 
-#include "headers.h"
+#include "wallet.h"
 
 /* Return positive answer if transaction should be shown in list.
  */
@@ -33,7 +33,7 @@ bool TransactionRecord::showTransaction(const CWalletTx &wtx)
 QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *wallet, const CWalletTx &wtx)
 {
     QList<TransactionRecord> parts;
-    int64 nTime = wtx.nTimeDisplayed = wtx.GetTxTime();
+    int64 nTime = wtx.GetTxTime();
     int64 nCredit = wtx.GetCredit(true);
     int64 nDebit = wtx.GetDebit();
     int64 nNet = nCredit - nDebit;
@@ -47,49 +47,35 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             //
             // Credit
             //
-            TransactionRecord sub(hash, nTime);
-
-            sub.credit = nNet;
-
-            if (wtx.IsCoinBase())
+            BOOST_FOREACH(const CTxOut& txout, wtx.vout)
             {
-                // Generated
-                sub.type = TransactionRecord::Generated;
-
-                if (nCredit == 0)
+                if(wallet->IsMine(txout))
                 {
-                    int64 nUnmatured = 0;
-                    BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-                        nUnmatured += wallet->GetCredit(txout);
-                    sub.credit = nUnmatured;
-                }
-            }
-            else
-            {
-                bool foundAddress = false;
-                // Received by Bitcoin Address
-                BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-                {
-                    if(wallet->IsMine(txout))
+                    TransactionRecord sub(hash, nTime);
+                    CBitcoinAddress address;
+                    sub.idx = parts.size(); // sequence number
+                    sub.credit = txout.nValue;
+                    if (wtx.IsCoinBase())
                     {
-                        CBitcoinAddress address;
-                        if (ExtractAddress(txout.scriptPubKey, address) && wallet->HaveKey(address))
-                        {
-                            sub.type = TransactionRecord::RecvWithAddress;
-                            sub.address = address.ToString();
-                            foundAddress = true;
-                            break;
-                        }
+                        // Generated
+                        sub.type = TransactionRecord::Generated;
                     }
-                }
-                if(!foundAddress)
-                {
-                    // Received by IP connection, or other non-address transaction like OP_EVAL
-                    sub.type = TransactionRecord::RecvFromOther;
-                    sub.address = mapValue["from"];
+                    else if (ExtractAddress(txout.scriptPubKey, address) && wallet->HaveKey(address))
+                    {
+                        // Received by Bitcoin Address
+                        sub.type = TransactionRecord::RecvWithAddress;
+                        sub.address = address.ToString();
+                    }
+                    else
+                    {
+                        // Received by IP connection (deprecated features), or a multisignature or other non-simple transaction
+                        sub.type = TransactionRecord::RecvFromOther;
+                        sub.address = mapValue["from"];
+                    }
+
+                    parts.append(sub);
                 }
             }
-            parts.append(sub);
         }
         else
         {
@@ -160,12 +146,6 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                 //
                 // Mixed debit transaction, can't break down payees
                 //
-                bool fAllMine = true;
-                BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-                    fAllMine = fAllMine && wallet->IsMine(txout);
-                BOOST_FOREACH(const CTxIn& txin, wtx.vin)
-                    fAllMine = fAllMine && wallet->IsMine(txin);
-
                 parts.append(TransactionRecord(hash, nTime, TransactionRecord::Other, "", nNet, 0));
             }
         }

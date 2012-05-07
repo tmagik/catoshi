@@ -1,6 +1,12 @@
 #include <string>
 #include <vector>
 
+#include <QClipboard>
+#include <QInputDialog>
+#include <QList>
+#include <QListWidgetItem>
+#include <QMessageBox>
+
 #include "main.h"
 #include "wallet.h"
 #include "init.h"
@@ -13,17 +19,16 @@
 #include "guiutil.h"
 #include "walletmodel.h"
 
-#include <QClipboard>
-#include <QInputDialog>
-#include <QList>
-#include <QListWidgetItem>
-#include <QMessageBox>
-
 MessagePage::MessagePage(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MessagePage)
 {
     ui->setupUi(this);
+    
+#if (QT_VERSION >= 0x040700)
+    /* Do not move this to the XML file, Qt before 4.7 will choke on it */
+    ui->signature->setPlaceholderText(tr("Click \"Sign Message\" to get signature"));
+#endif
 
     GUIUtil::setupAddressWidget(ui->signFrom, this);
 }
@@ -91,7 +96,7 @@ void MessagePage::on_signMessage_clicked()
         return;
     }
 
-    CDataStream ss(SER_GETHASH);
+    CDataStream ss(SER_GETHASH, 0);
     ss << strMessageMagic;
     ss << ui->message->document()->toPlainText().toStdString();
 
@@ -104,4 +109,11 @@ void MessagePage::on_signMessage_clicked()
 
     ui->signature->setText(QString::fromStdString(EncodeBase64(&vchSig[0], vchSig.size())));
     ui->signature->setFont(GUIUtil::bitcoinAddressFont());
+}
+
+void MessagePage::on_clearButton_clicked()
+{
+    ui->signFrom->clear();
+    ui->message->clear();
+    ui->signature->clear();
 }

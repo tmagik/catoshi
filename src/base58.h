@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin Developers
+// Copyright (c) 2009-2012 The Bitcoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
@@ -169,7 +169,7 @@ inline bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>
 
 
 
-// Base class for all base58-encoded data
+/** Base class for all base58-encoded data */
 class CBase58Data
 {
 protected:
@@ -252,11 +252,12 @@ public:
     bool operator> (const CBase58Data& b58) const { return CompareTo(b58) >  0; }
 };
 
-// base58-encoded bitcoin addresses
-// Public-key-hash-addresses have version 0 (or 192 testnet)
-// The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key
-// Script-hash-addresses have version 5 (or 196 testnet)
-// The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script
+/** base58-encoded bitcoin addresses.
+ * Public-key-hash-addresses have version 0 (or 111 testnet).
+ * The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
+ * Script-hash-addresses have version 5 (or 196 testnet).
+ * The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script.
+ */
 class CBitcoinAddress : public CBase58Data
 {
 public:
@@ -287,7 +288,7 @@ public:
 
     bool IsValid() const
     {
-        int nExpectedSize = 20;
+        unsigned int nExpectedSize = 20;
         bool fExpectTestNet = false;
         switch(nVersion)
         {
@@ -356,6 +357,7 @@ public:
     }
 };
 
+/** A base58-encoded secret key */
 class CBitcoinSecret : public CBase58Data
 {
 public:
@@ -392,6 +394,16 @@ public:
                 return false;
         }
         return fExpectTestNet == fTestNet && (vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1));
+    }
+
+    bool SetString(const char* pszSecret)
+    {
+        return CBase58Data::SetString(pszSecret) && IsValid();
+    }
+
+    bool SetString(const std::string& strSecret)
+    {
+        return SetString(strSecret.c_str());
     }
 
     CBitcoinSecret(const CSecret& vchSecret, bool fCompressed)

@@ -1,4 +1,4 @@
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,7 +7,9 @@
 #include <boost/tokenizer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "headers.h"
+#include "ui_interface.h"
+#include "util.h"
+#include "qtipcserver.h"
 
 using namespace boost::interprocess;
 using namespace boost::posix_time;
@@ -16,7 +18,7 @@ using namespace std;
 
 void ipcShutdown()
 {
-    message_queue::remove("BitcoinURL");
+    message_queue::remove(BITCOINURI_QUEUE_NAME);
 }
 
 void ipcThread(void* parg)
@@ -30,16 +32,7 @@ void ipcThread(void* parg)
         ptime d = boost::posix_time::microsec_clock::universal_time() + millisec(100);
         if(mq->timed_receive(&strBuf, sizeof(strBuf), nSize, nPriority, d))
         {
-            strBuf[nSize] = '\0';
-            // Convert bitcoin:// URLs to bitcoin: URIs
-            if (strBuf[8] == '/' && strBuf[9] == '/')
-            {
-                for (int i = 8; i < 256; i++)
-                {
-                    strBuf[i] = strBuf[i+2];
-                }
-            }
-            ThreadSafeHandleURL(strBuf);
+            ThreadSafeHandleURI(std::string(strBuf, nSize));
             Sleep(1000);
         }
         if (fShutdown)
@@ -53,12 +46,23 @@ void ipcThread(void* parg)
 
 void ipcInit()
 {
+#ifdef MAC_OSX
+    // TODO: implement bitcoin: URI handling the Mac Way
+    return;
+#endif
+#ifdef WIN32
+    // TODO: THOROUGHLY test boost::interprocess fix,
+    // and make sure there are no Windows argument-handling exploitable
+    // problems.
+    return;
+#endif
+
     message_queue* mq;
     char strBuf[257];
     size_t nSize;
     unsigned int nPriority;
     try {
-        mq = new message_queue(open_or_create, "BitcoinURL", 2, 256);
+        mq = new message_queue(open_or_create, BITCOINURI_QUEUE_NAME, 2, 256);
 
         // Make sure we don't lose any bitcoin: URIs
         for (int i = 0; i < 2; i++)
@@ -66,24 +70,15 @@ void ipcInit()
             ptime d = boost::posix_time::microsec_clock::universal_time() + millisec(1);
             if(mq->timed_receive(&strBuf, sizeof(strBuf), nSize, nPriority, d))
             {
-                strBuf[nSize] = '\0';
-                // Convert bitcoin:// URLs to bitcoin: URIs
-                if (strBuf[8] == '/' && strBuf[9] == '/')
-                {
-                    for (int i = 8; i < 256; i++)
-                    {
-                        strBuf[i] = strBuf[i+2];
-                    }
-                }
-                ThreadSafeHandleURL(strBuf);
+                ThreadSafeHandleURI(std::string(strBuf, nSize));
             }
             else
                 break;
         }
 
         // Make sure only one bitcoin instance is listening
-        message_queue::remove("BitcoinURL");
-        mq = new message_queue(open_or_create, "BitcoinURL", 2, 256);
+        message_queue::remove(BITCOINURI_QUEUE_NAME);
+        mq = new message_queue(open_or_create, BITCOINURI_QUEUE_NAME, 2, 256);
     }
     catch (interprocess_exception &ex) {
         return;

@@ -9,7 +9,6 @@
 
 #include <QSortFilterProxyModel>
 #include <QClipboard>
-#include <QFileDialog>
 #include <QMessageBox>
 #include <QMenu>
 
@@ -44,15 +43,19 @@ AddressBookPage::AddressBookPage(Mode mode, Tabs tab, QWidget *parent) :
         ui->tableView->setFocus();
         break;
     case ForEditing:
-        ui->buttonBox->hide();
+        ui->buttonBox->setVisible(false);
         break;
     }
     switch(tab)
     {
     case SendingTab:
-        ui->labelExplanation->hide();
+        ui->labelExplanation->setVisible(false);
+        ui->deleteButton->setVisible(true);
+        ui->signMessage->setVisible(false);
         break;
     case ReceivingTab:
+        ui->deleteButton->setVisible(false);
+        ui->signMessage->setVisible(true);
         break;
     }
     ui->tableView->setTabKeyNavigation(false);
@@ -91,8 +94,6 @@ void AddressBookPage::setModel(AddressTableModel *model)
     this->model = model;
     if(!model)
         return;
-    // Refresh list from core
-    model->updateList();
 
     proxyModel = new QSortFilterProxyModel(this);
     proxyModel->setSourceModel(model);
@@ -134,6 +135,7 @@ void AddressBookPage::on_copyToClipboard_clicked()
 {
     GUIUtil::copyEntryData(ui->tableView, AddressTableModel::Address);
 }
+
 void AddressBookPage::onCopyLabelAction()
 {
     GUIUtil::copyEntryData(ui->tableView, AddressTableModel::Label);
@@ -225,14 +227,18 @@ void AddressBookPage::selectionChanged()
         case SendingTab:
             // In sending tab, allow deletion of selection
             ui->deleteButton->setEnabled(true);
+            ui->deleteButton->setVisible(true);
             deleteAction->setEnabled(true);
             ui->signMessage->setEnabled(false);
+            ui->signMessage->setVisible(false);
             break;
         case ReceivingTab:
             // Deleting receiving addresses, however, is not allowed
             ui->deleteButton->setEnabled(false);
+            ui->deleteButton->setVisible(false);
             deleteAction->setEnabled(false);
             ui->signMessage->setEnabled(true);
+            ui->signMessage->setVisible(true);
             break;
         }
         ui->copyToClipboard->setEnabled(true);
@@ -277,10 +283,9 @@ void AddressBookPage::done(int retval)
 void AddressBookPage::exportClicked()
 {
     // CSV is currently the only supported format
-    QString filename = QFileDialog::getSaveFileName(
+    QString filename = GUIUtil::getSaveFileName(
             this,
-            tr("Export Address Book Data"),
-            QDir::currentPath(),
+            tr("Export Address Book Data"), QString(),
             tr("Comma separated file (*.csv)"));
 
     if (filename.isNull()) return;
@@ -305,16 +310,12 @@ void AddressBookPage::on_showQRCode_clicked()
     QTableView *table = ui->tableView;
     QModelIndexList indexes = table->selectionModel()->selectedRows(AddressTableModel::Address);
 
-
-    QRCodeDialog *d;
     foreach (QModelIndex index, indexes)
     {
-        QString address = index.data().toString(),
-            label = index.sibling(index.row(), 0).data().toString(),
-            title = QString("%1 << %2 >>").arg(label).arg(address);
+        QString address = index.data().toString(), label = index.sibling(index.row(), 0).data(Qt::EditRole).toString();
 
-        QRCodeDialog *d = new QRCodeDialog(title, address, label, tab == ReceivingTab, this);
-        d->show();
+        QRCodeDialog *dialog = new QRCodeDialog(address, label, tab == ReceivingTab, this);
+        dialog->show();
     }
 #endif
 }
