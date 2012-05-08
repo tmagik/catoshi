@@ -43,7 +43,7 @@ namespace boost {
 #ifdef _WIN32_IE
 #undef _WIN32_IE
 #endif
-#define _WIN32_IE 0x0400
+#define _WIN32_IE 0x0501
 #define WIN32_LEAN_AND_MEAN 1
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -252,7 +252,7 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
             *pend = '\0';
             char* p1 = pszBuffer;
             char* p2;
-            while (p2 = strchr(p1, '\n'))
+            while ((p2 = strchr(p1, '\n')))
             {
                 p2++;
                 char c = *p2;
@@ -283,7 +283,7 @@ int my_snprintf(char* buffer, size_t limit, const char* format, ...)
     va_start(arg_ptr, format);
     int ret = _vsnprintf(buffer, limit, format, arg_ptr);
     va_end(arg_ptr);
-    if (ret < 0 || ret >= limit)
+    if (ret < 0 || ret >= (int)limit)
     {
         ret = limit - 1;
         buffer[limit-1] = 0;
@@ -870,7 +870,11 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
     LOCK(csPathCached);
 
     if (mapArgs.count("-datadir")) {
-        path = mapArgs["-datadir"];
+        path = fs::system_complete(mapArgs["-datadir"]);
+        if (!fs::is_directory(path)) {
+            path = "";
+            return path;
+        }
     } else {
         path = GetDefaultDataDir();
     }
@@ -892,7 +896,7 @@ boost::filesystem::path GetConfigFile()
     return pathConfigFile;
 }
 
-bool ReadConfigFile(map<string, string>& mapSettingsRet,
+void ReadConfigFile(map<string, string>& mapSettingsRet,
                     map<string, vector<string> >& mapMultiSettingsRet)
 {
     namespace fs = boost::filesystem;
@@ -900,7 +904,7 @@ bool ReadConfigFile(map<string, string>& mapSettingsRet,
 
     fs::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-        return true; // No bitcoin.conf file is OK
+        return; // No bitcoin.conf file is OK
 
     set<string> setOptions;
     setOptions.insert("*");
@@ -917,7 +921,6 @@ bool ReadConfigFile(map<string, string>& mapSettingsRet,
         }
         mapMultiSettingsRet[strKey].push_back(it->value[0]);
     }
-    return true;
 }
 
 boost::filesystem::path GetPidFile()
