@@ -162,7 +162,7 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific = true);
 boost::filesystem::path GetConfigFile();
 boost::filesystem::path GetPidFile();
 void CreatePidFile(const boost::filesystem::path &path, pid_t pid);
-bool ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
+void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
 bool GetStartOnSystemStartup();
 bool SetStartOnSystemStartup(bool fAutoStart);
 void ShrinkDebugFile();
@@ -300,14 +300,6 @@ typedef boost::interprocess::interprocess_condition CConditionVariable;
         (cs).unlock(); \
         LeaveCritical(); \
     }
-
-
-// This is exactly like std::string, but with a custom allocator.
-// (secure_allocator<> is defined in serialize.h)
-typedef std::basic_string<char, std::char_traits<char>, secure_allocator<char> > SecureString;
-
-
-
 
 
 inline std::string i64tostr(int64 n)
@@ -579,9 +571,9 @@ template <typename T> class CMedianFilter
 private:
     std::vector<T> vValues;
     std::vector<T> vSorted;
-    int nSize;
+    unsigned int nSize;
 public:
-    CMedianFilter(int size, T initial_value):
+    CMedianFilter(unsigned int size, T initial_value):
         nSize(size)
     {
         vValues.reserve(size);
