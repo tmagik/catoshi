@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET =
-VERSION = 0.6.1
+VERSION = 0.6.99
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB
 CONFIG += no_include_pwd
@@ -158,7 +158,8 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/notificator.h \
     src/qt/qtipcserver.h \
     src/allocators.h \
-    src/ui_interface.h
+    src/ui_interface.h \
+    src/qt/rpcconsole.h
 
 SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/transactiontablemodel.cpp \
@@ -212,7 +213,8 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/askpassphrasedialog.cpp \
     src/protocol.cpp \
     src/qt/notificator.cpp \
-    src/qt/qtipcserver.cpp
+    src/qt/qtipcserver.cpp \
+    src/qt/rpcconsole.cpp
 
 RESOURCES += \
     src/qt/bitcoin.qrc
@@ -226,7 +228,8 @@ FORMS += \
     src/qt/forms/transactiondescdialog.ui \
     src/qt/forms/overviewpage.ui \
     src/qt/forms/sendcoinsentry.ui \
-    src/qt/forms/askpassphrasedialog.ui
+    src/qt/forms/askpassphrasedialog.ui \
+    src/qt/forms/rpcconsole.ui
 
 contains(USE_QRCODE, 1) {
 HEADERS += src/qt/qrcodedialog.h
@@ -266,7 +269,7 @@ PRE_TARGETDEPS += compiler_TSQM_make_all
 
 # "Other files" to show in Qt Creator
 OTHER_FILES += \
-    doc/*.rst doc/*.txt doc/README README.md
+    doc/*.rst doc/*.txt doc/README README.md res/bitcoin-qt.rc
 
 # platform specific defaults, if not overridden on command line
 isEmpty(BOOST_LIB_SUFFIX) {

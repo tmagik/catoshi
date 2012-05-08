@@ -126,6 +126,40 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
         entry.push_back(Pair(item.first, item.second));
 }
 
+void TxToJSON(const CTransaction &tx, Object& entry)
+{
+    entry.push_back(Pair("version", tx.nVersion));
+    entry.push_back(Pair("locktime", (boost::int64_t)tx.nLockTime));
+    entry.push_back(Pair("size", (boost::int64_t)::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION)));
+    Array vin;
+    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+    {
+        Object in;
+        if (tx.IsCoinBase())
+            in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+        else
+        {
+            Object prevout;
+            prevout.push_back(Pair("hash", txin.prevout.hash.GetHex()));
+            prevout.push_back(Pair("n", (boost::int64_t)txin.prevout.n));
+            in.push_back(Pair("prevout", prevout));
+            in.push_back(Pair("scriptSig", txin.scriptSig.ToString()));
+        }
+        in.push_back(Pair("sequence", (boost::int64_t)txin.nSequence));
+        vin.push_back(in);
+    }
+    entry.push_back(Pair("vin", vin));
+    Array vout;
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
+        Object out;
+        out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
+        out.push_back(Pair("scriptPubKey", txout.scriptPubKey.ToString()));
+        vout.push_back(out);
+    }
+    entry.push_back(Pair("vout", vout));
+}
+
 string AccountFromValue(const Value& value)
 {
     string strAccount = value.get_str();
@@ -999,10 +1033,12 @@ Value addmultisigaddress(const Array& params, bool fHelp)
         strAccount = AccountFromValue(params[2]);
 
     // Gather public keys
-    if ((nRequired < 1) || ((int)keys.size() < nRequired))
+    if (nRequired < 1)
+        throw runtime_error("a multisignature address must require at least one key to redeem");
+    if ((int)keys.size() < nRequired)
         throw runtime_error(
-            strprintf("wrong number of keys"
-                      "(got %d, need at least %d)", keys.size(), nRequired));
+            strprintf("not enough keys supplied "
+                      "(got %d keys, but need at least %d to redeem)", keys.size(), nRequired));
     std::vector<CKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)
@@ -1474,24 +1510,57 @@ Value gettransaction(const Array& params, bool fHelp)
 
     Object entry;
 
-    if (!pwalletMain->mapWallet.count(hash))
-        throw JSONRPCError(-5, "Invalid or non-wallet transaction id");
-    const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+    if (pwalletMain->mapWallet.count(hash))
+    {
+        const CWalletTx& wtx = pwalletMain->mapWallet[hash];
 
-    int64 nCredit = wtx.GetCredit();
-    int64 nDebit = wtx.GetDebit();
-    int64 nNet = nCredit - nDebit;
-    int64 nFee = (wtx.IsFromMe() ? wtx.GetValueOut() - nDebit : 0);
+        TxToJSON(wtx, entry);
 
-    entry.push_back(Pair("amount", ValueFromAmount(nNet - nFee)));
-    if (wtx.IsFromMe())
-        entry.push_back(Pair("fee", ValueFromAmount(nFee)));
+        int64 nCredit = wtx.GetCredit();
+        int64 nDebit = wtx.GetDebit();
+        int64 nNet = nCredit - nDebit;
+        int64 nFee = (wtx.IsFromMe() ? wtx.GetValueOut() - nDebit : 0);
 
-    WalletTxToJSON(pwalletMain->mapWallet[hash], entry);
+        entry.push_back(Pair("amount", ValueFromAmount(nNet - nFee)));
+        if (wtx.IsFromMe())
+            entry.push_back(Pair("fee", ValueFromAmount(nFee)));
 
-    Array details;
-    ListTransactions(pwalletMain->mapWallet[hash], "*", 0, false, details);
-    entry.push_back(Pair("details", details));
+        WalletTxToJSON(wtx, entry);
+
+        Array details;
+        ListTransactions(pwalletMain->mapWallet[hash], "*", 0, false, details);
+        entry.push_back(Pair("details", details));
+    }
+    else
+    {
+        CTransaction tx;
+        uint256 hashBlock = 0;
+        if (GetTransaction(hash, tx, hashBlock))
+        {
+            entry.push_back(Pair("txid", hash.GetHex()));
+            TxToJSON(tx, entry);
+            if (hashBlock == 0)
+                entry.push_back(Pair("confirmations", 0));
+            else
+            {
+                entry.push_back(Pair("blockhash", hashBlock.GetHex()));
+                map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashBlock);
+                if (mi != mapBlockIndex.end() && (*mi).second)
+                {
+                    CBlockIndex* pindex = (*mi).second;
+                    if (pindex->IsInMainChain())
+                    {
+                        entry.push_back(Pair("confirmations", 1 + nBestHeight - pindex->nHeight));
+                        entry.push_back(Pair("time", (boost::int64_t)pindex->nTime));
+                    }
+                    else
+                        entry.push_back(Pair("confirmations", 0));
+                }
+            }
+        }
+        else
+            throw JSONRPCError(-5, "No information available about transaction");
+    }
 
     return entry;
 }
@@ -2505,34 +2574,11 @@ void ThreadRPCServer2(void* parg)
             else
                 throw JSONRPCError(-32600, "Params must be an array");
 
-            // Find method
-            const CRPCCommand *pcmd = tableRPC[strMethod];
-            if (!pcmd)
-                throw JSONRPCError(-32601, "Method not found");
+            Value result = tableRPC.execute(strMethod, params);
 
-            // Observe safe mode
-            string strWarning = GetWarnings("rpc");
-            if (strWarning != "" && !GetBoolArg("-disablesafemode") &&
-                !pcmd->okSafeMode)
-                throw JSONRPCError(-2, string("Safe mode: ") + strWarning);
-
-            try
-            {
-                // Execute
-                Value result;
-                {
-                    LOCK2(cs_main, pwalletMain->cs_wallet);
-                    result = pcmd->actor(params, false);
-                }
-
-                // Send reply
-                string strReply = JSONRPCReply(result, Value::null, id);
-                stream << HTTPReply(200, strReply) << std::flush;
-            }
-            catch (std::exception& e)
-            {
-                ErrorReply(stream, JSONRPCError(-1, e.what()), id);
-            }
+            // Send reply
+            string strReply = JSONRPCReply(result, Value::null, id);
+            stream << HTTPReply(200, strReply) << std::flush;
         }
         catch (Object& objError)
         {
@@ -2545,7 +2591,34 @@ void ThreadRPCServer2(void* parg)
     }
 }
 
+json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_spirit::Array &params) const
+{
+    // Find method
+    const CRPCCommand *pcmd = tableRPC[strMethod];
+    if (!pcmd)
+        throw JSONRPCError(-32601, "Method not found");
 
+    // Observe safe mode
+    string strWarning = GetWarnings("rpc");
+    if (strWarning != "" && !GetBoolArg("-disablesafemode") &&
+        !pcmd->okSafeMode)
+        throw JSONRPCError(-2, string("Safe mode: ") + strWarning);
+
+    try
+    {
+        // Execute
+        Value result;
+        {
+            LOCK2(cs_main, pwalletMain->cs_wallet);
+            result = pcmd->actor(params, false);
+        }
+        return result;
+    }
+    catch (std::exception& e)
+    {
+        throw JSONRPCError(-1, e.what());
+    }
+}
 
 
 Object CallRPC(const string& strMethod, const Array& params)
@@ -2619,6 +2692,60 @@ void ConvertTo(Value& value)
     }
 }
 
+// Convert strings to command-specific RPC representation
+Array RPCConvertValues(const std::string &strMethod, const std::vector<std::string> &strParams)
+{
+    Array params;
+    BOOST_FOREACH(const std::string &param, strParams)
+        params.push_back(param);
+
+    int n = params.size();
+
+    //
+    // Special case non-string parameter types
+    //
+    if (strMethod == "setgenerate"            && n > 0) ConvertTo<bool>(params[0]);
+    if (strMethod == "setgenerate"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
+    if (strMethod == "settxfee"               && n > 0) ConvertTo<double>(params[0]);
+    if (strMethod == "getreceivedbyaddress"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "getreceivedbyaccount"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "listreceivedbyaddress"  && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "listreceivedbyaddress"  && n > 1) ConvertTo<bool>(params[1]);
+    if (strMethod == "listreceivedbyaccount"  && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "listreceivedbyaccount"  && n > 1) ConvertTo<bool>(params[1]);
+    if (strMethod == "getbalance"             && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "getblockhash"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "move"                   && n > 2) ConvertTo<double>(params[2]);
+    if (strMethod == "move"                   && n > 3) ConvertTo<boost::int64_t>(params[3]);
+    if (strMethod == "sendfrom"               && n > 2) ConvertTo<double>(params[2]);
+    if (strMethod == "sendfrom"               && n > 3) ConvertTo<boost::int64_t>(params[3]);
+    if (strMethod == "listtransactions"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "listtransactions"       && n > 2) ConvertTo<boost::int64_t>(params[2]);
+    if (strMethod == "listaccounts"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "walletpassphrase"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "listsinceblock"         && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "sendmany"               && n > 1)
+    {
+        string s = params[1].get_str();
+        Value v;
+        if (!read_string(s, v) || v.type() != obj_type)
+            throw runtime_error("type mismatch");
+        params[1] = v.get_obj();
+    }
+    if (strMethod == "sendmany"                && n > 2) ConvertTo<boost::int64_t>(params[2]);
+    if (strMethod == "addmultisigaddress"      && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "addmultisigaddress"      && n > 1)
+    {
+        string s = params[1].get_str();
+        Value v;
+        if (!read_string(s, v) || v.type() != array_type)
+            throw runtime_error("type mismatch "+s);
+        params[1] = v.get_array();
+    }
+    return params;
+}
+
 int CommandLineRPC(int argc, char *argv[])
 {
     string strPrint;
@@ -2638,53 +2765,8 @@ int CommandLineRPC(int argc, char *argv[])
         string strMethod = argv[1];
 
         // Parameters default to strings
-        Array params;
-        for (int i = 2; i < argc; i++)
-            params.push_back(argv[i]);
-        int n = params.size();
-
-        //
-        // Special case non-string parameter types
-        //
-        if (strMethod == "setgenerate"            && n > 0) ConvertTo<bool>(params[0]);
-        if (strMethod == "setgenerate"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
-        if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
-        if (strMethod == "settxfee"               && n > 0) ConvertTo<double>(params[0]);
-        if (strMethod == "getreceivedbyaddress"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
-        if (strMethod == "getreceivedbyaccount"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
-        if (strMethod == "listreceivedbyaddress"  && n > 0) ConvertTo<boost::int64_t>(params[0]);
-        if (strMethod == "listreceivedbyaddress"  && n > 1) ConvertTo<bool>(params[1]);
-        if (strMethod == "listreceivedbyaccount"  && n > 0) ConvertTo<boost::int64_t>(params[0]);
-        if (strMethod == "listreceivedbyaccount"  && n > 1) ConvertTo<bool>(params[1]);
-        if (strMethod == "getbalance"             && n > 1) ConvertTo<boost::int64_t>(params[1]);
-        if (strMethod == "getblockhash"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
-        if (strMethod == "move"                   && n > 2) ConvertTo<double>(params[2]);
-        if (strMethod == "move"                   && n > 3) ConvertTo<boost::int64_t>(params[3]);
-        if (strMethod == "sendfrom"               && n > 2) ConvertTo<double>(params[2]);
-        if (strMethod == "sendfrom"               && n > 3) ConvertTo<boost::int64_t>(params[3]);
-        if (strMethod == "listtransactions"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
-        if (strMethod == "listtransactions"       && n > 2) ConvertTo<boost::int64_t>(params[2]);
-        if (strMethod == "listaccounts"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
-        if (strMethod == "walletpassphrase"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
-        if (strMethod == "listsinceblock"         && n > 1) ConvertTo<boost::int64_t>(params[1]);
-        if (strMethod == "sendmany"               && n > 1)
-        {
-            string s = params[1].get_str();
-            Value v;
-            if (!read_string(s, v) || v.type() != obj_type)
-                throw runtime_error("type mismatch");
-            params[1] = v.get_obj();
-        }
-        if (strMethod == "sendmany"                && n > 2) ConvertTo<boost::int64_t>(params[2]);
-        if (strMethod == "addmultisigaddress"      && n > 0) ConvertTo<boost::int64_t>(params[0]);
-        if (strMethod == "addmultisigaddress"      && n > 1)
-        {
-            string s = params[1].get_str();
-            Value v;
-            if (!read_string(s, v) || v.type() != array_type)
-                throw runtime_error("type mismatch "+s);
-            params[1] = v.get_array();
-        }
+        std::vector<std::string> strParams(&argv[2], &argv[argc]);
+        Array params = RPCConvertValues(strMethod, strParams);
 
         // Execute
         Object reply = CallRPC(strMethod, params);
