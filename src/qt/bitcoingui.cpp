@@ -24,6 +24,7 @@
 #include "askpassphrasedialog.h"
 #include "notificator.h"
 #include "guiutil.h"
+#include "rpcconsole.h"
 
 #ifdef Q_WS_MAC
 #include "macdockiconhandler.h"
@@ -64,7 +65,8 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     changePassphraseAction(0),
     aboutQtAction(0),
     trayIcon(0),
-    notificator(0)
+    notificator(0),
+    rpcConsole(0)
 {
     resize(850, 550);
     setWindowTitle(tr("Bitcoin Wallet"));
@@ -158,6 +160,9 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     // Doubleclicking on a transaction on the transaction history page shows details
     connect(transactionView, SIGNAL(doubleClicked(QModelIndex)), transactionView, SLOT(showDetails()));
 
+    rpcConsole = new RPCConsole(this);
+    connect(openRPCConsoleAction, SIGNAL(triggered()), rpcConsole, SLOT(show()));
+
     gotoOverviewPage();
 }
 
@@ -204,7 +209,7 @@ void BitcoinGUI::createActions()
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
     tabGroup->addAction(sendCoinsAction);
 
-    messageAction = new QAction(QIcon(":/icons/edit"), tr("Sign &message"), this);
+    messageAction = new QAction(QIcon(":/icons/edit"), tr("Sign &message..."), this);
     messageAction->setToolTip(tr("Prove you control an address"));
 #ifdef FIRST_CLASS_MESSAGING
     messageAction->setCheckable(true);
@@ -241,13 +246,15 @@ void BitcoinGUI::createActions()
     toggleHideAction->setToolTip(tr("Show or hide the Bitcoin window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
-    encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet"), this);
+    encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
     encryptWalletAction->setToolTip(tr("Encrypt or decrypt wallet"));
     encryptWalletAction->setCheckable(true);
-    backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet"), this);
+    backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet..."), this);
     backupWalletAction->setToolTip(tr("Backup wallet to another location"));
-    changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase"), this);
+    changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase..."), this);
     changePassphraseAction->setToolTip(tr("Change the passphrase used for wallet encryption"));
+    openRPCConsoleAction = new QAction(tr("&Debug window"), this);
+    openRPCConsoleAction->setToolTip(tr("Open debugging and diagnostic console"));
 
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
@@ -286,6 +293,8 @@ void BitcoinGUI::createMenuBar()
     settings->addAction(optionsAction);
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
+    help->addAction(openRPCConsoleAction);
+    help->addSeparator();
     help->addAction(aboutAction);
     help->addAction(aboutQtAction);
 }
@@ -338,6 +347,8 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
 
         // Report errors from network/worker thread
         connect(clientModel, SIGNAL(error(QString,QString, bool)), this, SLOT(error(QString,QString,bool)));
+
+        rpcConsole->setClientModel(clientModel);
     }
 }
 
@@ -625,7 +636,7 @@ void BitcoinGUI::askFee(qint64 nFeeRequired, bool *payFee)
           "Do you want to pay the fee?").arg(
                 BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, nFeeRequired));
     QMessageBox::StandardButton retval = QMessageBox::question(
-          this, tr("Sending..."), strMessage,
+          this, tr("Confirm transaction fee"), strMessage,
           QMessageBox::Yes|QMessageBox::Cancel, QMessageBox::Yes);
     *payFee = (retval == QMessageBox::Yes);
 }
