@@ -104,9 +104,6 @@
      <property name="readOnly">
       <bool>true</bool>
      </property>
-     <property name="placeholderText">
-      <string>Click &quot;Sign Message&quot; to get signature</string>
-     </property>
     </widget>
    </item>
    <item>
@@ -131,7 +128,7 @@
         <string>Copy the current signature to the system clipboard</string>
        </property>
        <property name="text">
-        <string>&amp;Copy to Clipboard</string>
+        <string>&amp;Copy Signature</string>
        </property>
        <property name="icon">
         <iconset resource="../bitcoin.qrc">
@@ -145,7 +142,7 @@
         <string>Reset all sign message fields</string>
        </property>
        <property name="text">
-        <string>Clear all</string>
+        <string>Clear &amp;All</string>
        </property>
        <property name="icon">
         <iconset resource="../bitcoin.qrc">
