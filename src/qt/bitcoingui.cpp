@@ -402,13 +402,14 @@ void BitcoinGUI::createTrayIcon()
 
     // Configuration of the tray icon (or dock icon) icon menu
     trayIconMenu->addAction(toggleHideAction);
+    trayIconMenu->addAction(openRPCConsoleAction);
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(messageAction);
 #ifndef FIRST_CLASS_MESSAGING
     trayIconMenu->addSeparator();
 #endif
-    trayIconMenu->addAction(receiveCoinsAction);
     trayIconMenu->addAction(sendCoinsAction);
+    trayIconMenu->addAction(receiveCoinsAction);
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(optionsAction);
 #ifndef Q_WS_MAC // This is built-in on Mac
@@ -562,21 +563,24 @@ void BitcoinGUI::setNumBlocks(int count)
     // Set icon state: spinning if catching up, tick otherwise
     if(secs < 90*60 && count >= nTotalBlocks)
     {
-        tooltip = tr("Up to date") + QString(".\n") + tooltip;
+        tooltip = tr("Up to date") + QString(".<br>") + tooltip;
         labelBlocksIcon->setPixmap(QIcon(":/icons/synced").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
     }
     else
     {
-        tooltip = tr("Catching up...") + QString("\n") + tooltip;
+        tooltip = tr("Catching up...") + QString("<br>") + tooltip;
         labelBlocksIcon->setMovie(syncIconMovie);
         syncIconMovie->start();
     }
 
     if(!text.isEmpty())
     {
-        tooltip += QString("\n");
+        tooltip += QString("<br>");
         tooltip += tr("Last received block was generated %1.").arg(text);
     }
+
+    // Don't word-wrap this (fixed-width) tooltip
+    tooltip = QString("<nobr>") + tooltip + QString("</nobr>");
 
     labelBlocksIcon->setToolTip(tooltip);
     progressBarLabel->setToolTip(tooltip);
