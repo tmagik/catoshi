@@ -90,6 +90,12 @@ RPCConsole::RPCConsole(QWidget *parent) :
     ui->messagesWidget->horizontalHeader()->setResizeMode(1, QHeaderView::Stretch);
     ui->messagesWidget->setContextMenuPolicy(Qt::ActionsContextMenu);
 
+#ifndef WIN32
+    // Show Debug logfile label and Open button only for Windows
+    ui->labelDebugLogfile->setVisible(false);
+    ui->openDebugLogfileButton->setVisible(false);
+#endif
+
     // Install event filter for up and down arrow
     ui->lineEdit->installEventFilter(this);
 
@@ -101,6 +107,7 @@ RPCConsole::RPCConsole(QWidget *parent) :
     ui->messagesWidget->addAction(copyMessageAction);
 
     connect(ui->clearButton, SIGNAL(clicked()), this, SLOT(clear()));
+    connect(ui->openDebugLogfileButton, SIGNAL(clicked()), this, SLOT(on_openDebugLogfileButton_clicked()));
 
     startExecutor();
 
@@ -111,27 +118,6 @@ RPCConsole::~RPCConsole()
 {
     emit stopExecutor();
     delete ui;
-}
-
-bool RPCConsole::event(QEvent *event)
-{
-   int returnValue = QWidget::event(event);
-
-   if (event->type() == QEvent::LayoutRequest && firstLayout)
-   {
-       // Work around QTableWidget issue:
-       // Call resizeRowsToContents on first Layout request with widget visible,
-       // to make sure multiline messages that were added before the console was shown
-       // have the right height.
-       if(ui->messagesWidget->isVisible())
-       {
-           firstLayout = false;
-           ui->messagesWidget->resizeRowsToContents();
-       }
-       return true;
-   }
-
-   return returnValue;
 }
 
 bool RPCConsole::eventFilter(QObject* obj, QEvent *event)
@@ -246,7 +232,8 @@ void RPCConsole::setNumBlocks(int count)
     ui->numberOfBlocks->setText(QString::number(count));
     if(clientModel)
     {
-        ui->totalBlocks->setText(QString::number(clientModel->getNumBlocksOfPeers()));
+        // If there is no current number available display N/A instead of 0, which can't ever be true
+        ui->totalBlocks->setText(clientModel->getNumBlocksOfPeers() == 0 ? tr("N/A") : QString::number(clientModel->getNumBlocksOfPeers()));
         ui->lastBlockTime->setText(clientModel->getLastBlockDate().toString());
     }
 }
@@ -313,4 +300,26 @@ void RPCConsole::startExecutor()
 void RPCConsole::copyMessage()
 {
     GUIUtil::copyEntryData(ui->messagesWidget, 1, Qt::EditRole);
+}
+
+void RPCConsole::on_tabWidget_currentChanged(int index)
+{
+    if(ui->tabWidget->widget(index) == ui->tab_console)
+    {
+        if(firstLayout)
+        {
+            // Work around QTableWidget issue:
+            // Call resizeRowsToContents on first Layout request with widget visible,
+            // to make sure multiline messages that were added before the console was shown
+            // have the right height.
+            firstLayout = false;
+            ui->messagesWidget->resizeRowsToContents();
+        }
+        ui->lineEdit->setFocus();
+    }
+}
+
+void RPCConsole::on_openDebugLogfileButton_clicked()
+{
+    GUIUtil::openDebugLogfile();
 }

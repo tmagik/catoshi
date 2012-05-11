@@ -527,7 +527,7 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
                 return error("CTxMemPool::accept() : FetchInputs found invalid tx %s", hash.ToString().substr(0,10).c_str());
             if (pfMissingInputs)
                 *pfMissingInputs = true;
-            return error("CTxMemPool::accept() : FetchInputs failed %s", hash.ToString().substr(0,10).c_str());
+            return false;
         }
 
         // Check for non-standard pay-to-script-hash in inputs
@@ -594,7 +594,9 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
     if (ptxOld)
         EraseFromWallets(ptxOld->GetHash());
 
-    printf("CTxMemPool::accept() : accepted %s\n", hash.ToString().substr(0,10).c_str());
+    printf("CTxMemPool::accept() : accepted %s (poolsz %u)\n",
+           hash.ToString().substr(0,10).c_str(),
+           mapTx.size());
     return true;
 }
 
@@ -605,7 +607,6 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
 
 bool CTxMemPool::addUnchecked(CTransaction &tx)
 {
-    printf("addUnchecked(): size %lu\n",  mapTx.size());
     // Add to memory pool without checking anything.  Don't call this directly,
     // call CTxMemPool::accept to properly check the transaction first.
     {
@@ -2060,7 +2061,7 @@ bool LoadExternalBlockFile(FILE* fileIn)
         try {
             CAutoFile blkdat(fileIn, SER_DISK, CLIENT_VERSION);
             unsigned int nPos = 0;
-            while (nPos != -1 && blkdat.good() && !fRequestShutdown)
+            while (nPos != (unsigned int)-1 && blkdat.good() && !fRequestShutdown)
             {
                 unsigned char pchData[65536];
                 do {
@@ -2068,7 +2069,7 @@ bool LoadExternalBlockFile(FILE* fileIn)
                     int nRead = fread(pchData, 1, sizeof(pchData), blkdat);
                     if (nRead <= 8)
                     {
-                        nPos = -1;
+                        nPos = (unsigned int)-1;
                         break;
                     }
                     void* nFind = memchr(pchData, pchMessageStart[0], nRead+1-sizeof(pchMessageStart));
@@ -2084,7 +2085,7 @@ bool LoadExternalBlockFile(FILE* fileIn)
                     else
                         nPos += sizeof(pchData) - sizeof(pchMessageStart) + 1;
                 } while(!fRequestShutdown);
-                if (nPos == -1)
+                if (nPos == (unsigned int)-1)
                     break;
                 fseek(blkdat, nPos, SEEK_SET);
                 unsigned int nSize;
