@@ -192,7 +192,7 @@ bool AppInit2(int argc, char* argv[])
             "  -timeout=<n>     \t  "   + _("Specify connection timeout (in milliseconds)") + "\n" +
             "  -proxy=<ip:port> \t  "   + _("Connect through socks proxy") + "\n" +
             "  -socks=<n>       \t  "   + _("Select the version of socks proxy to use (4 or 5, 5 is default)") + "\n" +
-            "  -noproxy=<net>   \t  "   + _("Do not use proxy for connections to network net (ipv4 or ipv6)") + "\n" +
+            "  -noproxy=<net>   \t  "   + _("Do not use proxy for connections to network <net> (IPv4 or IPv6)") + "\n" +
             "  -dns             \t  "   + _("Allow DNS lookups for -addnode, -seednode and -connect") + "\n" +
             "  -proxydns        \t  "   + _("Pass DNS requests to (SOCKS5) proxy") + "\n" +
             "  -port=<port>     \t\t  " + _("Listen for connections on <port> (default: 8333 or testnet: 18333)") + "\n" +
@@ -201,7 +201,7 @@ bool AppInit2(int argc, char* argv[])
             "  -connect=<ip>    \t\t  " + _("Connect only to the specified node") + "\n" +
             "  -seednode=<ip>   \t\t  " + _("Connect to a node to retrieve peer addresses, and disconnect") + "\n" +
             "  -externalip=<ip> \t  "   + _("Specify your own public address") + "\n" +
-            "  -blocknet=<net>  \t  "   + _("Do not connect to addresses in network net (ipv4, ipv6)") + "\n" +
+            "  -blocknet=<net>  \t  "   + _("Do not connect to addresses in network <net> (IPv4 or IPv6)") + "\n" +
             "  -discover        \t  "   + _("Try to discover public IP address (default: 1)") + "\n" +
             "  -irc             \t  "   + _("Find peers using internet relay chat (default: 0)") + "\n" +
             "  -listen          \t  "   + _("Accept connections from outside (default: 1)") + "\n" +
@@ -611,13 +611,14 @@ bool AppInit2(int argc, char* argv[])
         std::string strError;
         if (mapArgs.count("-bind")) {
             BOOST_FOREACH(std::string strBind, mapMultiArgs["-bind"]) {
-                fBound |= Bind(CService(strBind, GetDefaultPort(), false));
+                fBound |= Bind(CService(strBind, GetListenPort(), false));
             }
         } else {
-            struct in_addr inaddr_any = {s_addr: INADDR_ANY};
-            fBound |= Bind(CService(inaddr_any, GetDefaultPort()));
+            struct in_addr inaddr_any;
+            inaddr_any.s_addr = INADDR_ANY;
+            fBound |= Bind(CService(inaddr_any, GetListenPort()));
 #ifdef USE_IPV6
-            fBound |= Bind(CService(in6addr_any, GetDefaultPort()));
+            fBound |= Bind(CService(in6addr_any, GetListenPort()));
 #endif
         }
         if (!fBound)
@@ -627,7 +628,7 @@ bool AppInit2(int argc, char* argv[])
     if (mapArgs.count("-externalip"))
     {
         BOOST_FOREACH(string strAddr, mapMultiArgs["-externalip"])
-            AddLocal(CNetAddr(strAddr, fNameLookup), LOCAL_MANUAL);
+            AddLocal(CService(strAddr, GetListenPort(), fNameLookup), LOCAL_MANUAL);
     }
 
     if (mapArgs.count("-paytxfee"))

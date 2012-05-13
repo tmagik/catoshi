@@ -116,11 +116,11 @@ HexBits(unsigned int nBits)
 }
 
 enum DecomposeMode {
-	DM_NONE = 0,
-	DM_HASH,
-	DM_HEX,
-	DM_ASM,
-	DM_OBJ,
+    DM_NONE = 0,
+    DM_HASH,
+    DM_HEX,
+    DM_ASM,
+    DM_OBJ,
 };
 
 enum DecomposeMode
@@ -2447,7 +2447,7 @@ int ReadHTTP(std::basic_istream<char>& stream, map<string, string>& mapHeadersRe
     strMessageRet = "";
 
     // Read status
-    int nProto;
+    int nProto = 0;
     int nStatus = ReadHTTPStatus(stream, nProto);
 
     // Read header
