@@ -38,27 +38,35 @@ CNode* FindNode(const CNetAddr& ip);
 CNode* FindNode(const CService& ip);
 CNode* ConnectNode(CAddress addrConnect, const char *strDest = NULL, int64 nTimeout=0);
 void MapPort(bool fMapPort);
-bool BindListenPort(std::string& strError=REF(std::string()));
+unsigned short GetListenPort();
+bool BindListenPort(const CService &bindAddr, std::string& strError=REF(std::string()));
 void StartNode(void* parg);
 bool StopNode();
 
 enum
 {
-    LOCAL_NONE,
-    LOCAL_IF,
-    LOCAL_UPNP,
-    LOCAL_IRC,
-    LOCAL_HTTP,
-    LOCAL_MANUAL,
+    LOCAL_NONE,   // unknown
+    LOCAL_IF,     // address a local interface listens on
+    LOCAL_BIND,   // address explicit bound to
+    LOCAL_UPNP,   // address reported by UPnP
+    LOCAL_IRC,    // address reported by IRC (deprecated)
+    LOCAL_HTTP,   // address reported by whatismyip.com and similars
+    LOCAL_MANUAL, // address explicitly specified (-externalip=)
 
     LOCAL_MAX
 };
 
+void SetLimited(enum Network net, bool fLimited = true);
+bool IsLimited(enum Network net);
+bool IsLimited(const CNetAddr& addr);
+bool AddLocal(const CService& addr, int nScore = LOCAL_NONE);
 bool AddLocal(const CNetAddr& addr, int nScore = LOCAL_NONE);
-bool SeenLocal(const CNetAddr& addr);
-bool IsLocal(const CNetAddr& addr);
-bool GetLocal(CNetAddr &addr, const CNetAddr *paddrPeer = NULL);
+bool SeenLocal(const CService& addr);
+bool IsLocal(const CService& addr);
+bool GetLocal(CService &addr, const CNetAddr *paddrPeer = NULL);
+bool IsReachable(const CNetAddr &addr);
 CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
+
 
 enum
 {
@@ -92,11 +100,12 @@ enum threadId
     THREAD_OPENCONNECTIONS,
     THREAD_MESSAGEHANDLER,
     THREAD_MINER,
-    THREAD_RPCSERVER,
+    THREAD_RPCLISTENER,
     THREAD_UPNP,
     THREAD_DNSSEED,
     THREAD_ADDEDCONNECTIONS,
     THREAD_DUMPADDRESS,
+    THREAD_RPCHANDLER,
 
     THREAD_MAX
 };
@@ -138,7 +147,7 @@ public:
     unsigned int nMessageStart;
     CAddress addr;
     std::string addrName;
-    CNetAddr addrLocal;
+    CService addrLocal;
     int nVersion;
     std::string strSubVer;
     bool fOneShot;
@@ -147,6 +156,7 @@ public:
     bool fNetworkNode;
     bool fSuccessfullyConnected;
     bool fDisconnect;
+    CSemaphoreGrant grantOutbound;
 protected:
     int nRefCount;
 

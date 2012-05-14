@@ -1,8 +1,8 @@
 /*
  * Qt4 bitcoin GUI.
  *
- * W.J. van der Laan 20011-2012
- * The Bitcoin Developers 20011-2012
+ * W.J. van der Laan 2011-2012
+ * The Bitcoin Developers 2011-2012
  */
 #include "bitcoingui.h"
 #include "transactiontablemodel.h"
@@ -72,6 +72,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     resize(850, 550);
     setWindowTitle(tr("Bitcoin Wallet"));
 #ifndef Q_WS_MAC
+    qApp->setWindowIcon(QIcon(":icons/bitcoin"));
     setWindowIcon(QIcon(":icons/bitcoin"));
 #else
     setUnifiedTitleAndToolBarOnMac(true);
@@ -157,6 +158,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     // Clicking on a transaction on the overview page simply sends you to transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), this, SLOT(gotoHistoryPage()));
+    connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), transactionView, SLOT(focusTransaction(QModelIndex)));
 
     // Doubleclicking on a transaction on the transaction history page shows details
     connect(transactionView, SIGNAL(doubleClicked(QModelIndex)), transactionView, SLOT(showDetails()));
@@ -331,6 +333,7 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
         {
             setWindowTitle(windowTitle() + QString(" ") + tr("[testnet]"));
 #ifndef Q_WS_MAC
+            qApp->setWindowIcon(QIcon(":icons/bitcoin_testnet"));
             setWindowIcon(QIcon(":icons/bitcoin_testnet"));
 #else
             MacDockIconHandler::instance()->setIcon(QIcon(":icons/bitcoin_testnet"));
