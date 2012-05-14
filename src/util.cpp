@@ -4,6 +4,7 @@
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
 #include "util.h"
+#include "sync.h"
 #include "strlcpy.h"
 #include "version.h"
 #include "ui_interface.h"
@@ -23,8 +24,6 @@ namespace boost {
 #include <boost/program_options/parsers.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include <boost/interprocess/sync/interprocess_mutex.hpp>
-#include <boost/interprocess/sync/interprocess_recursive_mutex.hpp>
 #include <boost/foreach.hpp>
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
@@ -49,7 +48,6 @@ namespace boost {
 #define NOMINMAX
 #endif
 #include "shlobj.h"
-#include "shlwapi.h"
 #endif
 
 using namespace std;
@@ -71,13 +69,14 @@ bool fLogTimestamps = false;
 CMedianFilter<int64> vTimeOffsets(200,0);
 
 // Init openssl library multithreading support
-static boost::interprocess::interprocess_mutex** ppmutexOpenSSL;
+static CCriticalSection** ppmutexOpenSSL;
 void locking_callback(int mode, int i, const char* file, int line)
 {
-    if (mode & CRYPTO_LOCK)
-        ppmutexOpenSSL[i]->lock();
-    else
-        ppmutexOpenSSL[i]->unlock();
+    if (mode & CRYPTO_LOCK) {
+        ENTER_CRITICAL_SECTION(*ppmutexOpenSSL[i]);
+    } else {
+        LEAVE_CRITICAL_SECTION(*ppmutexOpenSSL[i]);
+    }
 }
 
 // Init
@@ -87,9 +86,9 @@ public:
     CInit()
     {
         // Init openssl library multithreading support
-        ppmutexOpenSSL = (boost::interprocess::interprocess_mutex**)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(boost::interprocess::interprocess_mutex*));
+        ppmutexOpenSSL = (CCriticalSection**)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(CCriticalSection*));
         for (int i = 0; i < CRYPTO_num_locks(); i++)
-            ppmutexOpenSSL[i] = new boost::interprocess::interprocess_mutex();
+            ppmutexOpenSSL[i] = new CCriticalSection();
         CRYPTO_set_locking_callback(locking_callback);
 
 #ifdef WIN32
@@ -1078,260 +1077,4 @@ boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate)
     printf("SHGetSpecialFolderPathA() failed, could not obtain requested path.\n");
     return fs::path("");
 }
-
-boost::filesystem::path static StartupShortcutPath()
-{
-    return GetSpecialFolderPath(CSIDL_STARTUP) / "Bitcoin.lnk";
-}
-
-bool GetStartOnSystemStartup()
-{
-    // check for Bitcoin.lnk
-    return boost::filesystem::exists(StartupShortcutPath());
-}
-
-bool SetStartOnSystemStartup(bool fAutoStart)
-{
-    // If the shortcut exists already, remove it for updating
-    boost::filesystem::remove(StartupShortcutPath());
-
-    if (fAutoStart)
-    {
-        CoInitialize(NULL);
-
-        // Get a pointer to the IShellLink interface.
-        IShellLink* psl = NULL;
-        HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL,
-                                CLSCTX_INPROC_SERVER, IID_IShellLink,
-                                reinterpret_cast<void**>(&psl));
-
-        if (SUCCEEDED(hres))
-        {
-            // Get the current executable path
-            TCHAR pszExePath[MAX_PATH];
-            GetModuleFileName(NULL, pszExePath, sizeof(pszExePath));
-
-            TCHAR pszArgs[5] = TEXT("-min");
-
-            // Set the path to the shortcut target
-            psl->SetPath(pszExePath);
-            PathRemoveFileSpec(pszExePath);
-            psl->SetWorkingDirectory(pszExePath);
-            psl->SetShowCmd(SW_SHOWMINNOACTIVE);
-            psl->SetArguments(pszArgs);
-
-            // Query IShellLink for the IPersistFile interface for
-            // saving the shortcut in persistent storage.
-            IPersistFile* ppf = NULL;
-            hres = psl->QueryInterface(IID_IPersistFile,
-                                       reinterpret_cast<void**>(&ppf));
-            if (SUCCEEDED(hres))
-            {
-                WCHAR pwsz[MAX_PATH];
-                // Ensure that the string is ANSI.
-                MultiByteToWideChar(CP_ACP, 0, StartupShortcutPath().string().c_str(), -1, pwsz, MAX_PATH);
-                // Save the link by calling IPersistFile::Save.
-                hres = ppf->Save(pwsz, TRUE);
-                ppf->Release();
-                psl->Release();
-                CoUninitialize();
-                return true;
-            }
-            psl->Release();
-        }
-        CoUninitialize();
-        return false;
-    }
-    return true;
-}
-
-#elif defined(LINUX)
-
-// Follow the Desktop Application Autostart Spec:
-//  http://standards.freedesktop.org/autostart-spec/autostart-spec-latest.html
-
-boost::filesystem::path static GetAutostartDir()
-{
-    namespace fs = boost::filesystem;
-
-    char* pszConfigHome = getenv("XDG_CONFIG_HOME");
-    if (pszConfigHome) return fs::path(pszConfigHome) / "autostart";
-    char* pszHome = getenv("HOME");
-    if (pszHome) return fs::path(pszHome) / ".config" / "autostart";
-    return fs::path();
-}
-
-boost::filesystem::path static GetAutostartFilePath()
-{
-    return GetAutostartDir() / "bitcoin.desktop";
-}
-
-bool GetStartOnSystemStartup()
-{
-    boost::filesystem::ifstream optionFile(GetAutostartFilePath());
-    if (!optionFile.good())
-        return false;
-    // Scan through file for "Hidden=true":
-    string line;
-    while (!optionFile.eof())
-    {
-        getline(optionFile, line);
-        if (line.find("Hidden") != string::npos &&
-            line.find("true") != string::npos)
-            return false;
-    }
-    optionFile.close();
-
-    return true;
-}
-
-bool SetStartOnSystemStartup(bool fAutoStart)
-{
-    if (!fAutoStart)
-        boost::filesystem::remove(GetAutostartFilePath());
-    else
-    {
-        char pszExePath[MAX_PATH+1];
-        memset(pszExePath, 0, sizeof(pszExePath));
-        if (readlink("/proc/self/exe", pszExePath, sizeof(pszExePath)-1) == -1)
-            return false;
-
-        boost::filesystem::create_directories(GetAutostartDir());
-
-        boost::filesystem::ofstream optionFile(GetAutostartFilePath(), ios_base::out|ios_base::trunc);
-        if (!optionFile.good())
-            return false;
-        // Write a bitcoin.desktop file to the autostart directory:
-        optionFile << "[Desktop Entry]\n";
-        optionFile << "Type=Application\n";
-        optionFile << "Name=Bitcoin\n";
-        optionFile << "Exec=" << pszExePath << " -min\n";
-        optionFile << "Terminal=false\n";
-        optionFile << "Hidden=false\n";
-        optionFile.close();
-    }
-    return true;
-}
-#else
-
-// TODO: OSX startup stuff; see:
-// http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/Articles/CustomLogin.html
-
-bool GetStartOnSystemStartup() { return false; }
-bool SetStartOnSystemStartup(bool fAutoStart) { return false; }
-
 #endif
-
-
-
-#ifdef DEBUG_LOCKORDER
-//
-// Early deadlock detection.
-// Problem being solved:
-//    Thread 1 locks  A, then B, then C
-//    Thread 2 locks  D, then C, then A
-//     --> may result in deadlock between the two threads, depending on when they run.
-// Solution implemented here:
-// Keep track of pairs of locks: (A before B), (A before C), etc.
-// Complain if any thread trys to lock in a different order.
-//
-
-struct CLockLocation
-{
-    CLockLocation(const char* pszName, const char* pszFile, int nLine)
-    {
-        mutexName = pszName;
-        sourceFile = pszFile;
-        sourceLine = nLine;
-    }
-
-    std::string ToString() const
-    {
-        return mutexName+"  "+sourceFile+":"+itostr(sourceLine);
-    }
-
-private:
-    std::string mutexName;
-    std::string sourceFile;
-    int sourceLine;
-};
-
-typedef std::vector< std::pair<void*, CLockLocation> > LockStack;
-
-static boost::interprocess::interprocess_mutex dd_mutex;
-static std::map<std::pair<void*, void*>, LockStack> lockorders;
-static boost::thread_specific_ptr<LockStack> lockstack;
-
-
-static void potential_deadlock_detected(const std::pair<void*, void*>& mismatch, const LockStack& s1, const LockStack& s2)
-{
-    printf("POTENTIAL DEADLOCK DETECTED\n");
-    printf("Previous lock order was:\n");
-    BOOST_FOREACH(const PAIRTYPE(void*, CLockLocation)& i, s2)
-    {
-        if (i.first == mismatch.first) printf(" (1)");
-        if (i.first == mismatch.second) printf(" (2)");
-        printf(" %s\n", i.second.ToString().c_str());
-    }
-    printf("Current lock order is:\n");
-    BOOST_FOREACH(const PAIRTYPE(void*, CLockLocation)& i, s1)
-    {
-        if (i.first == mismatch.first) printf(" (1)");
-        if (i.first == mismatch.second) printf(" (2)");
-        printf(" %s\n", i.second.ToString().c_str());
-    }
-}
-
-static void push_lock(void* c, const CLockLocation& locklocation, bool fTry)
-{
-    bool fOrderOK = true;
-    if (lockstack.get() == NULL)
-        lockstack.reset(new LockStack);
-
-    if (fDebug) printf("Locking: %s\n", locklocation.ToString().c_str());
-    dd_mutex.lock();
-
-    (*lockstack).push_back(std::make_pair(c, locklocation));
-
-    if (!fTry) BOOST_FOREACH(const PAIRTYPE(void*, CLockLocation)& i, (*lockstack))
-    {
-        if (i.first == c) break;
-
-        std::pair<void*, void*> p1 = std::make_pair(i.first, c);
-        if (lockorders.count(p1))
-            continue;
-        lockorders[p1] = (*lockstack);
-
-        std::pair<void*, void*> p2 = std::make_pair(c, i.first);
-        if (lockorders.count(p2))
-        {
-            potential_deadlock_detected(p1, lockorders[p2], lockorders[p1]);
-            break;
-        }
-    }
-    dd_mutex.unlock();
-}
-
-static void pop_lock()
-{
-    if (fDebug) 
-    {
-        const CLockLocation& locklocation = (*lockstack).rbegin()->second;
-        printf("Unlocked: %s\n", locklocation.ToString().c_str());
-    }
-    dd_mutex.lock();
-    (*lockstack).pop_back();
-    dd_mutex.unlock();
-}
-
-void EnterCritical(const char* pszName, const char* pszFile, int nLine, void* cs, bool fTry)
-{
-    push_lock(cs, CLockLocation(pszName, pszFile, nLine), fTry);
-}
-
-void LeaveCritical()
-{
-    pop_lock();
-}
-
-#endif /* DEBUG_LOCKORDER */
