@@ -27,6 +27,7 @@ namespace boost {
 #include <boost/foreach.hpp>
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
+#include <stdarg.h>
 
 #ifdef WIN32
 #ifdef _MSC_VER
@@ -47,6 +48,7 @@ namespace boost {
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <io.h> /* for _commit */
 #include "shlobj.h"
 #endif
 
@@ -147,7 +149,7 @@ void RandAddSeedPerfmon()
     {
         RAND_add(pdata, nSize, nSize/100.0);
         memset(pdata, 0, nSize);
-        printf("%s RandAddSeed() %d bytes\n", DateTimeStrFormat("%x %H:%M", GetTime()).c_str(), nSize);
+        printf("RandAddSeed() %d bytes\n", nSize);
     }
 #endif
 }
@@ -868,6 +870,27 @@ void CreatePidFile(const boost::filesystem::path &path, pid_t pid)
         fprintf(file, "%d\n", pid);
         fclose(file);
     }
+}
+
+bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest)
+{
+#ifdef WIN32
+    return MoveFileExA(src.string().c_str(), dest.string().c_str(),
+                      MOVEFILE_REPLACE_EXISTING);
+#else
+    int rc = std::rename(src.string().c_str(), dest.string().c_str());
+    return (rc == 0);
+#endif /* WIN32 */
+}
+
+void FileCommit(FILE *fileout)
+{
+    fflush(fileout);                // harmless if redundantly called
+#ifdef WIN32
+    _commit(_fileno(fileout));
+#else
+    fsync(fileno(fileout));
+#endif
 }
 
 int GetFilesize(FILE* file)

@@ -62,7 +62,7 @@ void Shutdown(void* parg)
         delete pwalletMain;
         CreateThread(ExitTimeout, NULL);
         Sleep(50);
-        printf("Bitcoin exiting\n\n");
+        printf("Bitcoin exited\n\n");
         fExit = true;
         exit(0);
     }
@@ -162,7 +162,6 @@ bool static InitError(const std::string &str)
 {
     ThreadSafeMessageBox(str, _("Bitcoin"), wxOK | wxMODAL);
     return false;
-
 }
 
 bool static InitWarning(const std::string &str)
@@ -352,7 +351,7 @@ bool AppInit2()
         return false;
     }
 
-    // Make sure only a single bitcoin process is using the data directory.
+    // Make sure only a single Bitcoin process is using the data directory.
     boost::filesystem::path pathLockFile = GetDataDir() / ".lock";
     FILE* file = fopen(pathLockFile.string().c_str(), "a"); // empty lock file; created if it doesn't exist.
     if (file) fclose(file);
@@ -365,15 +364,21 @@ bool AppInit2()
     // Load data files
     //
     if (fDaemon)
-        fprintf(stdout, "bitcoin server starting\n");
+        fprintf(stdout, "Bitcoin server starting\n");
     int64 nStart;
 
     InitMessage(_("Loading addresses..."));
     printf("Loading addresses...\n");
     nStart = GetTimeMillis();
-    if (!LoadAddresses())
-        strErrors << _("Error loading addr.dat") << "\n";
-    printf(" addresses   %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+
+    {
+        CAddrDB adb;
+        if (!adb.Read(addrman))
+            printf("Invalid or missing peers.dat; recreating\n");
+    }
+
+    printf("Loaded %i addresses from peers.dat  %"PRI64d"ms\n",
+           addrman.size(), GetTimeMillis() - nStart);
 
     InitMessage(_("Loading block index..."));
     printf("Loading block index...\n");
@@ -492,7 +497,7 @@ bool AppInit2()
     // Add wallet transactions that aren't already in a block to mapTransactions
     pwalletMain->ReacceptWalletTransactions();
 
-    // Note: Bitcoin-QT stores several settings in the wallet, so we want
+    // Note: Bitcoin-Qt stores several settings in the wallet, so we want
     // to load the wallet BEFORE parsing command-line arguments, so
     // the command-line/bitcoin.conf settings override GUI setting.
 
