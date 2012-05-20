@@ -43,11 +43,6 @@ static const int64 CENT = 1000000;
 #define ARRAYLEN(array)     (sizeof(array)/sizeof((array)[0]))
 #define printf              OutputDebugStringF
 
-#ifdef snprintf
-#undef snprintf
-#endif
-#define snprintf my_snprintf
-
 #ifndef PRI64d
 #if defined(_MSC_VER) || defined(__MSVCRT__)
 #define PRI64d  "I64d"
@@ -133,6 +128,7 @@ int my_snprintf(char* buffer, size_t limit, const char* format, ...);
 */
 std::string real_strprintf(const std::string &format, int dummy, ...);
 #define strprintf(format, ...) real_strprintf(format, 0, __VA_ARGS__)
+std::string vstrprintf(const std::string &format, va_list ap);
 
 bool error(const char *format, ...);
 void LogException(std::exception* pex, const char* pszThread);
@@ -152,7 +148,9 @@ std::string EncodeBase64(const std::string& str);
 void ParseParameters(int argc, const char*const argv[]);
 bool WildcardMatch(const char* psz, const char* mask);
 bool WildcardMatch(const std::string& str, const std::string& mask);
+void FileCommit(FILE *fileout);
 int GetFilesize(FILE* file);
+bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest);
 boost::filesystem::path GetDefaultDataDir();
 const boost::filesystem::path &GetDataDir(bool fNetSpecific = true);
 boost::filesystem::path GetConfigFile();
