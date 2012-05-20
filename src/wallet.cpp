@@ -242,7 +242,8 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
         if (fFileBacked)
         {
             pwalletdbEncryption = new CWalletDB(strWalletFile);
-            pwalletdbEncryption->TxnBegin();
+            if (!pwalletdbEncryption->TxnBegin())
+                return false;
             pwalletdbEncryption->WriteMasterKey(nMasterKeyMaxID, kMasterKey);
         }
 
@@ -1250,7 +1251,7 @@ string CWallet::SendMoneyToBitcoinAddress(const CBitcoinAddress& address, int64 
     if (nValue + nTransactionFee > GetBalance())
         return _("Insufficient funds");
 
-    // Parse bitcoin address
+    // Parse Bitcoin address
     CScript scriptPubKey;
     scriptPubKey.SetBitcoinAddress(address);
 
