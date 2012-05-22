@@ -7,26 +7,15 @@
 #include <string>
 #include <vector>
 
-#ifdef WIN32
-#define _WIN32_WINNT 0x0501
-#include <winsock2.h>
-#include <mswsock.h>
-#include <ws2tcpip.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <net/if.h>
-#include <ifaddrs.h>
-#include <netinet/in.h>
-#endif
-
 #include "serialize.h"
 #include "compat.h"
 
 extern int nConnectTimeout;
 
+#ifdef WIN32
+// In MSVC, this is defined as a macro, undefine it to prevent a compile and link error
+#undef SetPort
+#endif
 
 /** IP address (IPv6, or IPv4 using mapped IPv6 range (::FFFF:0:0/96)) */
 class CNetAddr
@@ -79,7 +68,7 @@ class CNetAddr
             )
 };
 
-/** A combnation of a network address (CNetAddr) and a (TCP) port */
+/** A combination of a network address (CNetAddr) and a (TCP) port */
 class CService : public CNetAddr
 {
     protected:

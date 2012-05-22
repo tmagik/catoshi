@@ -5,13 +5,12 @@
 #ifndef BITCOIN_INIT_H
 #define BITCOIN_INIT_H
 
+#include "wallet.h"
+
 extern CWallet* pwalletMain;
 
 void Shutdown(void* parg);
 bool AppInit(int argc, char* argv[]);
 bool AppInit2(int argc, char* argv[]);
-
-bool GetStartOnSystemStartup();
-bool SetStartOnSystemStartup(bool fAutoStart);
 
 #endif
