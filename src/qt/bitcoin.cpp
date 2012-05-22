@@ -6,6 +6,7 @@
 #include "walletmodel.h"
 #include "optionsmodel.h"
 #include "guiutil.h"
+#include "guiconstants.h"
 
 #include "init.h"
 #include "ui_interface.h"
@@ -20,6 +21,7 @@
 #include <QLibraryInfo>
 
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 #if defined(BITCOIN_NEED_QT_PLUGINS) && !defined(_BITCOIN_QT_PLUGINS_INCLUDED)
 #define _BITCOIN_QT_PLUGINS_INCLUDED
@@ -35,15 +37,13 @@ Q_IMPORT_PLUGIN(qtaccessiblewidgets)
 // Need a global reference for the notifications to find the GUI
 static BitcoinGUI *guiref;
 static QSplashScreen *splashref;
-static WalletModel *walletmodel;
-static ClientModel *clientmodel;
 
-int ThreadSafeMessageBox(const std::string& message, const std::string& caption, int style)
+static void ThreadSafeMessageBox(const std::string& message, const std::string& caption, int style)
 {
     // Message from network thread
     if(guiref)
     {
-        bool modal = (style & wxMODAL);
+        bool modal = (style & CClientUIInterface::MODAL);
         // in case of modal message, use blocking connection to wait for user to click OK
         QMetaObject::invokeMethod(guiref, "error",
                                    modal ? GUIUtil::blockingGUIThreadConnection() : Qt::QueuedConnection,
@@ -56,10 +56,9 @@ int ThreadSafeMessageBox(const std::string& message, const std::string& caption,
         printf("%s: %s\n", caption.c_str(), message.c_str());
         fprintf(stderr, "%s: %s\n", caption.c_str(), message.c_str());
     }
-    return 4;
 }
 
-bool ThreadSafeAskFee(int64 nFeeRequired, const std::string& strCaption)
+static bool ThreadSafeAskFee(int64 nFeeRequired, const std::string& strCaption)
 {
     if(!guiref)
         return false;
@@ -74,7 +73,7 @@ bool ThreadSafeAskFee(int64 nFeeRequired, const std::string& strCaption)
     return payFee;
 }
 
-void ThreadSafeHandleURI(const std::string& strURI)
+static void ThreadSafeHandleURI(const std::string& strURI)
 {
     if(!guiref)
         return;
@@ -83,21 +82,7 @@ void ThreadSafeHandleURI(const std::string& strURI)
                                Q_ARG(QString, QString::fromStdString(strURI)));
 }
 
-void MainFrameRepaint()
-{
-    if(clientmodel)
-        QMetaObject::invokeMethod(clientmodel, "update", Qt::QueuedConnection);
-    if(walletmodel)
-        QMetaObject::invokeMethod(walletmodel, "update", Qt::QueuedConnection);
-}
-
-void AddressBookRepaint()
-{
-    if(walletmodel)
-        QMetaObject::invokeMethod(walletmodel, "updateAddressList", Qt::QueuedConnection);
-}
-
-void InitMessage(const std::string &message)
+static void InitMessage(const std::string &message)
 {
     if(splashref)
     {
@@ -106,7 +91,7 @@ void InitMessage(const std::string &message)
     }
 }
 
-void QueueShutdown()
+static void QueueShutdown()
 {
     QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 }
@@ -114,7 +99,7 @@ void QueueShutdown()
 /*
    Translate string to current locale using Qt.
  */
-std::string _(const char* psz)
+static std::string Translate(const char* psz)
 {
     return QCoreApplication::translate("bitcoin-core", psz).toStdString();
 }
@@ -128,9 +113,54 @@ static void handleRunawayException(std::exception *e)
     exit(1);
 }
 
-#ifdef WIN32
-#define strncasecmp strnicmp
+/** Help message for Bitcoin-Qt, shown with --help. */
+class HelpMessageBox: public QMessageBox
+{
+    Q_OBJECT
+public:
+    HelpMessageBox(QWidget *parent = 0);
+
+    void exec();
+private:
+    QString header;
+    QString coreOptions;
+    QString uiOptions;
+};
+
+HelpMessageBox::HelpMessageBox(QWidget *parent):
+    QMessageBox(parent)
+{
+    header = tr("Bitcoin-Qt") + " " + tr("version") + " " +
+        QString::fromStdString(FormatFullVersion()) + "\n\n" +
+        tr("Usage:") + "\n" +
+        "  bitcoin-qt [" + tr("options") + "]                     " + "\n";
+    coreOptions = QString::fromStdString(HelpMessage());
+    uiOptions = tr("UI options") + ":\n" +
+        "  -lang=<lang>           " + tr("Set language, for example \"de_DE\" (default: system locale)") + "\n" +
+        "  -min                   " + tr("Start minimized") + "\n" +
+        "  -splash                " + tr("Show splash screen on startup (default: 1)") + "\n";
+
+    setWindowTitle(tr("Bitcoin-Qt"));
+    setTextFormat(Qt::PlainText);
+    // setMinimumWidth is ignored for QMessageBox so put in nonbreaking spaces to make it wider.
+    QChar em_space(0x2003);
+    setText(header + QString(em_space).repeated(40));
+    setDetailedText(coreOptions + "\n" + uiOptions);
+}
+#include "bitcoin.moc"
+
+void HelpMessageBox::exec()
+{
+#if defined(WIN32)
+    // On windows, show a message box, as there is no stderr in windowed applications
+    QMessageBox::exec();
+#else
+    // On other operating systems, the expected action is to print the message to the console.
+    QString strUsage = header + "\n" + coreOptions + "\n" + uiOptions;
+    fprintf(stderr, "%s", strUsage.toStdString().c_str());
 #endif
+}
+
 #ifndef BITCOIN_QT_TEST
 int main(int argc, char *argv[])
 {
@@ -140,7 +170,7 @@ int main(int argc, char *argv[])
     // Do this early as we don't want to bother initializing if we are just calling IPC
     for (int i = 1; i < argc; i++)
     {
-        if (strlen(argv[i]) > 7 && strncasecmp(argv[i], "bitcoin:", 8) == 0)
+        if (boost::algorithm::istarts_with(argv[i], "bitcoin:"))
         {
             const char *strURI = argv[i];
             try {
@@ -163,6 +193,9 @@ int main(int argc, char *argv[])
 
     Q_INIT_RESOURCE(bitcoin);
     QApplication app(argc, argv);
+
+    // Install global event filter that makes sure that long tooltips can be word-wrapped
+    app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
 
     // Command-line options take precedence:
     ParseParameters(argc, argv);
@@ -187,31 +220,49 @@ int main(int argc, char *argv[])
     // ... then GUI settings:
     OptionsModel optionsModel;
 
-    // Get desired locale ("en_US") from command line or system locale
+    // Get desired locale (e.g. "de_DE") from command line or use system locale
     QString lang_territory = QString::fromStdString(GetArg("-lang", QLocale::system().name().toStdString()));
+    QString lang = lang_territory;
+    // Convert to "de" only by truncating "_DE"
+    lang.truncate(lang_territory.lastIndexOf('_'));
+
+    QTranslator qtTranslatorBase, qtTranslator, translatorBase, translator;
     // Load language files for configured locale:
     // - First load the translator for the base language, without territory
     // - Then load the more specific locale translator
-    QString lang = lang_territory;
 
-    lang.truncate(lang_territory.lastIndexOf('_')); // "en"
-    QTranslator qtTranslatorBase, qtTranslator, translatorBase, translator;
-
-    qtTranslatorBase.load(QLibraryInfo::location(QLibraryInfo::TranslationsPath) + "/qt_" + lang);
-    if (!qtTranslatorBase.isEmpty())
+    // Load e.g. qt_de.qm
+    if (qtTranslatorBase.load("qt_" + lang, QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
         app.installTranslator(&qtTranslatorBase);
 
-    qtTranslator.load(QLibraryInfo::location(QLibraryInfo::TranslationsPath) + "/qt_" + lang_territory);
-    if (!qtTranslator.isEmpty())
+    // Load e.g. qt_de_DE.qm
+    if (qtTranslator.load("qt_" + lang_territory, QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
         app.installTranslator(&qtTranslator);
 
-    translatorBase.load(":/translations/"+lang);
-    if (!translatorBase.isEmpty())
+    // Load e.g. bitcoin_de.qm (shortcut "de" needs to be defined in bitcoin.qrc)
+    if (translatorBase.load(lang, ":/translations/"))
         app.installTranslator(&translatorBase);
 
-    translator.load(":/translations/"+lang_territory);
-    if (!translator.isEmpty())
+    // Load e.g. bitcoin_de_DE.qm (shortcut "de_DE" needs to be defined in bitcoin.qrc)
+    if (translator.load(lang_territory, ":/translations/"))
         app.installTranslator(&translator);
+
+    // Subscribe to global signals from core
+    uiInterface.ThreadSafeMessageBox.connect(ThreadSafeMessageBox);
+    uiInterface.ThreadSafeAskFee.connect(ThreadSafeAskFee);
+    uiInterface.ThreadSafeHandleURI.connect(ThreadSafeHandleURI);
+    uiInterface.InitMessage.connect(InitMessage);
+    uiInterface.QueueShutdown.connect(QueueShutdown);
+    uiInterface.Translate.connect(Translate);
+
+    // Show help message immediately after parsing command-line options (for "-lang") and setting locale,
+    // but before showing splash screen.
+    if (mapArgs.count("-?") || mapArgs.count("--help"))
+    {
+        HelpMessageBox help;
+        help.exec();
+        return 1;
+    }
 
     QSplashScreen splash(QPixmap(":/images/splash"), 0);
     if (GetBoolArg("-splash", true) && !GetBoolArg("-min"))
@@ -227,9 +278,13 @@ int main(int argc, char *argv[])
 
     try
     {
+        // Regenerate startup link, to fix links to old versions
+        if (GUIUtil::GetStartOnSystemStartup())
+            GUIUtil::SetStartOnSystemStartup(true);
+
         BitcoinGUI window;
         guiref = &window;
-        if(AppInit2(argc, argv))
+        if(AppInit2())
         {
             {
                 // Put this in a block, so that the Model objects are cleaned up before
@@ -241,9 +296,7 @@ int main(int argc, char *argv[])
                     splash.finish(&window);
 
                 ClientModel clientModel(&optionsModel);
-                clientmodel = &clientModel;
                 WalletModel walletModel(pwalletMain, &optionsModel);
-                walletmodel = &walletModel;
 
                 window.setClientModel(&clientModel);
                 window.setWalletModel(&walletModel);
@@ -257,17 +310,16 @@ int main(int argc, char *argv[])
                 {
                     window.show();
                 }
+#if !defined(MAC_OSX) && !defined(WIN32)
+// TODO: implement qtipcserver.cpp for Mac and Windows
 
                 // Place this here as guiref has to be defined if we dont want to lose URIs
                 ipcInit();
 
-#if !defined(MAC_OSX) && !defined(WIN32)
-// TODO: implement qtipcserver.cpp for Mac and Windows
-
                 // Check for URI in argv
                 for (int i = 1; i < argc; i++)
                 {
-                    if (strlen(argv[i]) > 7 && strncasecmp(argv[i], "bitcoin:", 8) == 0)
+                    if (boost::algorithm::istarts_with(argv[i], "bitcoin:"))
                     {
                         const char *strURI = argv[i];
                         try {
@@ -281,11 +333,10 @@ int main(int argc, char *argv[])
 #endif
                 app.exec();
 
+                window.hide();
                 window.setClientModel(0);
                 window.setWalletModel(0);
                 guiref = 0;
-                clientmodel = 0;
-                walletmodel = 0;
             }
             Shutdown(NULL);
         }

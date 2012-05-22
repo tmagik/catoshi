@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2012 Bitcoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "init.h" // for pwalletMain
 #include "bitcoinrpc.h"
@@ -73,8 +73,6 @@ Value importprivkey(const Array& params, bool fHelp)
         pwalletMain->ReacceptWalletTransactions();
     }
 
-    MainFrameRepaint();
-
     return Value::null;
 }
 
@@ -88,7 +86,7 @@ Value dumpprivkey(const Array& params, bool fHelp)
     string strAddress = params[0].get_str();
     CBitcoinAddress address;
     if (!address.SetString(strAddress))
-        throw JSONRPCError(-5, "Invalid bitcoin address");
+        throw JSONRPCError(-5, "Invalid Bitcoin address");
     CSecret vchSecret;
     bool fCompressed;
     if (!pwalletMain->GetSecret(address, vchSecret, fCompressed))
