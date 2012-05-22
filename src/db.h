@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_DB_H
 #define BITCOIN_DB_H
 
@@ -216,7 +216,7 @@ public:
         if (!pdb)
             return false;
         DbTxn* ptxn = NULL;
-        int ret = dbenv.txn_begin(GetTxn(), &ptxn, DB_TXN_NOSYNC);
+        int ret = dbenv.txn_begin(GetTxn(), &ptxn, DB_TXN_WRITE_NOSYNC);
         if (!ptxn || ret != 0)
             return false;
         vTxn.push_back(ptxn);
@@ -285,7 +285,6 @@ public:
     bool ReadDiskTx(COutPoint outpoint, CTransaction& tx, CTxIndex& txindex);
     bool ReadDiskTx(COutPoint outpoint, CTransaction& tx);
     bool WriteBlockIndex(const CDiskBlockIndex& blockindex);
-    bool EraseBlockIndex(uint256 hash);
     bool ReadHashBestChain(uint256& hashBestChain);
     bool WriteHashBestChain(uint256 hashBestChain);
     bool ReadBestInvalidWork(CBigNum& bnBestInvalidWork);
@@ -296,20 +295,15 @@ public:
 
 
 
-/** Access to the (IP) address database (addr.dat) */
-class CAddrDB : public CDB
+/** Access to the (IP) address database (peers.dat) */
+class CAddrDB
 {
-public:
-    CAddrDB(const char* pszMode="r+") : CDB("addr.dat", pszMode) { }
 private:
-    CAddrDB(const CAddrDB&);
-    void operator=(const CAddrDB&);
+    boost::filesystem::path pathAddr;
 public:
-    bool WriteAddrman(const CAddrMan& addr);
-    bool LoadAddresses();
+    CAddrDB();
+    bool Write(const CAddrMan& addr);
+    bool Read(CAddrMan& addr);
 };
-
-bool LoadAddresses();
-
 
 #endif // BITCOIN_DB_H

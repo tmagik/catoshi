@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <map>
 
@@ -9,6 +9,7 @@
 #include <openssl/obj_mac.h>
 
 #include "key.h"
+#include "sync.h"
 #include "util.h"
 
 // Generate a private key from just the secret parameter
