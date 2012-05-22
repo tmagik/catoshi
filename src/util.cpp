@@ -25,6 +25,7 @@ namespace boost {
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/foreach.hpp>
+#include <boost/thread.hpp>
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
 #include <stdarg.h>
@@ -69,6 +70,7 @@ bool fTestNet = false;
 bool fNoListen = false;
 bool fLogTimestamps = false;
 CMedianFilter<int64> vTimeOffsets(200,0);
+bool fReopenDebugLog = false;
 
 // Init openssl library multithreading support
 static CCriticalSection** ppmutexOpenSSL;
@@ -174,6 +176,12 @@ int GetRandInt(int nMax)
     return GetRand(nMax);
 }
 
+uint256 GetRandHash()
+{
+    uint256 hash;
+    RAND_bytes((unsigned char*)&hash, sizeof(hash));
+    return hash;
+}
 
 
 
@@ -207,6 +215,16 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
         if (fileout)
         {
             static bool fStartedNewLine = true;
+            static boost::mutex mutexDebugLog;
+            boost::mutex::scoped_lock scoped_lock(mutexDebugLog);
+
+            // reopen the log file, if requested
+            if (fReopenDebugLog) {
+                fReopenDebugLog = false;
+                boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
+                if (freopen(pathDebug.string().c_str(),"a",fileout) != NULL)
+                    setbuf(fileout, NULL); // unbuffered
+            }
 
             // Debug print useful for profiling
             if (fLogTimestamps && fStartedNewLine)
