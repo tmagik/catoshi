@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2012 Bitcoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "init.h" // for pwalletMain
 #include "bitcoinrpc.h"
@@ -72,8 +72,6 @@ Value importprivkey(const Array& params, bool fHelp)
         pwalletMain->ScanForWalletTransactions(pindexGenesisBlock, true);
         pwalletMain->ReacceptWalletTransactions();
     }
-
-    MainFrameRepaint();
 
     return Value::null;
 }

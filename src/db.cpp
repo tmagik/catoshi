@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "db.h"
 #include "util.h"
@@ -74,6 +74,10 @@ bool CDBEnv::Open(boost::filesystem::path pathEnv_)
     filesystem::path pathErrorFile = pathDataDir / "db.log";
     printf("dbenv.open LogDir=%s ErrorFile=%s\n", pathLogDir.string().c_str(), pathErrorFile.string().c_str());
 
+    unsigned int nEnvFlags = 0;
+    if (GetBoolArg("-privdb", true))
+        nEnvFlags |= DB_PRIVATE;
+
     int nDbCache = GetArg("-dbcache", 25);
     dbenv.set_lg_dir(pathLogDir.string().c_str());
     dbenv.set_cachesize(nDbCache / 1024, (nDbCache % 1024)*1048576, 1);
@@ -92,7 +96,8 @@ bool CDBEnv::Open(boost::filesystem::path pathEnv_)
                      DB_INIT_MPOOL |
                      DB_INIT_TXN   |
                      DB_THREAD     |
-                     DB_RECOVER,
+                     DB_RECOVER    |
+                     nEnvFlags,
                      S_IRUSR | S_IWUSR);
     if (ret > 0)
         return error("CDB() : error %d opening database environment", ret);
@@ -423,9 +428,15 @@ bool CTxDB::ReadOwnerTxes(uint160 hash160, int nMinHeight, vector<CTransaction>&
         string strType;
         uint160 hashItem;
         CDiskTxPos pos;
-        ssKey >> strType >> hashItem >> pos;
         int nItemHeight;
-        ssValue >> nItemHeight;
+
+        try {
+            ssKey >> strType >> hashItem >> pos;
+            ssValue >> nItemHeight;
+        }
+        catch (std::exception &e) {
+            return error("%s() : deserialize error", __PRETTY_FUNCTION__);
+        }
 
         // Read transaction
         if (strType != "owner" || hashItem != hash160)
@@ -540,6 +551,8 @@ bool CTxDB::LoadBlockIndex()
             return false;
 
         // Unserialize
+
+        try {
         string strType;
         ssKey >> strType;
         if (strType == "blockindex" && !fRequestShutdown)
@@ -570,6 +583,10 @@ bool CTxDB::LoadBlockIndex()
         else
         {
             break; // if shutdown requested or finished loading block index
+        }
+        }    // try
+        catch (std::exception &e) {
+            return error("%s() : deserialize error", __PRETTY_FUNCTION__);
         }
     }
     pcursor->close();
