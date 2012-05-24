@@ -1,0 +1,12 @@
+src/*.exe
+src/bitcoin
+src/bitcoind
+src/test_bitcoin
+.*.swp
+*.*~*
+*.bak
+*.rej
+*.orig
+*.o
+*.patch
+.bitcoin
