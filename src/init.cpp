@@ -414,6 +414,7 @@ bool AppInit2()
         ShrinkDebugFile();
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     printf("Bitcoin version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
+    printf("Startup time: %s\n", DateTimeStrFormat("%x %H:%M:%S", GetTime()).c_str());
     printf("Default data directory %s\n", GetDefaultDataDir().string().c_str());
     std::ostringstream strErrors;
 
@@ -604,11 +605,11 @@ bool AppInit2()
         // Create new keyUser and set as default key
         RandAddSeedPerfmon();
 
-        std::vector<unsigned char> newDefaultKey;
+        CPubKey newDefaultKey;
         if (!pwalletMain->GetKeyFromPool(newDefaultKey, false))
             strErrors << _("Cannot initialize keypool") << "\n";
         pwalletMain->SetDefaultKey(newDefaultKey);
-        if (!pwalletMain->SetAddressBookName(CBitcoinAddress(pwalletMain->vchDefaultKey), ""))
+        if (!pwalletMain->SetAddressBookName(pwalletMain->vchDefaultKey.GetID(), ""))
             strErrors << _("Cannot write default address") << "\n";
     }
 
