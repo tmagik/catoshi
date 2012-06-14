@@ -5,6 +5,7 @@
 #include "transactiontablemodel.h"
 
 #include "headers.h"
+#include "db.h" // for BackupWallet
 
 #include <QTimer>
 #include <QSet>
@@ -243,6 +244,11 @@ bool WalletModel::changePassphrase(const SecureString &oldPass, const SecureStri
         retval = wallet->ChangeWalletPassphrase(oldPass, newPass);
     }
     return retval;
+}
+
+bool WalletModel::backupWallet(const QString &filename)
+{
+    return BackupWallet(*wallet, filename.toLocal8Bit().data());
 }
 
 // WalletModel::UnlockContext implementation
