@@ -2,7 +2,7 @@ TEMPLATE = app
 TARGET =
 VERSION = 0.6.99
 INCLUDEPATH += src src/json src/qt
-DEFINES += QT_GUI BOOST_THREAD_USE_LIB USE_IPV6
+DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE USE_IPV6
 CONFIG += no_include_pwd
 
 # for boost 1.37, add -mt to the boost libraries 
@@ -83,7 +83,7 @@ contains(BITCOIN_NEED_QT_PLUGINS, 1) {
 # regenerate src/build.h
 !windows || contains(USE_BUILD_INFO, 1) {
     genbuild.depends = FORCE
-    genbuild.commands = cd $$PWD; share/genbuild.sh $$OUT_PWD/build/build.h
+    genbuild.commands = cd $$PWD; /bin/sh share/genbuild.sh $$OUT_PWD/build/build.h
     genbuild.target = $$OUT_PWD/build/build.h
     PRE_TARGETDEPS += $$OUT_PWD/build/build.h
     QMAKE_EXTRA_TARGETS += genbuild
@@ -160,7 +160,8 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/qtipcserver.h \
     src/allocators.h \
     src/ui_interface.h \
-    src/qt/rpcconsole.h
+    src/qt/rpcconsole.h \
+    src/qt/verifymessagedialog.h
 
 SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/transactiontablemodel.cpp \
@@ -216,7 +217,8 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/protocol.cpp \
     src/qt/notificator.cpp \
     src/qt/qtipcserver.cpp \
-    src/qt/rpcconsole.cpp
+    src/qt/rpcconsole.cpp \
+    src/qt/verifymessagedialog.cpp
 
 RESOURCES += \
     src/qt/bitcoin.qrc
@@ -231,7 +233,9 @@ FORMS += \
     src/qt/forms/overviewpage.ui \
     src/qt/forms/sendcoinsentry.ui \
     src/qt/forms/askpassphrasedialog.ui \
-    src/qt/forms/rpcconsole.ui
+    src/qt/forms/rpcconsole.ui \
+    src/qt/forms/verifymessagedialog.ui \
+    src/qt/forms/optionsdialog.ui
 
 contains(USE_QRCODE, 1) {
 HEADERS += src/qt/qrcodedialog.h

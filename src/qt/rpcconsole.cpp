@@ -11,6 +11,7 @@
 #include <QTextEdit>
 #include <QKeyEvent>
 #include <QUrl>
+#include <QScrollBar>
 
 #include <boost/tokenizer.hpp>
 
@@ -108,17 +109,15 @@ RPCConsole::RPCConsole(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#ifndef WIN32
-    // Show Debug logfile label and Open button only for Windows
-    ui->labelDebugLogfile->setVisible(false);
-    ui->openDebugLogfileButton->setVisible(false);
+#ifndef Q_WS_MAC
+    ui->openDebugLogfileButton->setIcon(QIcon(":/icons/export"));
+    ui->showCLOptionsButton->setIcon(QIcon(":/icons/options"));
 #endif
 
     // Install event filter for up and down arrow
     ui->lineEdit->installEventFilter(this);
 
     connect(ui->clearButton, SIGNAL(clicked()), this, SLOT(clear()));
-    connect(ui->openDebugLogfileButton, SIGNAL(clicked()), this, SLOT(on_openDebugLogfileButton_clicked()));
 
     startExecutor();
 
@@ -155,18 +154,18 @@ void RPCConsole::setClientModel(ClientModel *model)
     {
         // Subscribe to information, replies, messages, errors
         connect(model, SIGNAL(numConnectionsChanged(int)), this, SLOT(setNumConnections(int)));
-        connect(model, SIGNAL(numBlocksChanged(int)), this, SLOT(setNumBlocks(int)));
+        connect(model, SIGNAL(numBlocksChanged(int,int)), this, SLOT(setNumBlocks(int,int)));
 
         // Provide initial values
         ui->clientVersion->setText(model->formatFullVersion());
         ui->clientName->setText(model->clientName());
         ui->buildDate->setText(model->formatBuildDate());
-        ui->startupTime->setText(model->formatClientStartupTime().toString());
+        ui->startupTime->setText(model->formatClientStartupTime());
 
         setNumConnections(model->getNumConnections());
         ui->isTestNet->setChecked(model->isTestNet());
 
-        setNumBlocks(model->getNumBlocks());
+        setNumBlocks(model->getNumBlocks(), model->getNumBlocksOfPeers());
     }
 }
 
@@ -207,9 +206,9 @@ void RPCConsole::clear()
                 "b { color: #006060; } "
                 );
 
-    message(CMD_REPLY, tr("Welcome to the Bitcoin RPC console.<br>"
-                          "Use up and down arrows to navigate history, and <b>Ctrl-L</b> to clear screen.<br>"
-                          "Type <b>help</b> for an overview of available commands."), true);
+    message(CMD_REPLY, (tr("Welcome to the Bitcoin RPC console.") + "<br>" +
+                        tr("Use up and down arrows to navigate history, and <b>Ctrl-L</b> to clear screen.") + "<br>" +
+                        tr("Type <b>help</b> for an overview of available commands.")), true);
 }
 
 void RPCConsole::message(int category, const QString &message, bool html)
@@ -233,9 +232,10 @@ void RPCConsole::setNumConnections(int count)
     ui->numberOfConnections->setText(QString::number(count));
 }
 
-void RPCConsole::setNumBlocks(int count)
+void RPCConsole::setNumBlocks(int count, int countOfPeers)
 {
     ui->numberOfBlocks->setText(QString::number(count));
+    ui->totalBlocks->setText(QString::number(countOfPeers));
     if(clientModel)
     {
         // If there is no current number available display N/A instead of 0, which can't ever be true
@@ -262,6 +262,8 @@ void RPCConsole::on_lineEdit_returnPressed()
             history.removeFirst();
         // Set pointer to end of history
         historyPtr = history.size();
+        // Scroll console view to end
+        scrollToEnd();
     }
 }
 
@@ -314,4 +316,16 @@ void RPCConsole::on_tabWidget_currentChanged(int index)
 void RPCConsole::on_openDebugLogfileButton_clicked()
 {
     GUIUtil::openDebugLogfile();
+}
+
+void RPCConsole::scrollToEnd()
+{
+    QScrollBar *scrollbar = ui->messagesWidget->verticalScrollBar();
+    scrollbar->setValue(scrollbar->maximum());
+}
+
+void RPCConsole::on_showCLOptionsButton_clicked()
+{
+    GUIUtil::HelpMessageBox help;
+    help.exec();
 }

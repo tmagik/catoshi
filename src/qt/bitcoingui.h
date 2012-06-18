@@ -79,6 +79,7 @@ private:
     QAction *sendCoinsAction;
     QAction *addressBookAction;
     QAction *messageAction;
+    QAction *verifyMessageAction;
     QAction *aboutAction;
     QAction *receiveCoinsAction;
     QAction *optionsAction;
@@ -110,7 +111,7 @@ public slots:
     /** Set number of connections shown in the UI */
     void setNumConnections(int count);
     /** Set number of blocks shown in the UI */
-    void setNumBlocks(int count);
+    void setNumBlocks(int count, int countOfPeers);
     /** Set the encryption status as shown in the UI.
        @param[in] status            current encryption status
        @see WalletModel::EncryptionStatus
@@ -163,12 +164,14 @@ private slots:
     void backupWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
+    /** Verify a message signature */
+    void verifyMessage();
     /** Ask for pass phrase to unlock wallet temporarily */
     void unlockWallet();
 
-    /** Show window if hidden, unminimize when minimized */
-    void showNormalIfMinimized();
-    /** Hide window if visible, show if hidden */
+    /** Show window if hidden, unminimize when minimized, rise when obscured or show if hidden and fToggleHidden is true */
+    void showNormalIfMinimized(bool fToggleHidden = false);
+    /** simply calls showNormalIfMinimized(true) for use in SLOT() macro */
     void toggleHidden();
 };
 

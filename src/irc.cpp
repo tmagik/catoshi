@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "irc.h"
 #include "net.h"
@@ -176,8 +176,6 @@ bool GetIPFromIRC(SOCKET hSocket, string strMyName, CNetAddr& ipRet)
     // Hybrid IRC used by lfnet always returns IP when you userhost yourself,
     // but in case another IRC is ever used this should work.
     printf("GetIPFromIRC() got userhost %s\n", strHost.c_str());
-    if (fUseProxy)
-        return false;
     CNetAddr addr(strHost, true);
     if (!addr.IsValid())
         return false;
@@ -200,7 +198,7 @@ void ThreadIRCSeed(void* parg)
     } catch (...) {
         PrintExceptionContinue(NULL, "ThreadIRCSeed()");
     }
-    printf("ThreadIRCSeed exiting\n");
+    printf("ThreadIRCSeed exited\n");
 }
 
 void ThreadIRCSeed2(void* parg)
@@ -246,11 +244,12 @@ void ThreadIRCSeed2(void* parg)
                 return;
         }
 
+        CNetAddr addrIPv4("1.2.3.4"); // arbitrary IPv4 address to make GetLocal prefer IPv4 addresses
         CService addrLocal;
         string strMyName;
-        if (GetLocal(addrLocal, &addrConnect))
+        if (GetLocal(addrLocal, &addrIPv4))
             strMyName = EncodeAddress(GetLocalAddress(&addrConnect));
-        else
+        if (strMyName == "")
             strMyName = strprintf("x%u", GetRand(1000000000));
 
         Send(hSocket, strprintf("NICK %s\r", strMyName.c_str()).c_str());
@@ -280,7 +279,7 @@ void ThreadIRCSeed2(void* parg)
         if (GetIPFromIRC(hSocket, strMyName, addrFromIRC))
         {
             printf("GetIPFromIRC() returned %s\n", addrFromIRC.ToString().c_str());
-            if (!fUseProxy && addrFromIRC.IsRoutable())
+            if (addrFromIRC.IsRoutable())
             {
                 // IRC lets you to re-nick
                 AddLocal(addrFromIRC, LOCAL_IRC);
@@ -290,8 +289,8 @@ void ThreadIRCSeed2(void* parg)
         }
         
         if (fTestNet) {
-            Send(hSocket, "JOIN #bitcoinTEST\r");
-            Send(hSocket, "WHO #bitcoinTEST\r");
+            Send(hSocket, "JOIN #bitcoinTEST3\r");
+            Send(hSocket, "WHO #bitcoinTEST3\r");
         } else {
             // randomly join #bitcoin00-#bitcoin99
             int channel_number = GetRandInt(100);

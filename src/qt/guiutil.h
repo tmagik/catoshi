@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QObject>
+#include <QMessageBox>
 
 QT_BEGIN_NAMESPACE
 class QFont;
@@ -22,7 +23,7 @@ namespace GUIUtil
     QString dateTimeStr(const QDateTime &datetime);
     QString dateTimeStr(qint64 nTime);
 
-    // Render bitcoin addresses in monospace font
+    // Render Bitcoin addresses in monospace font
     QFont bitcoinAddressFont();
 
     // Set up widgets for address and amounts
@@ -80,6 +81,7 @@ namespace GUIUtil
     class ToolTipToRichTextFilter : public QObject
     {
         Q_OBJECT
+
     public:
         explicit ToolTipToRichTextFilter(int size_threshold, QObject *parent = 0);
 
@@ -92,6 +94,26 @@ namespace GUIUtil
 
     bool GetStartOnSystemStartup();
     bool SetStartOnSystemStartup(bool fAutoStart);
+
+    /** Help message for Bitcoin-Qt, shown with --help. */
+    class HelpMessageBox : public QMessageBox
+    {
+        Q_OBJECT
+
+    public:
+        HelpMessageBox(QWidget *parent = 0);
+
+        /** Show message box or print help message to standard output, based on operating system. */
+        void showOrPrint();
+
+        /** Print help message to console */
+        void printToConsole();
+
+    private:
+        QString header;
+        QString coreOptions;
+        QString uiOptions;
+    };
 
 } // namespace GUIUtil
 
