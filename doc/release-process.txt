@@ -93,10 +93,13 @@
 * create SHA256SUMS for builds, and PGP-sign it
 
 * update bitcoin.org version
+  make sure all OS download links go to the right versions
 
 * update forum version
 
 * update wiki download links
+
+* update wiki changelog: https://en.bitcoin.it/wiki/Changelog
 
 * Commit your signature to gitian.sigs:
   pushd gitian.sigs

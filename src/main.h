@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_MAIN_H
 #define BITCOIN_MAIN_H
 
@@ -9,10 +9,6 @@
 #include "sync.h"
 #include "net.h"
 #include "script.h"
-
-#ifdef WIN32
-#include <io.h> /* for _commit */
-#endif
 
 #include <list>
 
@@ -75,8 +71,8 @@ extern unsigned char pchMessageStart[4];
 // Settings
 extern int64 nTransactionFee;
 
-
-
+// Minimum disk space required - used in CheckDiskSpace()
+static const uint64 nMinDiskSpace = 52428800;
 
 
 class CReserveKey;
@@ -85,6 +81,7 @@ class CTxIndex;
 
 void RegisterWallet(CWallet* pwalletIn);
 void UnregisterWallet(CWallet* pwalletIn);
+void SyncWithWallets(const CTransaction& tx, const CBlock* pblock = NULL, bool fUpdate = false);
 bool ProcessBlock(CNode* pfrom, CBlock* pblock);
 bool CheckDiskSpace(uint64 nAdditionalBytes=0);
 FILE* OpenBlockFile(unsigned int nFile, unsigned int nBlockPos, const char* pszMode="rb");
@@ -597,7 +594,13 @@ public:
         // Read transaction
         if (fseek(filein, pos.nTxPos, SEEK_SET) != 0)
             return error("CTransaction::ReadFromDisk() : fseek failed");
-        filein >> *this;
+
+        try {
+            filein >> *this;
+        }
+        catch (std::exception &e) {
+            return error("%s() : deserialize or I/O error", __PRETTY_FUNCTION__);
+        }
 
         // Return file pointer
         if (pfileRet)
@@ -956,13 +959,7 @@ public:
         // Flush stdio buffers and commit to disk before returning
         fflush(fileout);
         if (!IsInitialBlockDownload() || (nBestHeight+1) % 500 == 0)
-        {
-#ifdef WIN32
-            _commit(_fileno(fileout));
-#else
-            fsync(fileno(fileout));
-#endif
-        }
+            FileCommit(fileout);
 
         return true;
     }
@@ -979,7 +976,12 @@ public:
             filein.nType |= SER_BLOCKHEADERONLY;
 
         // Read block
-        filein >> *this;
+        try {
+            filein >> *this;
+        }
+        catch (std::exception &e) {
+            return error("%s() : deserialize or I/O error", __PRETTY_FUNCTION__);
+        }
 
         // Check the header
         if (!CheckProofOfWork(GetHash(), nBits))
@@ -1128,21 +1130,6 @@ public:
     bool CheckIndex() const
     {
         return CheckProofOfWork(GetBlockHash(), nBits);
-    }
-
-    bool EraseBlockFromDisk()
-    {
-        // Open history file
-        CAutoFile fileout = CAutoFile(OpenBlockFile(nFile, nBlockPos, "rb+"), SER_DISK, CLIENT_VERSION);
-        if (!fileout)
-            return false;
-
-        // Overwrite with empty null block
-        CBlock block;
-        block.SetNull();
-        fileout << block;
-
-        return true;
     }
 
     enum { nMedianTimeSpan=11 };
@@ -1599,6 +1586,11 @@ public:
     }
 
     bool ProcessAlert();
+
+    /*
+     * Get copy of (active) alert object by hash. Returns a null alert if it is not found.
+     */
+    static CAlert getAlertByHash(const uint256 &hash);
 };
 
 class CTxMemPool

@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_NET_H
 #define BITCOIN_NET_H
 
@@ -19,7 +19,6 @@
 #include "protocol.h"
 #include "addrman.h"
 
-class CAddrDB;
 class CRequestTracker;
 class CNode;
 class CBlockIndex;
@@ -37,7 +36,7 @@ void AddressCurrentlyConnected(const CService& addr);
 CNode* FindNode(const CNetAddr& ip);
 CNode* FindNode(const CService& ip);
 CNode* ConnectNode(CAddress addrConnect, const char *strDest = NULL, int64 nTimeout=0);
-void MapPort(bool fMapPort);
+void MapPort();
 unsigned short GetListenPort();
 bool BindListenPort(const CService &bindAddr, std::string& strError=REF(std::string()));
 void StartNode(void* parg);
@@ -57,6 +56,7 @@ enum
 };
 
 void SetLimited(enum Network net, bool fLimited = true);
+bool IsLimited(enum Network net);
 bool IsLimited(const CNetAddr& addr);
 bool AddLocal(const CService& addr, int nScore = LOCAL_NONE);
 bool AddLocal(const CNetAddr& addr, int nScore = LOCAL_NONE);
@@ -110,6 +110,8 @@ enum threadId
 };
 
 extern bool fClient;
+extern bool fDiscover;
+extern bool fUseUPnP;
 extern uint64 nLocalServices;
 extern uint64 nLocalHostNonce;
 extern boost::array<int, THREAD_MAX> vnThreadsRunning;
@@ -318,10 +320,8 @@ public:
         nHeaderStart = vSend.size();
         vSend << CMessageHeader(pszCommand, 0);
         nMessageStart = vSend.size();
-        if (fDebug) {
-            printf("%s ", DateTimeStrFormat("%x %H:%M:%S", GetTime()).c_str());
+        if (fDebug)
             printf("sending: %s ", pszCommand);
-        }
     }
 
     void AbortMessage()
