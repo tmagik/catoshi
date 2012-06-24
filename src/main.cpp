@@ -652,7 +652,15 @@ bool CTxMemPool::remove(CTransaction &tx)
     return true;
 }
 
+void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
+{
+    vtxid.clear();
 
+    LOCK(cs);
+    vtxid.reserve(mapTx.size());
+    for (map<uint256, CTransaction>::iterator mi = mapTx.begin(); mi != mapTx.end(); ++mi)
+        vtxid.push_back((*mi).first);
+}
 
 
 
@@ -1317,8 +1325,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     // This logic is not necessary for memory pool transactions, as AcceptToMemoryPool
     // already refuses previously-known transaction id's entirely.
     // This rule applies to all blocks whose timestamp is after March 15, 2012, 0:00 UTC.
-    // On testnet it is enabled as of februari 20, 2012, 0:00 UTC.
-    if (pindex->nTime > 1331769600 || (fTestNet && pindex->nTime > 1329696000))
+    if (pindex->nTime > 1331769600)
     {
         BOOST_FOREACH(CTransaction& tx, vtx)
         {
@@ -1332,8 +1339,8 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
         }
     }
 
-    // BIP16 didn't become active until Apr 1 2012 (Feb 15 on testnet)
-    int64 nBIP16SwitchTime = fTestNet ? 1329264000 : 1333238400;
+    // BIP16 didn't become active until Apr 1 2012
+    int64 nBIP16SwitchTime = 1333238400;
     bool fStrictPayToScriptHash = (pindex->nTime >= nBIP16SwitchTime);
 
     //// issue here: it doesn't know the version
@@ -3143,7 +3150,8 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             const CInv& inv = (*pto->mapAskFor.begin()).second;
             if (!AlreadyHave(txdb, inv))
             {
-                printf("sending getdata: %s\n", inv.ToString().c_str());
+                if (fDebugNet)
+                    printf("sending getdata: %s\n", inv.ToString().c_str());
                 vGetData.push_back(inv);
                 if (vGetData.size() >= 1000)
                 {
