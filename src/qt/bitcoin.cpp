@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
     if (mapArgs.count("-?") || mapArgs.count("--help"))
     {
         GUIUtil::HelpMessageBox help;
-        help.exec();
+        help.showOrPrint();
         return 1;
     }
 
