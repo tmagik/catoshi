@@ -113,60 +113,9 @@ static void handleRunawayException(std::exception *e)
     exit(1);
 }
 
-/** Help message for Bitcoin-Qt, shown with --help. */
-class HelpMessageBox: public QMessageBox
-{
-    Q_OBJECT
-public:
-    HelpMessageBox(QWidget *parent = 0);
-
-    void exec();
-private:
-    QString header;
-    QString coreOptions;
-    QString uiOptions;
-};
-
-HelpMessageBox::HelpMessageBox(QWidget *parent):
-    QMessageBox(parent)
-{
-    header = tr("Bitcoin-Qt") + " " + tr("version") + " " +
-        QString::fromStdString(FormatFullVersion()) + "\n\n" +
-        tr("Usage:") + "\n" +
-        "  bitcoin-qt [" + tr("options") + "]                     " + "\n";
-    coreOptions = QString::fromStdString(HelpMessage());
-    uiOptions = tr("UI options") + ":\n" +
-        "  -lang=<lang>           " + tr("Set language, for example \"de_DE\" (default: system locale)") + "\n" +
-        "  -min                   " + tr("Start minimized") + "\n" +
-        "  -splash                " + tr("Show splash screen on startup (default: 1)") + "\n";
-
-    setWindowTitle(tr("Bitcoin-Qt"));
-    setTextFormat(Qt::PlainText);
-    // setMinimumWidth is ignored for QMessageBox so put in nonbreaking spaces to make it wider.
-    QChar em_space(0x2003);
-    setText(header + QString(em_space).repeated(40));
-    setDetailedText(coreOptions + "\n" + uiOptions);
-}
-#include "bitcoin.moc"
-
-void HelpMessageBox::exec()
-{
-#if defined(WIN32)
-    // On windows, show a message box, as there is no stderr in windowed applications
-    QMessageBox::exec();
-#else
-    // On other operating systems, the expected action is to print the message to the console.
-    QString strUsage = header + "\n" + coreOptions + "\n" + uiOptions;
-    fprintf(stderr, "%s", strUsage.toStdString().c_str());
-#endif
-}
-
 #ifndef BITCOIN_QT_TEST
 int main(int argc, char *argv[])
 {
-#if !defined(MAC_OSX) && !defined(WIN32)
-// TODO: implement qtipcserver.cpp for Mac and Windows
-
     // Do this early as we don't want to bother initializing if we are just calling IPC
     for (int i = 1; i < argc; i++)
     {
@@ -185,7 +134,6 @@ int main(int argc, char *argv[])
             }
         }
     }
-#endif
 
     // Internal string conversion is all UTF-8
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
@@ -259,8 +207,8 @@ int main(int argc, char *argv[])
     // but before showing splash screen.
     if (mapArgs.count("-?") || mapArgs.count("--help"))
     {
-        HelpMessageBox help;
-        help.exec();
+        GUIUtil::HelpMessageBox help;
+        help.showOrPrint();
         return 1;
     }
 
@@ -310,8 +258,6 @@ int main(int argc, char *argv[])
                 {
                     window.show();
                 }
-#if !defined(MAC_OSX) && !defined(WIN32)
-// TODO: implement qtipcserver.cpp for Mac and Windows
 
                 // Place this here as guiref has to be defined if we dont want to lose URIs
                 ipcInit();
@@ -330,7 +276,7 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-#endif
+
                 app.exec();
 
                 window.hide();
@@ -338,6 +284,7 @@ int main(int argc, char *argv[])
                 window.setWalletModel(0);
                 guiref = 0;
             }
+            // Shutdown the core and it's threads, but don't exit Bitcoin-Qt here
             Shutdown(NULL);
         }
         else

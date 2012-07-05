@@ -20,9 +20,10 @@ public:
         MinimizeToTray, // bool
         MapPortUPnP, // bool
         MinimizeOnClose, // bool
-        ConnectSOCKS4, // bool
+        ProxyUse, // bool
+        ProxySocksVersion, // int
         ProxyIP, // QString
-        ProxyPort, // QString
+        ProxyPort, // int
         Fee, // qint64
         DisplayUnit, // BitcoinUnits::Unit
         DisplayAddresses, // bool

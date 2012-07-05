@@ -230,6 +230,8 @@ TransactionTableModel::TransactionTableModel(CWallet* wallet, WalletModel *paren
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(updateConfirmations()));
     timer->start(MODEL_UPDATE_DELAY);
+
+    connect(walletModel->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
 }
 
 TransactionTableModel::~TransactionTableModel()
@@ -298,8 +300,7 @@ QString TransactionTableModel::formatTxStatus(const TransactionRecord *wtx) cons
         switch(wtx->status.maturity)
         {
         case TransactionStatus::Immature:
-            status += "\n" + tr("Mined balance will be available in %n more blocks", "",
-                           wtx->status.matures_in);
+            status += "\n" + tr("Mined balance will be available when it matures in %n more block(s)", "", wtx->status.matures_in);
             break;
         case TransactionStatus::Mature:
             break;
@@ -625,3 +626,8 @@ QModelIndex TransactionTableModel::index(int row, int column, const QModelIndex 
     }
 }
 
+void TransactionTableModel::updateDisplayUnit()
+{
+    // emit dataChanged to update Amount column with the current unit
+    emit dataChanged(index(0, Amount), index(priv->size()-1, Amount));
+}
