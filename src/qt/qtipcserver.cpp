@@ -6,17 +6,31 @@
 #include <boost/interprocess/ipc/message_queue.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/version.hpp>
 
-#include "headers.h"
+#if defined(WIN32) && (!defined(BOOST_INTERPROCESS_HAS_WINDOWS_KERNEL_BOOTTIME) || !defined(BOOST_INTERPROCESS_HAS_KERNEL_BOOTTIME) || BOOST_VERSION < 104900)
+#warning Compiling without BOOST_INTERPROCESS_HAS_WINDOWS_KERNEL_BOOTTIME and BOOST_INTERPROCESS_HAS_KERNEL_BOOTTIME uncommented in boost/interprocess/detail/tmp_dir_helpers.hpp or using a boost version before 1.49 may have unintended results see svn.boost.org/trac/boost/ticket/5392
+#endif
+
+#include "ui_interface.h"
+#include "qtipcserver.h"
 
 using namespace boost::interprocess;
 using namespace boost::posix_time;
 using namespace boost;
 using namespace std;
 
+#ifdef MAC_OSX
+// URI handling not implemented on OSX yet
+
+void ipcInit() { }
+void ipcShutdown() { }
+
+#else
+
 void ipcShutdown()
 {
-    message_queue::remove("BitcoinURL");
+    message_queue::remove(BITCOINURI_QUEUE_NAME);
 }
 
 void ipcThread(void* parg)
@@ -30,7 +44,7 @@ void ipcThread(void* parg)
         ptime d = boost::posix_time::microsec_clock::universal_time() + millisec(100);
         if(mq->timed_receive(&strBuf, sizeof(strBuf), nSize, nPriority, d))
         {
-            ThreadSafeHandleURL(std::string(strBuf, nSize));
+            uiInterface.ThreadSafeHandleURI(std::string(strBuf, nSize));
             Sleep(1000);
         }
         if (fShutdown)
@@ -44,23 +58,12 @@ void ipcThread(void* parg)
 
 void ipcInit()
 {
-#ifdef MAC_OSX
-    // TODO: implement bitcoin: URI handling the Mac Way
-    return;
-#endif
-#ifdef WIN32
-    // TODO: THOROUGHLY test boost::interprocess fix,
-    // and make sure there are no Windows argument-handling exploitable
-    // problems.
-    return;
-#endif
-
     message_queue* mq;
     char strBuf[257];
     size_t nSize;
     unsigned int nPriority;
     try {
-        mq = new message_queue(open_or_create, "BitcoinURL", 2, 256);
+        mq = new message_queue(open_or_create, BITCOINURI_QUEUE_NAME, 2, 256);
 
         // Make sure we don't lose any bitcoin: URIs
         for (int i = 0; i < 2; i++)
@@ -68,15 +71,15 @@ void ipcInit()
             ptime d = boost::posix_time::microsec_clock::universal_time() + millisec(1);
             if(mq->timed_receive(&strBuf, sizeof(strBuf), nSize, nPriority, d))
             {
-                ThreadSafeHandleURL(std::string(strBuf, nSize));
+                uiInterface.ThreadSafeHandleURI(std::string(strBuf, nSize));
             }
             else
                 break;
         }
 
         // Make sure only one bitcoin instance is listening
-        message_queue::remove("BitcoinURL");
-        mq = new message_queue(open_or_create, "BitcoinURL", 2, 256);
+        message_queue::remove(BITCOINURI_QUEUE_NAME);
+        mq = new message_queue(open_or_create, BITCOINURI_QUEUE_NAME, 2, 256);
     }
     catch (interprocess_exception &ex) {
         return;
@@ -86,3 +89,5 @@ void ipcInit()
         delete mq;
     }
 }
+
+#endif

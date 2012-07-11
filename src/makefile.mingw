@@ -5,28 +5,29 @@
 USE_UPNP:=0
 
 INCLUDEPATHS= \
- -I"C:\boost-1.47.0-mgw" \
+ -I"C:\boost-1.49.0-mgw" \
  -I"C:\db-4.8.30.NC-mgw\build_unix" \
  -I"C:\openssl-1.0.0d-mgw\include"
 
 LIBPATHS= \
- -L"C:\boost-1.47.0-mgw\stage\lib" \
+ -L"C:\boost-1.49.0-mgw\stage\lib" \
  -L"C:\db-4.8.30.NC-mgw\build_unix" \
  -L"C:\openssl-1.0.0d-mgw"
 
 LIBS= \
- -l boost_system-mgw45-mt-s-1_47 \
- -l boost_filesystem-mgw45-mt-s-1_47 \
- -l boost_program_options-mgw45-mt-s-1_47 \
- -l boost_thread-mgw45-mt-s-1_47 \
+ -l boost_system-mgw45-mt-s-1_49 \
+ -l boost_filesystem-mgw45-mt-s-1_49 \
+ -l boost_program_options-mgw45-mt-s-1_49 \
+ -l boost_thread-mgw45-mt-s-1_49 \
  -l db_cxx \
  -l ssl \
  -l crypto
 
-DEFS=-DWIN32 -D_WINDOWS -DNOPCH -DUSE_SSL -DBOOST_THREAD_USE_LIB
+DEFS=-DWIN32 -D_WINDOWS -DBOOST_THREAD_USE_LIB -DBOOST_SPIRIT_THREADSAFE -DUSE_IPV6
 DEBUGFLAGS=-g
-CFLAGS=-mthreads -O2 -w -Wno-invalid-offsetof -Wformat $(DEBUGFLAGS) $(DEFS) $(INCLUDEPATHS)
+CFLAGS=-mthreads -O2 -w -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter $(DEBUGFLAGS) $(DEFS) $(INCLUDEPATHS)
 
+TESTDEFS = -DTEST_DATA_DIR=$(abspath test/data)
 
 ifdef USE_UPNP
  INCLUDEPATHS += -I"C:\miniupnpc-1.6-mgw"
@@ -35,12 +36,13 @@ ifdef USE_UPNP
  DEFS += -DSTATICLIB -DUSE_UPNP=$(USE_UPNP)
 endif
 
-LIBS += -l kernel32 -l user32 -l gdi32 -l comdlg32 -l winspool -l winmm -l shell32 -l comctl32 -l ole32 -l oleaut32 -l uuid -l rpcrt4 -l advapi32 -l ws2_32 -l shlwapi
+LIBS += -l kernel32 -l user32 -l gdi32 -l comdlg32 -l winspool -l winmm -l shell32 -l comctl32 -l ole32 -l oleaut32 -l uuid -l rpcrt4 -l advapi32 -l ws2_32 -l mswsock -l shlwapi
 
 # TODO: make the mingw builds smarter about dependencies, like the linux/osx builds are
 HEADERS = $(wildcard *.h)
 
 OBJS= \
+    obj/version.o \
     obj/checkpoints.o \
     obj/netbase.o \
     obj/addrman.o \
@@ -55,9 +57,14 @@ OBJS= \
     obj/protocol.o \
     obj/bitcoinrpc.o \
     obj/rpcdump.o \
+    obj/rpcnet.o \
+    obj/rpcrawtransaction.o \
     obj/script.o \
+    obj/sync.o \
     obj/util.o \
-    obj/wallet.o
+    obj/wallet.o \
+    obj/walletdb.o \
+    obj/noui.o
 
 
 all: bitcoind.exe
@@ -68,16 +75,16 @@ obj/%.o: %.cpp $(HEADERS)
 bitcoind.exe: $(OBJS:obj/%=obj/%)
 	g++ $(CFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS)
 
-obj/test/test_bitcoin.o: $(wildcard test/*.cpp) $(HEADERS)
-	g++ -c $(CFLAGS) -o $@ test/test_bitcoin.cpp
+TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
 
-test_bitcoin.exe: obj/test/test_bitcoin.o $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
-	g++ $(CFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS)
+obj-test/%.o: test/%.cpp $(HEADERS)
+	g++ -c $(TESTDEFS) $(CFLAGS) -o $@ $<
+
+test_bitcoin.exe: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
+	g++ $(CFLAGS) -o $@ $(LIBPATHS) $^ -lboost_unit_test_framework $(LIBS)
 
 clean:
 	-del /Q bitcoind test_bitcoin
 	-del /Q obj\*
-	-del /Q obj\nogui\*
-	-del /Q obj\test\*
-	-del /Q test\*.o
-	-del /Q headers.h.gch
+	-del /Q obj-test\*
+	-del /Q build.h
