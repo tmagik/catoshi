@@ -1,6 +1,6 @@
 // Copyright (c) 2012 Pieter Wuille
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef _BITCOIN_ADDRMAN
 #define _BITCOIN_ADDRMAN 1
 
@@ -23,13 +23,13 @@ private:
     // where knowledge about this address first came from
     CNetAddr source;
 
-    // last succesfull connection by us
+    // last successful connection by us
     int64 nLastSuccess;
 
     // last try whatsoever by us:
     // int64 CAddress::nLastTry
 
-    // connection attempts since last succesful attempt
+    // connection attempts since last successful attempt
     int nAttempts;
 
     // reference count in new sets (memory only)

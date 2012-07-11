@@ -3,8 +3,8 @@
 
 #include <QAbstractListModel>
 
-/** Interface from QT to configuration data structure for bitcoin client.
-   To QT, the options are presented as a list with the different options
+/** Interface from Qt to configuration data structure for Bitcoin client.
+   To Qt, the options are presented as a list with the different options
    laid out vertically.
    This can be changed to a tree once the settings become sufficiently
    complex.
@@ -20,9 +20,10 @@ public:
         MinimizeToTray, // bool
         MapPortUPnP, // bool
         MinimizeOnClose, // bool
-        ConnectSOCKS4, // bool
+        ProxyUse, // bool
+        ProxySocksVersion, // int
         ProxyIP, // QString
-        ProxyPort, // QString
+        ProxyPort, // int
         Fee, // qint64
         DisplayUnit, // BitcoinUnits::Unit
         DisplayAddresses, // bool

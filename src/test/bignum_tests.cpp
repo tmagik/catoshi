@@ -1,10 +1,27 @@
 #include <boost/test/unit_test.hpp>
-#include <climits>
+#include <limits>
 
 #include "bignum.h"
+#include "util.h"
 
 BOOST_AUTO_TEST_SUITE(bignum_tests)
 
+// Unfortunately there's no standard way of preventing a function from being
+// inlined, so we define a macro for it.
+//
+// You should use it like this:
+//   NOINLINE void function() {...}
+#if defined(__GNUC__)
+// This also works and will be defined for any compiler implementing gcc
+// extensions, such as clang and icc.
+#define NOINLINE __attribute__((noinline))
+#elif defined(_MSC_VER)
+#define NOINLINE __declspec(noinline)
+#else
+// We give out a warning because it impacts the correctness of one bignum test.
+#warning You should define NOINLINE for your compiler.
+#define NOINLINE
+#endif
 
 // For the following test case, it is useful to use additional tools.
 //
@@ -29,9 +46,7 @@ BOOST_AUTO_TEST_SUITE(bignum_tests)
 // Let's force this code not to be inlined, in order to actually
 // test a generic version of the function. This increases the chance
 // that -ftrapv will detect overflows.
-void mysetint64(CBigNum& num, int64 n) __attribute__((noinline));
-
-void mysetint64(CBigNum& num, int64 n)
+NOINLINE void mysetint64(CBigNum& num, int64 n)
 {
 	num.setint64(n);
 }
@@ -88,7 +103,7 @@ BOOST_AUTO_TEST_CASE(bignum_setint64)
         BOOST_CHECK(num.ToString() == "-5");
     }
     {
-        n = LLONG_MIN;
+        n = std::numeric_limits<int64>::min();
         CBigNum num(n);
         BOOST_CHECK(num.ToString() == "-9223372036854775808");
         num.setulong(0);
@@ -97,7 +112,7 @@ BOOST_AUTO_TEST_CASE(bignum_setint64)
         BOOST_CHECK(num.ToString() == "-9223372036854775808");
     }
     {
-        n = LLONG_MAX;
+        n = std::numeric_limits<int64>::max();
         CBigNum num(n);
         BOOST_CHECK(num.ToString() == "9223372036854775807");
         num.setulong(0);

@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file license.txt or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "util.h"
 #include "sync.h"
@@ -25,8 +25,10 @@ namespace boost {
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/foreach.hpp>
+#include <boost/thread.hpp>
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
+#include <stdarg.h>
 
 #ifdef WIN32
 #ifdef _MSC_VER
@@ -47,6 +49,7 @@ namespace boost {
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <io.h> /* for _commit */
 #include "shlobj.h"
 #endif
 
@@ -55,6 +58,7 @@ using namespace std;
 map<string, string> mapArgs;
 map<string, vector<string> > mapMultiArgs;
 bool fDebug = false;
+bool fDebugNet = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugger = false;
 bool fRequestShutdown = false;
@@ -67,6 +71,7 @@ bool fTestNet = false;
 bool fNoListen = false;
 bool fLogTimestamps = false;
 CMedianFilter<int64> vTimeOffsets(200,0);
+bool fReopenDebugLog = false;
 
 // Init openssl library multithreading support
 static CCriticalSection** ppmutexOpenSSL;
@@ -147,7 +152,7 @@ void RandAddSeedPerfmon()
     {
         RAND_add(pdata, nSize, nSize/100.0);
         memset(pdata, 0, nSize);
-        printf("%s RandAddSeed() %d bytes\n", DateTimeStrFormat("%x %H:%M", GetTime()).c_str(), nSize);
+        printf("RandAddSeed() %d bytes\n", nSize);
     }
 #endif
 }
@@ -172,8 +177,12 @@ int GetRandInt(int nMax)
     return GetRand(nMax);
 }
 
-
-
+uint256 GetRandHash()
+{
+    uint256 hash;
+    RAND_bytes((unsigned char*)&hash, sizeof(hash));
+    return hash;
+}
 
 
 
@@ -207,6 +216,16 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
         if (fileout)
         {
             static bool fStartedNewLine = true;
+            static boost::mutex mutexDebugLog;
+            boost::mutex::scoped_lock scoped_lock(mutexDebugLog);
+
+            // reopen the log file, if requested
+            if (fReopenDebugLog) {
+                fReopenDebugLog = false;
+                boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
+                if (freopen(pathDebug.string().c_str(),"a",fileout) != NULL)
+                    setbuf(fileout, NULL); // unbuffered
+            }
 
             // Debug print useful for profiling
             if (fLogTimestamps && fStartedNewLine)
@@ -228,68 +247,30 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
     {
         static CCriticalSection cs_OutputDebugStringF;
 
-        // accumulate a line at a time
+        // accumulate and output a line at a time
         {
             LOCK(cs_OutputDebugStringF);
-            static char pszBuffer[50000];
-            static char* pend;
-            if (pend == NULL)
-                pend = pszBuffer;
+            static std::string buffer;
+
             va_list arg_ptr;
             va_start(arg_ptr, pszFormat);
-            int limit = END(pszBuffer) - pend - 2;
-            int ret = _vsnprintf(pend, limit, pszFormat, arg_ptr);
+            buffer += vstrprintf(pszFormat, arg_ptr);
             va_end(arg_ptr);
-            if (ret < 0 || ret >= limit)
+
+            int line_start = 0, line_end;
+            while((line_end = buffer.find('\n', line_start)) != -1)
             {
-                pend = END(pszBuffer) - 2;
-                *pend++ = '\n';
+                OutputDebugStringA(buffer.substr(line_start, line_end - line_start).c_str());
+                line_start = line_end + 1;
             }
-            else
-                pend += ret;
-            *pend = '\0';
-            char* p1 = pszBuffer;
-            char* p2;
-            while ((p2 = strchr(p1, '\n')))
-            {
-                p2++;
-                char c = *p2;
-                *p2 = '\0';
-                OutputDebugStringA(p1);
-                *p2 = c;
-                p1 = p2;
-            }
-            if (p1 != pszBuffer)
-                memmove(pszBuffer, p1, pend - p1 + 1);
-            pend -= (p1 - pszBuffer);
+            buffer.erase(0, line_start);
         }
     }
 #endif
     return ret;
 }
 
-
-// Safer snprintf
-//  - prints up to limit-1 characters
-//  - output string is always null terminated even if limit reached
-//  - return value is the number of characters actually printed
-int my_snprintf(char* buffer, size_t limit, const char* format, ...)
-{
-    if (limit == 0)
-        return 0;
-    va_list arg_ptr;
-    va_start(arg_ptr, format);
-    int ret = _vsnprintf(buffer, limit, format, arg_ptr);
-    va_end(arg_ptr);
-    if (ret < 0 || ret >= (int)limit)
-    {
-        ret = limit - 1;
-        buffer[limit-1] = 0;
-    }
-    return ret;
-}
-
-string real_strprintf(const std::string &format, int dummy, ...)
+string vstrprintf(const std::string &format, va_list ap)
 {
     char buffer[50000];
     char* p = buffer;
@@ -298,7 +279,7 @@ string real_strprintf(const std::string &format, int dummy, ...)
     loop
     {
         va_list arg_ptr;
-        va_start(arg_ptr, dummy);
+        va_copy(arg_ptr, ap);
         ret = _vsnprintf(p, limit, format.c_str(), arg_ptr);
         va_end(arg_ptr);
         if (ret >= 0 && ret < limit)
@@ -316,19 +297,22 @@ string real_strprintf(const std::string &format, int dummy, ...)
     return str;
 }
 
+string real_strprintf(const std::string &format, int dummy, ...)
+{
+    va_list arg_ptr;
+    va_start(arg_ptr, dummy);
+    string str = vstrprintf(format, arg_ptr);
+    va_end(arg_ptr);
+    return str;
+}
+
 bool error(const char *format, ...)
 {
-    char buffer[50000];
-    int limit = sizeof(buffer);
     va_list arg_ptr;
     va_start(arg_ptr, format);
-    int ret = _vsnprintf(buffer, limit, format, arg_ptr);
+    std::string str = vstrprintf(format, arg_ptr);
     va_end(arg_ptr);
-    if (ret < 0 || ret >= limit)
-    {
-        buffer[limit - 1] = 0;
-    }
-    printf("ERROR: %s\n", buffer);
+    printf("ERROR: %s\n", str.c_str());
     return false;
 }
 
@@ -719,6 +703,193 @@ string DecodeBase64(const string& str)
     return string((const char*)&vchRet[0], vchRet.size());
 }
 
+string EncodeBase32(const unsigned char* pch, size_t len)
+{
+    static const char *pbase32 = "abcdefghijklmnopqrstuvwxyz234567";
+
+    string strRet="";
+    strRet.reserve((len+4)/5*8);
+
+    int mode=0, left=0;
+    const unsigned char *pchEnd = pch+len;
+
+    while (pch<pchEnd)
+    {
+        int enc = *(pch++);
+        switch (mode)
+        {
+            case 0: // we have no bits
+                strRet += pbase32[enc >> 3];
+                left = (enc & 7) << 2;
+                mode = 1;
+                break;
+
+            case 1: // we have three bits
+                strRet += pbase32[left | (enc >> 6)];
+                strRet += pbase32[(enc >> 1) & 31];
+                left = (enc & 1) << 4;
+                mode = 2;
+                break;
+
+            case 2: // we have one bit
+                strRet += pbase32[left | (enc >> 4)];
+                left = (enc & 15) << 1;
+                mode = 3;
+                break;
+
+            case 3: // we have four bits
+                strRet += pbase32[left | (enc >> 7)];
+                strRet += pbase32[(enc >> 2) & 31];
+                left = (enc & 3) << 3;
+                mode = 4;
+                break;
+
+            case 4: // we have two bits
+                strRet += pbase32[left | (enc >> 5)];
+                strRet += pbase32[enc & 31];
+                mode = 0;
+        }
+    }
+
+    static const int nPadding[5] = {0, 6, 4, 3, 1};
+    if (mode)
+    {
+        strRet += pbase32[left];
+        for (int n=0; n<nPadding[mode]; n++)
+             strRet += '=';
+    }
+
+    return strRet;
+}
+
+string EncodeBase32(const string& str)
+{
+    return EncodeBase32((const unsigned char*)str.c_str(), str.size());
+}
+
+vector<unsigned char> DecodeBase32(const char* p, bool* pfInvalid)
+{
+    static const int decode32_table[256] =
+    {
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, -1,  0,  1,  2,
+         3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+        23, 24, 25, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+    };
+
+    if (pfInvalid)
+        *pfInvalid = false;
+
+    vector<unsigned char> vchRet;
+    vchRet.reserve((strlen(p))*5/8);
+
+    int mode = 0;
+    int left = 0;
+
+    while (1)
+    {
+         int dec = decode32_table[(unsigned char)*p];
+         if (dec == -1) break;
+         p++;
+         switch (mode)
+         {
+             case 0: // we have no bits and get 5
+                 left = dec;
+                 mode = 1;
+                 break;
+
+              case 1: // we have 5 bits and keep 2
+                  vchRet.push_back((left<<3) | (dec>>2));
+                  left = dec & 3;
+                  mode = 2;
+                  break;
+
+             case 2: // we have 2 bits and keep 7
+                 left = left << 5 | dec;
+                 mode = 3;
+                 break;
+
+             case 3: // we have 7 bits and keep 4
+                 vchRet.push_back((left<<1) | (dec>>4));
+                 left = dec & 15;
+                 mode = 4;
+                 break;
+
+             case 4: // we have 4 bits, and keep 1
+                 vchRet.push_back((left<<4) | (dec>>1));
+                 left = dec & 1;
+                 mode = 5;
+                 break;
+
+             case 5: // we have 1 bit, and keep 6
+                 left = left << 5 | dec;
+                 mode = 6;
+                 break;
+
+             case 6: // we have 6 bits, and keep 3
+                 vchRet.push_back((left<<2) | (dec>>3));
+                 left = dec & 7;
+                 mode = 7;
+                 break;
+
+             case 7: // we have 3 bits, and keep 0
+                 vchRet.push_back((left<<5) | dec);
+                 mode = 0;
+                 break;
+         }
+    }
+
+    if (pfInvalid)
+        switch (mode)
+        {
+            case 0: // 8n base32 characters processed: ok
+                break;
+
+            case 1: // 8n+1 base32 characters processed: impossible
+            case 3: //   +3
+            case 6: //   +6
+                *pfInvalid = true;
+                break;
+
+            case 2: // 8n+2 base32 characters processed: require '======'
+                if (left || p[0] != '=' || p[1] != '=' || p[2] != '=' || p[3] != '=' || p[4] != '=' || p[5] != '=' || decode32_table[(unsigned char)p[6]] != -1)
+                    *pfInvalid = true;
+                break;
+
+            case 4: // 8n+4 base32 characters processed: require '===='
+                if (left || p[0] != '=' || p[1] != '=' || p[2] != '=' || p[3] != '=' || decode32_table[(unsigned char)p[4]] != -1)
+                    *pfInvalid = true;
+                break;
+
+            case 5: // 8n+5 base32 characters processed: require '==='
+                if (left || p[0] != '=' || p[1] != '=' || p[2] != '=' || decode32_table[(unsigned char)p[3]] != -1)
+                    *pfInvalid = true;
+                break;
+
+            case 7: // 8n+7 base32 characters processed: require '='
+                if (left || p[0] != '=' || decode32_table[(unsigned char)p[1]] != -1)
+                    *pfInvalid = true;
+                break;
+        }
+
+    return vchRet;
+}
+
+string DecodeBase32(const string& str)
+{
+    vector<unsigned char> vchRet = DecodeBase32(str.c_str());
+    return string((const char*)&vchRet[0], vchRet.size());
+}
+
 
 bool WildcardMatch(const char* psz, const char* mask)
 {
@@ -756,7 +927,7 @@ bool WildcardMatch(const string& str, const string& mask)
 
 
 
-void FormatException(char* pszMessage, std::exception* pex, const char* pszThread)
+static std::string FormatException(std::exception* pex, const char* pszThread)
 {
 #ifdef WIN32
     char pszModule[MAX_PATH] = "";
@@ -765,37 +936,34 @@ void FormatException(char* pszMessage, std::exception* pex, const char* pszThrea
     const char* pszModule = "bitcoin";
 #endif
     if (pex)
-        snprintf(pszMessage, 1000,
+        return strprintf(
             "EXCEPTION: %s       \n%s       \n%s in %s       \n", typeid(*pex).name(), pex->what(), pszModule, pszThread);
     else
-        snprintf(pszMessage, 1000,
+        return strprintf(
             "UNKNOWN EXCEPTION       \n%s in %s       \n", pszModule, pszThread);
 }
 
 void LogException(std::exception* pex, const char* pszThread)
 {
-    char pszMessage[10000];
-    FormatException(pszMessage, pex, pszThread);
-    printf("\n%s", pszMessage);
+    std::string message = FormatException(pex, pszThread);
+    printf("\n%s", message.c_str());
 }
 
 void PrintException(std::exception* pex, const char* pszThread)
 {
-    char pszMessage[10000];
-    FormatException(pszMessage, pex, pszThread);
-    printf("\n\n************************\n%s\n", pszMessage);
-    fprintf(stderr, "\n\n************************\n%s\n", pszMessage);
-    strMiscWarning = pszMessage;
+    std::string message = FormatException(pex, pszThread);
+    printf("\n\n************************\n%s\n", message.c_str());
+    fprintf(stderr, "\n\n************************\n%s\n", message.c_str());
+    strMiscWarning = message;
     throw;
 }
 
 void PrintExceptionContinue(std::exception* pex, const char* pszThread)
 {
-    char pszMessage[10000];
-    FormatException(pszMessage, pex, pszThread);
-    printf("\n\n************************\n%s\n", pszMessage);
-    fprintf(stderr, "\n\n************************\n%s\n", pszMessage);
-    strMiscWarning = pszMessage;
+    std::string message = FormatException(pex, pszThread);
+    printf("\n\n************************\n%s\n", message.c_str());
+    fprintf(stderr, "\n\n************************\n%s\n", message.c_str());
+    strMiscWarning = message;
 }
 
 boost::filesystem::path GetDefaultDataDir()
@@ -854,7 +1022,7 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
         path = GetDefaultDataDir();
     }
     if (fNetSpecific && GetBoolArg("-testnet", false))
-        path /= "testnet";
+        path /= "testnet3";
 
     fs::create_directory(path);
 
@@ -910,6 +1078,27 @@ void CreatePidFile(const boost::filesystem::path &path, pid_t pid)
     }
 }
 
+bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest)
+{
+#ifdef WIN32
+    return MoveFileExA(src.string().c_str(), dest.string().c_str(),
+                      MOVEFILE_REPLACE_EXISTING);
+#else
+    int rc = std::rename(src.string().c_str(), dest.string().c_str());
+    return (rc == 0);
+#endif /* WIN32 */
+}
+
+void FileCommit(FILE *fileout)
+{
+    fflush(fileout);                // harmless if redundantly called
+#ifdef WIN32
+    _commit(_fileno(fileout));
+#else
+    fsync(fileno(fileout));
+#endif
+}
+
 int GetFilesize(FILE* file)
 {
     int nSavePos = ftell(file);
@@ -953,7 +1142,7 @@ void ShrinkDebugFile()
 // "Never go to sea with two chronometers; take one or three."
 // Our three time sources are:
 //  - System clock
-//  - Median of other nodes's clocks
+//  - Median of other nodes clocks
 //  - The user (asking the user to fix the system clock if the first two disagree)
 //
 static int64 nMockTime = 0;  // For unit testing
@@ -1017,7 +1206,7 @@ void AddTimeData(const CNetAddr& ip, int64 nTime)
                     string strMessage = _("Warning: Please check that your computer's date and time are correct.  If your clock is wrong Bitcoin will not work properly.");
                     strMiscWarning = strMessage;
                     printf("*** %s\n", strMessage.c_str());
-                    ThreadSafeMessageBox(strMessage+" ", string("Bitcoin"), wxOK | wxICON_EXCLAMATION);
+                    uiInterface.ThreadSafeMessageBox(strMessage+" ", string("Bitcoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION);
                 }
             }
         }
@@ -1078,3 +1267,11 @@ boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate)
     return fs::path("");
 }
 #endif
+
+void runCommand(std::string strCommand)
+{
+    int nErr = ::system(strCommand.c_str());
+    if (nErr)
+        printf("runCommand error: system(%s) returned %d\n", strCommand.c_str(), nErr);
+}
+
