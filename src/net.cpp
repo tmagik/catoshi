@@ -606,7 +606,23 @@ bool CNode::Misbehaving(int howmuch)
     return false;
 }
 
-
+#undef X
+#define X(name) stats.name = name
+void CNode::copyStats(CNodeStats &stats)
+{
+    X(nServices);
+    X(nLastSend);
+    X(nLastRecv);
+    X(nTimeConnected);
+    X(addrName);
+    X(nVersion);
+    X(strSubVer);
+    X(fInbound);
+    X(nReleaseTime);
+    X(nStartingHeight);
+    X(nMisbehavior);
+}
+#undef X
 
 
 
@@ -922,8 +938,6 @@ void ThreadSocketHandler2(void* parg)
                                 pnode->CloseSocketDisconnect();
                             }
                         }
-                        if (vSend.size() > SendBufferSize())
-                            printf("socket send buffer full warning (%d bytes)\n", vSend.size());
                     }
                 }
             }
@@ -1123,10 +1137,10 @@ void MapPort()
 // The first name is used as information source for addrman.
 // The second name should resolve to a list of seed addresses.
 static const char *strDNSSeed[][2] = {
-    {"xf2.org", "bitseed.xf2.org"},
-    {"bluematt.me", "dnsseed.bluematt.me"},
     {"bitcoin.sipa.be", "seed.bitcoin.sipa.be"},
+    {"bluematt.me", "dnsseed.bluematt.me"},
     {"dashjr.org", "dnsseed.bitcoin.dashjr.org"},
+    {"xf2.org", "bitseed.xf2.org"},
 };
 
 void ThreadDNSAddressSeed(void* parg)
@@ -1416,16 +1430,17 @@ void ThreadOpenConnections2(void* parg)
         //
         CAddress addrConnect;
 
-        // Only connect to one address per a.b.?.? range.
+        // Only connect out to one peer per network group (/16 for IPv4).
         // Do this here so we don't have to critsect vNodes inside mapAddresses critsect.
         int nOutbound = 0;
         set<vector<unsigned char> > setConnected;
         {
             LOCK(cs_vNodes);
             BOOST_FOREACH(CNode* pnode, vNodes) {
-                setConnected.insert(pnode->addr.GetGroup());
-                if (!pnode->fInbound)
+                if (!pnode->fInbound) {
+                    setConnected.insert(pnode->addr.GetGroup());
                     nOutbound++;
+                }
             }
         }
 
