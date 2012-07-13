@@ -9,7 +9,6 @@
 #include "init.h"
 #include "util.h"
 #include "ui_interface.h"
-#include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/convenience.hpp>
@@ -41,8 +40,13 @@ void ExitTimeout(void* parg)
 
 void StartShutdown()
 {
+#ifdef QT_GUI
     // ensure we leave the Qt main loop for a clean GUI exit (Shutdown() is called in bitcoin.cpp afterwards)
     uiInterface.QueueShutdown();
+#else
+    // Without UI, Shutdown() can simply be started in a new thread
+    CreateThread(Shutdown, NULL);
+#endif
 }
 
 void Shutdown(void* parg)
@@ -150,11 +154,6 @@ bool AppInit(int argc, char* argv[])
             exit(ret);
         }
 
-        // Create the shutdown thread when receiving a shutdown signal
-        boost::signals2::scoped_connection do_stop(
-                uiInterface.QueueShutdown.connect(boost::bind(
-                    &CreateThread, &Shutdown, static_cast<void*>(0), false)));
-
         fRet = AppInit2();
     }
     catch (std::exception& e) {
@@ -240,7 +239,7 @@ std::string HelpMessage()
         "  -banscore=<n>          " + _("Threshold for disconnecting misbehaving peers (default: 100)") + "\n" +
         "  -bantime=<n>           " + _("Number of seconds to keep misbehaving peers from reconnecting (default: 86400)") + "\n" +
         "  -maxreceivebuffer=<n>  " + _("Maximum per-connection receive buffer, <n>*1000 bytes (default: 5000)") + "\n" +
-        "  -maxsendbuffer=<n>     " + _("Maximum per-connection send buffer, <n>*1000 bytes (default: 5000)") + "\n" +
+        "  -maxsendbuffer=<n>     " + _("Maximum per-connection send buffer, <n>*1000 bytes (default: 1000)") + "\n" +
 #ifdef USE_UPNP
 #if USE_UPNP
         "  -upnp                  " + _("Use UPnP to map the listening port (default: 1 when listening)") + "\n" +
