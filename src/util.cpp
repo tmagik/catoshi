@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2011-2012 The PPCoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -51,6 +52,10 @@ namespace boost {
 #endif
 #include "shlobj.h"
 #include "shlwapi.h"
+#endif
+
+#ifndef WIN32
+#include <execinfo.h>
 #endif
 
 using namespace std;
@@ -189,7 +194,7 @@ uint256 GetRandHash()
 
 
 
-
+static FILE* fileout = NULL;
 
 inline int OutputDebugStringF(const char* pszFormat, ...)
 {
@@ -205,8 +210,6 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
     else
     {
         // print to debug.log
-        static FILE* fileout = NULL;
-
         if (!fileout)
         {
             boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
@@ -371,7 +374,7 @@ string FormatMoney(int64 n, bool fPlus)
     int64 n_abs = (n > 0 ? n : -n);
     int64 quotient = n_abs/COIN;
     int64 remainder = n_abs%COIN;
-    string str = strprintf("%"PRI64d".%08"PRI64d, quotient, remainder);
+    string str = strprintf("%"PRI64d".%06"PRI64d, quotient, remainder);
 
     // Right-trim excess 0's before the decimal point:
     int nTrim = 0;
@@ -801,6 +804,19 @@ void PrintException(std::exception* pex, const char* pszThread)
     throw;
 }
 
+void LogStackTrace() {
+    printf("\n\n******* exception encountered *******\n");
+    if (fileout)
+    {
+#ifndef WIN32
+        void* pszBuffer[32];
+        size_t size;
+        size = backtrace(pszBuffer, 32);
+        backtrace_symbols_fd(pszBuffer, size, fileno(fileout));
+#endif
+    }
+}
+
 void PrintExceptionContinue(std::exception* pex, const char* pszThread)
 {
     char pszMessage[10000];
@@ -836,12 +852,12 @@ boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
 
-    // Windows: C:\Documents and Settings\username\Application Data\Bitcoin
-    // Mac: ~/Library/Application Support/Bitcoin
-    // Unix: ~/.bitcoin
+    // Windows: C:\Documents and Settings\username\Application Data\PPCoin
+    // Mac: ~/Library/Application Support/PPCoin
+    // Unix: ~/.ppcoin
 #ifdef WIN32
     // Windows
-    return MyGetSpecialFolderPath(CSIDL_APPDATA, true) / "Bitcoin";
+    return MyGetSpecialFolderPath(CSIDL_APPDATA, true) / "PPCoin";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -853,10 +869,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     fs::create_directory(pathRet);
-    return pathRet / "Bitcoin";
+    return pathRet / "PPCoin";
 #else
     // Unix
-    return pathRet / ".bitcoin";
+    return pathRet / ".ppcoin";
 #endif
 #endif
 }
@@ -900,7 +916,7 @@ boost::filesystem::path GetConfigFile()
 {
     namespace fs = boost::filesystem;
 
-    fs::path pathConfigFile(GetArg("-conf", "bitcoin.conf"));
+    fs::path pathConfigFile(GetArg("-conf", "ppcoin.conf"));
     if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir(false) / pathConfigFile;
     return pathConfigFile;
 }
@@ -936,7 +952,7 @@ boost::filesystem::path GetPidFile()
 {
     namespace fs = boost::filesystem;
 
-    fs::path pathPidFile(GetArg("-pid", "bitcoind.pid"));
+    fs::path pathPidFile(GetArg("-pid", "ppcoind.pid"));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }
@@ -1203,6 +1219,7 @@ bool GetStartOnSystemStartup()
         if (line.find("Hidden") != string::npos &&
             line.find("true") != string::npos)
             return false;
+>>>>>>> bitcoin
     }
     optionFile.close();
 

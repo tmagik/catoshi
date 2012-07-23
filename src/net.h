@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2012 The PPCoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_NET_H
@@ -86,6 +87,7 @@ extern bool fClient;
 extern bool fAllowDNS;
 extern uint64 nLocalServices;
 extern CAddress addrLocalHost;
+extern CAddress addrSeenByPeer;
 extern uint64 nLocalHostNonce;
 extern boost::array<int, THREAD_MAX> vnThreadsRunning;
 extern CAddrMan addrman;
@@ -151,6 +153,7 @@ public:
     std::set<CAddress> setAddrKnown;
     bool fGetAddr;
     std::set<uint256> setKnown;
+    uint256 hashCheckpointKnown; // ppcoin: known sent sync-checkpoint
 
     // inventory based relay
     mruset<CInv> setInventoryKnown;
@@ -185,6 +188,7 @@ public:
         nStartingHeight = -1;
         fGetAddr = false;
         nMisbehavior = 0;
+        hashCheckpointKnown = 0;
         setInventoryKnown.max_size(SendBufferSize() / 1000);
 
         // Be shy and don't send version until we hear

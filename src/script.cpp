@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2012 The PPCoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #include <boost/foreach.hpp>
@@ -19,7 +20,6 @@ bool CheckSig(vector<unsigned char> vchSig, vector<unsigned char> vchPubKey, CSc
 
 
 
-typedef vector<unsigned char> valtype;
 static const valtype vchFalse(0);
 static const valtype vchZero(0);
 static const valtype vchTrue(1, 1);
@@ -1584,6 +1584,7 @@ bool SignSignature(const CKeyStore &keystore, const CTransaction& txFrom, CTrans
     assert(nIn < txTo.vin.size());
     CTxIn& txin = txTo.vin[nIn];
     assert(txin.prevout.n < txFrom.vout.size());
+    assert(txin.prevout.hash == txFrom.GetHash());
     const CTxOut& txout = txFrom.vout[txin.prevout.n];
 
     // Leave out the signature from the hash, since a signature can't sign itself.
