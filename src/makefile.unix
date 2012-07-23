@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2010 Satoshi Nakamoto
+# Copyright (c) 2011 The PPCoin developers
 # Distributed under the MIT/X11 software license, see the accompanying
 # file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
@@ -109,7 +110,7 @@ OBJS= \
     obj/noui.o
 
 
-all: bitcoind
+all: ppcoind
 
 # auto-generated dependencies:
 -include obj/*.P
@@ -127,8 +128,8 @@ obj/%.o: %.cpp
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-bitcoind: $(OBJS:obj/%=obj/%)
-	$(CXX) $(xCXXFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
+ppcoind: $(OBJS:obj/%=obj/%)
+	$(CXX) $(xCXXFLAGS) -rdynamic -o $@ $^ $(LDFLAGS) $(LIBS)
 
 TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
 
@@ -139,15 +140,25 @@ obj-test/%.o: test/%.cpp
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-test_bitcoin: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
+test_ppcoin: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
 	$(CXX) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ -Wl,-B$(LMODE) -lboost_unit_test_framework $(LDFLAGS) $(LIBS)
 
 clean:
-	-rm -f bitcoind test_bitcoin
+	-rm -f ppcoind test_ppcoin genesis
 	-rm -f obj/*.o
 	-rm -f obj-test/*.o
 	-rm -f obj/*.P
 	-rm -f obj-test/*.P
 	-rm -f src/build.h
+	-rm -f ppcoin/obj/*
+
+ppcoin/obj/genesis.o: ppcoin/genesis.cpp
+	$(CXX) -c $(xCXXFLAGS) -MMD -o $@ $<
+	$(CXX) -c $(xCXXFLAGS) -MMD -DPPCOIN_GENESIS -o obj/nogui/init.o init.cpp
+
+genesis: ppcoin/obj/genesis.o $(OBJS:obj/%=obj/nogui/%)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+	-rm -f obj/init.*
+	-rm -f ppcoin/obj/genesis.*
 
 FORCE:
