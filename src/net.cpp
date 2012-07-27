@@ -407,7 +407,7 @@ bool GetMyExternalIP(CNetAddr& ipRet)
 
 void ThreadGetMyExternalIP(void* parg)
 {
-    // Make this thread recognisable as the message handling thread
+    // Make this thread recognisable as the external IP detection thread
     RenameThread("bitcoin-ext-ip");
 
     CNetAddr addrLocalHost;
@@ -1878,7 +1878,9 @@ void static Discover()
     }
 #endif
 
-    CreateThread(ThreadGetMyExternalIP, NULL);
+    // Don't use external IPv4 discovery, when -onlynet="IPv6"
+    if (!IsLimited(NET_IPV4))
+        CreateThread(ThreadGetMyExternalIP, NULL);
 }
 
 void StartNode(void* parg)
