@@ -101,7 +101,7 @@ private:
 
     /** Create the main UI actions. */
     void createActions();
-    /** Create the menu bar and submenus. */
+    /** Create the menu bar and sub-menus. */
     void createMenuBar();
     /** Create the toolbars */
     void createToolBars();
@@ -112,7 +112,7 @@ public slots:
     /** Set number of connections shown in the UI */
     void setNumConnections(int count);
     /** Set number of blocks shown in the UI */
-    void setNumBlocks(int count, int countOfPeers);
+    void setNumBlocks(int count, int nTotalBlocks);
     /** Set the encryption status as shown in the UI.
        @param[in] status            current encryption status
        @see WalletModel::EncryptionStatus
@@ -132,9 +132,6 @@ public slots:
     void askFee(qint64 nFeeRequired, bool *payFee);
     void handleURI(QString strURI);
 
-    void gotoSignMessageTab(QString addr = "");
-    void gotoVerifyMessageTab(QString addr = "");
-
 private slots:
     /** Switch to overview (home) page */
     void gotoOverviewPage();
@@ -146,6 +143,11 @@ private slots:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage();
+
+    /** Show Sign/Verify Message dialog and switch to sign message tab */
+    void gotoSignMessageTab(QString addr = "");
+    /** Show Sign/Verify Message dialog and switch to verify message tab */
+    void gotoVerifyMessageTab(QString addr = "");
 
     /** Show configuration dialog */
     void optionsClicked();
@@ -166,7 +168,7 @@ private slots:
     void backupWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
-    /** Ask for pass phrase to unlock wallet temporarily */
+    /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
 
     /** Show window if hidden, unminimize when minimized, rise when obscured or show if hidden and fToggleHidden is true */

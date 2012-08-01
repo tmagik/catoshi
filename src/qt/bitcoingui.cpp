@@ -51,7 +51,6 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QTimer>
-
 #include <QDragEnterEvent>
 #include <QUrl>
 
@@ -69,7 +68,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     rpcConsole(0)
 {
     resize(850, 550);
-    setWindowTitle(tr("Bitcoin Wallet"));
+    setWindowTitle(tr("Bitcoin") + " - " + tr("Wallet"));
 #ifndef Q_WS_MAC
     qApp->setWindowIcon(QIcon(":icons/bitcoin"));
     setWindowIcon(QIcon(":icons/bitcoin"));
@@ -159,11 +158,16 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), this, SLOT(gotoHistoryPage()));
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), transactionView, SLOT(focusTransaction(QModelIndex)));
 
-    // Doubleclicking on a transaction on the transaction history page shows details
+    // Double-clicking on a transaction on the transaction history page shows details
     connect(transactionView, SIGNAL(doubleClicked(QModelIndex)), transactionView, SLOT(showDetails()));
 
     rpcConsole = new RPCConsole(this);
     connect(openRPCConsoleAction, SIGNAL(triggered()), rpcConsole, SLOT(show()));
+
+    // Clicking on "Verify Message" in the address book sends you to the verify message tab
+    connect(addressBookPage, SIGNAL(verifyMessage(QString)), this, SLOT(gotoVerifyMessageTab(QString)));
+    // Clicking on "Sign Message" in the receive coins page sends you to the sign message tab
+    connect(receiveCoinsPage, SIGNAL(signMessage(QString)), this, SLOT(gotoSignMessageTab(QString)));
 
     gotoOverviewPage();
 }
@@ -250,7 +254,7 @@ void BitcoinGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/bitcoin"), tr("&About %1").arg(qApp->applicationName()), this);
+    aboutAction = new QAction(QIcon(":/icons/bitcoin"), tr("&About Bitcoin"), this);
     aboutAction->setToolTip(tr("Show information about Bitcoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(tr("About &Qt"), this);
@@ -340,6 +344,7 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
     this->clientModel = clientModel;
     if(clientModel)
     {
+        // Replace some strings and icons, when using the testnet
         if(clientModel->isTestNet())
         {
             setWindowTitle(windowTitle() + QString(" ") + tr("[testnet]"));
@@ -355,6 +360,8 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
                 trayIcon->setIcon(QIcon(":/icons/toolbar_testnet"));
                 toggleHideAction->setIcon(QIcon(":/icons/toolbar_testnet"));
             }
+
+            aboutAction->setIcon(QIcon(":/icons/toolbar_testnet"));
         }
 
         // Keep up to date with client
@@ -393,7 +400,7 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
         setEncryptionStatus(walletModel->getEncryptionStatus());
         connect(walletModel, SIGNAL(encryptionStatusChanged(int)), this, SLOT(setEncryptionStatus(int)));
 
-        // Balloon popup for new transaction
+        // Balloon pop-up for new transaction
         connect(walletModel->getTransactionTableModel(), SIGNAL(rowsInserted(QModelIndex,int,int)),
                 this, SLOT(incomingTransaction(QModelIndex,int,int)));
 
@@ -485,7 +492,7 @@ void BitcoinGUI::setNumConnections(int count)
 
 void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
 {
-    // don't show / hide progressBar and it's label if we have no connection(s) to the network
+    // don't show / hide progressBar and its label if we have no connection(s) to the network
     if (!clientModel || clientModel->getNumConnections() == 0)
     {
         progressBarLabel->setVisible(false);
@@ -494,6 +501,7 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
         return;
     }
 
+    QString strStatusBarWarnings = clientModel->getStatusBarWarnings();
     QString tooltip;
 
     if(count < nTotalBlocks)
@@ -501,7 +509,7 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
         int nRemainingBlocks = nTotalBlocks - count;
         float nPercentageDone = count / (nTotalBlocks * 0.01f);
 
-        if (clientModel->getStatusBarWarnings() == "")
+        if (strStatusBarWarnings.isEmpty())
         {
             progressBarLabel->setText(tr("Synchronizing with network..."));
             progressBarLabel->setVisible(true);
@@ -510,30 +518,28 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
             progressBar->setValue(count);
             progressBar->setVisible(true);
         }
-        else
-        {
-            progressBarLabel->setText(clientModel->getStatusBarWarnings());
-            progressBarLabel->setVisible(true);
-            progressBar->setVisible(false);
-        }
+
         tooltip = tr("Downloaded %1 of %2 blocks of transaction history (%3% done).").arg(count).arg(nTotalBlocks).arg(nPercentageDone, 0, 'f', 2);
     }
     else
     {
-        if (clientModel->getStatusBarWarnings() == "")
+        if (strStatusBarWarnings.isEmpty())
             progressBarLabel->setVisible(false);
-        else
-        {
-            progressBarLabel->setText(clientModel->getStatusBarWarnings());
-            progressBarLabel->setVisible(true);
-        }
+
         progressBar->setVisible(false);
         tooltip = tr("Downloaded %1 blocks of transaction history.").arg(count);
     }
 
-    QDateTime now = QDateTime::currentDateTime();
+    // Override progressBarLabel text and hide progressBar, when we have warnings to display
+    if (!strStatusBarWarnings.isEmpty())
+    {
+        progressBarLabel->setText(strStatusBarWarnings);
+        progressBarLabel->setVisible(true);
+        progressBar->setVisible(false);
+    }
+
     QDateTime lastBlockDate = clientModel->getLastBlockDate();
-    int secs = lastBlockDate.secsTo(now);
+    int secs = lastBlockDate.secsTo(QDateTime::currentDateTime());
     QString text;
 
     // Represent time from last generated block in human readable text
