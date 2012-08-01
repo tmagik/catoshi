@@ -113,6 +113,8 @@ void AddressBookPage::setModel(AddressTableModel *model)
     proxyModel = new QSortFilterProxyModel(this);
     proxyModel->setSourceModel(model);
     proxyModel->setDynamicSortFilter(true);
+    proxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     switch(tab)
     {
     case ReceivingTab:
@@ -190,10 +192,7 @@ void AddressBookPage::on_signMessage_clicked()
         addr = address.toString();
     }
 
-    QObject *qoGUI = parent()->parent();
-    BitcoinGUI *gui = qobject_cast<BitcoinGUI *>(qoGUI);
-    if (gui)
-        gui->gotoSignMessageTab(addr);
+    emit signMessage(addr);
 }
 
 void AddressBookPage::on_verifyMessage_clicked()
@@ -208,10 +207,7 @@ void AddressBookPage::on_verifyMessage_clicked()
         addr = address.toString();
     }
 
-    QObject *qoGUI = parent()->parent();
-    BitcoinGUI *gui = qobject_cast<BitcoinGUI *>(qoGUI);
-    if (gui)
-        gui->gotoVerifyMessageTab(addr);
+    emit verifyMessage(addr);
 }
 
 void AddressBookPage::on_newAddressButton_clicked()

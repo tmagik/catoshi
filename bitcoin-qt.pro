@@ -81,7 +81,7 @@ contains(BITCOIN_NEED_QT_PLUGINS, 1) {
 }
 
 # regenerate src/build.h
-!windows || contains(USE_BUILD_INFO, 1) {
+!windows|contains(USE_BUILD_INFO, 1) {
     genbuild.depends = FORCE
     genbuild.commands = cd $$PWD; /bin/sh share/genbuild.sh $$OUT_PWD/build/build.h
     genbuild.target = $$OUT_PWD/build/build.h
@@ -279,7 +279,7 @@ OTHER_FILES += \
 # platform specific defaults, if not overridden on command line
 isEmpty(BOOST_LIB_SUFFIX) {
     macx:BOOST_LIB_SUFFIX = -mt
-    windows:BOOST_LIB_SUFFIX = -mgw44-mt-1_43
+    windows:BOOST_LIB_SUFFIX = -mgw44-mt-s-1_49
 }
 
 isEmpty(BOOST_THREAD_LIB_SUFFIX) {

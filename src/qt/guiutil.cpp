@@ -131,7 +131,7 @@ bool parseBitcoinURI(QString uri, SendCoinsRecipient *out)
     // Convert bitcoin:// to bitcoin:
     //
     //    Cannot handle this later, because bitcoin:// will cause Qt to see the part after // as host,
-    //    which will lowercase it (and thus invalidate the address).
+    //    which will lower-case it (and thus invalidate the address).
     if(uri.startsWith("bitcoin://"))
     {
         uri.replace(0, 10, "bitcoin:");
@@ -412,7 +412,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
 #else
 
 // TODO: OSX startup stuff; see:
-// http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/Articles/CustomLogin.html
+// https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPSystemStartup/Articles/CustomLogin.html
 
 bool GetStartOnSystemStartup() { return false; }
 bool SetStartOnSystemStartup(bool fAutoStart) { return false; }
@@ -436,7 +436,7 @@ HelpMessageBox::HelpMessageBox(QWidget *parent) :
 
     setWindowTitle(tr("Bitcoin-Qt"));
     setTextFormat(Qt::PlainText);
-    // setMinimumWidth is ignored for QMessageBox so put in nonbreaking spaces to make it wider.
+    // setMinimumWidth is ignored for QMessageBox so put in non-breaking spaces to make it wider.
     setText(header + QString(QChar(0x2003)).repeated(50));
     setDetailedText(coreOptions + "\n" + uiOptions);
 }

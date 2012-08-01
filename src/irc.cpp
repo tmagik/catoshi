@@ -189,6 +189,10 @@ bool GetIPFromIRC(SOCKET hSocket, string strMyName, CNetAddr& ipRet)
 void ThreadIRCSeed(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadIRCSeed(parg));
+
+    // Make this thread recognisable as the IRC seeding thread
+    RenameThread("bitcoin-ircseed");
+
     try
     {
         ThreadIRCSeed2(parg);
@@ -203,7 +207,7 @@ void ThreadIRCSeed(void* parg)
 
 void ThreadIRCSeed2(void* parg)
 {
-    /* Dont advertise on IRC if we don't allow incoming connections */
+    /* Don't advertise on IRC if we don't allow incoming connections */
     if (mapArgs.count("-connect") || fNoListen)
         return;
 
