@@ -54,6 +54,10 @@ void Shutdown(void* parg)
 {
     static CCriticalSection cs_Shutdown;
     static bool fTaken;
+
+    // Make this thread recognisable as the shutdown thread
+    RenameThread("bitcoin-shutoff");
+
     bool fFirstThread = false;
     {
         TRY_LOCK(cs_Shutdown, lockShutdown);
@@ -213,6 +217,7 @@ bool static Bind(const CService &addr, bool fError = true) {
 std::string HelpMessage()
 {
     string strUsage = _("Options:") + "\n" +
+        "  -?                     " + _("This help message") + "\n" +
         "  -conf=<file>           " + _("Specify configuration file (default: bitcoin.conf)") + "\n" +
         "  -pid=<file>            " + _("Specify pid file (default: bitcoind.pid)") + "\n" +
         "  -gen                   " + _("Generate coins") + "\n" +
@@ -260,6 +265,7 @@ std::string HelpMessage()
         "  -debug                 " + _("Output extra debugging information. Implies all other -debug* options") + "\n" +
         "  -debugnet              " + _("Output extra network debugging information") + "\n" +
         "  -logtimestamps         " + _("Prepend debug output with timestamp") + "\n" +
+        "  -shrinkdebugfile       " + _("Shrink debug.log file on client startup (default: 1 when no -debug)") + "\n" +
         "  -printtoconsole        " + _("Send trace/debug info to console instead of debug.log file") + "\n" +
 #ifdef WIN32
         "  -printtodebugger       " + _("Send trace/debug info to debugger") + "\n" +
@@ -276,10 +282,13 @@ std::string HelpMessage()
         "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 2500, 0 = all)") + "\n" +
         "  -checklevel=<n>        " + _("How thorough the block verification is (0-6, default: 1)") + "\n" +
         "  -loadblock=<file>      " + _("Imports blocks from external blk000?.dat file") + "\n" +
-        "  -?                     " + _("This help message") + "\n";
 
-    strUsage += string() +
-        _("\nSSL options: (see the Bitcoin Wiki for SSL setup instructions)") + "\n" +
+        "\n" + _("Block creation options:") + "\n" +
+        "  -blockminsize=<n>      "   + _("Set minimum block size in bytes (default: 0)") + "\n" +
+        "  -blockmaxsize=<n>      "   + _("Set maximum block size in bytes (default: 250000)") + "\n" +
+        "  -blockprioritysize=<n> "   + _("Set maximum size of high-priority/low-fee transactions in bytes (default: 27000)") + "\n" +
+
+        "\n" + _("SSL options: (see the Bitcoin Wiki for SSL setup instructions)") + "\n" +
         "  -rpcssl                                  " + _("Use OpenSSL (https) for JSON-RPC connections") + "\n" +
         "  -rpcsslcertificatechainfile=<file.cert>  " + _("Server certificate file (default: server.cert)") + "\n" +
         "  -rpcsslprivatekeyfile=<file.pem>         " + _("Server private key (default: server.pem)") + "\n" +
@@ -443,7 +452,7 @@ bool AppInit2()
     }
 #endif
 
-    if (!fDebug)
+    if (GetBoolArg("-shrinkdebugfile", !fDebug))
         ShrinkDebugFile();
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     printf("Bitcoin version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());

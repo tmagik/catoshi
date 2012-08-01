@@ -407,6 +407,9 @@ bool GetMyExternalIP(CNetAddr& ipRet)
 
 void ThreadGetMyExternalIP(void* parg)
 {
+    // Make this thread recognisable as the external IP detection thread
+    RenameThread("bitcoin-ext-ip");
+
     CNetAddr addrLocalHost;
     if (GetMyExternalIP(addrLocalHost))
     {
@@ -586,7 +589,7 @@ bool CNode::Misbehaving(int howmuch)
 {
     if (addr.IsLocal())
     {
-        printf("Warning: local node %s misbehaving\n", addrName.c_str());
+        printf("Warning: local node %s misbehaving (delta: %d)\n", addrName.c_str(), howmuch);
         return false;
     }
 
@@ -594,15 +597,16 @@ bool CNode::Misbehaving(int howmuch)
     if (nMisbehavior >= GetArg("-banscore", 100))
     {
         int64 banTime = GetTime()+GetArg("-bantime", 60*60*24);  // Default 24-hour ban
+        printf("Misbehaving: %s (%d -> %d) DISCONNECTING\n", addr.ToString().c_str(), nMisbehavior-howmuch, nMisbehavior);
         {
             LOCK(cs_setBanned);
             if (setBanned[addr] < banTime)
                 setBanned[addr] = banTime;
         }
         CloseSocketDisconnect();
-        printf("Disconnected %s for misbehavior (score=%d)\n", addrName.c_str(), nMisbehavior);
         return true;
-    }
+    } else
+        printf("Misbehaving: %s (%d -> %d)\n", addr.ToString().c_str(), nMisbehavior-howmuch, nMisbehavior);
     return false;
 }
 
@@ -636,6 +640,10 @@ void CNode::copyStats(CNodeStats &stats)
 void ThreadSocketHandler(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadSocketHandler(parg));
+
+    // Make this thread recognisable as the networking thread
+    RenameThread("bitcoin-net");
+
     try
     {
         vnThreadsRunning[THREAD_SOCKETHANDLER]++;
@@ -988,6 +996,10 @@ void ThreadSocketHandler2(void* parg)
 void ThreadMapPort(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadMapPort(parg));
+
+    // Make this thread recognisable as the UPnP thread
+    RenameThread("bitcoin-UPnP");
+
     try
     {
         vnThreadsRunning[THREAD_UPNP]++;
@@ -1137,15 +1149,19 @@ void MapPort()
 // The first name is used as information source for addrman.
 // The second name should resolve to a list of seed addresses.
 static const char *strDNSSeed[][2] = {
-    {"xf2.org", "bitseed.xf2.org"},
-    {"bluematt.me", "dnsseed.bluematt.me"},
     {"bitcoin.sipa.be", "seed.bitcoin.sipa.be"},
+    {"bluematt.me", "dnsseed.bluematt.me"},
     {"dashjr.org", "dnsseed.bitcoin.dashjr.org"},
+    {"xf2.org", "bitseed.xf2.org"},
 };
 
 void ThreadDNSAddressSeed(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadDNSAddressSeed(parg));
+
+    // Make this thread recognisable as the DNS seeding thread
+    RenameThread("bitcoin-dnsseed");
+
     try
     {
         vnThreadsRunning[THREAD_DNSSEED]++;
@@ -1315,6 +1331,10 @@ void ThreadDumpAddress2(void* parg)
 void ThreadDumpAddress(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadDumpAddress(parg));
+
+    // Make this thread recognisable as the address dumping thread
+    RenameThread("bitcoin-adrdump");
+
     try
     {
         ThreadDumpAddress2(parg);
@@ -1328,6 +1348,10 @@ void ThreadDumpAddress(void* parg)
 void ThreadOpenConnections(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadOpenConnections(parg));
+
+    // Make this thread recognisable as the connection opening thread
+    RenameThread("bitcoin-opencon");
+
     try
     {
         vnThreadsRunning[THREAD_OPENCONNECTIONS]++;
@@ -1481,6 +1505,10 @@ void ThreadOpenConnections2(void* parg)
 void ThreadOpenAddedConnections(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadOpenAddedConnections(parg));
+
+    // Make this thread recognisable as the connection opening thread
+    RenameThread("bitcoin-opencon");
+
     try
     {
         vnThreadsRunning[THREAD_ADDEDCONNECTIONS]++;
@@ -1610,6 +1638,10 @@ bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOu
 void ThreadMessageHandler(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadMessageHandler(parg));
+
+    // Make this thread recognisable as the message handling thread
+    RenameThread("bitcoin-msghand");
+
     try
     {
         vnThreadsRunning[THREAD_MESSAGEHANDLER]++;
@@ -1847,11 +1879,16 @@ void static Discover()
     }
 #endif
 
-    CreateThread(ThreadGetMyExternalIP, NULL);
+    // Don't use external IPv4 discovery, when -onlynet="IPv6"
+    if (!IsLimited(NET_IPV4))
+        CreateThread(ThreadGetMyExternalIP, NULL);
 }
 
 void StartNode(void* parg)
 {
+    // Make this thread recognisable as the startup thread
+    RenameThread("bitcoin-start");
+
     if (semOutbound == NULL) {
         // initialize semaphore
         int nMaxOutbound = min(MAX_OUTBOUND_CONNECTIONS, (int)GetArg("-maxconnections", 125));
