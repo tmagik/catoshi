@@ -15,16 +15,14 @@ using namespace std;
 int64 nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
 
-std::string
-HelpRequiringPassphrase()
+std::string HelpRequiringPassphrase()
 {
     return pwalletMain->IsCrypted()
         ? "\nrequires wallet passphrase to be set with walletpassphrase first"
         : "";
 }
 
-void
-EnsureWalletIsUnlocked()
+void EnsureWalletIsUnlocked()
 {
     if (pwalletMain->IsLocked())
         throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
@@ -34,13 +32,17 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
 {
     int confirms = wtx.GetDepthInMainChain();
     entry.push_back(Pair("confirmations", confirms));
+    if (wtx.IsCoinBase())
+        entry.push_back(Pair("generated", true));
     if (confirms)
     {
         entry.push_back(Pair("blockhash", wtx.hashBlock.GetHex()));
         entry.push_back(Pair("blockindex", wtx.nIndex));
+        entry.push_back(Pair("blocktime", (boost::int64_t)(mapBlockIndex[wtx.hashBlock]->nTime)));
     }
     entry.push_back(Pair("txid", wtx.GetHash().GetHex()));
     entry.push_back(Pair("time", (boost::int64_t)wtx.GetTxTime()));
+    entry.push_back(Pair("timereceived", (boost::int64_t)wtx.nTimeReceived));
     BOOST_FOREACH(const PAIRTYPE(string,string)& item, wtx.mapValue)
         entry.push_back(Pair(item.first, item.second));
 }
@@ -272,6 +274,37 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+Value listaddressgroupings(const Array& params, bool fHelp)
+{
+    if (fHelp)
+        throw runtime_error(
+            "listaddressgroupings\n"
+            "Lists groups of addresses which have had their common ownership\n"
+            "made public by common use as inputs or as the resulting change\n"
+            "in past transactions");
+
+    Array jsonGroupings;
+    map<CTxDestination, int64> balances = pwalletMain->GetAddressBalances();
+    BOOST_FOREACH(set<CTxDestination> grouping, pwalletMain->GetAddressGroupings())
+    {
+        Array jsonGrouping;
+        BOOST_FOREACH(CTxDestination address, grouping)
+        {
+            Array addressInfo;
+            addressInfo.push_back(CBitcoinAddress(address).ToString());
+            addressInfo.push_back(ValueFromAmount(balances[address]));
+            {
+                LOCK(pwalletMain->cs_wallet);
+                if (pwalletMain->mapAddressBook.find(CBitcoinAddress(address).Get()) != pwalletMain->mapAddressBook.end())
+                    addressInfo.push_back(pwalletMain->mapAddressBook.find(CBitcoinAddress(address).Get())->second);
+            }
+            jsonGrouping.push_back(addressInfo);
+        }
+        jsonGroupings.push_back(jsonGrouping);
+    }
+    return jsonGroupings;
+}
+
 Value signmessage(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 2)
@@ -443,12 +476,12 @@ int64 GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMinD
         if (!wtx.IsFinal())
             continue;
 
-        int64 nGenerated, nReceived, nSent, nFee;
-        wtx.GetAccountAmounts(strAccount, nGenerated, nReceived, nSent, nFee);
+        int64 nReceived, nSent, nFee;
+        wtx.GetAccountAmounts(strAccount, nReceived, nSent, nFee);
 
         if (nReceived != 0 && wtx.GetDepthInMainChain() >= nMinDepth)
             nBalance += nReceived;
-        nBalance += nGenerated - nSent - nFee;
+        nBalance -= nSent + nFee;
     }
 
     // Tally internal accounting entries
@@ -490,12 +523,11 @@ Value getbalance(const Array& params, bool fHelp)
             if (!wtx.IsFinal())
                 continue;
 
-            int64 allGeneratedImmature, allGeneratedMature, allFee;
-            allGeneratedImmature = allGeneratedMature = allFee = 0;
+            int64 allFee;
             string strSentAccount;
             list<pair<CTxDestination, int64> > listReceived;
             list<pair<CTxDestination, int64> > listSent;
-            wtx.GetAmounts(allGeneratedImmature, allGeneratedMature, listReceived, listSent, allFee, strSentAccount);
+            wtx.GetAmounts(listReceived, listSent, allFee, strSentAccount);
             if (wtx.GetDepthInMainChain() >= nMinDepth)
             {
                 BOOST_FOREACH(const PAIRTYPE(CTxDestination,int64)& r, listReceived)
@@ -504,7 +536,6 @@ Value getbalance(const Array& params, bool fHelp)
             BOOST_FOREACH(const PAIRTYPE(CTxDestination,int64)& r, listSent)
                 nBalance -= r.second;
             nBalance -= allFee;
-            nBalance += allGeneratedMature;
         }
         return  ValueFromAmount(nBalance);
     }
@@ -542,6 +573,7 @@ Value movecmd(const Array& params, bool fHelp)
 
     // Debit
     CAccountingEntry debit;
+    debit.nOrderPos = pwalletMain->nOrderPosNext++;
     debit.strAccount = strFrom;
     debit.nCreditDebit = -nAmount;
     debit.nTime = nNow;
@@ -551,6 +583,7 @@ Value movecmd(const Array& params, bool fHelp)
 
     // Credit
     CAccountingEntry credit;
+    credit.nOrderPos = pwalletMain->nOrderPosNext++;
     credit.strAccount = strTo;
     credit.nCreditDebit = nAmount;
     credit.nTime = nNow;
@@ -632,7 +665,7 @@ Value sendmany(const Array& params, bool fHelp)
     {
         CBitcoinAddress address(s.name_);
         if (!address.IsValid())
-            throw JSONRPCError(-5, string("Invalid Bitcoin address:")+s.name_);
+            throw JSONRPCError(-5, string("Invalid Bitcoin address: ")+s.name_);
 
         if (setAddress.count(address))
             throw JSONRPCError(-8, string("Invalid parameter, duplicated address: ")+s.name_);
@@ -873,34 +906,14 @@ Value listreceivedbyaccount(const Array& params, bool fHelp)
 
 void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret)
 {
-    int64 nGeneratedImmature, nGeneratedMature, nFee;
+    int64 nFee;
     string strSentAccount;
     list<pair<CTxDestination, int64> > listReceived;
     list<pair<CTxDestination, int64> > listSent;
 
-    wtx.GetAmounts(nGeneratedImmature, nGeneratedMature, listReceived, listSent, nFee, strSentAccount);
+    wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount);
 
     bool fAllAccounts = (strAccount == string("*"));
-
-    // Generated blocks assigned to account ""
-    if ((nGeneratedMature+nGeneratedImmature) != 0 && (fAllAccounts || strAccount == ""))
-    {
-        Object entry;
-        entry.push_back(Pair("account", string("")));
-        if (nGeneratedImmature)
-        {
-            entry.push_back(Pair("category", wtx.GetDepthInMainChain() ? "immature" : "orphan"));
-            entry.push_back(Pair("amount", ValueFromAmount(nGeneratedImmature)));
-        }
-        else
-        {
-            entry.push_back(Pair("category", "generate"));
-            entry.push_back(Pair("amount", ValueFromAmount(nGeneratedMature)));
-        }
-        if (fLong)
-            WalletTxToJSON(wtx, entry);
-        ret.push_back(entry);
-    }
 
     // Sent
     if ((!listSent.empty() || nFee != 0) && (fAllAccounts || strAccount == strSentAccount))
@@ -932,7 +945,17 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 Object entry;
                 entry.push_back(Pair("account", account));
                 entry.push_back(Pair("address", CBitcoinAddress(r.first).ToString()));
-                entry.push_back(Pair("category", "receive"));
+                if (wtx.IsCoinBase())
+                {
+                    if (wtx.GetDepthInMainChain() < 1)
+                        entry.push_back(Pair("category", "orphan"));
+                    else if (wtx.GetBlocksToMaturity() > 0)
+                        entry.push_back(Pair("category", "immature"));
+                    else
+                        entry.push_back(Pair("category", "generate"));
+                }
+                else
+                    entry.push_back(Pair("category", "receive"));
                 entry.push_back(Pair("amount", ValueFromAmount(r.second)));
                 if (fLong)
                     WalletTxToJSON(wtx, entry);
@@ -982,29 +1005,11 @@ Value listtransactions(const Array& params, bool fHelp)
         throw JSONRPCError(-8, "Negative from");
 
     Array ret;
-    CWalletDB walletdb(pwalletMain->strWalletFile);
 
-    // First: get all CWalletTx and CAccountingEntry into a sorted-by-time multimap.
-    typedef pair<CWalletTx*, CAccountingEntry*> TxPair;
-    typedef multimap<int64, TxPair > TxItems;
-    TxItems txByTime;
-
-    // Note: maintaining indices in the database of (account,time) --> txid and (account, time) --> acentry
-    // would make this much faster for applications that do this a lot.
-    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-    {
-        CWalletTx* wtx = &((*it).second);
-        txByTime.insert(make_pair(wtx->GetTxTime(), TxPair(wtx, (CAccountingEntry*)0)));
-    }
-    list<CAccountingEntry> acentries;
-    walletdb.ListAccountCreditDebit(strAccount, acentries);
-    BOOST_FOREACH(CAccountingEntry& entry, acentries)
-    {
-        txByTime.insert(make_pair(entry.nTime, TxPair((CWalletTx*)0, &entry)));
-    }
+    CWallet::TxItems txOrdered = pwalletMain->OrderedTxItems(strAccount);
 
     // iterate backwards until we have nCount items to return:
-    for (TxItems::reverse_iterator it = txByTime.rbegin(); it != txByTime.rend(); ++it)
+    for (CWallet::TxItems::reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
     {
         CWalletTx *const pwtx = (*it).second.first;
         if (pwtx != 0)
@@ -1054,17 +1059,16 @@ Value listaccounts(const Array& params, bool fHelp)
     for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
-        int64 nGeneratedImmature, nGeneratedMature, nFee;
+        int64 nFee;
         string strSentAccount;
         list<pair<CTxDestination, int64> > listReceived;
         list<pair<CTxDestination, int64> > listSent;
-        wtx.GetAmounts(nGeneratedImmature, nGeneratedMature, listReceived, listSent, nFee, strSentAccount);
+        wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount);
         mapAccountBalances[strSentAccount] -= nFee;
         BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64)& s, listSent)
             mapAccountBalances[strSentAccount] -= s.second;
         if (wtx.GetDepthInMainChain() >= nMinDepth)
         {
-            mapAccountBalances[""] += nGeneratedMature;
             BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64)& r, listReceived)
                 if (pwalletMain->mapAddressBook.count(r.first))
                     mapAccountBalances[pwalletMain->mapAddressBook[r.first]] += r.second;
@@ -1389,7 +1393,7 @@ Value encryptwallet(const Array& params, bool fHelp)
 
     // BDB seems to have a bad habit of writing old data into
     // slack space in .dat files; that is bad if the old data is
-    // unencrypted private keys.  So:
+    // unencrypted private keys. So:
     StartShutdown();
     return "wallet encrypted; Bitcoin server stopping, restart to run with encrypted wallet";
 }

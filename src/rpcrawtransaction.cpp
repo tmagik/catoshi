@@ -18,8 +18,7 @@ using namespace boost;
 using namespace boost::assign;
 using namespace json_spirit;
 
-void
-ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out)
+void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out)
 {
     txnouttype type;
     vector<CTxDestination> addresses;
@@ -43,8 +42,7 @@ ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out)
     out.push_back(Pair("addresses", a));
 }
 
-void
-TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
+void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 {
     entry.push_back(Pair("txid", tx.GetHash().GetHex()));
     entry.push_back(Pair("version", tx.nVersion));
@@ -93,6 +91,7 @@ TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
             {
                 entry.push_back(Pair("confirmations", 1 + nBestHeight - pindex->nHeight));
                 entry.push_back(Pair("time", (boost::int64_t)pindex->nTime));
+                entry.push_back(Pair("blocktime", (boost::int64_t)pindex->nTime));
             }
             else
                 entry.push_back(Pair("confirmations", 0));
@@ -137,23 +136,39 @@ Value getrawtransaction(const Array& params, bool fHelp)
 
 Value listunspent(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 2)
+    if (fHelp || params.size() > 3)
         throw runtime_error(
-            "listunspent [minconf=1] [maxconf=999999]\n"
+            "listunspent [minconf=1] [maxconf=9999999]  [\"address\",...]\n"
             "Returns array of unspent transaction outputs\n"
             "with between minconf and maxconf (inclusive) confirmations.\n"
+            "Optionally filtered to only include txouts paid to specified addresses.\n"
             "Results are an array of Objects, each of which has:\n"
             "{txid, vout, scriptPubKey, amount, confirmations}");
 
-    RPCTypeCheck(params, list_of(int_type)(int_type));
+    RPCTypeCheck(params, list_of(int_type)(int_type)(array_type));
 
     int nMinDepth = 1;
     if (params.size() > 0)
         nMinDepth = params[0].get_int();
 
-    int nMaxDepth = 999999;
+    int nMaxDepth = 9999999;
     if (params.size() > 1)
         nMaxDepth = params[1].get_int();
+
+    set<CBitcoinAddress> setAddress;
+    if (params.size() > 2)
+    {
+        Array inputs = params[2].get_array();
+        BOOST_FOREACH(Value& input, inputs)
+        {
+            CBitcoinAddress address(input.get_str());
+            if (!address.IsValid())
+                throw JSONRPCError(-5, string("Invalid Bitcoin address: ")+input.get_str());
+            if (setAddress.count(address))
+                throw JSONRPCError(-8, string("Invalid parameter, duplicated address: ")+input.get_str());
+           setAddress.insert(address);
+        }
+    }
 
     Array results;
     vector<COutput> vecOutputs;
@@ -162,6 +177,16 @@ Value listunspent(const Array& params, bool fHelp)
     {
         if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
             continue;
+
+        if(setAddress.size())
+        {
+            CTxDestination address;
+            if(!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+                continue;
+
+            if (!setAddress.count(address))
+                continue;
+        }
 
         int64 nValue = out.tx->vout[out.i].nValue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
@@ -223,7 +248,7 @@ Value createrawtransaction(const Array& params, bool fHelp)
     {
         CBitcoinAddress address(s.name_);
         if (!address.IsValid())
-            throw JSONRPCError(-5, string("Invalid Bitcoin address:")+s.name_);
+            throw JSONRPCError(-5, string("Invalid Bitcoin address: ")+s.name_);
 
         if (setAddress.count(address))
             throw JSONRPCError(-8, string("Invalid parameter, duplicated address: ")+s.name_);
