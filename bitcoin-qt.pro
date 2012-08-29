@@ -75,12 +75,12 @@ contains(FIRST_CLASS_MESSAGING, 1) {
 #  or: qmake "USE_IPV6=0" (disabled by default)
 #  or: qmake "USE_IPV6=-" (not supported)
 contains(USE_IPV6, -) {
-	message(Building without IPv6 support)
+    message(Building without IPv6 support)
 } else {
-	count(USE_IPV6, 0) {
-		USE_IPV6=1
-	}
-	DEFINES += USE_IPV6=$$USE_IPV6
+    count(USE_IPV6, 0) {
+        USE_IPV6=1
+    }
+    DEFINES += USE_IPV6=$$USE_IPV6
 }
 
 contains(BITCOIN_NEED_QT_PLUGINS, 1) {
@@ -92,7 +92,7 @@ contains(BITCOIN_NEED_QT_PLUGINS, 1) {
     # for extra security against potential buffer overflows
     QMAKE_CXXFLAGS += -fstack-protector
     QMAKE_LFLAGS += -fstack-protector
-    # do not enable this on windows, as it will result in a non-working executable!
+    # do not enable this on windows cross compile with mingw 4.2.x, as it will result in a non-working executable!
 }
 
 # regenerate src/build.h
@@ -202,9 +202,6 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/addrman.cpp \
     src/db.cpp \
     src/walletdb.cpp \
-    src/json/json_spirit_writer.cpp \
-    src/json/json_spirit_value.cpp \
-    src/json/json_spirit_reader.cpp \
     src/qt/clientmodel.cpp \
     src/qt/guiutil.cpp \
     src/qt/transactionrecord.cpp \
