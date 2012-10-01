@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>691</width>
-    <height>347</height>
+    <width>760</width>
+    <height>380</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -102,7 +102,7 @@
         <string>Sign a message to prove you own a Bitcoin address</string>
        </property>
        <property name="text">
-        <string>&amp;Sign Message</string>
+        <string>Sign &amp;Message</string>
        </property>
        <property name="icon">
         <iconset resource="../bitcoin.qrc">
@@ -127,7 +127,7 @@
      <item>
       <widget class="QPushButton" name="deleteButton">
        <property name="toolTip">
-        <string>Delete the currently selected address from the list. Only sending addresses can be deleted.</string>
+        <string>Delete the currently selected address from the list</string>
        </property>
        <property name="text">
         <string>&amp;Delete</string>
