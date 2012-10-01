@@ -27,6 +27,7 @@ static const unsigned int MAX_BLOCK_SIZE = 1000000;
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
+static const unsigned int MAX_INV_SZ = 50000;
 static const int64 MIN_TX_FEE = 50000;
 static const int64 MIN_RELAY_TX_FEE = 10000;
 static const int64 MAX_MONEY = 21000000 * COIN;
@@ -88,6 +89,7 @@ FILE* OpenBlockFile(unsigned int nFile, unsigned int nBlockPos, const char* pszM
 FILE* AppendBlockFile(unsigned int& nFileRet);
 bool LoadBlockIndex(bool fAllowNew=true);
 void PrintBlockTree();
+CBlockIndex* FindBlockByHeight(int nHeight);
 bool ProcessMessages(CNode* pfrom);
 bool SendMessages(CNode* pto, bool fSendTrickle);
 bool LoadExternalBlockFile(FILE* fileIn);
@@ -156,7 +158,7 @@ public:
         if (IsNull())
             return "null";
         else
-            return strprintf("(nFile=%d, nBlockPos=%d, nTxPos=%d)", nFile, nBlockPos, nTxPos);
+            return strprintf("(nFile=%u, nBlockPos=%u, nTxPos=%u)", nFile, nBlockPos, nTxPos);
     }
 
     void print() const
@@ -212,7 +214,7 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("COutPoint(%s, %d)", hash.ToString().substr(0,10).c_str(), n);
+        return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10).c_str(), n);
     }
 
     void print() const
@@ -538,53 +540,7 @@ public:
         return dPriority > COIN * 144 / 250;
     }
 
-    int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const
-    {
-        // Base fee is either MIN_TX_FEE or MIN_RELAY_TX_FEE
-        int64 nBaseFee = (mode == GMF_RELAY) ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
-
-        unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
-        unsigned int nNewBlockSize = nBlockSize + nBytes;
-        int64 nMinFee = (1 + (int64)nBytes / 1000) * nBaseFee;
-
-        if (fAllowFree)
-        {
-            if (nBlockSize == 1)
-            {
-                // Transactions under 10K are free
-                // (about 4500bc if made of 50bc inputs)
-                if (nBytes < 10000)
-                    nMinFee = 0;
-            }
-            else
-            {
-                // Free transaction area
-                if (nNewBlockSize < 27000)
-                    nMinFee = 0;
-            }
-        }
-
-        // To limit dust spam, require MIN_TX_FEE/MIN_RELAY_TX_FEE if any output is less than 0.01
-        if (nMinFee < nBaseFee)
-        {
-            BOOST_FOREACH(const CTxOut& txout, vout)
-                if (txout.nValue < CENT)
-                    nMinFee = nBaseFee;
-        }
-
-        // Raise the price as the block approaches full
-        if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN/2)
-        {
-            if (nNewBlockSize >= MAX_BLOCK_SIZE_GEN)
-                return MAX_MONEY;
-            nMinFee *= MAX_BLOCK_SIZE_GEN / (MAX_BLOCK_SIZE_GEN - nNewBlockSize);
-        }
-
-        if (!MoneyRange(nMinFee))
-            nMinFee = MAX_MONEY;
-        return nMinFee;
-    }
-
+    int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const;
 
     bool ReadFromDisk(CDiskTxPos pos, FILE** pfileRet=NULL)
     {
@@ -630,7 +586,7 @@ public:
     std::string ToString() const
     {
         std::string str;
-        str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%d, vout.size=%d, nLockTime=%d)\n",
+        str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%u, vout.size=%u, nLockTime=%u)\n",
             GetHash().ToString().substr(0,10).c_str(),
             nVersion,
             vin.size(),
@@ -797,7 +753,7 @@ public:
         return !(a == b);
     }
     int GetDepthInMainChain() const;
- 
+
 };
 
 
@@ -818,7 +774,7 @@ class CBlock
 {
 public:
     // header
-    static const int CURRENT_VERSION=1;
+    static const int CURRENT_VERSION=2;
     int nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
@@ -1016,11 +972,11 @@ public:
 
 
     bool DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex);
-    bool ConnectBlock(CTxDB& txdb, CBlockIndex* pindex);
+    bool ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck=false);
     bool ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions=true);
     bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);
     bool AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos);
-    bool CheckBlock() const;
+    bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true) const;
     bool AcceptBlock();
 
 private:
@@ -1162,11 +1118,17 @@ public:
         return pindex->GetMedianTimePast();
     }
 
+    /**
+     * Returns true if there are nRequired or more blocks of minVersion or above
+     * in the last nToCheck blocks, starting at pstart and going backwards.
+     */
+    static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart,
+                                unsigned int nRequired, unsigned int nToCheck);
 
 
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(nprev=%08x, pnext=%08x, nFile=%d, nBlockPos=%-6d nHeight=%d, merkle=%s, hashBlock=%s)",
+        return strprintf("CBlockIndex(pprev=%08x, pnext=%08x, nFile=%u, nBlockPos=%-6u nHeight=%d, merkle=%s, hashBlock=%s)",
             pprev, pnext, nFile, nBlockPos, nHeight,
             hashMerkleRoot.ToString().substr(0,10).c_str(),
             GetBlockHash().ToString().substr(0,20).c_str());
@@ -1389,212 +1351,6 @@ public:
 
 
 
-
-/** Alerts are for notifying old versions if they become too obsolete and
- * need to upgrade.  The message is displayed in the status bar.
- * Alert messages are broadcast as a vector of signed data.  Unserializing may
- * not read the entire buffer if the alert is for a newer version, but older
- * versions can still relay the original data.
- */
-class CUnsignedAlert
-{
-public:
-    int nVersion;
-    int64 nRelayUntil;      // when newer nodes stop relaying to newer nodes
-    int64 nExpiration;
-    int nID;
-    int nCancel;
-    std::set<int> setCancel;
-    int nMinVer;            // lowest version inclusive
-    int nMaxVer;            // highest version inclusive
-    std::set<std::string> setSubVer;  // empty matches all
-    int nPriority;
-
-    // Actions
-    std::string strComment;
-    std::string strStatusBar;
-    std::string strReserved;
-
-    IMPLEMENT_SERIALIZE
-    (
-        READWRITE(this->nVersion);
-        nVersion = this->nVersion;
-        READWRITE(nRelayUntil);
-        READWRITE(nExpiration);
-        READWRITE(nID);
-        READWRITE(nCancel);
-        READWRITE(setCancel);
-        READWRITE(nMinVer);
-        READWRITE(nMaxVer);
-        READWRITE(setSubVer);
-        READWRITE(nPriority);
-
-        READWRITE(strComment);
-        READWRITE(strStatusBar);
-        READWRITE(strReserved);
-    )
-
-    void SetNull()
-    {
-        nVersion = 1;
-        nRelayUntil = 0;
-        nExpiration = 0;
-        nID = 0;
-        nCancel = 0;
-        setCancel.clear();
-        nMinVer = 0;
-        nMaxVer = 0;
-        setSubVer.clear();
-        nPriority = 0;
-
-        strComment.clear();
-        strStatusBar.clear();
-        strReserved.clear();
-    }
-
-    std::string ToString() const
-    {
-        std::string strSetCancel;
-        BOOST_FOREACH(int n, setCancel)
-            strSetCancel += strprintf("%d ", n);
-        std::string strSetSubVer;
-        BOOST_FOREACH(std::string str, setSubVer)
-            strSetSubVer += "\"" + str + "\" ";
-        return strprintf(
-                "CAlert(\n"
-                "    nVersion     = %d\n"
-                "    nRelayUntil  = %"PRI64d"\n"
-                "    nExpiration  = %"PRI64d"\n"
-                "    nID          = %d\n"
-                "    nCancel      = %d\n"
-                "    setCancel    = %s\n"
-                "    nMinVer      = %d\n"
-                "    nMaxVer      = %d\n"
-                "    setSubVer    = %s\n"
-                "    nPriority    = %d\n"
-                "    strComment   = \"%s\"\n"
-                "    strStatusBar = \"%s\"\n"
-                ")\n",
-            nVersion,
-            nRelayUntil,
-            nExpiration,
-            nID,
-            nCancel,
-            strSetCancel.c_str(),
-            nMinVer,
-            nMaxVer,
-            strSetSubVer.c_str(),
-            nPriority,
-            strComment.c_str(),
-            strStatusBar.c_str());
-    }
-
-    void print() const
-    {
-        printf("%s", ToString().c_str());
-    }
-};
-
-/** An alert is a combination of a serialized CUnsignedAlert and a signature. */
-class CAlert : public CUnsignedAlert
-{
-public:
-    std::vector<unsigned char> vchMsg;
-    std::vector<unsigned char> vchSig;
-
-    CAlert()
-    {
-        SetNull();
-    }
-
-    IMPLEMENT_SERIALIZE
-    (
-        READWRITE(vchMsg);
-        READWRITE(vchSig);
-    )
-
-    void SetNull()
-    {
-        CUnsignedAlert::SetNull();
-        vchMsg.clear();
-        vchSig.clear();
-    }
-
-    bool IsNull() const
-    {
-        return (nExpiration == 0);
-    }
-
-    uint256 GetHash() const
-    {
-        return SerializeHash(*this);
-    }
-
-    bool IsInEffect() const
-    {
-        return (GetAdjustedTime() < nExpiration);
-    }
-
-    bool Cancels(const CAlert& alert) const
-    {
-        if (!IsInEffect())
-            return false; // this was a no-op before 31403
-        return (alert.nID <= nCancel || setCancel.count(alert.nID));
-    }
-
-    bool AppliesTo(int nVersion, std::string strSubVerIn) const
-    {
-        // TODO: rework for client-version-embedded-in-strSubVer ?
-        return (IsInEffect() &&
-                nMinVer <= nVersion && nVersion <= nMaxVer &&
-                (setSubVer.empty() || setSubVer.count(strSubVerIn)));
-    }
-
-    bool AppliesToMe() const
-    {
-        return AppliesTo(PROTOCOL_VERSION, FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<std::string>()));
-    }
-
-    bool RelayTo(CNode* pnode) const
-    {
-        if (!IsInEffect())
-            return false;
-        // returns true if wasn't already contained in the set
-        if (pnode->setKnown.insert(GetHash()).second)
-        {
-            if (AppliesTo(pnode->nVersion, pnode->strSubVer) ||
-                AppliesToMe() ||
-                GetAdjustedTime() < nRelayUntil)
-            {
-                pnode->PushMessage("alert", *this);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    bool CheckSignature()
-    {
-        CKey key;
-        if (!key.SetPubKey(ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284")))
-            return error("CAlert::CheckSignature() : SetPubKey failed");
-        if (!key.Verify(Hash(vchMsg.begin(), vchMsg.end()), vchSig))
-            return error("CAlert::CheckSignature() : verify signature failed");
-
-        // Now unserialize the data
-        CDataStream sMsg(vchMsg, SER_NETWORK, PROTOCOL_VERSION);
-        sMsg >> *(CUnsignedAlert*)this;
-        return true;
-    }
-
-    bool ProcessAlert();
-
-    /*
-     * Get copy of (active) alert object by hash. Returns a null alert if it is not found.
-     */
-    static CAlert getAlertByHash(const uint256 &hash);
-};
-
 class CTxMemPool
 {
 public:
@@ -1606,6 +1362,7 @@ public:
                 bool fCheckInputs, bool* pfMissingInputs);
     bool addUnchecked(const uint256& hash, CTransaction &tx);
     bool remove(CTransaction &tx);
+    void clear();
     void queryHashes(std::vector<uint256>& vtxid);
 
     unsigned long size()

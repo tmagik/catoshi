@@ -5,12 +5,19 @@
 #ifndef BITCOIN_WALLET_H
 #define BITCOIN_WALLET_H
 
+#include <string>
+#include <vector>
+
+#include <stdlib.h>
+
 #include "main.h"
 #include "key.h"
 #include "keystore.h"
 #include "script.h"
 #include "ui_interface.h"
+#include "util.h"
 
+class CAccountingEntry;
 class CWalletTx;
 class CReserveKey;
 class CWalletDB;
@@ -91,6 +98,7 @@ public:
         fFileBacked = false;
         nMasterKeyMaxID = 0;
         pwalletdbEncryption = NULL;
+        nOrderPosNext = 0;
     }
     CWallet(std::string strWalletFileIn)
     {
@@ -100,9 +108,11 @@ public:
         fFileBacked = true;
         nMasterKeyMaxID = 0;
         pwalletdbEncryption = NULL;
+        nOrderPosNext = 0;
     }
 
     std::map<uint256, CWalletTx> mapWallet;
+    int64 nOrderPosNext;
     std::map<uint256, int> mapRequestCount;
 
     std::map<CTxDestination, std::string> mapAddressBook;
@@ -136,6 +146,20 @@ public:
     bool ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase, const SecureString& strNewWalletPassphrase);
     bool EncryptWallet(const SecureString& strWalletPassphrase);
 
+    /** Increment the next transaction order id
+        @return next transaction order id
+     */
+    int64 IncOrderPosNext();
+
+    typedef std::pair<CWalletTx*, CAccountingEntry*> TxPair;
+    typedef std::multimap<int64, TxPair > TxItems;
+
+    /** Get the wallet's activity log
+        @return multimap of ordered transactions and accounting entries
+        @warning Returned pointers are *only* valid within the scope of passed acentries
+     */
+    TxItems OrderedTxItems(std::list<CAccountingEntry>& acentries, std::string strAccount = "");
+
     void MarkDirty();
     bool AddToWallet(const CWalletTx& wtxIn);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate = false, bool fFindBlock = false);
@@ -163,6 +187,9 @@ public:
     bool GetKeyFromPool(CPubKey &key, bool fAllowReuse=true);
     int64 GetOldestKeyPoolTime();
     void GetAllReserveKeys(std::set<CKeyID>& setAddress);
+
+    std::set< std::set<CTxDestination> > GetAddressGroupings();
+    std::map<CTxDestination, int64> GetAddressBalances();
 
     bool IsMine(const CTxIn& txin) const;
     int64 GetDebit(const CTxIn& txin) const;
@@ -304,7 +331,29 @@ public:
 };
 
 
-/** A transaction with a bunch of additional info that only the owner cares about. 
+typedef std::map<std::string, std::string> mapValue_t;
+
+
+static void ReadOrderPos(int64& nOrderPos, mapValue_t& mapValue)
+{
+    if (!mapValue.count("n"))
+    {
+        nOrderPos = -1; // TODO: calculate elsewhere
+        return;
+    }
+    nOrderPos = atoi64(mapValue["n"].c_str());
+}
+
+
+static void WriteOrderPos(const int64& nOrderPos, mapValue_t& mapValue)
+{
+    if (nOrderPos == -1)
+        return;
+    mapValue["n"] = i64tostr(nOrderPos);
+}
+
+
+/** A transaction with a bunch of additional info that only the owner cares about.
  * It includes any unrecorded transactions needed to link it back to the block chain.
  */
 class CWalletTx : public CMerkleTx
@@ -314,13 +363,15 @@ private:
 
 public:
     std::vector<CMerkleTx> vtxPrev;
-    std::map<std::string, std::string> mapValue;
+    mapValue_t mapValue;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
     unsigned int nTimeReceived;  // time received by this node
+    unsigned int nTimeSmart;
     char fFromMe;
     std::string strFromAccount;
     std::vector<char> vfSpent; // which outputs are already spent
+    int64 nOrderPos;  // position in ordered transaction list
 
     // memory only
     mutable bool fDebitCached;
@@ -360,6 +411,7 @@ public:
         vOrderForm.clear();
         fTimeReceivedIsTxTime = false;
         nTimeReceived = 0;
+        nTimeSmart = 0;
         fFromMe = false;
         strFromAccount.clear();
         vfSpent.clear();
@@ -371,6 +423,7 @@ public:
         nCreditCached = 0;
         nAvailableCreditCached = 0;
         nChangeCached = 0;
+        nOrderPos = -1;
     }
 
     IMPLEMENT_SERIALIZE
@@ -392,6 +445,11 @@ public:
                     fSpent = true;
             }
             pthis->mapValue["spent"] = str;
+
+            WriteOrderPos(pthis->nOrderPos, pthis->mapValue);
+
+            if (nTimeSmart)
+                pthis->mapValue["timesmart"] = strprintf("%u", nTimeSmart);
         }
 
         nSerSize += SerReadWrite(s, *(CMerkleTx*)this, nType, nVersion,ser_action);
@@ -412,11 +470,17 @@ public:
                     pthis->vfSpent.push_back(c != '0');
             else
                 pthis->vfSpent.assign(vout.size(), fSpent);
+
+            ReadOrderPos(pthis->nOrderPos, pthis->mapValue);
+
+            pthis->nTimeSmart = mapValue.count("timesmart") ? (unsigned int)atoi64(pthis->mapValue["timesmart"]) : 0;
         }
 
         pthis->mapValue.erase("fromaccount");
         pthis->mapValue.erase("version");
         pthis->mapValue.erase("spent");
+        pthis->mapValue.erase("n");
+        pthis->mapValue.erase("timesmart");
     )
 
     // marks certain txout's as spent
@@ -536,10 +600,10 @@ public:
         return nChangeCached;
     }
 
-    void GetAmounts(int64& nGeneratedImmature, int64& nGeneratedMature, std::list<std::pair<CTxDestination, int64> >& listReceived,
+    void GetAmounts(std::list<std::pair<CTxDestination, int64> >& listReceived,
                     std::list<std::pair<CTxDestination, int64> >& listSent, int64& nFee, std::string& strSentAccount) const;
 
-    void GetAccountAmounts(const std::string& strAccount, int64& nGenerated, int64& nReceived, 
+    void GetAccountAmounts(const std::string& strAccount, int64& nReceived,
                            int64& nSent, int64& nFee) const;
 
     bool IsFromMe() const
@@ -705,6 +769,9 @@ public:
     int64 nTime;
     std::string strOtherAccount;
     std::string strComment;
+    mapValue_t mapValue;
+    int64 nOrderPos;  // position in ordered transaction list
+    uint64 nEntryNo;
 
     CAccountingEntry()
     {
@@ -718,18 +785,55 @@ public:
         strAccount.clear();
         strOtherAccount.clear();
         strComment.clear();
+        nOrderPos = -1;
     }
 
     IMPLEMENT_SERIALIZE
     (
+        CAccountingEntry& me = *const_cast<CAccountingEntry*>(this);
         if (!(nType & SER_GETHASH))
             READWRITE(nVersion);
         // Note: strAccount is serialized as part of the key, not here.
         READWRITE(nCreditDebit);
         READWRITE(nTime);
         READWRITE(strOtherAccount);
+
+        if (!fRead)
+        {
+            WriteOrderPos(nOrderPos, me.mapValue);
+
+            if (!(mapValue.empty() && _ssExtra.empty()))
+            {
+                CDataStream ss(nType, nVersion);
+                ss.insert(ss.begin(), '\0');
+                ss << mapValue;
+                ss.insert(ss.end(), _ssExtra.begin(), _ssExtra.end());
+                me.strComment.append(ss.str());
+            }
+        }
+
         READWRITE(strComment);
+
+        size_t nSepPos = strComment.find("\0", 0, 1);
+        if (fRead)
+        {
+            me.mapValue.clear();
+            if (std::string::npos != nSepPos)
+            {
+                CDataStream ss(std::vector<char>(strComment.begin() + nSepPos + 1, strComment.end()), nType, nVersion);
+                ss >> me.mapValue;
+                me._ssExtra = std::vector<char>(ss.begin(), ss.end());
+            }
+            ReadOrderPos(me.nOrderPos, me.mapValue);
+        }
+        if (std::string::npos != nSepPos)
+            me.strComment.erase(nSepPos);
+
+        me.mapValue.erase("n");
     )
+
+private:
+    std::vector<char> _ssExtra;
 };
 
 bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
