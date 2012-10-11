@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = bitcoin-qt
-VERSION = 0.7.0
+VERSION = 0.7.1
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE
 CONFIG += no_include_pwd
@@ -125,7 +125,6 @@ HEADERS += src/qt/bitcoingui.h \
     src/util.h \
     src/uint256.h \
     src/serialize.h \
-    src/strlcpy.h \
     src/main.h \
     src/net.h \
     src/key.h \
