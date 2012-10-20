@@ -9,6 +9,7 @@
 #include "ui_interface.h"
 #include "base58.h"
 #include "bitcoinrpc.h"
+#include "db.h"
 
 #undef printf
 #include <boost/asio.hpp>
@@ -40,6 +41,11 @@ const Object emptyobj;
 
 void ThreadRPCServer3(void* parg);
 
+static inline unsigned short GetDefaultRPCPort()
+{
+    return GetBoolArg("-testnet", false) ? 18332 : 8332;
+}
+
 Object JSONRPCError(int code, const string& message)
 {
     Object error;
@@ -63,7 +69,7 @@ void RPCTypeCheck(const Array& params,
         {
             string err = strprintf("Expected type %s, got %s",
                                    Value_type_name[t], Value_type_name[v.type()]);
-            throw JSONRPCError(-3, err);
+            throw JSONRPCError(RPC_TYPE_ERROR, err);
         }
         i++;
     }
@@ -77,13 +83,13 @@ void RPCTypeCheck(const Object& o,
     {
         const Value& v = find_value(o, t.first);
         if (!fAllowNull && v.type() == null_type)
-            throw JSONRPCError(-3, strprintf("Missing %s", t.first.c_str()));
+            throw JSONRPCError(RPC_TYPE_ERROR, strprintf("Missing %s", t.first.c_str()));
 
         if (!((v.type() == t.second) || (fAllowNull && (v.type() == null_type))))
         {
             string err = strprintf("Expected type %s for %s, got %s",
                                    Value_type_name[t.second], t.first.c_str(), Value_type_name[v.type()]);
-            throw JSONRPCError(-3, err);
+            throw JSONRPCError(RPC_TYPE_ERROR, err);
         }
     }
 }
@@ -92,10 +98,10 @@ int64 AmountFromValue(const Value& value)
 {
     double dAmount = value.get_real();
     if (dAmount <= 0.0 || dAmount > 21000000.0)
-        throw JSONRPCError(-3, "Invalid amount");
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
     int64 nAmount = roundint64(dAmount * COIN);
     if (!MoneyRange(nAmount))
-        throw JSONRPCError(-3, "Invalid amount");
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
     return nAmount;
 }
 
@@ -173,11 +179,14 @@ Value help(const Array& params, bool fHelp)
 
 Value stop(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "stop\n"
-            "Stop Bitcoin server.");
+            "stop <detach>\n"
+            "<detach> is true or false to detach the database or not for this stop only\n"
+            "Stop Bitcoin server (and possibly override the detachdb config value).");
     // Shutdown will take long enough that the response should get back
+    if (params.size() > 0)
+        bitdb.SetDetach(params[0].get_bool());
     StartShutdown();
     return "Bitcoin server stopping";
 }
@@ -308,7 +317,7 @@ string rfc1123Time()
 
 static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
 {
-    if (nStatus == 401)
+    if (nStatus == HTTP_UNAUTHORIZED)
         return strprintf("HTTP/1.0 401 Authorization Required\r\n"
             "Date: %s\r\n"
             "Server: bitcoin-json-rpc/%s\r\n"
@@ -326,17 +335,17 @@ static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
             "<BODY><H1>401 Unauthorized.</H1></BODY>\r\n"
             "</HTML>\r\n", rfc1123Time().c_str(), FormatFullVersion().c_str());
     const char *cStatus;
-         if (nStatus == 200) cStatus = "OK";
-    else if (nStatus == 400) cStatus = "Bad Request";
-    else if (nStatus == 403) cStatus = "Forbidden";
-    else if (nStatus == 404) cStatus = "Not Found";
-    else if (nStatus == 500) cStatus = "Internal Server Error";
+         if (nStatus == HTTP_OK) cStatus = "OK";
+    else if (nStatus == HTTP_BAD_REQUEST) cStatus = "Bad Request";
+    else if (nStatus == HTTP_FORBIDDEN) cStatus = "Forbidden";
+    else if (nStatus == HTTP_NOT_FOUND) cStatus = "Not Found";
+    else if (nStatus == HTTP_INTERNAL_SERVER_ERROR) cStatus = "Internal Server Error";
     else cStatus = "";
     return strprintf(
             "HTTP/1.1 %d %s\r\n"
             "Date: %s\r\n"
             "Connection: %s\r\n"
-            "Content-Length: %d\r\n"
+            "Content-Length: %"PRIszu"\r\n"
             "Content-Type: application/json\r\n"
             "Server: bitcoin-json-rpc/%s\r\n"
             "\r\n"
@@ -357,7 +366,7 @@ int ReadHTTPStatus(std::basic_istream<char>& stream, int &proto)
     vector<string> vWords;
     boost::split(vWords, str, boost::is_any_of(" "));
     if (vWords.size() < 2)
-        return 500;
+        return HTTP_INTERNAL_SERVER_ERROR;
     proto = 0;
     const char *ver = strstr(str.c_str(), "HTTP/1.");
     if (ver != NULL)
@@ -402,7 +411,7 @@ int ReadHTTP(std::basic_istream<char>& stream, map<string, string>& mapHeadersRe
     // Read header
     int nLen = ReadHTTPHeader(stream, mapHeadersRet);
     if (nLen < 0 || nLen > (int)MAX_SIZE)
-        return 500;
+        return HTTP_INTERNAL_SERVER_ERROR;
 
     // Read message
     if (nLen > 0)
@@ -475,10 +484,10 @@ string JSONRPCReply(const Value& result, const Value& error, const Value& id)
 void ErrorReply(std::ostream& stream, const Object& objError, const Value& id)
 {
     // Send error reply from json-rpc error object
-    int nStatus = 500;
+    int nStatus = HTTP_INTERNAL_SERVER_ERROR;
     int code = find_value(objError, "code").get_int();
-    if (code == -32600) nStatus = 400;
-    else if (code == -32601) nStatus = 404;
+    if (code == RPC_INVALID_REQUEST) nStatus = HTTP_BAD_REQUEST;
+    else if (code == RPC_METHOD_NOT_FOUND) nStatus = HTTP_NOT_FOUND;
     string strReply = JSONRPCReply(Value::null, objError, id);
     stream << HTTPReply(nStatus, strReply, false) << std::flush;
 }
@@ -608,8 +617,6 @@ private:
 
 void ThreadRPCServer(void* parg)
 {
-    IMPLEMENT_RANDOMIZE_STACK(ThreadRPCServer(parg));
-
     // Make this thread recognisable as the RPC listener
     RenameThread("bitcoin-rpclist");
 
@@ -692,7 +699,7 @@ static void RPCAcceptHandler(boost::shared_ptr< basic_socket_acceptor<Protocol, 
     {
         // Only send a 403 if we're not using SSL to prevent a DoS during the SSL handshake.
         if (!fUseSSL)
-            conn->stream() << HTTPReply(403, "", false) << std::flush;
+            conn->stream() << HTTPReply(HTTP_FORBIDDEN, "", false) << std::flush;
         delete conn;
     }
 
@@ -760,7 +767,7 @@ void ThreadRPCServer2(void* parg)
     // Try a dual IPv6/IPv4 socket, falling back to separate IPv4 and IPv6 sockets
     const bool loopback = !mapArgs.count("-rpcallowip");
     asio::ip::address bindAddress = loopback ? asio::ip::address_v6::loopback() : asio::ip::address_v6::any();
-    ip::tcp::endpoint endpoint(bindAddress, GetArg("-rpcport", 8332));
+    ip::tcp::endpoint endpoint(bindAddress, GetArg("-rpcport", GetDefaultRPCPort()));
     boost::system::error_code v6_only_error;
     boost::shared_ptr<ip::tcp::acceptor> acceptor(new ip::tcp::acceptor(io_service));
 
@@ -789,7 +796,7 @@ void ThreadRPCServer2(void* parg)
     }
     catch(boost::system::system_error &e)
     {
-        strerr = strprintf(_("An error occurred while setting up the RPC port %i for listening on IPv6, falling back to IPv4: %s"), endpoint.port(), e.what());
+        strerr = strprintf(_("An error occurred while setting up the RPC port %u for listening on IPv6, falling back to IPv4: %s"), endpoint.port(), e.what());
     }
 
     try {
@@ -816,7 +823,7 @@ void ThreadRPCServer2(void* parg)
     }
     catch(boost::system::system_error &e)
     {
-        strerr = strprintf(_("An error occurred while setting up the RPC port %i for listening on IPv4: %s"), endpoint.port(), e.what());
+        strerr = strprintf(_("An error occurred while setting up the RPC port %u for listening on IPv4: %s"), endpoint.port(), e.what());
     }
 
     if (!fListening) {
@@ -847,7 +854,7 @@ void JSONRequest::parse(const Value& valRequest)
 {
     // Parse request
     if (valRequest.type() != obj_type)
-        throw JSONRPCError(-32600, "Invalid Request object");
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Invalid Request object");
     const Object& request = valRequest.get_obj();
 
     // Parse id now so errors from here on will have the id
@@ -856,9 +863,9 @@ void JSONRequest::parse(const Value& valRequest)
     // Parse method
     Value valMethod = find_value(request, "method");
     if (valMethod.type() == null_type)
-        throw JSONRPCError(-32600, "Missing method");
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Missing method");
     if (valMethod.type() != str_type)
-        throw JSONRPCError(-32600, "Method must be a string");
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Method must be a string");
     strMethod = valMethod.get_str();
     if (strMethod != "getwork" && strMethod != "getblocktemplate")
         printf("ThreadRPCServer method=%s\n", strMethod.c_str());
@@ -870,7 +877,7 @@ void JSONRequest::parse(const Value& valRequest)
     else if (valParams.type() == null_type)
         params = Array();
     else
-        throw JSONRPCError(-32600, "Params must be an array");
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Params must be an array");
 }
 
 static Object JSONRPCExecOne(const Value& req)
@@ -891,7 +898,7 @@ static Object JSONRPCExecOne(const Value& req)
     catch (std::exception& e)
     {
         rpc_result = JSONRPCReplyObj(Value::null,
-                                     JSONRPCError(-32700, e.what()), jreq.id);
+                                     JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
     }
 
     return rpc_result;
@@ -910,8 +917,6 @@ static CCriticalSection cs_THREAD_RPCHANDLER;
 
 void ThreadRPCServer3(void* parg)
 {
-    IMPLEMENT_RANDOMIZE_STACK(ThreadRPCServer3(parg));
-
     // Make this thread recognisable as the RPC handler
     RenameThread("bitcoin-rpchand");
 
@@ -941,7 +946,7 @@ void ThreadRPCServer3(void* parg)
         // Check authorization
         if (mapHeaders.count("authorization") == 0)
         {
-            conn->stream() << HTTPReply(401, "", false) << std::flush;
+            conn->stream() << HTTPReply(HTTP_UNAUTHORIZED, "", false) << std::flush;
             break;
         }
         if (!HTTPAuthorized(mapHeaders))
@@ -953,7 +958,7 @@ void ThreadRPCServer3(void* parg)
             if (mapArgs["-rpcpassword"].size() < 20)
                 Sleep(250);
 
-            conn->stream() << HTTPReply(401, "", false) << std::flush;
+            conn->stream() << HTTPReply(HTTP_UNAUTHORIZED, "", false) << std::flush;
             break;
         }
         if (mapHeaders["connection"] == "close")
@@ -965,7 +970,7 @@ void ThreadRPCServer3(void* parg)
             // Parse request
             Value valRequest;
             if (!read_string(strRequest, valRequest))
-                throw JSONRPCError(-32700, "Parse error");
+                throw JSONRPCError(RPC_PARSE_ERROR, "Parse error");
 
             string strReply;
 
@@ -982,9 +987,9 @@ void ThreadRPCServer3(void* parg)
             } else if (valRequest.type() == array_type)
                 strReply = JSONRPCExecBatch(valRequest.get_array());
             else
-                throw JSONRPCError(-32700, "Top-level object parse error");
+                throw JSONRPCError(RPC_PARSE_ERROR, "Top-level object parse error");
 
-            conn->stream() << HTTPReply(200, strReply, fRun) << std::flush;
+            conn->stream() << HTTPReply(HTTP_OK, strReply, fRun) << std::flush;
         }
         catch (Object& objError)
         {
@@ -993,7 +998,7 @@ void ThreadRPCServer3(void* parg)
         }
         catch (std::exception& e)
         {
-            ErrorReply(conn->stream(), JSONRPCError(-32700, e.what()), jreq.id);
+            ErrorReply(conn->stream(), JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
             break;
         }
     }
@@ -1010,13 +1015,13 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
     // Find method
     const CRPCCommand *pcmd = tableRPC[strMethod];
     if (!pcmd)
-        throw JSONRPCError(-32601, "Method not found");
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found");
 
     // Observe safe mode
     string strWarning = GetWarnings("rpc");
     if (strWarning != "" && !GetBoolArg("-disablesafemode") &&
         !pcmd->okSafeMode)
-        throw JSONRPCError(-2, string("Safe mode: ") + strWarning);
+        throw JSONRPCError(RPC_FORBIDDEN_BY_SAFE_MODE, string("Safe mode: ") + strWarning);
 
     try
     {
@@ -1034,7 +1039,7 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
     }
     catch (std::exception& e)
     {
-        throw JSONRPCError(-1, e.what());
+        throw JSONRPCError(RPC_MISC_ERROR, e.what());
     }
 }
 
@@ -1055,7 +1060,7 @@ Object CallRPC(const string& strMethod, const Array& params)
     asio::ssl::stream<asio::ip::tcp::socket> sslStream(io_service, context);
     SSLIOStreamDevice<asio::ip::tcp> d(sslStream, fUseSSL);
     iostreams::stream< SSLIOStreamDevice<asio::ip::tcp> > stream(d);
-    if (!d.connect(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", "8332")))
+    if (!d.connect(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", itostr(GetDefaultRPCPort()))))
         throw runtime_error("couldn't connect to server");
 
     // HTTP basic authentication
@@ -1072,9 +1077,9 @@ Object CallRPC(const string& strMethod, const Array& params)
     map<string, string> mapHeaders;
     string strReply;
     int nStatus = ReadHTTP(stream, mapHeaders, strReply);
-    if (nStatus == 401)
+    if (nStatus == HTTP_UNAUTHORIZED)
         throw runtime_error("incorrect rpcuser or rpcpassword (authorization failed)");
-    else if (nStatus >= 400 && nStatus != 400 && nStatus != 404 && nStatus != 500)
+    else if (nStatus >= 400 && nStatus != HTTP_BAD_REQUEST && nStatus != HTTP_NOT_FOUND && nStatus != HTTP_INTERNAL_SERVER_ERROR)
         throw runtime_error(strprintf("server returned HTTP error %d", nStatus));
     else if (strReply.empty())
         throw runtime_error("no response from server");
@@ -1126,6 +1131,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     //
     // Special case non-string parameter types
     //
+    if (strMethod == "stop"                   && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "setgenerate"            && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "setgenerate"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
