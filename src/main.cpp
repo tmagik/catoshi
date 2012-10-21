@@ -1291,7 +1291,7 @@ bool CTransaction::UpdateCoins(CCoinsViewCache &inputs, CTxUndo &txundo, int nHe
 
 bool CTransaction::HaveInputs(CCoinsViewCache &inputs) const
 {
-    if (!IsCoinBase()) { 
+    if (!IsCoinBase()) {
         // first check whether information about the prevout hash is available
         for (unsigned int i = 0; i < vin.size(); i++) {
             const COutPoint &prevout = vin[i].prevout;
@@ -1356,9 +1356,9 @@ bool CTransaction::CheckInputs(CCoinsViewCache &inputs, enum CheckSig_mode csmod
         // Helps prevent CPU exhaustion attacks.
 
         // Skip ECDSA signature verification when connecting blocks
-        // before the last blockchain checkpoint. This is safe because block merkle hashes are
+        // before the last block chain checkpoint. This is safe because block merkle hashes are
         // still computed and checked, and any change will be caught at the next checkpoint.
-        if (csmode == CS_ALWAYS || 
+        if (csmode == CS_ALWAYS ||
             (csmode == CS_AFTER_CHECKPOINT && inputs.GetBestBlock()->nHeight >= Checkpoints::GetTotalBlocksEstimate())) {
             for (unsigned int i = 0; i < vin.size(); i++) {
                 const COutPoint &prevout = vin[i].prevout;
@@ -1620,7 +1620,7 @@ bool CBlock::ConnectBlock(CBlockIndex* pindex, CCoinsViewCache &view, bool fJust
             return error("ConnectBlock() : WriteBlockIndex failed");
     }
 
-    // add this block to the view's blockchain
+    // add this block to the view's block chain
     if (!view.SetBestBlock(pindex))
         return false;
 
@@ -2258,7 +2258,7 @@ bool static LoadBlockIndexDB()
     printf("LoadBlockIndex(): last block file = %i\n", nLastBlockFile);
     if (pblocktree->ReadBlockFileInfo(nLastBlockFile, infoLastBlockFile))
         printf("LoadBlockIndex(): last block file: %s\n", infoLastBlockFile.ToString().c_str());
- 
+
     // Load hashBestChain pointer to end of best chain
     pindexBest = pcoinsTip->GetBestBlock();
     if (pindexBest == NULL)
@@ -2549,7 +2549,6 @@ void ThreadImport(void *data) {
     vnThreadsRunning[THREAD_IMPORT]++;
 
     // -loadblock=
-    uiInterface.InitMessage(_("Starting block import..."));
     BOOST_FOREACH(boost::filesystem::path &path, *vFiles) {
         FILE *file = fopen(path.string().c_str(), "rb");
         if (file)
@@ -2559,8 +2558,6 @@ void ThreadImport(void *data) {
     // hardcoded $DATADIR/bootstrap.dat
     filesystem::path pathBootstrap = GetDataDir() / "bootstrap.dat";
     if (filesystem::exists(pathBootstrap)) {
-        uiInterface.InitMessage(_("Importing bootstrap blockchain data file."));
-
         FILE *file = fopen(pathBootstrap.string().c_str(), "rb");
         if (file) {
             filesystem::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
