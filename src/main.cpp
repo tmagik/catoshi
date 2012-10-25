@@ -2618,8 +2618,12 @@ string GetWarnings(string strFor)
     int nPriority = 0;
     string strStatusBar;
     string strRPC;
+
     if (GetBoolArg("-testsafemode"))
         strRPC = "test";
+
+    if (!CLIENT_VERSION_IS_RELEASE)
+        strStatusBar = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
 
     // Misc warnings like out of disk space and clock is wrong
     if (strMiscWarning != "")
@@ -3746,9 +3750,6 @@ public:
     }
 };
 
-const char* pszDummy = "\0\0";
-CScript scriptDummy(std::vector<unsigned char>(pszDummy, pszDummy + sizeof(pszDummy)));
-
 CBlock* CreateNewBlock(CReserveKey& reservekey)
 {
 
@@ -3982,7 +3983,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
         pblock->UpdateTime(pindexPrev);
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock.get());
         pblock->nNonce         = 0;
-        pblock->vtx[0].vin[0].scriptSig = scriptDummy;
+        pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
 
         CBlockIndex indexDummy(*pblock);
         indexDummy.pprev = pindexPrev;
