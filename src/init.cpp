@@ -236,7 +236,6 @@ std::string HelpMessage()
         "  -gen=0                 " + _("Don't generate coins") + "\n" +
         "  -datadir=<dir>         " + _("Specify data directory") + "\n" +
         "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 25)") + "\n" +
-        "  -dblogsize=<n>         " + _("Set database disk log size in megabytes (default: 100)") + "\n" +
         "  -timeout=<n>           " + _("Specify connection timeout in milliseconds (default: 5000)") + "\n" +
         "  -proxy=<ip:port>       " + _("Connect through socks proxy") + "\n" +
         "  -socks=<n>             " + _("Select the version of socks proxy to use (4-5, default: 5)") + "\n" +
@@ -458,7 +457,7 @@ bool AppInit2()
     if (file) fclose(file);
     static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
     if (!lock.try_lock())
-        return InitError(strprintf(_("Cannot obtain a lock on data directory %s.  Bitcoin is probably already running."), strDataDir.c_str()));
+        return InitError(strprintf(_("Cannot obtain a lock on data directory %s. Bitcoin is probably already running."), strDataDir.c_str()));
 
 #if !defined(WIN32) && !defined(QT_GUI)
     if (fDaemon)
@@ -648,11 +647,23 @@ bool AppInit2()
         return InitError(msg);
     }
 
+    // cache size calculations
+    size_t nTotalCache = GetArg("-dbcache", 25) << 20;
+    if (nTotalCache < (1 << 22))
+        nTotalCache = (1 << 22); // total cache cannot be less than 4 MiB
+    size_t nBlockTreeDBCache = nTotalCache / 8;
+    if (nBlockTreeDBCache > (1 << 21))
+        nBlockTreeDBCache = (1 << 21); // block tree db cache shouldn't be larger than 2 MiB
+    nTotalCache -= nBlockTreeDBCache;
+    size_t nCoinDBCache = nTotalCache / 2; // use half of the remaining cache for coindb cache
+    nTotalCache -= nCoinDBCache;
+    nCoinCacheSize = nTotalCache / 300; // coins in memory require around 300 bytes
+
     uiInterface.InitMessage(_("Loading block index..."));
     printf("Loading block index...\n");
     nStart = GetTimeMillis();
-    pblocktree = new CBlockTreeDB();
-    pcoinsdbview = new CCoinsViewDB();
+    pblocktree = new CBlockTreeDB(nBlockTreeDBCache);
+    pcoinsdbview = new CCoinsViewDB(nCoinDBCache);
     pcoinsTip = new CCoinsViewCache(*pcoinsdbview);
 
     if (!LoadBlockIndex())
