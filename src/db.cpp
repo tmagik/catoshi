@@ -55,7 +55,7 @@ void CDBEnv::Close()
     EnvShutdown();
 }
 
-bool CDBEnv::Open(boost::filesystem::path pathEnv_)
+bool CDBEnv::Open(const boost::filesystem::path& path)
 {
     if (fDbEnvInit)
         return true;
@@ -63,18 +63,16 @@ bool CDBEnv::Open(boost::filesystem::path pathEnv_)
     if (fShutdown)
         return false;
 
-    pathEnv = pathEnv_;
-    filesystem::path pathDataDir = pathEnv;
-    filesystem::path pathLogDir = pathDataDir / "database";
+    filesystem::path pathLogDir = path / "database";
     filesystem::create_directory(pathLogDir);
-    filesystem::path pathErrorFile = pathDataDir / "db.log";
+    filesystem::path pathErrorFile = path / "db.log";
     printf("dbenv.open LogDir=%s ErrorFile=%s\n", pathLogDir.string().c_str(), pathErrorFile.string().c_str());
 
     unsigned int nEnvFlags = 0;
     if (GetBoolArg("-privdb", true))
         nEnvFlags |= DB_PRIVATE;
 
-    int nDbCache = GetArg("-dbcache", 25);
+    unsigned int nDbCache = GetArg("-dbcache", 25);
     dbenv.set_lg_dir(pathLogDir.string().c_str());
     dbenv.set_cachesize(nDbCache / 1024, (nDbCache % 1024)*1048576, 1);
     dbenv.set_lg_bsize(1048576);
@@ -85,7 +83,7 @@ bool CDBEnv::Open(boost::filesystem::path pathEnv_)
     dbenv.set_flags(DB_AUTO_COMMIT, 1);
     dbenv.set_flags(DB_TXN_WRITE_NOSYNC, 1);
     dbenv.log_set_config(DB_LOG_AUTO_REMOVE, 1);
-    int ret = dbenv.open(pathDataDir.string().c_str(),
+    int ret = dbenv.open(path.string().c_str(),
                      DB_CREATE     |
                      DB_INIT_LOCK  |
                      DB_INIT_LOG   |
@@ -271,14 +269,6 @@ CDB::CDB(const char *pszFile, const char* pszMode) :
     }
 }
 
-static bool IsChainFile(std::string strFile)
-{
-    if (strFile == "coins.dat" || strFile == "blktree.dat")
-        return true;
-
-    return false;
-}
-
 void CDB::Flush()
 {
     if (activeTxn)
@@ -288,10 +278,6 @@ void CDB::Flush()
     unsigned int nMinutes = 0;
     if (fReadOnly)
         nMinutes = 1;
-    if (IsChainFile(strFile))
-        nMinutes = 2;
-    if (IsChainFile(strFile) && IsInitialBlockDownload())
-        nMinutes = 5;
 
     bitdb.dbenv.txn_checkpoint(nMinutes ? GetArg("-dblogsize", 100)*1024 : 0, nMinutes, 0);
 }
@@ -453,11 +439,9 @@ void CDBEnv::Flush(bool fShutdown)
                 CloseDb(strFile);
                 printf("%s checkpoint\n", strFile.c_str());
                 dbenv.txn_checkpoint(0, 0, 0);
-                if (!IsChainFile(strFile) || fDetachDB) {
-                    printf("%s detach\n", strFile.c_str());
-                    if (!fMockDb)
-                        dbenv.lsn_reset(strFile.c_str(), 0);
-                }
+                printf("%s detach\n", strFile.c_str());
+                if (!fMockDb)
+                    dbenv.lsn_reset(strFile.c_str(), 0);
                 printf("%s closed\n", strFile.c_str());
                 mapFileUseCount.erase(mi++);
             }
