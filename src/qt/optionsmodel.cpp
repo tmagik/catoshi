@@ -56,8 +56,6 @@ void OptionsModel::Init()
         SoftSetArg("-proxy", settings.value("addrProxy").toString().toStdString());
     if (settings.contains("nSocksVersion") && settings.value("fUseProxy").toBool())
         SoftSetArg("-socks", settings.value("nSocksVersion").toString().toStdString());
-    if (settings.contains("detachDB"))
-        SoftSetBoolArg("-detachdb", settings.value("detachDB").toBool());
     if (!language.isEmpty())
         SoftSetArg("-lang", language.toStdString());
 }
@@ -142,8 +140,10 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("fUseUPnP", GetBoolArg("-upnp", true));
         case MinimizeOnClose:
             return QVariant(fMinimizeOnClose);
-        case ProxyUse:
-            return settings.value("fUseProxy", false);
+        case ProxyUse: {
+            proxyType proxy;
+            return QVariant(GetProxy(NET_IPV4, proxy));
+        }
         case ProxyIP: {
             proxyType proxy;
             if (GetProxy(NET_IPV4, proxy))
@@ -158,16 +158,19 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             else
                 return QVariant(9050);
         }
-        case ProxySocksVersion:
-            return settings.value("nSocksVersion", 5);
+        case ProxySocksVersion: {
+            proxyType proxy;
+            if (GetProxy(NET_IPV4, proxy))
+                return QVariant(proxy.second);
+            else
+                return QVariant(5);
+        }
         case Fee:
             return QVariant(nTransactionFee);
         case DisplayUnit:
             return QVariant(nDisplayUnit);
         case DisplayAddresses:
             return QVariant(bDisplayAddresses);
-        case DetachDatabases:
-            return QVariant(bitdb.GetDetach());
         case Language:
             return settings.value("language", "");
         default:
@@ -203,7 +206,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             break;
         case ProxyUse:
             settings.setValue("fUseProxy", value.toBool());
-            ApplyProxySettings();
+            successful = ApplyProxySettings();
             break;
         case ProxyIP: {
             proxyType proxy;
@@ -249,12 +252,6 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             bDisplayAddresses = value.toBool();
             settings.setValue("bDisplayAddresses", bDisplayAddresses);
             break;
-        case DetachDatabases: {
-            bool fDetachDB = value.toBool();
-            bitdb.SetDetach(fDetachDB);
-            settings.setValue("detachDB", fDetachDB);
-            }
-            break;
         case Language:
             settings.setValue("language", value);
             break;
@@ -270,24 +267,4 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
 qint64 OptionsModel::getTransactionFee()
 {
     return nTransactionFee;
-}
-
-bool OptionsModel::getMinimizeToTray()
-{
-    return fMinimizeToTray;
-}
-
-bool OptionsModel::getMinimizeOnClose()
-{
-    return fMinimizeOnClose;
-}
-
-int OptionsModel::getDisplayUnit()
-{
-    return nDisplayUnit;
-}
-
-bool OptionsModel::getDisplayAddresses()
-{
-    return bDisplayAddresses;
 }
