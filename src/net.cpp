@@ -7,7 +7,6 @@
 #include "db.h"
 #include "net.h"
 #include "init.h"
-#include "strlcpy.h"
 #include "addrman.h"
 #include "ui_interface.h"
 
@@ -711,13 +710,9 @@ void ThreadSocketHandler2(void* parg)
                             TRY_LOCK(pnode->cs_vRecv, lockRecv);
                             if (lockRecv)
                             {
-                                TRY_LOCK(pnode->cs_mapRequests, lockReq);
-                                if (lockReq)
-                                {
-                                    TRY_LOCK(pnode->cs_inventory, lockInv);
-                                    if (lockInv)
-                                        fDelete = true;
-                                }
+                                TRY_LOCK(pnode->cs_inventory, lockInv);
+                                if (lockInv)
+                                    fDelete = true;
                             }
                         }
                     }
@@ -1314,6 +1309,8 @@ void DumpAddresses()
 
 void ThreadDumpAddress2(void* parg)
 {
+    printf("ThreadDumpAddress started\n");
+
     vnThreadsRunning[THREAD_DUMPADDRESS]++;
     while (!fShutdown)
     {
