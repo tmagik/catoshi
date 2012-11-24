@@ -22,7 +22,7 @@ class CAddress;
 class CInv;
 class CNode;
 
-class CBlockIndexWorkComparator;
+struct CBlockIndexWorkComparator;
 
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
@@ -173,6 +173,11 @@ CBlockIndex * InsertBlockIndex(uint256 hash);
 
 
 
+
+static inline std::string BlockHashStr(const uint256& hash)
+{
+    return hash.ToString();
+}
 
 bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
 
@@ -625,7 +630,7 @@ public:
 
     // Check whether all inputs of this transaction are valid (no double spends, scripts & sigs, amounts)
     // This does not modify the UTXO set
-    bool CheckInputs(CCoinsViewCache &view, enum CheckSig_mode csmode, bool fStrictPayToScriptHash=true, bool fStrictEncodings=true) const;
+    bool CheckInputs(CCoinsViewCache &view, enum CheckSig_mode csmode, unsigned int flags = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC) const;
 
     // Apply the effects of this transaction on the UTXO set represented by view
     bool UpdateCoins(CCoinsViewCache &view, CTxUndo &txundo, int nHeight, const uint256 &txhash) const;
@@ -733,7 +738,6 @@ public:
 
     bool WriteToDisk(CDiskBlockPos &pos)
     {
-
         // Open history file to append
         CAutoFile fileout = CAutoFile(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
         if (!fileout)
@@ -746,7 +750,7 @@ public:
         // Write undo data
         long fileOutPos = ftell(fileout);
         if (fileOutPos < 0)
-            return error("CBlock::WriteToDisk() : ftell failed");
+            return error("CBlockUndo::WriteToDisk() : ftell failed");
         pos.nPos = (unsigned int)fileOutPos;
         fileout << *this;
 
@@ -757,7 +761,6 @@ public:
 
         return true;
     }
-
 };
 
 /** pruned version of CTransaction: only retains metadata and unspent transaction outputs
@@ -1068,7 +1071,7 @@ public:
  * in the block is a special one that creates a new coin owned by the creator
  * of the block.
  */
-class CBlock
+class CBlockHeader
 {
 public:
     // header
@@ -1080,17 +1083,7 @@ public:
     unsigned int nBits;
     unsigned int nNonce;
 
-    // network and disk
-    std::vector<CTransaction> vtx;
-
-    // memory only
-    mutable std::vector<uint256> vMerkleTree;
-
-    // Denial-of-service detection:
-    mutable int nDoS;
-    bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
-
-    CBlock()
+    CBlockHeader()
     {
         SetNull();
     }
@@ -1104,25 +1097,16 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-
-        // ConnectBlock depends on vtx being last so it can calculate offset
-        if (!(nType & (SER_GETHASH|SER_BLOCKHEADERONLY)))
-            READWRITE(vtx);
-        else if (fRead)
-            const_cast<CBlock*>(this)->vtx.clear();
     )
 
     void SetNull()
     {
-        nVersion = CBlock::CURRENT_VERSION;
+        nVersion = CBlockHeader::CURRENT_VERSION;
         hashPrevBlock = 0;
         hashMerkleRoot = 0;
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        vtx.clear();
-        vMerkleTree.clear();
-        nDoS = 0;
     }
 
     bool IsNull() const
@@ -1141,7 +1125,45 @@ public:
     }
 
     void UpdateTime(const CBlockIndex* pindexPrev);
+};
 
+class CBlock : public CBlockHeader
+{
+public:
+    // network and disk
+    std::vector<CTransaction> vtx;
+
+    // memory only
+    mutable std::vector<uint256> vMerkleTree;
+
+    // Denial-of-service detection:
+    mutable int nDoS;
+    bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
+
+    CBlock()
+    {
+        SetNull();
+    }
+
+    CBlock(const CBlockHeader &header)
+    {
+        SetNull();
+        *((CBlockHeader*)this) = header;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        READWRITE(*(CBlockHeader*)this);
+        READWRITE(vtx);
+    )
+
+    void SetNull()
+    {
+        CBlockHeader::SetNull();
+        vtx.clear();
+        vMerkleTree.clear();
+        nDoS = 0;
+    }
 
     uint256 BuildMerkleTree() const
     {
@@ -1226,7 +1248,7 @@ public:
         return true;
     }
 
-    bool ReadFromDisk(const CDiskBlockPos &pos, bool fReadTransactions = true)
+    bool ReadFromDisk(const CDiskBlockPos &pos)
     {
         SetNull();
 
@@ -1234,8 +1256,6 @@ public:
         CAutoFile filein = CAutoFile(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
         if (!filein)
             return error("CBlock::ReadFromDisk() : OpenBlockFile failed");
-        if (!fReadTransactions)
-            filein.nType |= SER_BLOCKHEADERONLY;
 
         // Read block
         try {
@@ -1257,9 +1277,9 @@ public:
     void print() const
     {
         printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%"PRIszu")\n",
-            GetHash().ToString().substr(0,20).c_str(),
+            BlockHashStr(GetHash()).c_str(),
             nVersion,
-            hashPrevBlock.ToString().substr(0,20).c_str(),
+            BlockHashStr(hashPrevBlock).c_str(),
             hashMerkleRoot.ToString().substr(0,10).c_str(),
             nTime, nBits, nNonce,
             vtx.size());
@@ -1282,7 +1302,7 @@ public:
     bool ConnectBlock(CBlockIndex *pindex, CCoinsViewCache &coins, bool fJustCheck=false);
 
     // Read a block from disk
-    bool ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions=true);
+    bool ReadFromDisk(const CBlockIndex* pindex);
 
     // Add this block to the block index, and if necessary, switch the active block chain to this
     bool AddToBlockIndex(const CDiskBlockPos &pos);
@@ -1447,7 +1467,7 @@ public:
         nNonce         = 0;
     }
 
-    CBlockIndex(CBlock& block)
+    CBlockIndex(CBlockHeader& block)
     {
         phashBlock = NULL;
         pprev = NULL;
@@ -1488,9 +1508,9 @@ public:
         return ret;
     }
 
-    CBlock GetBlockHeader() const
+    CBlockHeader GetBlockHeader() const
     {
-        CBlock block;
+        CBlockHeader block;
         block.nVersion       = nVersion;
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
@@ -1570,7 +1590,7 @@ public:
         return strprintf("CBlockIndex(pprev=%p, pnext=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
             pprev, pnext, nHeight,
             hashMerkleRoot.ToString().substr(0,10).c_str(),
-            GetBlockHash().ToString().substr(0,20).c_str());
+            BlockHashStr(GetBlockHash()).c_str());
     }
 
     void print() const
@@ -1634,7 +1654,7 @@ public:
 
     uint256 GetBlockHash() const
     {
-        CBlock block;
+        CBlockHeader block;
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
@@ -1651,7 +1671,7 @@ public:
         str += CBlockIndex::ToString();
         str += strprintf("\n                hashBlock=%s, hashPrev=%s)",
             GetBlockHash().ToString().c_str(),
-            hashPrev.ToString().substr(0,20).c_str());
+            BlockHashStr(hashPrev).c_str());
         return str;
     }
 
@@ -1872,7 +1892,7 @@ public:
     virtual bool GetStats(CCoinsStats &stats);
 
     // As we use CCoinsViews polymorphically, have a virtual destructor
-    virtual ~CCoinsView() {};
+    virtual ~CCoinsView() {}
 };
 
 /** CCoinsView backed by another CCoinsView */
