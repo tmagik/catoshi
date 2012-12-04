@@ -90,7 +90,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     // Create the toolbars
     createToolBars();
 
-    // Create the tray icon (or setup the dock icon)
+    // Create system tray icon and notification
     createTrayIcon();
 
     // Create tabs
@@ -354,11 +354,16 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
                 // Just attach " [testnet]" to the existing tooltip
                 trayIcon->setToolTip(trayIcon->toolTip() + QString(" ") + tr("[testnet]"));
                 trayIcon->setIcon(QIcon(":/icons/toolbar_testnet"));
-                toggleHideAction->setIcon(QIcon(":/icons/toolbar_testnet"));
             }
 
+            toggleHideAction->setIcon(QIcon(":/icons/toolbar_testnet"));
             aboutAction->setIcon(QIcon(":/icons/toolbar_testnet"));
         }
+
+        // Create system tray menu (or setup the dock menu) that late to prevent users from calling actions,
+        // while the client has not yet fully loaded
+        if(trayIcon)
+            createTrayIconMenu();
 
         // Keep up to date with client
         setNumConnections(clientModel->getNumConnections());
@@ -368,7 +373,7 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
         connect(clientModel, SIGNAL(numBlocksChanged(int,int)), this, SLOT(setNumBlocks(int,int)));
 
         // Receive and report messages from network/worker thread
-        connect(clientModel, SIGNAL(message(QString,QString,bool,unsigned int)), this, SLOT(message(QString,QString,bool,unsigned int)));
+        connect(clientModel, SIGNAL(message(QString,QString,unsigned int)), this, SLOT(message(QString,QString,unsigned int)));
 
         overviewPage->setClientModel(clientModel);
         rpcConsole->setClientModel(clientModel);
@@ -383,7 +388,7 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
     if(walletModel)
     {
         // Receive and report messages from wallet thread
-        connect(walletModel, SIGNAL(message(QString,QString,bool,unsigned int)), this, SLOT(message(QString,QString,bool,unsigned int)));
+        connect(walletModel, SIGNAL(message(QString,QString,unsigned int)), this, SLOT(message(QString,QString,unsigned int)));
 
         // Put transaction list in tabs
         transactionView->setModel(walletModel);
@@ -407,16 +412,26 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
 
 void BitcoinGUI::createTrayIcon()
 {
-    QMenu *trayIconMenu;
 #ifndef Q_OS_MAC
     trayIcon = new QSystemTrayIcon(this);
-    trayIconMenu = new QMenu(this);
-    trayIcon->setContextMenu(trayIconMenu);
+
     trayIcon->setToolTip(tr("Bitcoin client"));
     trayIcon->setIcon(QIcon(":/icons/toolbar"));
+    trayIcon->show();
+#endif
+
+    notificator = new Notificator(qApp->applicationName(), trayIcon);
+}
+
+void BitcoinGUI::createTrayIconMenu()
+{
+    QMenu *trayIconMenu;
+#ifndef Q_OS_MAC
+    trayIconMenu = new QMenu(this);
+    trayIcon->setContextMenu(trayIconMenu);
+
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
             this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
-    trayIcon->show();
 #else
     // Note: On Mac, the dock icon is used to provide the tray's functionality.
     MacDockIconHandler *dockIconHandler = MacDockIconHandler::instance();
@@ -438,8 +453,6 @@ void BitcoinGUI::createTrayIcon()
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(quitAction);
 #endif
-
-    notificator = new Notificator(qApp->applicationName(), trayIcon);
 }
 
 #ifndef Q_OS_MAC
@@ -593,7 +606,7 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
     progressBar->setToolTip(tooltip);
 }
 
-void BitcoinGUI::message(const QString &title, const QString &message, bool modal, unsigned int style)
+void BitcoinGUI::message(const QString &title, const QString &message, unsigned int style)
 {
     QString strTitle = tr("Bitcoin") + " - ";
     // Default to information icon
@@ -626,7 +639,7 @@ void BitcoinGUI::message(const QString &title, const QString &message, bool moda
     }
 
     // Display message
-    if (modal) {
+    if (style & CClientUIInterface::MODAL) {
         // Check for buttons, use OK as default, if none was supplied
         QMessageBox::StandardButton buttons;
         if (!(buttons = (QMessageBox::StandardButton)(style & CClientUIInterface::BTN_MASK)))
