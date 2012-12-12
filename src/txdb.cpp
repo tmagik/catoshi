@@ -19,7 +19,7 @@ void static BatchWriteHashBestChain(CLevelDBBatch &batch, const uint256 &hash) {
     batch.Write('B', hash);
 }
 
-CCoinsViewDB::CCoinsViewDB(bool fMemory) : db(GetDataDir() / "coins", fMemory) {
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "coins", nCacheSize, fMemory, fWipe) {
 }
 
 bool CCoinsViewDB::GetCoins(uint256 txid, CCoins &coins) { 
@@ -58,12 +58,13 @@ bool CCoinsViewDB::BatchWrite(const std::map<uint256, CCoins> &mapCoins, CBlockI
     CLevelDBBatch batch;
     for (std::map<uint256, CCoins>::const_iterator it = mapCoins.begin(); it != mapCoins.end(); it++)
         BatchWriteCoins(batch, it->first, it->second);
-    BatchWriteHashBestChain(batch, pindex->GetBlockHash());
+    if (pindex)
+        BatchWriteHashBestChain(batch, pindex->GetBlockHash());
 
     return db.WriteBatch(batch);
 }
 
-CBlockTreeDB::CBlockTreeDB(bool fMemory) : CLevelDB(GetDataDir() / "blktree", fMemory) {
+CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CLevelDB(GetDataDir() / "blktree", nCacheSize, fMemory, fWipe) {
 }
 
 bool CBlockTreeDB::WriteBlockIndex(const CDiskBlockIndex& blockindex)
@@ -91,6 +92,18 @@ bool CBlockTreeDB::ReadBlockFileInfo(int nFile, CBlockFileInfo &info) {
 
 bool CBlockTreeDB::WriteLastBlockFile(int nFile) {
     return Write('l', nFile);
+}
+
+bool CBlockTreeDB::WriteReindexing(bool fReindexing) {
+    if (fReindexing)
+        return Write('R', '1');
+    else
+        return Erase('R');
+}
+
+bool CBlockTreeDB::ReadReindexing(bool &fReindexing) {
+    fReindexing = Exists('R');
+    return true;
 }
 
 bool CBlockTreeDB::ReadLastBlockFile(int &nFile) {

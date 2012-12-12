@@ -119,11 +119,18 @@ public:
 
     CPubKey vchDefaultKey;
 
+    std::set<COutPoint> setLockedCoins;
+
     // check whether we are allowed to upgrade (or already support) to the named feature
     bool CanSupportFeature(enum WalletFeature wf) { return nWalletMaxVersion >= wf; }
 
     void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true) const;
     bool SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
+    bool IsLockedCoin(uint256 hash, unsigned int n) const;
+    void LockCoin(COutPoint& output);
+    void UnlockCoin(COutPoint& output);
+    void UnlockAllCoins();
+    void ListLockedCoins(std::vector<COutPoint>& vOutpts);
 
     // keystore implementation
     // Generate a new key
@@ -149,7 +156,7 @@ public:
     /** Increment the next transaction order id
         @return next transaction order id
      */
-    int64 IncOrderPosNext();
+    int64 IncOrderPosNext(CWalletDB *pwalletdb = NULL);
 
     typedef std::pair<CWalletTx*, CAccountingEntry*> TxPair;
     typedef std::multimap<int64, TxPair > TxItems;
@@ -375,10 +382,12 @@ public:
     // memory only
     mutable bool fDebitCached;
     mutable bool fCreditCached;
+    mutable bool fImmatureCreditCached;
     mutable bool fAvailableCreditCached;
     mutable bool fChangeCached;
     mutable int64 nDebitCached;
     mutable int64 nCreditCached;
+    mutable int64 nImmatureCreditCached;
     mutable int64 nAvailableCreditCached;
     mutable int64 nChangeCached;
 
@@ -416,10 +425,12 @@ public:
         vfSpent.clear();
         fDebitCached = false;
         fCreditCached = false;
+        fImmatureCreditCached = false;
         fAvailableCreditCached = false;
         fChangeCached = false;
         nDebitCached = 0;
         nCreditCached = 0;
+        nImmatureCreditCached = 0;
         nAvailableCreditCached = 0;
         nChangeCached = 0;
         nOrderPos = -1;
@@ -561,6 +572,20 @@ public:
         nCreditCached = pwallet->GetCredit(*this);
         fCreditCached = true;
         return nCreditCached;
+    }
+
+    int64 GetImmatureCredit(bool fUseCache=true) const
+    {
+        if (IsCoinBase() && GetBlocksToMaturity() > 0 && IsInMainChain())
+        {
+            if (fUseCache && fImmatureCreditCached)
+                return nImmatureCreditCached;
+            nImmatureCreditCached = pwallet->GetCredit(*this);
+            fImmatureCreditCached = true;
+            return nImmatureCreditCached;
+        }
+
+        return 0;
     }
 
     int64 GetAvailableCredit(bool fUseCache=true) const
