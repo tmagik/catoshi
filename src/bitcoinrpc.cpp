@@ -750,7 +750,8 @@ void ThreadRPCServer2(void* parg)
     printf("ThreadRPCServer started\n");
 
     strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
-    if (mapArgs["-rpcpassword"] == "")
+    if ((mapArgs["-rpcpassword"] == "") ||
+        (mapArgs["-rpcuser"] == mapArgs["-rpcpassword"]))
     {
         unsigned char rand_pwd[32];
         RAND_bytes(rand_pwd, 32);
@@ -765,11 +766,12 @@ void ThreadRPCServer2(void* parg)
               "rpcuser=bitcoinrpc\n"
               "rpcpassword=%s\n"
               "(you do not need to remember this password)\n"
+              "The username and password MUST NOT be the same.\n"
               "If the file does not exist, create it with owner-readable-only file permissions.\n"),
                 strWhatAmI.c_str(),
                 GetConfigFile().string().c_str(),
                 EncodeBase58(&rand_pwd[0],&rand_pwd[0]+32).c_str()),
-            _("Error"), CClientUIInterface::OK | CClientUIInterface::MODAL);
+                "", CClientUIInterface::MSG_ERROR);
         StartShutdown();
         return;
     }
@@ -860,7 +862,7 @@ void ThreadRPCServer2(void* parg)
     }
 
     if (!fListening) {
-        uiInterface.ThreadSafeMessageBox(strerr, _("Error"), CClientUIInterface::OK | CClientUIInterface::MODAL);
+        uiInterface.ThreadSafeMessageBox(strerr, "", CClientUIInterface::MSG_ERROR);
         StartShutdown();
         return;
     }
