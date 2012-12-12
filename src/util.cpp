@@ -5,10 +5,11 @@
 
 #include "util.h"
 #include "sync.h"
-#include "strlcpy.h"
 #include "version.h"
 #include "ui_interface.h"
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/case_conv.hpp> // for to_lower()
+#include <boost/algorithm/string/predicate.hpp> // for startswith() and endswith()
 
 // Work around clang compilation problem in Boost 1.46:
 // /usr/include/boost/program_options/detail/config_file.hpp:163:17: error: call to function 'to_internal' that is neither visible in the template definition nor found by argument-dependent lookup
@@ -63,7 +64,7 @@ bool fDebug = false;
 bool fDebugNet = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugger = false;
-bool fRequestShutdown = false;
+volatile bool fRequestShutdown = false;
 bool fShutdown = false;
 bool fDaemon = false;
 bool fServer = false;
@@ -155,8 +156,8 @@ void RandAddSeedPerfmon()
     if (ret == ERROR_SUCCESS)
     {
         RAND_add(pdata, nSize, nSize/100.0);
-        memset(pdata, 0, nSize);
-        printf("RandAddSeed() %d bytes\n", nSize);
+        OPENSSL_cleanse(pdata, nSize);
+        printf("RandAddSeed() %lu bytes\n", nSize);
     }
 #endif
 }
@@ -220,8 +221,14 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
         if (fileout)
         {
             static bool fStartedNewLine = true;
-            static boost::mutex mutexDebugLog;
-            boost::mutex::scoped_lock scoped_lock(mutexDebugLog);
+
+            // This routine may be called by global destructors during shutdown.
+            // Since the order of destruction of static/global objects is undefined,
+            // allocate mutexDebugLog on the heap the first time this routine
+            // is called to avoid crashes during shutdown.
+            static boost::mutex* mutexDebugLog = NULL;
+            if (mutexDebugLog == NULL) mutexDebugLog = new boost::mutex();
+            boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
 
             // reopen the log file, if requested
             if (fReopenDebugLog) {
@@ -274,7 +281,7 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
     return ret;
 }
 
-string vstrprintf(const std::string &format, va_list ap)
+string vstrprintf(const char *format, va_list ap)
 {
     char buffer[50000];
     char* p = buffer;
@@ -284,7 +291,11 @@ string vstrprintf(const std::string &format, va_list ap)
     {
         va_list arg_ptr;
         va_copy(arg_ptr, ap);
-        ret = _vsnprintf(p, limit, format.c_str(), arg_ptr);
+#ifdef WIN32
+        ret = _vsnprintf(p, limit, format, arg_ptr);
+#else
+        ret = vsnprintf(p, limit, format, arg_ptr);
+#endif
         va_end(arg_ptr);
         if (ret >= 0 && ret < limit)
             break;
@@ -301,11 +312,20 @@ string vstrprintf(const std::string &format, va_list ap)
     return str;
 }
 
-string real_strprintf(const std::string &format, int dummy, ...)
+string real_strprintf(const char *format, int dummy, ...)
 {
     va_list arg_ptr;
     va_start(arg_ptr, dummy);
     string str = vstrprintf(format, arg_ptr);
+    va_end(arg_ptr);
+    return str;
+}
+
+string real_strprintf(const std::string &format, int dummy, ...)
+{
+    va_list arg_ptr;
+    va_start(arg_ptr, dummy);
+    string str = vstrprintf(format.c_str(), arg_ptr);
     va_end(arg_ptr);
     return str;
 }
@@ -411,7 +431,7 @@ bool ParseMoney(const char* pszIn, int64& nRet)
 }
 
 
-static signed char phexdigit[256] =
+static const signed char phexdigit[256] =
 { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -486,24 +506,24 @@ void ParseParameters(int argc, const char* const argv[])
     mapMultiArgs.clear();
     for (int i = 1; i < argc; i++)
     {
-        char psz[10000];
-        strlcpy(psz, argv[i], sizeof(psz));
-        char* pszValue = (char*)"";
-        if (strchr(psz, '='))
+        std::string str(argv[i]);
+        std::string strValue;
+        size_t is_index = str.find('=');
+        if (is_index != std::string::npos)
         {
-            pszValue = strchr(psz, '=');
-            *pszValue++ = '\0';
+            strValue = str.substr(is_index+1);
+            str = str.substr(0, is_index);
         }
-        #ifdef WIN32
-        _strlwr(psz);
-        if (psz[0] == '/')
-            psz[0] = '-';
-        #endif
-        if (psz[0] != '-')
+#ifdef WIN32
+        boost::to_lower(str);
+        if (boost::algorithm::starts_with(str, "/"))
+            str = "-" + str.substr(1);
+#endif
+        if (str[0] != '-')
             break;
 
-        mapArgs[psz] = pszValue;
-        mapMultiArgs[psz].push_back(pszValue);
+        mapArgs[str] = strValue;
+        mapMultiArgs[str].push_back(strValue);
     }
 
     // New 0.6 features:
@@ -1099,7 +1119,11 @@ void FileCommit(FILE *fileout)
 #ifdef WIN32
     _commit(_fileno(fileout));
 #else
+    #if defined(__linux__) || defined(__NetBSD__)
+    fdatasync(fileno(fileout));
+    #else
     fsync(fileno(fileout));
+    #endif
 #endif
 }
 
@@ -1111,6 +1135,20 @@ int GetFilesize(FILE* file)
         nFilesize = ftell(file);
     fseek(file, nSavePos, SEEK_SET);
     return nFilesize;
+}
+
+// this function tries to make a particular range of a file allocated (corresponding to disk space)
+// it is advisory, and the range specified in the arguments will never contain live data
+void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
+    static const char buf[65536] = {};
+    fseek(file, offset, SEEK_SET);
+    while (length > 0) {
+        unsigned int now = 65536;
+        if (length < now)
+            now = length;
+        fwrite(buf, 1, now, file); // allowed to fail; this function is advisory anyway
+        length -= now;
+    }
 }
 
 void ShrinkDebugFile()
@@ -1210,7 +1248,7 @@ void AddTimeData(const CNetAddr& ip, int64 nTime)
                     string strMessage = _("Warning: Please check that your computer's date and time are correct! If your clock is wrong Bitcoin will not work properly.");
                     strMiscWarning = strMessage;
                     printf("*** %s\n", strMessage.c_str());
-                    uiInterface.ThreadSafeMessageBox(strMessage+" ", string("Bitcoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION);
+                    uiInterface.ThreadSafeMessageBox(strMessage, "", CClientUIInterface::MSG_WARNING);
                 }
             }
         }
@@ -1271,6 +1309,28 @@ boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate)
     return fs::path("");
 }
 #endif
+
+boost::filesystem::path GetTempPath() {
+#if BOOST_FILESYSTEM_VERSION == 3
+    return boost::filesystem::temp_directory_path();
+#else
+    // TODO: remove when we don't support filesystem v2 anymore
+    boost::filesystem::path path;
+#ifdef WIN32
+    char pszPath[MAX_PATH] = "";
+
+    if (GetTempPathA(MAX_PATH, pszPath))
+        path = boost::filesystem::path(pszPath);
+#else
+    path = boost::filesystem::path("/tmp");
+#endif
+    if (path.empty() || !boost::filesystem::is_directory(path)) {
+        printf("GetTempPath(): failed to find temp path\n");
+        return boost::filesystem::path("");
+    }
+    return path;
+#endif
+}
 
 void runCommand(std::string strCommand)
 {

@@ -7,7 +7,6 @@
 #include "optionsmodel.h"
 #include "guiutil.h"
 #include "guiconstants.h"
-
 #include "init.h"
 #include "ui_interface.h"
 #include "qtipcserver.h"
@@ -35,18 +34,18 @@ Q_IMPORT_PLUGIN(qtaccessiblewidgets)
 static BitcoinGUI *guiref;
 static QSplashScreen *splashref;
 
-static void ThreadSafeMessageBox(const std::string& message, const std::string& caption, int style)
+static void ThreadSafeMessageBox(const std::string& message, const std::string& caption, unsigned int style)
 {
     // Message from network thread
     if(guiref)
     {
         bool modal = (style & CClientUIInterface::MODAL);
-        // in case of modal message, use blocking connection to wait for user to click OK
-        QMetaObject::invokeMethod(guiref, "error",
+        // In case of modal message, use blocking connection to wait for user to click a button
+        QMetaObject::invokeMethod(guiref, "message",
                                    modal ? GUIUtil::blockingGUIThreadConnection() : Qt::QueuedConnection,
                                    Q_ARG(QString, QString::fromStdString(caption)),
                                    Q_ARG(QString, QString::fromStdString(message)),
-                                   Q_ARG(bool, modal));
+                                   Q_ARG(unsigned int, style));
     }
     else
     {
@@ -55,12 +54,13 @@ static void ThreadSafeMessageBox(const std::string& message, const std::string& 
     }
 }
 
-static bool ThreadSafeAskFee(int64 nFeeRequired, const std::string& strCaption)
+static bool ThreadSafeAskFee(int64 nFeeRequired)
 {
     if(!guiref)
         return false;
     if(nFeeRequired < MIN_TX_FEE || nFeeRequired <= nTransactionFee || fDaemon)
         return true;
+
     bool payFee = false;
 
     QMetaObject::invokeMethod(guiref, "askFee", GUIUtil::blockingGUIThreadConnection(),
@@ -132,7 +132,10 @@ int main(int argc, char *argv[])
     // ... then bitcoin.conf:
     if (!boost::filesystem::is_directory(GetDataDir(false)))
     {
-        fprintf(stderr, "Error: Specified directory does not exist\n");
+        // This message can not be translated, as translation is not initialized yet
+        // (which not yet possible because lang=XX can be overridden in bitcoin.conf in the data directory)
+        QMessageBox::critical(0, "Bitcoin",
+                              QString("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(mapArgs["-datadir"])));
         return 1;
     }
     ReadConfigFile(mapArgs, mapMultiArgs);

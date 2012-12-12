@@ -3,7 +3,7 @@ release time)
 
 Building this from
 
-	$ git shortlog --no-merges v0.6.3..
+	$ git shortlog --no-merges v0.7.0..
 
 How to Upgrade
 --------------
@@ -19,99 +19,55 @@ Ubuntu PPA version), then run the old version again with the -detachdb
 argument and shut it down; if you do not, then the new version will not
 be able to read the database files and will exit with an error.
 
-Incompatible Changes
---------------------
-* Replaced the 'getmemorypool' RPC command with 'getblocktemplate/submitblock'
-  and 'getrawmempool' commands.
-* Remove deprecated RPC 'getblocknumber'
+Explanation of -detachdb (and the new "stop true" RPC command):
+The Berkeley DB database library stores data in both ".dat" and
+"log" files, so the database is always in a consistent state,
+even in case of power failure or other sudden shutdown. The
+format of the ".dat" files is portable between different
+versions of Berkeley DB, but the "log" files are not-- even minor
+version differences may have incompatible "log" files. The
+-detachdb option moves any pending changes from the "log" files
+to the "blkindex.dat" file for maximum compatibility, but makes
+shutdown much slower. Note that the "wallet.dat" file is always
+detached, and versions prior to 0.6.0 detached all databases
+at shutdown.
 
-Bitcoin Improvement Proposals implemented
------------------------------------------
-BIP 22 - 'getblocktemplate', 'submitblock' RPCs
-BIP 34 - block version 2, height in coinbase
-BIP 35 - 'mempool' message, extended 'getdata' message behavior
-
-
-Core bitcoin handling and blockchain database
----------------------------------------------
-* Reduced CPU usage, by eliminating some redundant hash calculations
-* Cache signature verifications, to eliminate redundant signature checks
-* Transactions with zero-value outputs are considered non-standard
-* Mining: when creating new blocks, sort 'paid' area by fee-per-kb
-* Database: better validation of on-disk stored data
-* Database: minor optimizations and reliability improvements
-* -loadblock=FILE will import an external block file
-* Additional DoS (denial-of-service) prevention measures
-* New blockchain checkpoint at block 193,000
-* (Windows only): enable ASLR and DEP for bitcoind.exe
-
-
-JSON-RPC API
+New features
 ------------
-* Internal HTTP server is now thread-per-connection, rather than
-  a single-threaded queue that would stall on network I/O.
-* Internal HTTP server supports HTTP/1.1, pipelined requests and
-  connection keep-alive.
-* Support JSON-RPC 2.0 batches, to encapsulate multiple JSON-RPC requests
-  within a single HTTP request.
-* IPv6 support
-* Added raw transaction API.  See https://gist.github.com/2839617
-* Added 'getrawmempool', to list contents of TX memory pool
-* Added 'getpeerinfo', to list data about each connected network peer
-* Added 'listaddressgroupings' for better coin control
-* Rework gettransaction, getblock calls. 'gettransaction' responds for
-  non-wallet TXs now.
-* Remove deprecated RPC 'getblocknumber'
-* Remove superceded RPC 'getmemorypool' (see BIP 22, above)
-* listtransactions output now displays "smart" times for transactions,
-  and 'blocktime' and 'timereceived' fields were added
 
+* Added a boolean argument to the RPC 'stop' command, if true sets
+  -detachdb to create standalone database .dat files before shutting down.
 
-P2P networking
---------------
-* IPv6 support
-* Tor hidden service support (see doc/Tor.txt)
-* Attempts to fix "stuck blockchain download" problems
-* Replace BDB database "addr.dat" with internally-managed "peers.dat"
-  file containing peer address data.
-* Lower default send buffer from 10MB to 1MB
-* proxy: SOCKS5 by default
-* Support connecting by hostnames passed to proxy
-* Add -seednode connections, and use this instead of DNS seeds when proxied
-* Added -externalip and -discover
-* Add -onlynet to connect only to a given network (IPv4, IPv6, or Tor)
-* Separate listening sockets, -bind=<addr>
+* -salvagewallet command-line option, which moves any existing wallet.dat
+  to wallet.{timestamp}.dat and then attempts to salvage public/private
+  keys and master encryption keys (if the wallet is encrypted) into
+  a new wallet.dat. This should only be used if your wallet becomes
+  corrupted, and is not intended to replace regular wallet backups.
 
+* Import $DataDir/bootstrap.dat automatically, if it exists.
 
-Qt GUI
-------
-* Add UI RPC console / debug window
-* Re-Enable URI handling on Windows, add safety checks and tray-notifications
-* Harmonize the use of ellipsis ("...") to be used in menus, but not on buttons
-* Add 2 labels to the overviewpage that display Wallet and Transaction status (obsolete or current)
-* Extend the optionsdialog (e.g. language selection) and re-work it to a tabbed UI
-* Merge sign/verify message into a single window with tabbed UI
-* Ensure a changed bitcoin unit immediately updates all GUI elements that use units
-* Update QR Code dialog
-* Improve error reporting at startup
-* Fine-grained UI updates for a much smoother UI during block downloads
-* Remove autocorrection of 0/i in addresses in UI
-* Reorganize tray icon menu into more logical order
-* Persistently poll for balance change when number of blocks changed
-* Much better translations
-* Override progress bar design on platforms with segmented progress bars to assist with readability
-* Added 'immature balance' display on the overview page
-* (Windows only): enable ASLR and DEP for bitcoin-qt.exe
-* (Windows only): add meta-data to bitcoin-qt.exe (e.g. description and version)
+Dependency changes
+------------------
 
-Internal codebase
------------------
-* Additional unit tests
-* Compile warning fixes
+* Qt 4.8.2 for Windows builds
 
+* openssl 1.0.1c
 
-Miscellaneous
--------------
-* Reopen debug.log upon SIGHUP
-* Bash programmable completion for bitcoind(1)
-* On supported OSes, each thread is given a useful name
+Bug fixes
+---------
+
+* When running -testnet, use RPC port 18332 by default.
+
+* Better detection and handling of corrupt wallet.dat and blkindex.dat files.
+  Previous versions would crash with a DB_RUNRECOVERY exception, this
+  version detects most problems and tells you how to recover if it
+  cannot recover itself.
+
+* Fixed an uninitialized variable bug that could cause transactions to
+  be reported out of order.
+
+* Fixed a bug that could cause occasional crashes on exit.
+
+* Warn the user that they need to create fresh wallet backups after they
+  encrypt their wallet.
+
