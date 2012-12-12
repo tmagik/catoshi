@@ -46,7 +46,7 @@ OptionsDialog::OptionsDialog(QWidget *parent) :
     ui->proxyIp->installEventFilter(this);
 
     /* Window elements init */
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     ui->tabWindow->setVisible(false);
 #endif
 
@@ -128,7 +128,6 @@ void OptionsDialog::setMapper()
     /* Main */
     mapper->addMapping(ui->transactionFee, OptionsModel::Fee);
     mapper->addMapping(ui->bitcoinAtStartup, OptionsModel::StartAtStartup);
-    mapper->addMapping(ui->detachDatabases, OptionsModel::DetachDatabases);
 
     /* Network */
     mapper->addMapping(ui->mapPortUpnp, OptionsModel::MapPortUPnP);
@@ -139,7 +138,7 @@ void OptionsDialog::setMapper()
     mapper->addMapping(ui->socksVersion, OptionsModel::ProxySocksVersion);
 
     /* Window */
-#ifndef Q_WS_MAC
+#ifndef Q_OS_MAC
     mapper->addMapping(ui->minimizeToTray, OptionsModel::MinimizeToTray);
     mapper->addMapping(ui->minimizeOnClose, OptionsModel::MinimizeOnClose);
 #endif
