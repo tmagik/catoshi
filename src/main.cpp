@@ -1240,9 +1240,12 @@ bool ConnectBestBlock() {
 
             if (pindexTest->pprev == NULL || pindexTest->pnext != NULL) {
                 reverse(vAttach.begin(), vAttach.end());
-                BOOST_FOREACH(CBlockIndex *pindexSwitch, vAttach)
+                BOOST_FOREACH(CBlockIndex *pindexSwitch, vAttach) {
+                    if (fRequestShutdown)
+                        break;
                     if (!SetBestChain(pindexSwitch))
                         return false;
+                }
                 return true;
             }
             pindexTest = pindexTest->pprev;
@@ -1897,6 +1900,7 @@ bool FindBlockPos(CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeigh
             nLastBlockFile = pos.nFile;
             infoLastBlockFile.SetNull();
             pblocktree->ReadBlockFileInfo(nLastBlockFile, infoLastBlockFile);
+            fUpdatedLast = true;
         }
     } else {
         while (infoLastBlockFile.nSize + nAddSize >= MAX_BLOCKFILE_SIZE) {
@@ -1918,12 +1922,16 @@ bool FindBlockPos(CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeigh
         unsigned int nOldChunks = (pos.nPos + BLOCKFILE_CHUNK_SIZE - 1) / BLOCKFILE_CHUNK_SIZE;
         unsigned int nNewChunks = (infoLastBlockFile.nSize + BLOCKFILE_CHUNK_SIZE - 1) / BLOCKFILE_CHUNK_SIZE;
         if (nNewChunks > nOldChunks) {
-            FILE *file = OpenBlockFile(pos);
-            if (file) {
-                printf("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE, pos.nFile);
-                AllocateFileRange(file, pos.nPos, nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos);
-                fclose(file);
+            if (CheckDiskSpace(nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos)) {
+                FILE *file = OpenBlockFile(pos);
+                if (file) {
+                    printf("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE, pos.nFile);
+                    AllocateFileRange(file, pos.nPos, nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos);
+                    fclose(file);
+                }
             }
+            else
+                return error("FindBlockPos() : out of disk space");
         }
     }
 
@@ -1960,12 +1968,16 @@ bool FindUndoPos(int nFile, CDiskBlockPos &pos, unsigned int nAddSize)
     unsigned int nOldChunks = (pos.nPos + UNDOFILE_CHUNK_SIZE - 1) / UNDOFILE_CHUNK_SIZE;
     unsigned int nNewChunks = (nNewSize + UNDOFILE_CHUNK_SIZE - 1) / UNDOFILE_CHUNK_SIZE;
     if (nNewChunks > nOldChunks) {
-        FILE *file = OpenUndoFile(pos);
-        if (file) {
-            printf("Pre-allocating up to position 0x%x in rev%05u.dat\n", nNewChunks * UNDOFILE_CHUNK_SIZE, pos.nFile);
-            AllocateFileRange(file, pos.nPos, nNewChunks * UNDOFILE_CHUNK_SIZE - pos.nPos);
-            fclose(file);
+        if (CheckDiskSpace(nNewChunks * UNDOFILE_CHUNK_SIZE - pos.nPos)) {
+            FILE *file = OpenUndoFile(pos);
+            if (file) {
+                printf("Pre-allocating up to position 0x%x in rev%05u.dat\n", nNewChunks * UNDOFILE_CHUNK_SIZE, pos.nFile);
+                AllocateFileRange(file, pos.nPos, nNewChunks * UNDOFILE_CHUNK_SIZE - pos.nPos);
+                fclose(file);
+            }
         }
+        else
+            return error("FindUndoPos() : out of disk space");
     }
 
     return true;
@@ -2090,12 +2102,8 @@ bool CBlock::AcceptBlock(CDiskBlockPos *dbp)
     // Write block to history file
     unsigned int nBlockSize = ::GetSerializeSize(*this, SER_DISK, CLIENT_VERSION);
     CDiskBlockPos blockPos;
-    if (dbp == NULL) {
-        if (!CheckDiskSpace(::GetSerializeSize(*this, SER_DISK, CLIENT_VERSION)))
-            return error("AcceptBlock() : out of disk space");
-    } else {
+    if (dbp != NULL)
         blockPos = *dbp;
-    }
     if (!FindBlockPos(blockPos, nBlockSize+8, nHeight, nTime, dbp != NULL))
         return error("AcceptBlock() : FindBlockPos failed");
     if (dbp == NULL)
@@ -2549,7 +2557,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
             }
         }
         uint64 nRewind = blkdat.GetPos();
-        while (blkdat.good() && !blkdat.eof() && !fShutdown) {
+        while (blkdat.good() && !blkdat.eof() && !fRequestShutdown) {
             blkdat.SetPos(nRewind);
             nRewind++; // start one byte further next time, in case of failure
             blkdat.SetLimit(); // remove former limit
