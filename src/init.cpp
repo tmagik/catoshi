@@ -258,6 +258,7 @@ std::string HelpMessage()
         "  -onlynet=<net>         " + _("Only connect to nodes in network <net> (IPv4, IPv6 or Tor)") + "\n" +
         "  -discover              " + _("Discover own IP address (default: 1 when listening and no -externalip)") + "\n" +
         "  -irc                   " + _("Find peers using internet relay chat (default: 0)") + "\n" +
+        "  -checkpoints           " + _("Lock in block chain with compiled-in checkpoints (default: 1)") + "\n" +
         "  -listen                " + _("Accept connections from outside (default: 1 if no -proxy or -connect)") + "\n" +
         "  -bind=<addr>           " + _("Bind to given address and always listen on it. Use [host]:port notation for IPv6") + "\n" +
         "  -dnsseed               " + _("Find peers using DNS lookup (default: 1 unless -connect)") + "\n" +
@@ -345,7 +346,7 @@ void ThreadImport(void *data) {
     if (fReindex) {
         CImportingNow imp;
         int nFile = 0;
-        while (!fShutdown) {
+        while (!fRequestShutdown) {
             CDiskBlockPos pos(nFile, 0);
             FILE *file = OpenBlockFile(pos, true);
             if (!file)
@@ -354,7 +355,7 @@ void ThreadImport(void *data) {
             LoadExternalBlockFile(file, &pos);
             nFile++;
         }
-        if (!fShutdown) {
+        if (!fRequestShutdown) {
             pblocktree->WriteReindexing(false);
             fReindex = false;
             printf("Reindexing finished\n");
@@ -363,7 +364,7 @@ void ThreadImport(void *data) {
 
     // hardcoded $DATADIR/bootstrap.dat
     filesystem::path pathBootstrap = GetDataDir() / "bootstrap.dat";
-    if (filesystem::exists(pathBootstrap) && !fShutdown) {
+    if (filesystem::exists(pathBootstrap) && !fRequestShutdown) {
         FILE *file = fopen(pathBootstrap.string().c_str(), "rb");
         if (file) {
             CImportingNow imp;
@@ -376,7 +377,7 @@ void ThreadImport(void *data) {
 
     // -loadblock=
     BOOST_FOREACH(boost::filesystem::path &path, import->vFiles) {
-        if (fShutdown)
+        if (fRequestShutdown)
             break;
         FILE *file = fopen(path.string().c_str(), "rb");
         if (file) {
@@ -481,6 +482,7 @@ bool AppInit2()
     // ********************************************************* Step 3: parameter-to-internal-flags
 
     fDebug = GetBoolArg("-debug");
+    fBenchmark = GetBoolArg("-benchmark");
 
     // -debug implies fDebug*
     if (fDebug)
@@ -865,7 +867,7 @@ bool AppInit2()
         if (walletdb.ReadBestBlock(locator))
             pindexRescan = locator.GetBlockIndex();
     }
-    if (pindexBest != pindexRescan)
+    if (pindexBest && pindexBest != pindexRescan)
     {
         uiInterface.InitMessage(_("Rescanning..."));
         printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
