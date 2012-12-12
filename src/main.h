@@ -20,26 +20,38 @@ class CReserveKey;
 
 class CAddress;
 class CInv;
-class CRequestTracker;
 class CNode;
 
-class CBlockIndexWorkComparator;
+struct CBlockIndexWorkComparator;
 
+/** The maximum allowed size for a serialized block, in bytes (network rule) */
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
+/** The maximum size for mined blocks */
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
+/** The maximum allowed number of signature check operations in a block (network rule) */
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
+/** The maximum number of orphan transactions kept in memory */
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
+/** The maximum number of entries in an 'inv' protocol message */
 static const unsigned int MAX_INV_SZ = 50000;
+/** The maximum size of a blk?????.dat file (since 0.8) */
 static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
+/** The pre-allocation chunk size for blk?????.dat files (since 0.8) */
 static const unsigned int BLOCKFILE_CHUNK_SIZE = 0x1000000; // 16 MiB
+/** The pre-allocation chunk size for rev?????.dat files (since 0.8) */
 static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
+/** Fake height value used in CCoins to signify they are only in the memory pool (since 0.8) */
 static const unsigned int MEMPOOL_HEIGHT = 0x7FFFFFFF;
+/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
 static const int64 MIN_TX_FEE = 50000;
+/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
 static const int64 MIN_RELAY_TX_FEE = 10000;
+/** No amount larger than this (in satoshi) is valid */
 static const int64 MAX_MONEY = 21000000 * COIN;
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
+/** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 100;
-// Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp.
+/** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 #ifdef USE_UPNP
 static const int fHaveUPnP = true;
@@ -76,6 +88,9 @@ extern CCriticalSection cs_setpwalletRegistered;
 extern std::set<CWallet*> setpwalletRegistered;
 extern unsigned char pchMessageStart[4];
 extern bool fImporting;
+extern bool fReindex;
+extern bool fBenchmark;
+extern unsigned int nCoinCacheSize;
 
 // Settings
 extern int64 nTransactionFee;
@@ -93,32 +108,61 @@ class CTxUndo;
 class CCoinsView;
 class CCoinsViewCache;
 
+/** Register a wallet to receive updates from core */
 void RegisterWallet(CWallet* pwalletIn);
+/** Unregister a wallet from core */
 void UnregisterWallet(CWallet* pwalletIn);
+/** Push an updated transaction to all registered wallets */
 void SyncWithWallets(const uint256 &hash, const CTransaction& tx, const CBlock* pblock = NULL, bool fUpdate = false);
-bool ProcessBlock(CNode* pfrom, CBlock* pblock);
+/** Process an incoming block */
+bool ProcessBlock(CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp = NULL);
+/** Check whether enough disk space is available for an incoming block */
 bool CheckDiskSpace(uint64 nAdditionalBytes=0);
+/** Open a block file (blk?????.dat) */
 FILE* OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
+/** Open an undo file (rev?????.dat) */
 FILE* OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
-bool LoadBlockIndex(bool fAllowNew=true);
+/** Import blocks from an external file */
+bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp = NULL);
+/** Load the block tree and coins database from disk */
+bool LoadBlockIndex();
+/** Print the loaded block tree */
 void PrintBlockTree();
+/** Find a block by height in the currently-connected chain */
 CBlockIndex* FindBlockByHeight(int nHeight);
+/** Process protocol messages received from a given node */
 bool ProcessMessages(CNode* pfrom);
+/** Send queued protocol messages to be sent to a give node */
 bool SendMessages(CNode* pto, bool fSendTrickle);
+/** Run the importer thread, which deals with reindexing, loading bootstrap.dat, and whatever is passed to -loadblock */
 void ThreadImport(void *parg);
+/** Run the miner threads */
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
+/** Generate a new block, without valid proof-of-work */
 CBlock* CreateNewBlock(CReserveKey& reservekey);
+/** Modify the extranonce in a block */
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce);
+/** Do mining precalculation */
 void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash1);
+/** Check mined block */
 bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey);
+/** Check whether a block hash satisfies the proof-of-work requirement specified by nBits */
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
+/** Calculate the minimum amount of work a received block needs, without knowing its direct parent */
 unsigned int ComputeMinWork(unsigned int nBase, int64 nTime);
+/** Get the number of active peers */
 int GetNumBlocksOfPeers();
+/** Check whether we are doin an inital block download (synchronizing from disk or network) */
 bool IsInitialBlockDownload();
+/** Format a string that describes several potential problems detected by the core */
 std::string GetWarnings(std::string strFor);
+/** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock, bool fAllowSlow = false);
+/** Connect/disconnect blocks until pindexNew is the new tip of the active block chain */
 bool SetBestChain(CBlockIndex* pindexNew);
+/** Find the best known block, and make it the tip of the block chain */
 bool ConnectBestBlock();
+/** Create a new block index entry for a given block hash */
 CBlockIndex * InsertBlockIndex(uint256 hash);
 
 
@@ -130,6 +174,11 @@ CBlockIndex * InsertBlockIndex(uint256 hash);
 
 
 
+
+static inline std::string BlockHashStr(const uint256& hash)
+{
+    return hash.ToString();
+}
 
 bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
 
@@ -143,6 +192,15 @@ public:
         READWRITE(VARINT(nFile));
         READWRITE(VARINT(nPos));
     )
+
+    CDiskBlockPos() {
+        SetNull();
+    }
+
+    CDiskBlockPos(int nFileIn, unsigned int nPosIn) {
+        nFile = nFileIn;
+        nPos = nPosIn;
+    }
 
     friend bool operator==(const CDiskBlockPos &a, const CDiskBlockPos &b) {
         return (a.nFile == b.nFile && a.nPos == b.nPos);
@@ -582,7 +640,7 @@ public:
 
     // Check whether all inputs of this transaction are valid (no double spends, scripts & sigs, amounts)
     // This does not modify the UTXO set
-    bool CheckInputs(CCoinsViewCache &view, enum CheckSig_mode csmode, bool fStrictPayToScriptHash=true, bool fStrictEncodings=true) const;
+    bool CheckInputs(CCoinsViewCache &view, enum CheckSig_mode csmode, unsigned int flags = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC) const;
 
     // Apply the effects of this transaction on the UTXO set represented by view
     bool UpdateCoins(CCoinsViewCache &view, CTxUndo &txundo, int nHeight, const uint256 &txhash) const;
@@ -690,7 +748,6 @@ public:
 
     bool WriteToDisk(CDiskBlockPos &pos)
     {
-
         // Open history file to append
         CAutoFile fileout = CAutoFile(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
         if (!fileout)
@@ -703,7 +760,7 @@ public:
         // Write undo data
         long fileOutPos = ftell(fileout);
         if (fileOutPos < 0)
-            return error("CBlock::WriteToDisk() : ftell failed");
+            return error("CBlockUndo::WriteToDisk() : ftell failed");
         pos.nPos = (unsigned int)fileOutPos;
         fileout << *this;
 
@@ -714,7 +771,6 @@ public:
 
         return true;
     }
-
 };
 
 /** pruned version of CTransaction: only retains metadata and unspent transaction outputs
@@ -777,7 +833,7 @@ public:
     // unspent transaction outputs; spent outputs are .IsNull(); spent outputs at the end of the array are dropped
     std::vector<CTxOut> vout;
 
-    // at which height this transaction was included in the active blockchain
+    // at which height this transaction was included in the active block chain
     int nHeight;
 
     // version of the CTransaction; accesses to this value should probably check for nHeight as well,
@@ -798,7 +854,7 @@ public:
 
     // equality test
     friend bool operator==(const CCoins &a, const CCoins &b) {
-         return a.fCoinBase == b.fCoinBase && 
+         return a.fCoinBase == b.fCoinBase &&
                 a.nHeight == b.nHeight &&
                 a.nVersion == b.nVersion &&
                 a.vout == b.vout;
@@ -1025,7 +1081,7 @@ public:
  * in the block is a special one that creates a new coin owned by the creator
  * of the block.
  */
-class CBlock
+class CBlockHeader
 {
 public:
     // header
@@ -1037,17 +1093,7 @@ public:
     unsigned int nBits;
     unsigned int nNonce;
 
-    // network and disk
-    std::vector<CTransaction> vtx;
-
-    // memory only
-    mutable std::vector<uint256> vMerkleTree;
-
-    // Denial-of-service detection:
-    mutable int nDoS;
-    bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
-
-    CBlock()
+    CBlockHeader()
     {
         SetNull();
     }
@@ -1061,25 +1107,16 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-
-        // ConnectBlock depends on vtx being last so it can calculate offset
-        if (!(nType & (SER_GETHASH|SER_BLOCKHEADERONLY)))
-            READWRITE(vtx);
-        else if (fRead)
-            const_cast<CBlock*>(this)->vtx.clear();
     )
 
     void SetNull()
     {
-        nVersion = CBlock::CURRENT_VERSION;
+        nVersion = CBlockHeader::CURRENT_VERSION;
         hashPrevBlock = 0;
         hashMerkleRoot = 0;
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        vtx.clear();
-        vMerkleTree.clear();
-        nDoS = 0;
     }
 
     bool IsNull() const
@@ -1098,7 +1135,45 @@ public:
     }
 
     void UpdateTime(const CBlockIndex* pindexPrev);
+};
 
+class CBlock : public CBlockHeader
+{
+public:
+    // network and disk
+    std::vector<CTransaction> vtx;
+
+    // memory only
+    mutable std::vector<uint256> vMerkleTree;
+
+    // Denial-of-service detection:
+    mutable int nDoS;
+    bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
+
+    CBlock()
+    {
+        SetNull();
+    }
+
+    CBlock(const CBlockHeader &header)
+    {
+        SetNull();
+        *((CBlockHeader*)this) = header;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        READWRITE(*(CBlockHeader*)this);
+        READWRITE(vtx);
+    )
+
+    void SetNull()
+    {
+        CBlockHeader::SetNull();
+        vtx.clear();
+        vMerkleTree.clear();
+        nDoS = 0;
+    }
 
     uint256 BuildMerkleTree() const
     {
@@ -1183,7 +1258,7 @@ public:
         return true;
     }
 
-    bool ReadFromDisk(const CDiskBlockPos &pos, bool fReadTransactions = true)
+    bool ReadFromDisk(const CDiskBlockPos &pos)
     {
         SetNull();
 
@@ -1191,8 +1266,6 @@ public:
         CAutoFile filein = CAutoFile(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
         if (!filein)
             return error("CBlock::ReadFromDisk() : OpenBlockFile failed");
-        if (!fReadTransactions)
-            filein.nType |= SER_BLOCKHEADERONLY;
 
         // Read block
         try {
@@ -1214,9 +1287,9 @@ public:
     void print() const
     {
         printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%"PRIszu")\n",
-            GetHash().ToString().substr(0,20).c_str(),
+            BlockHashStr(GetHash()).c_str(),
             nVersion,
-            hashPrevBlock.ToString().substr(0,20).c_str(),
+            BlockHashStr(hashPrevBlock).c_str(),
             hashMerkleRoot.ToString().substr(0,10).c_str(),
             nTime, nBits, nNonce,
             vtx.size());
@@ -1239,7 +1312,7 @@ public:
     bool ConnectBlock(CBlockIndex *pindex, CCoinsViewCache &coins, bool fJustCheck=false);
 
     // Read a block from disk
-    bool ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions=true);
+    bool ReadFromDisk(const CBlockIndex* pindex);
 
     // Add this block to the block index, and if necessary, switch the active block chain to this
     bool AddToBlockIndex(const CDiskBlockPos &pos);
@@ -1248,7 +1321,8 @@ public:
     bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true) const;
 
     // Store block on disk
-    bool AcceptBlock();
+    // if dbp is provided, the file is known to already reside on disk
+    bool AcceptBlock(CDiskBlockPos *dbp = NULL);
 };
 
 
@@ -1403,7 +1477,7 @@ public:
         nNonce         = 0;
     }
 
-    CBlockIndex(CBlock& block)
+    CBlockIndex(CBlockHeader& block)
     {
         phashBlock = NULL;
         pprev = NULL;
@@ -1429,8 +1503,7 @@ public:
         if (nStatus & BLOCK_HAVE_DATA) {
             ret.nFile = nFile;
             ret.nPos  = nDataPos;
-        } else
-            ret.SetNull();
+        }
         return ret;
     }
 
@@ -1439,14 +1512,13 @@ public:
         if (nStatus & BLOCK_HAVE_UNDO) {
             ret.nFile = nFile;
             ret.nPos  = nUndoPos;
-        } else
-            ret.SetNull();
+        }
         return ret;
     }
 
-    CBlock GetBlockHeader() const
+    CBlockHeader GetBlockHeader() const
     {
-        CBlock block;
+        CBlockHeader block;
         block.nVersion       = nVersion;
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
@@ -1526,7 +1598,7 @@ public:
         return strprintf("CBlockIndex(pprev=%p, pnext=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
             pprev, pnext, nHeight,
             hashMerkleRoot.ToString().substr(0,10).c_str(),
-            GetBlockHash().ToString().substr(0,20).c_str());
+            BlockHashStr(GetBlockHash()).c_str());
     }
 
     void print() const
@@ -1590,7 +1662,7 @@ public:
 
     uint256 GetBlockHash() const
     {
-        CBlock block;
+        CBlockHeader block;
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
@@ -1607,7 +1679,7 @@ public:
         str += CBlockIndex::ToString();
         str += strprintf("\n                hashBlock=%s, hashPrev=%s)",
             GetBlockHash().ToString().c_str(),
-            hashPrev.ToString().substr(0,20).c_str());
+            BlockHashStr(hashPrev).c_str());
         return str;
     }
 
@@ -1767,7 +1839,8 @@ public:
 
     bool accept(CTransaction &tx, bool fCheckInputs, bool* pfMissingInputs);
     bool addUnchecked(const uint256& hash, CTransaction &tx);
-    bool remove(CTransaction &tx);
+    bool remove(const CTransaction &tx, bool fRecursive = false);
+    bool removeConflicts(const CTransaction &tx);
     void clear();
     void queryHashes(std::vector<uint256>& vtxid);
     void pruneSpent(const uint256& hash, CCoins &coins);
@@ -1820,8 +1893,15 @@ public:
 
     // Modify the currently active block index
     virtual bool SetBestBlock(CBlockIndex *pindex);
+
+    // Do a bulk modification (multiple SetCoins + one SetBestBlock)
     virtual bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, CBlockIndex *pindex);
+
+    // Calculate statistics about the unspent transaction output set
     virtual bool GetStats(CCoinsStats &stats);
+
+    // As we use CCoinsViews polymorphically, have a virtual destructor
+    virtual ~CCoinsView() {}
 };
 
 /** CCoinsView backed by another CCoinsView */
@@ -1851,14 +1931,25 @@ protected:
 
 public:
     CCoinsViewCache(CCoinsView &baseIn, bool fDummy = false);
+
+    // Standard CCoinsView methods
     bool GetCoins(uint256 txid, CCoins &coins);
     bool SetCoins(uint256 txid, const CCoins &coins);
     bool HaveCoins(uint256 txid);
-    CCoins &GetCoins(uint256 txid);
     CBlockIndex *GetBestBlock();
     bool SetBestBlock(CBlockIndex *pindex);
     bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, CBlockIndex *pindex);
+
+    // Return a modifiable reference to a CCoins. Check HaveCoins first.
+    // Many methods explicitly require a CCoinsViewCache because of this method, to reduce
+    // copying.
+    CCoins &GetCoins(uint256 txid);
+
+    // Push the modifications applied to this cache to its base.
+    // Failure to call this method before destruction will cause the changes to be forgotten.
     bool Flush();
+
+    // Calculate the size of the cache (in number of transactions)
     unsigned int GetCacheSize();
 
 private:

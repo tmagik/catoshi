@@ -291,10 +291,14 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
     return true;
 }
 
-int64 CWallet::IncOrderPosNext()
+int64 CWallet::IncOrderPosNext(CWalletDB *pwalletdb)
 {
-    int64 nRet = nOrderPosNext;
-    CWalletDB(strWalletFile).WriteOrderPosNext(++nOrderPosNext);
+    int64 nRet = nOrderPosNext++;
+    if (pwalletdb) {
+        pwalletdb->WriteOrderPosNext(nOrderPosNext);
+    } else {
+        CWalletDB(strWalletFile).WriteOrderPosNext(nOrderPosNext);
+    }
     return nRet;
 }
 
@@ -752,7 +756,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
         while (pindex)
         {
             CBlock block;
-            block.ReadFromDisk(pindex, true);
+            block.ReadFromDisk(pindex);
             BOOST_FOREACH(CTransaction& tx, block.vtx)
             {
                 if (AddToWalletIfInvolvingMe(tx.GetHash(), tx, &block, fUpdate))
@@ -780,8 +784,8 @@ void CWallet::ReacceptWalletTransactions()
 
             CCoins coins;
             bool fUpdated = false;
-            bool fNotFound = pcoinsTip->GetCoins(wtx.GetHash(), coins);
-            if (!fNotFound || wtx.GetDepthInMainChain() > 0)
+            bool fFound = pcoinsTip->GetCoins(wtx.GetHash(), coins);
+            if (fFound || wtx.GetDepthInMainChain() > 0)
             {
                 // Update fSpent if a tx got spent somewhere else by a copy of wallet.dat
                 for (unsigned int i = 0; i < wtx.vout.size(); i++)
@@ -820,21 +824,17 @@ void CWallet::ReacceptWalletTransactions()
 
 void CWalletTx::RelayWalletTransaction()
 {
-    CCoinsViewCache& coins = *pcoinsTip;
     BOOST_FOREACH(const CMerkleTx& tx, vtxPrev)
     {
-        if (!tx.IsCoinBase())
-        {
-            uint256 hash = tx.GetHash();
-            if (!coins.HaveCoins(hash))
-                RelayMessage(CInv(MSG_TX, hash), (CTransaction)tx);
+        if (!tx.IsCoinBase()) {
+            if (tx.GetDepthInMainChain() == 0)
+                RelayMessage(CInv(MSG_TX, tx.GetHash()), (CTransaction)tx);
         }
     }
     if (!IsCoinBase())
     {
-        uint256 hash = GetHash();
-        if (!coins.HaveCoins(hash))
-        {
+        if (GetDepthInMainChain() == 0) {
+            uint256 hash = GetHash();
             printf("Relaying wtx %s\n", hash.ToString().substr(0,10).c_str());
             RelayMessage(CInv(MSG_TX, hash), (CTransaction)*this);
         }
@@ -930,9 +930,8 @@ int64 CWallet::GetImmatureBalance() const
         LOCK(cs_wallet);
         for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
         {
-            const CWalletTx& pcoin = (*it).second;
-            if (pcoin.IsCoinBase() && pcoin.GetBlocksToMaturity() > 0 && pcoin.IsInMainChain())
-                nTotal += GetCredit(pcoin);
+            const CWalletTx* pcoin = &(*it).second;
+            nTotal += pcoin->GetImmatureCredit();
         }
     }
     return nTotal;
@@ -958,9 +957,11 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed) const
             if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0)
                 continue;
 
-            for (unsigned int i = 0; i < pcoin->vout.size(); i++)
-                if (!(pcoin->IsSpent(i)) && IsMine(pcoin->vout[i]) && pcoin->vout[i].nValue > 0)
+            for (unsigned int i = 0; i < pcoin->vout.size(); i++) {
+                if (!(pcoin->IsSpent(i)) && IsMine(pcoin->vout[i]) &&
+                    !IsLockedCoin((*it).first, i) && pcoin->vout[i].nValue > 0)
                     vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain()));
+            }
         }
     }
 }
@@ -1296,7 +1297,7 @@ string CWallet::SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew,
 
     if (IsLocked())
     {
-        string strError = _("Error: Wallet locked, unable to create transaction  ");
+        string strError = _("Error: Wallet locked, unable to create transaction!");
         printf("SendMoney() : %s", strError.c_str());
         return strError;
     }
@@ -1304,18 +1305,18 @@ string CWallet::SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew,
     {
         string strError;
         if (nValue + nFeeRequired > GetBalance())
-            strError = strprintf(_("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds  "), FormatMoney(nFeeRequired).c_str());
+            strError = strprintf(_("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!"), FormatMoney(nFeeRequired).c_str());
         else
-            strError = _("Error: Transaction creation failed  ");
+            strError = _("Error: Transaction creation failed!");
         printf("SendMoney() : %s", strError.c_str());
         return strError;
     }
 
-    if (fAskFee && !uiInterface.ThreadSafeAskFee(nFeeRequired, _("Sending...")))
+    if (fAskFee && !uiInterface.ThreadSafeAskFee(nFeeRequired))
         return "ABORTED";
 
     if (!CommitTransaction(wtxNew, reservekey))
-        return _("Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
+        return _("Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
 
     return "";
 }
@@ -1771,3 +1772,35 @@ void CWallet::UpdatedTransaction(const uint256 &hashTx)
             NotifyTransactionChanged(this, hashTx, CT_UPDATED);
     }
 }
+
+void CWallet::LockCoin(COutPoint& output)
+{
+    setLockedCoins.insert(output);
+}
+
+void CWallet::UnlockCoin(COutPoint& output)
+{
+    setLockedCoins.erase(output);
+}
+
+void CWallet::UnlockAllCoins()
+{
+    setLockedCoins.clear();
+}
+
+bool CWallet::IsLockedCoin(uint256 hash, unsigned int n) const
+{
+    COutPoint outpt(hash, n);
+
+    return (setLockedCoins.count(outpt) > 0);
+}
+
+void CWallet::ListLockedCoins(std::vector<COutPoint>& vOutpts)
+{
+    for (std::set<COutPoint>::iterator it = setLockedCoins.begin();
+         it != setLockedCoins.end(); it++) {
+        COutPoint outpt = (*it);
+        vOutpts.push_back(outpt);
+    }
+}
+
