@@ -42,6 +42,7 @@ set<CBlockIndex*, CBlockIndexWorkComparator> setBlockIndexValid; // may contain 
 int64 nTimeBestReceived = 0;
 bool fImporting = false;
 bool fReindex = false;
+bool fBenchmark = false;
 unsigned int nCoinCacheSize = 5000;
 
 CMedianFilter<int> cPeerBlockCounts(5, 0); // Amount of blocks that other nodes claim to have
@@ -1186,11 +1187,11 @@ void static InvalidChainFound(CBlockIndex* pindexNew)
     }
     printf("InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
       BlockHashStr(pindexNew->GetBlockHash()).c_str(), pindexNew->nHeight,
-      pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S",
+      pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%Y-%m-%dT%H:%M:%S",
       pindexNew->GetBlockTime()).c_str());
     printf("InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n",
       BlockHashStr(hashBestChain).c_str(), nBestHeight, bnBestChainWork.ToString().c_str(),
-      DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
+      DateTimeStrFormat("%Y-%m-%dT%H:%M:%S", pindexBest->GetBlockTime()).c_str());
     if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6)
         printf("InvalidChainFound: Warning: Displayed transactions may not be correct! You may need to upgrade, or other nodes may need to upgrade.\n");
 }
@@ -1240,9 +1241,12 @@ bool ConnectBestBlock() {
 
             if (pindexTest->pprev == NULL || pindexTest->pnext != NULL) {
                 reverse(vAttach.begin(), vAttach.end());
-                BOOST_FOREACH(CBlockIndex *pindexSwitch, vAttach)
+                BOOST_FOREACH(CBlockIndex *pindexSwitch, vAttach) {
+                    if (fRequestShutdown)
+                        break;
                     if (!SetBestChain(pindexSwitch))
                         return false;
+                }
                 return true;
             }
             pindexTest = pindexTest->pprev;
@@ -1590,12 +1594,16 @@ bool CBlock::ConnectBlock(CBlockIndex* pindex, CCoinsViewCache &view, bool fJust
 
     CBlockUndo blockundo;
 
+    int64 nStart = GetTimeMicros();
     int64 nFees = 0;
+    int nInputs = 0;
     unsigned int nSigOps = 0;
     for (unsigned int i=0; i<vtx.size(); i++)
     {
+
         const CTransaction &tx = vtx[i];
 
+        nInputs += tx.vin.size();
         nSigOps += tx.GetLegacySigOpCount();
         if (nSigOps > MAX_BLOCK_SIGOPS)
             return DoS(100, error("ConnectBlock() : too many sigops"));
@@ -1626,7 +1634,11 @@ bool CBlock::ConnectBlock(CBlockIndex* pindex, CCoinsViewCache &view, bool fJust
             return error("ConnectBlock() : UpdateInputs failed");
         if (!tx.IsCoinBase())
             blockundo.vtxundo.push_back(txundo);
+
     }
+    int64 nTime = GetTimeMicros() - nStart;
+    if (fBenchmark)
+        printf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)vtx.size(), 0.001 * nTime, 0.001 * nTime / vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
 
     if (vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
         return error("ConnectBlock() : coinbase pays too much (actual=%"PRI64d" vs limit=%"PRI64d")", vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees));
@@ -1691,7 +1703,7 @@ bool SetBestChain(CBlockIndex* pindexNew)
     // Find the fork (typically, there is none)
     CBlockIndex* pfork = view.GetBestBlock();
     CBlockIndex* plonger = pindexNew;
-    while (pfork != plonger)
+    while (pfork && pfork != plonger)
     {
         while (plonger->nHeight > pfork->nHeight)
             if (!(plonger = plonger->pprev))
@@ -1724,8 +1736,11 @@ bool SetBestChain(CBlockIndex* pindexNew)
         CBlock block;
         if (!block.ReadFromDisk(pindex))
             return error("SetBestBlock() : ReadFromDisk for disconnect failed");
+        int64 nStart = GetTimeMicros();
         if (!block.DisconnectBlock(pindex, view))
             return error("SetBestBlock() : DisconnectBlock %s failed", BlockHashStr(pindex->GetBlockHash()).c_str());
+        if (fBenchmark)
+            printf("- Disconnect: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
 
         // Queue memory transactions to resurrect.
         // We only do this for blocks after the last checkpoint (reorganisation before that
@@ -1741,11 +1756,14 @@ bool SetBestChain(CBlockIndex* pindexNew)
         CBlock block;
         if (!block.ReadFromDisk(pindex))
             return error("SetBestBlock() : ReadFromDisk for connect failed");
+        int64 nStart = GetTimeMicros();
         if (!block.ConnectBlock(pindex, view)) {
             InvalidChainFound(pindexNew);
             InvalidBlockFound(pindex);
             return error("SetBestBlock() : ConnectBlock %s failed", BlockHashStr(pindex->GetBlockHash()).c_str());
         }
+        if (fBenchmark)
+            printf("- Connect: %.2fms\n", (GetTimeMicros() - nStart) * 0.001); 
 
         // Queue memory transactions to delete
         BOOST_FOREACH(const CTransaction& tx, block.vtx)
@@ -1753,8 +1771,13 @@ bool SetBestChain(CBlockIndex* pindexNew)
     }
 
     // Flush changes to global coin state
+    int64 nStart = GetTimeMicros();
+    int nModified = view.GetCacheSize();
     if (!view.Flush())
         return error("SetBestBlock() : unable to modify coin state");
+    int64 nTime = GetTimeMicros() - nStart;
+    if (fBenchmark)
+        printf("- Flush %i transactions: %.2fms (%.4fms/tx)\n", nModified, 0.001 * nTime, 0.001 * nTime / nModified);
 
     // Make sure it's successfully written to disk before changing memory structure
     bool fIsInitialDownload = IsInitialBlockDownload();
@@ -1805,7 +1828,7 @@ bool SetBestChain(CBlockIndex* pindexNew)
     nTransactionsUpdated++;
     printf("SetBestChain: new best=%s  height=%d  work=%s  tx=%lu  date=%s\n",
       BlockHashStr(hashBestChain).c_str(), nBestHeight, bnBestChainWork.ToString().c_str(), (unsigned long)pindexNew->nChainTx,
-      DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
+      DateTimeStrFormat("%Y-%m-%dT%H:%M:%S", pindexBest->GetBlockTime()).c_str());
 
     // Check the version of the last 100 blocks to see if we need to upgrade:
     if (!fIsInitialDownload)
@@ -1897,6 +1920,7 @@ bool FindBlockPos(CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeigh
             nLastBlockFile = pos.nFile;
             infoLastBlockFile.SetNull();
             pblocktree->ReadBlockFileInfo(nLastBlockFile, infoLastBlockFile);
+            fUpdatedLast = true;
         }
     } else {
         while (infoLastBlockFile.nSize + nAddSize >= MAX_BLOCKFILE_SIZE) {
@@ -2326,13 +2350,18 @@ bool static LoadBlockIndexDB()
     if (pblocktree->ReadBlockFileInfo(nLastBlockFile, infoLastBlockFile))
         printf("LoadBlockIndex(): last block file: %s\n", infoLastBlockFile.ToString().c_str());
 
+    // Load bnBestInvalidWork, OK if it doesn't exist
+    pblocktree->ReadBestInvalidWork(bnBestInvalidWork);
+
+    // Check whether we need to continue reindexing
+    bool fReindexing = false;
+    pblocktree->ReadReindexing(fReindexing);
+    fReindex |= fReindexing;
+
     // Load hashBestChain pointer to end of best chain
     pindexBest = pcoinsTip->GetBestBlock();
     if (pindexBest == NULL)
-    {
-        if (pindexGenesisBlock == NULL)
-            return true;
-    }
+        return true;
     hashBestChain = pindexBest->GetBlockHash();
     nBestHeight = pindexBest->nHeight;
     bnBestChainWork = pindexBest->bnChainWork;
@@ -2346,15 +2375,7 @@ bool static LoadBlockIndexDB()
     }
     printf("LoadBlockIndex(): hashBestChain=%s  height=%d date=%s\n",
         BlockHashStr(hashBestChain).c_str(), nBestHeight,
-        DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-
-    // Load bnBestInvalidWork, OK if it doesn't exist
-    pblocktree->ReadBestInvalidWork(bnBestInvalidWork);
-
-    // Check whether we need to continue reindexing
-    bool fReindexing = false;
-    pblocktree->ReadReindexing(fReindexing);
-    fReindex |= fReindexing;
+        DateTimeStrFormat("%Y-%m-%dT%H:%M:%S", pindexBest->GetBlockTime()).c_str());
 
     // Verify blocks in the best chain
     int nCheckLevel = GetArg("-checklevel", 1);
@@ -2517,7 +2538,7 @@ void PrintBlockTree()
         printf("%d (blk%05u.dat:0x%x)  %s  tx %"PRIszu"",
             pindex->nHeight,
             pindex->GetBlockPos().nFile, pindex->GetBlockPos().nPos,
-            DateTimeStrFormat("%x %H:%M:%S", block.GetBlockTime()).c_str(),
+            DateTimeStrFormat("%Y-%m-%dT%H:%M:%S", block.GetBlockTime()).c_str(),
             block.vtx.size());
 
         PrintWallets(block);
@@ -2556,7 +2577,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
             }
         }
         uint64 nRewind = blkdat.GetPos();
-        while (blkdat.good() && !blkdat.eof() && !fShutdown) {
+        while (blkdat.good() && !blkdat.eof() && !fRequestShutdown) {
             blkdat.SetPos(nRewind);
             nRewind++; // start one byte further next time, in case of failure
             blkdat.SetLimit(); // remove former limit
