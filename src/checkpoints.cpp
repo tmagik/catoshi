@@ -40,6 +40,9 @@ namespace Checkpoints
 
     bool CheckBlock(int nHeight, const uint256& hash)
     {
+        if (!GetBoolArg("-checkpoints", true))
+            return true;
+
         MapCheckpoints& checkpoints = (fTestNet ? mapCheckpointsTestnet : mapCheckpoints);
 
         MapCheckpoints::const_iterator i = checkpoints.find(nHeight);
@@ -49,6 +52,9 @@ namespace Checkpoints
 
     int GetTotalBlocksEstimate()
     {
+        if (!GetBoolArg("-checkpoints", true))
+            return 0;
+
         MapCheckpoints& checkpoints = (fTestNet ? mapCheckpointsTestnet : mapCheckpoints);
 
         return checkpoints.rbegin()->first;
@@ -56,6 +62,9 @@ namespace Checkpoints
 
     CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex)
     {
+        if (!GetBoolArg("-checkpoints", true))
+            return NULL;
+
         MapCheckpoints& checkpoints = (fTestNet ? mapCheckpointsTestnet : mapCheckpoints);
 
         BOOST_REVERSE_FOREACH(const MapCheckpoints::value_type& i, checkpoints)
