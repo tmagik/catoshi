@@ -144,6 +144,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/compat.h \
     src/sync.h \
     src/util.h \
+    src/hash.h \
     src/uint256.h \
     src/serialize.h \
     src/main.h \
@@ -154,7 +155,9 @@ HEADERS += src/qt/bitcoingui.h \
     src/script.h \
     src/init.h \
     src/irc.h \
+    src/bloom.h \
     src/mruset.h \
+    src/checkqueue.h \
     src/json/json_spirit_writer_template.h \
     src/json/json_spirit_writer.h \
     src/json/json_spirit_value.h \
@@ -214,6 +217,7 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/version.cpp \
     src/sync.cpp \
     src/util.cpp \
+    src/hash.cpp \
     src/netbase.cpp \
     src/key.cpp \
     src/script.cpp \
@@ -221,6 +225,7 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/init.cpp \
     src/net.cpp \
     src/irc.cpp \
+    src/bloom.cpp \
     src/checkpoints.cpp \
     src/addrman.cpp \
     src/db.cpp \
