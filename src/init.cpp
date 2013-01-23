@@ -84,6 +84,10 @@ void Shutdown(void* parg)
         fShutdown = true;
         nTransactionsUpdated++;
         bitdb.Flush(false);
+        {
+            LOCK(cs_main);
+            ThreadScriptCheckQuit();
+        }
         StopNode();
         {
             LOCK(cs_main);
@@ -303,6 +307,7 @@ std::string HelpMessage()
         "  -checklevel=<n>        " + _("How thorough the block verification is (0-4, default: 3)") + "\n" +
         "  -loadblock=<file>      " + _("Imports blocks from external blk000??.dat file") + "\n" +
         "  -reindex               " + _("Rebuild blockchain index from current blk000??.dat files") + "\n" +
+        "  -par=N                 " + _("Set the number of script verification threads (1-16, 0=auto, default: 0)") + "\n" +
 
         "\n" + _("Block creation options:") + "\n" +
         "  -blockminsize=<n>      "   + _("Set minimum block size in bytes (default: 0)") + "\n" +
@@ -484,6 +489,15 @@ bool AppInit2()
     fDebug = GetBoolArg("-debug");
     fBenchmark = GetBoolArg("-benchmark");
 
+    // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
+    nScriptCheckThreads = GetArg("-par", 0);
+    if (nScriptCheckThreads == 0)
+        nScriptCheckThreads = boost::thread::hardware_concurrency();
+    if (nScriptCheckThreads <= 1) 
+        nScriptCheckThreads = 0;
+    else if (nScriptCheckThreads > MAX_SCRIPTCHECK_THREADS)
+        nScriptCheckThreads = MAX_SCRIPTCHECK_THREADS;
+
     // -debug implies fDebug*
     if (fDebug)
         fDebugNet = true;
@@ -578,6 +592,12 @@ bool AppInit2()
 
     if (fDaemon)
         fprintf(stdout, "Bitcoin server starting\n");
+
+    if (nScriptCheckThreads) {
+        printf("Using %u threads for script verification\n", nScriptCheckThreads);
+        for (int i=0; i<nScriptCheckThreads-1; i++)
+            NewThread(ThreadScriptCheck, NULL);
+    }
 
     int64 nStart;
 
@@ -769,7 +789,7 @@ bool AppInit2()
     nCoinCacheSize = nTotalCache / 300; // coins in memory require around 300 bytes
 
     uiInterface.InitMessage(_("Loading block index..."));
-    printf("Loading block index...\n");
+
     nStart = GetTimeMillis();
     pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
     pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex);
@@ -828,7 +848,7 @@ bool AppInit2()
     // ********************************************************* Step 8: load wallet
 
     uiInterface.InitMessage(_("Loading wallet..."));
-    printf("Loading wallet...\n");
+
     nStart = GetTimeMillis();
     bool fFirstRun = true;
     pwalletMain = new CWallet("wallet.dat");
@@ -926,7 +946,7 @@ bool AppInit2()
     // ********************************************************* Step 10: load peers
 
     uiInterface.InitMessage(_("Loading addresses..."));
-    printf("Loading addresses...\n");
+
     nStart = GetTimeMillis();
 
     {
@@ -961,7 +981,6 @@ bool AppInit2()
     // ********************************************************* Step 12: finished
 
     uiInterface.InitMessage(_("Done loading"));
-    printf("Done loading\n");
 
     if (!strErrors.str().empty())
         return InitError(strErrors.str());
