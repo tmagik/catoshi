@@ -278,7 +278,8 @@ bool IsCanonicalSignature(const valtype &vchSig) {
         return error("Non-canonical signature: too short");
     if (vchSig.size() > 73)
         return error("Non-canonical signature: too long");
-    if (vchSig[vchSig.size() - 1] & 0x7C)
+    unsigned char nHashType = vchSig[vchSig.size() - 1] & (~(SIGHASH_ANYONECANPAY));
+    if (nHashType < SIGHASH_ALL || nHashType > SIGHASH_SINGLE)
         return error("Non-canonical signature: unknown hashtype byte");
     if (vchSig[0] != 0x30)
         return error("Non-canonical signature: wrong type");
@@ -340,7 +341,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
             //
             if (!script.GetOp(pc, opcode, vchPushValue))
                 return false;
-            if (vchPushValue.size() > 520)
+            if (vchPushValue.size() > MAX_SCRIPT_ELEMENT_SIZE)
                 return false;
             if (opcode > OP_16 && ++nOpCount > 201)
                 return false;
@@ -670,7 +671,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                     valtype& vch2 = stacktop(-1);
                     vch1.insert(vch1.end(), vch2.begin(), vch2.end());
                     popstack(stack);
-                    if (stacktop(-1).size() > 520)
+                    if (stacktop(-1).size() > MAX_SCRIPT_ELEMENT_SIZE)
                         return false;
                 }
                 break;
