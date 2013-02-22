@@ -201,6 +201,8 @@ static const CRPCCommand vRPCCommands[] =
     { "getblockcount",          &getblockcount,          true,   false },
     { "getconnectioncount",     &getconnectioncount,     true,   false },
     { "getpeerinfo",            &getpeerinfo,            true,   false },
+    { "addnode",                &addnode,                true,   true },
+    { "getaddednodeinfo",       &getaddednodeinfo,       true,   true },
     { "getdifficulty",          &getdifficulty,          true,   false },
     { "getgenerate",            &getgenerate,            true,   false },
     { "setgenerate",            &setgenerate,            true,   false },
@@ -244,7 +246,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getblocktemplate",       &getblocktemplate,       true,   false },
     { "submitblock",            &submitblock,            false,  false },
     { "listsinceblock",         &listsinceblock,         false,  false },
-    { "dumpprivkey",            &dumpprivkey,            false,  false },
+    { "dumpprivkey",            &dumpprivkey,            true,   false },
     { "importprivkey",          &importprivkey,          false,  false },
     { "listunspent",            &listunspent,            false,  false },
     { "getrawtransaction",      &getrawtransaction,      false,  false },
@@ -1179,6 +1181,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     // Special case non-string parameter types
     //
     if (strMethod == "stop"                   && n > 0) ConvertTo<bool>(params[0]);
+    if (strMethod == "getaddednodeinfo"       && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "setgenerate"            && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "setgenerate"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
