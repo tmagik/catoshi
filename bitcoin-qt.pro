@@ -159,7 +159,6 @@ HEADERS += src/qt/bitcoingui.h \
     src/walletdb.h \
     src/script.h \
     src/init.h \
-    src/irc.h \
     src/bloom.h \
     src/mruset.h \
     src/checkqueue.h \
@@ -186,6 +185,9 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/transactionfilterproxy.h \
     src/qt/transactionview.h \
     src/qt/walletmodel.h \
+    src/qt/walletview.h \
+    src/qt/walletstack.h \
+    src/qt/walletframe.h \
     src/bitcoinrpc.h \
     src/qt/overviewpage.h \
     src/qt/csvmodelwriter.h \
@@ -230,7 +232,6 @@ SOURCES += src/qt/bitcoin.cpp \
     src/main.cpp \
     src/init.cpp \
     src/net.cpp \
-    src/irc.cpp \
     src/bloom.cpp \
     src/checkpoints.cpp \
     src/addrman.cpp \
@@ -250,6 +251,9 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/transactionfilterproxy.cpp \
     src/qt/transactionview.cpp \
     src/qt/walletmodel.cpp \
+    src/qt/walletview.cpp \
+    src/qt/walletstack.cpp \
+    src/qt/walletframe.cpp \
     src/bitcoinrpc.cpp \
     src/rpcdump.cpp \
     src/rpcnet.cpp \
