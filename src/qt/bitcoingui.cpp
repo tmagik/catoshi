@@ -167,14 +167,14 @@ void BitcoinGUI::createActions()
     overviewAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_1));
     tabGroup->addAction(overviewAction);
 
-    sendCoinsAction = new QAction(QIcon(":/icons/send"), tr("&Send coins"), this);
+    sendCoinsAction = new QAction(QIcon(":/icons/send"), tr("&Send"), this);
     sendCoinsAction->setStatusTip(tr("Send coins to a Bitcoin address"));
     sendCoinsAction->setToolTip(sendCoinsAction->statusTip());
     sendCoinsAction->setCheckable(true);
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
     tabGroup->addAction(sendCoinsAction);
 
-    receiveCoinsAction = new QAction(QIcon(":/icons/receiving_addresses"), tr("&Receive coins"), this);
+    receiveCoinsAction = new QAction(QIcon(":/icons/receiving_addresses"), tr("&Receive"), this);
     receiveCoinsAction->setStatusTip(tr("Show the list of addresses for receiving payments"));
     receiveCoinsAction->setToolTip(receiveCoinsAction->statusTip());
     receiveCoinsAction->setCheckable(true);
@@ -188,7 +188,7 @@ void BitcoinGUI::createActions()
     historyAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_4));
     tabGroup->addAction(historyAction);
 
-    addressBookAction = new QAction(QIcon(":/icons/address-book"), tr("&Address Book"), this);
+    addressBookAction = new QAction(QIcon(":/icons/address-book"), tr("&Addresses"), this);
     addressBookAction->setStatusTip(tr("Edit the list of stored addresses and labels"));
     addressBookAction->setToolTip(addressBookAction->statusTip());
     addressBookAction->setCheckable(true);
@@ -205,7 +205,7 @@ void BitcoinGUI::createActions()
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
-    
+
     quitAction = new QAction(QIcon(":/icons/quit"), tr("E&xit"), this);
     quitAction->setStatusTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
@@ -338,6 +338,7 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
         // Receive and report messages from network/worker thread
         connect(clientModel, SIGNAL(message(QString,QString,unsigned int)), this, SLOT(message(QString,QString,unsigned int)));
 
+        rpcConsole->setClientModel(clientModel);
         walletFrame->setClientModel(clientModel);
     }
 }
@@ -475,9 +476,9 @@ void BitcoinGUI::gotoReceiveCoinsPage()
     if (walletFrame) walletFrame->gotoReceiveCoinsPage();
 }
 
-void BitcoinGUI::gotoSendCoinsPage()
+void BitcoinGUI::gotoSendCoinsPage(QString addr)
 {
-    if (walletFrame) walletFrame->gotoSendCoinsPage();
+    if (walletFrame) walletFrame->gotoSendCoinsPage(addr);
 }
 
 void BitcoinGUI::gotoSignMessageTab(QString addr)
@@ -700,7 +701,7 @@ void BitcoinGUI::askFee(qint64 nFeeRequired, bool *payFee)
 
 void BitcoinGUI::incomingTransaction(const QString& date, int unit, qint64 amount, const QString& type, const QString& address)
 {
-   // On new transaction, make an info balloon
+    // On new transaction, make an info balloon
     message((amount)<0 ? tr("Sent transaction") : tr("Incoming transaction"),
              tr("Date: %1\n"
                 "Amount: %2\n"
