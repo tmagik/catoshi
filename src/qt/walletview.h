@@ -10,7 +10,6 @@
 #include <QStackedWidget>
 
 class BitcoinGUI;
-class TransactionTableModel;
 class ClientModel;
 class WalletModel;
 class TransactionView;
@@ -18,7 +17,6 @@ class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
 class SignVerifyMessageDialog;
-class Notificator;
 class RPCConsole;
 
 QT_BEGIN_NAMESPACE
@@ -35,6 +33,7 @@ QT_END_NAMESPACE
 class WalletView : public QStackedWidget
 {
     Q_OBJECT
+
 public:
     explicit WalletView(QWidget *parent, BitcoinGUI *_gui);
     ~WalletView();
@@ -49,9 +48,9 @@ public:
         functionality.
     */
     void setWalletModel(WalletModel *walletModel);
-    
+
     bool handleURI(const QString &uri);
-    
+
     void showOutOfSyncWarning(bool fShow);
 
 private:
@@ -66,34 +65,7 @@ private:
     SendCoinsDialog *sendCoinsPage;
     SignVerifyMessageDialog *signVerifyMessageDialog;
 
-    QLabel *labelEncryptionIcon;
-    QLabel *labelConnectionsIcon;
-    QLabel *labelBlocksIcon;
-    QLabel *progressBarLabel;
-
-    QAction *overviewAction;
-    QAction *historyAction;
-    QAction *quitAction;
-    QAction *sendCoinsAction;
-    QAction *addressBookAction;
-    QAction *signMessageAction;
-    QAction *verifyMessageAction;
-    QAction *aboutAction;
-    QAction *receiveCoinsAction;
-    QAction *optionsAction;
-    QAction *toggleHideAction;
-    QAction *exportAction;
-    QAction *encryptWalletAction;
-    QAction *backupWalletAction;
-    QAction *changePassphraseAction;
-    QAction *aboutQtAction;
-    QAction *openRPCConsoleAction;
-
     TransactionView *transactionView;
-
-    /** Create the main UI actions. */
-    void createActions();
-    /** Create the menu bar and sub-menus. */
 
 public slots:
     /** Switch to overview (home) page */
@@ -105,7 +77,7 @@ public slots:
     /** Switch to receive coins page */
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
-    void gotoSendCoinsPage();
+    void gotoSendCoinsPage(QString addr = "");
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
@@ -125,7 +97,7 @@ public slots:
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
-    
+
     void setEncryptionStatus();
 };
 
