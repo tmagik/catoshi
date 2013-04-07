@@ -15,11 +15,11 @@ namespace Checkpoints
     typedef std::map<int, uint256> MapCheckpoints;
 
     // How many times we expect transactions after the last checkpoint to
-    // be slower. This number is conservative. On multi-core CPUs with
-    // parallel signature checking enabled, this number is way too high.
-    // We prefer a progressbar that's faster at the end than the other
-    // way around, though.
-    static const double fSigcheckVerificationFactor = 15.0;
+    // be slower. This number is a compromise, as it can't be accurate for
+    // every system. When reindexing from a fast disk with a slow CPU, it
+    // can be up to 20, while when downloading from a slow network with a
+    // fast multicore CPU, it won't be much higher than 1.
+    static const double fSigcheckVerificationFactor = 5.0;
 
     struct CCheckpointData {
         const MapCheckpoints *mapCheckpoints;
@@ -44,13 +44,14 @@ namespace Checkpoints
         (193000, uint256("0x000000000000059f452a5f7340de6682a977387c17010ff6e6c3bd83ca8b1317"))
         (210000, uint256("0x000000000000048b95347e83192f69cf0366076336c639f9b7228e9ba171342e"))
         (216116, uint256("0x00000000000001b4f4b433e81ee46494af945cf96014816a4e2370f11b23df4e"))
+        (225430, uint256("0x00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932"))
         ;
     static const CCheckpointData data = {
         &mapCheckpoints,
-        1357902690, // * UNIX timestamp of last checkpoint block
-        11011160,   // * total number of transactions between genesis and last checkpoint
+        1363044259, // * UNIX timestamp of last checkpoint block
+        14264869,   // * total number of transactions between genesis and last checkpoint
                     //   (the tx=... number in the SetBestChain debug.log lines)
-        50000.0     // * estimated number of transactions per day after checkpoint
+        60000.0     // * estimated number of transactions per day after checkpoint
     };
 
     static MapCheckpoints mapCheckpointsTestnet = 
