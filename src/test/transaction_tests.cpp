@@ -66,7 +66,9 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             CTransaction tx;
             stream >> tx;
 
-                BOOST_CHECK_MESSAGE(tx.CheckTransaction(), strTest);
+            CValidationState state;
+            BOOST_CHECK_MESSAGE(tx.CheckTransaction(state), strTest);
+            BOOST_CHECK(state.IsValid());
 
             for (unsigned int i = 0; i < tx.vin.size(); i++)
             {
@@ -133,7 +135,8 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             CTransaction tx;
             stream >> tx;
 
-            fValid = tx.CheckTransaction();
+            CValidationState state;
+            fValid = tx.CheckTransaction(state) && state.IsValid();
 
             for (unsigned int i = 0; i < tx.vin.size() && fValid; i++)
             {
@@ -159,11 +162,12 @@ BOOST_AUTO_TEST_CASE(basic_transaction_tests)
     CDataStream stream(vch, SER_DISK, CLIENT_VERSION);
     CTransaction tx;
     stream >> tx;
-    BOOST_CHECK_MESSAGE(tx.CheckTransaction(), "Simple deserialized transaction should be valid.");
+    CValidationState state;
+    BOOST_CHECK_MESSAGE(tx.CheckTransaction(state) && state.IsValid(), "Simple deserialized transaction should be valid.");
 
     // Check that duplicate txins fail
     tx.vin.push_back(tx.vin[0]);
-    BOOST_CHECK_MESSAGE(!tx.CheckTransaction(), "Transaction with duplicate txins should be invalid.");
+    BOOST_CHECK_MESSAGE(!tx.CheckTransaction(state) || !state.IsValid(), "Transaction with duplicate txins should be invalid.");
 }
 
 //
@@ -238,24 +242,34 @@ BOOST_AUTO_TEST_CASE(test_Get)
     BOOST_CHECK(!t1.AreInputsStandard(coins));
 }
 
-BOOST_AUTO_TEST_CASE(test_GetThrow)
+BOOST_AUTO_TEST_CASE(test_IsStandard)
 {
     CBasicKeyStore keystore;
     CCoinsView coinsDummy;
     CCoinsViewCache coins(coinsDummy);
     std::vector<CTransaction> dummyTransactions = SetupDummyInputs(keystore, coins);
 
-    CTransaction t1;
-    t1.vin.resize(3);
-    t1.vin[0].prevout.hash = dummyTransactions[0].GetHash();
-    t1.vin[0].prevout.n = 0;
-    t1.vin[1].prevout.hash = dummyTransactions[1].GetHash();;
-    t1.vin[1].prevout.n = 0;
-    t1.vin[2].prevout.hash = dummyTransactions[1].GetHash();;
-    t1.vin[2].prevout.n = 1;
-    t1.vout.resize(2);
-    t1.vout[0].nValue = 90*CENT;
-    t1.vout[0].scriptPubKey << OP_1;
+    CTransaction t;
+    t.vin.resize(1);
+    t.vin[0].prevout.hash = dummyTransactions[0].GetHash();
+    t.vin[0].prevout.n = 1;
+    t.vin[0].scriptSig << std::vector<unsigned char>(65, 0);
+    t.vout.resize(1);
+    t.vout[0].nValue = 90*CENT;
+    CKey key;
+    key.MakeNewKey(true);
+    t.vout[0].scriptPubKey.SetDestination(key.GetPubKey().GetID());
+
+    BOOST_CHECK(t.IsStandard());
+
+    t.vout[0].nValue = 5011; // dust
+    BOOST_CHECK(!t.IsStandard());
+
+    t.vout[0].nValue = 6011; // not dust
+    BOOST_CHECK(t.IsStandard());
+
+    t.vout[0].scriptPubKey = CScript() << OP_1;
+    BOOST_CHECK(!t.IsStandard());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

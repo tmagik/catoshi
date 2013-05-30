@@ -11,6 +11,7 @@
 #include <map>
 
 class CBlockIndex;
+class CReserveKey;
 
 #include "json/json_spirit_reader_template.h"
 #include "json/json_spirit_writer_template.h"
@@ -67,7 +68,8 @@ enum RPCErrorCode
 
 json_spirit::Object JSONRPCError(int code, const std::string& message);
 
-void ThreadRPCServer(void* parg);
+void StartRPCThreads();
+void StopRPCThreads();
 int CommandLineRPC(int argc, char *argv[]);
 
 /** Convert parameter values for RPC call from strings to command-specific JSON objects. */
@@ -95,7 +97,7 @@ public:
     std::string name;
     rpcfn_type actor;
     bool okSafeMode;
-    bool unlocked;
+    bool threadSafe;
 };
 
 /**
@@ -121,6 +123,7 @@ public:
 };
 
 extern const CRPCTable tableRPC;
+extern CReserveKey* pMiningKey;
 
 extern int64 nWalletUnlockTime;
 extern int64 AmountFromValue(const json_spirit::Value& value);
@@ -132,6 +135,8 @@ extern void EnsureWalletIsUnlocked();
 
 extern json_spirit::Value getconnectioncount(const json_spirit::Array& params, bool fHelp); // in rpcnet.cpp
 extern json_spirit::Value getpeerinfo(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value addnode(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getaddednodeinfo(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value dumpprivkey(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
 extern json_spirit::Value importprivkey(const json_spirit::Array& params, bool fHelp);
 

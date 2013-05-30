@@ -17,6 +17,7 @@ static const char* ppszTypeName[] =
     "ERROR",
     "tx",
     "block",
+    "filtered block"
 };
 
 CMessageHeader::CMessageHeader()
@@ -141,12 +142,7 @@ const char* CInv::GetCommand() const
 
 std::string CInv::ToString() const
 {
-    if (type == MSG_BLOCK)
-        return strprintf("%s %s", GetCommand(), BlockHashStr(hash).c_str());
-    if (type == MSG_TX)
-        return strprintf("%s %s", GetCommand(), hash.ToString().substr(0,10).c_str());
-
-    return strprintf("%s %s", GetCommand(), hash.ToString().substr(0,20).c_str());
+    return strprintf("%s %s", GetCommand(), hash.ToString().c_str());
 }
 
 void CInv::print() const

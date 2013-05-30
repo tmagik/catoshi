@@ -5,6 +5,7 @@
 
 #include "txdb.h"
 #include "main.h"
+#include "hash.h"
 
 using namespace std;
 
@@ -19,20 +20,20 @@ void static BatchWriteHashBestChain(CLevelDBBatch &batch, const uint256 &hash) {
     batch.Write('B', hash);
 }
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "coins", nCacheSize, fMemory, fWipe) {
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe) {
 }
 
-bool CCoinsViewDB::GetCoins(uint256 txid, CCoins &coins) { 
+bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) { 
     return db.Read(make_pair('c', txid), coins); 
 }
 
-bool CCoinsViewDB::SetCoins(uint256 txid, const CCoins &coins) {
+bool CCoinsViewDB::SetCoins(const uint256 &txid, const CCoins &coins) {
     CLevelDBBatch batch;
     BatchWriteCoins(batch, txid, coins);
     return db.WriteBatch(batch);
 }
 
-bool CCoinsViewDB::HaveCoins(uint256 txid) {
+bool CCoinsViewDB::HaveCoins(const uint256 &txid) {
     return db.Exists(make_pair('c', txid)); 
 }
 
@@ -64,7 +65,7 @@ bool CCoinsViewDB::BatchWrite(const std::map<uint256, CCoins> &mapCoins, CBlockI
     return db.WriteBatch(batch);
 }
 
-CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CLevelDB(GetDataDir() / "blktree", nCacheSize, fMemory, fWipe) {
+CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CLevelDB(GetDataDir() / "blocks" / "index", nCacheSize, fMemory, fWipe) {
 }
 
 bool CBlockTreeDB::WriteBlockIndex(const CDiskBlockIndex& blockindex)
@@ -114,26 +115,40 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
     leveldb::Iterator *pcursor = db.NewIterator();
     pcursor->SeekToFirst();
 
+    CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
+    stats.hashBlock = GetBestBlock()->GetBlockHash();
+    ss << stats.hashBlock;
+    int64 nTotalAmount = 0;
     while (pcursor->Valid()) {
+        boost::this_thread::interruption_point();
         try {
             leveldb::Slice slKey = pcursor->key();
             CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
             char chType;
             ssKey >> chType;
-            if (chType == 'c' && !fRequestShutdown) {
+            if (chType == 'c') {
                 leveldb::Slice slValue = pcursor->value();
                 CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
                 CCoins coins;
                 ssValue >> coins;
                 uint256 txhash;
                 ssKey >> txhash;
-
+                ss << txhash;
+                ss << VARINT(coins.nVersion);
+                ss << (coins.fCoinBase ? 'c' : 'n'); 
+                ss << VARINT(coins.nHeight);
                 stats.nTransactions++;
-                BOOST_FOREACH(const CTxOut &out, coins.vout) {
-                    if (!out.IsNull())
+                for (unsigned int i=0; i<coins.vout.size(); i++) {
+                    const CTxOut &out = coins.vout[i];
+                    if (!out.IsNull()) {
                         stats.nTransactionOutputs++;
+                        ss << VARINT(i+1);
+                        ss << out;
+                        nTotalAmount += out.nValue;
+                    }
                 }
                 stats.nSerializedSize += 32 + slValue.size();
+                ss << VARINT(0);
             }
             pcursor->Next();
         } catch (std::exception &e) {
@@ -142,6 +157,31 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
     }
     delete pcursor;
     stats.nHeight = GetBestBlock()->nHeight;
+    stats.hashSerialized = ss.GetHash();
+    stats.nTotalAmount = nTotalAmount;
+    return true;
+}
+
+bool CBlockTreeDB::ReadTxIndex(const uint256 &txid, CDiskTxPos &pos) {
+    return Read(make_pair('t', txid), pos);
+}
+
+bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> >&vect) {
+    CLevelDBBatch batch;
+    for (std::vector<std::pair<uint256,CDiskTxPos> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
+        batch.Write(make_pair('t', it->first), it->second);
+    return WriteBatch(batch);
+}
+
+bool CBlockTreeDB::WriteFlag(const std::string &name, bool fValue) {
+    return Write(std::make_pair('F', name), fValue ? '1' : '0');
+}
+
+bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
+    char ch;
+    if (!Read(std::make_pair('F', name), ch))
+        return false;
+    fValue = ch == '1';
     return true;
 }
 
@@ -155,12 +195,13 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 
     // Load mapBlockIndex
     while (pcursor->Valid()) {
+        boost::this_thread::interruption_point();
         try {
             leveldb::Slice slKey = pcursor->key();
             CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
             char chType;
             ssKey >> chType;
-            if (chType == 'b' && !fRequestShutdown) {
+            if (chType == 'b') {
                 leveldb::Slice slValue = pcursor->value();
                 CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
                 CDiskBlockIndex diskindex;
