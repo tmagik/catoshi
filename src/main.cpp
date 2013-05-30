@@ -1342,7 +1342,7 @@ unsigned int CTransaction::GetP2SHSigOpCount(CCoinsViewCache& inputs) const
     return nSigOps;
 }
 
-bool CTransaction::UpdateCoins(CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash) const
+void CTransaction::UpdateCoins(CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash) const
 {
     // mark inputs spent
     if (!IsCoinBase()) {
@@ -1356,8 +1356,6 @@ bool CTransaction::UpdateCoins(CValidationState &state, CCoinsViewCache &inputs,
 
     // add outputs
     assert(inputs.SetCoins(txhash, CCoins(*this, nHeight)));
-
-    return true;
 }
 
 bool CTransaction::HaveInputs(CCoinsViewCache &inputs) const
@@ -1683,8 +1681,7 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
         }
 
         CTxUndo txundo;
-        if (!tx.UpdateCoins(state, view, txundo, pindex->nHeight, GetTxHash(i)))
-            return error("ConnectBlock() : UpdateInputs failed");
+        tx.UpdateCoins(state, view, txundo, pindex->nHeight, GetTxHash(i));
         if (!tx.IsCoinBase())
             blockundo.vtxundo.push_back(txundo);
 
@@ -1873,7 +1870,7 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
     }
 
     // Update best block in wallet (so we can detect restored wallets)
-    if (!fIsInitialDownload)
+    if ((pindexNew->nHeight % 20160) == 0 || (!fIsInitialDownload && (pindexNew->nHeight % 144) == 0))
     {
         const CBlockLocator locator(pindexNew);
         ::SetBestChain(locator);
@@ -2075,25 +2072,6 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
     // Size limits
     if (vtx.empty() || vtx.size() > MAX_BLOCK_SIZE || ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
         return state.DoS(100, error("CheckBlock() : size limits failed"));
-
-    // Special short-term limits to avoid 10,000 BDB lock limit:
-    if (GetBlockTime() >= 1363867200 && // start enforcing 21 March 2013, noon GMT
-        GetBlockTime() < 1368576000)  // stop enforcing 15 May 2013 00:00:00
-    {
-        // Rule is: #unique txids referenced <= 4,500
-        // ... to prevent 10,000 BDB lock exhaustion on old clients
-        set<uint256> setTxIn;
-        for (size_t i = 0; i < vtx.size(); i++)
-        {
-            setTxIn.insert(vtx[i].GetHash());
-            if (i == 0) continue; // skip coinbase txin
-            BOOST_FOREACH(const CTxIn& txin, vtx[i].vin)
-                setTxIn.insert(txin.prevout.hash);
-        }
-        size_t nTxids = setTxIn.size();
-        if (nTxids > 4500)
-            return error("CheckBlock() : 15 May maxlocks violation");
-    }
 
     // Check proof of work matches claimed amount
     if (fCheckPOW && !CheckProofOfWork(GetHash(), nBits))
@@ -4191,10 +4169,6 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
     // Limit to betweeen 1K and MAX_BLOCK_SIZE-1K for sanity:
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
 
-    // Special compatibility rule before 15 May: limit size to 500,000 bytes:
-    if (GetAdjustedTime() < 1368576000)
-        nBlockMaxSize = std::min(nBlockMaxSize, (unsigned int)(MAX_BLOCK_SIZE_GEN));
-
     // How much of the block should be dedicated to high-priority transactions,
     // included regardless of the fees they pay
     unsigned int nBlockPrioritySize = GetArg("-blockprioritysize", 27000);
@@ -4233,8 +4207,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
             {
                 // Read prev transaction
-                CCoins coins;
-                if (!view.GetCoins(txin.prevout.hash, coins))
+                if (!view.HaveCoins(txin.prevout.hash))
                 {
                     // This should never happen; all transactions in the memory
                     // pool should connect to either transactions in the chain
@@ -4261,6 +4234,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
                     nTotalIn += mempool.mapTx[txin.prevout.hash].vout[txin.prevout.n].nValue;
                     continue;
                 }
+                const CCoins &coins = view.GetCoins(txin.prevout.hash);
 
                 int64 nValueIn = coins.vout[txin.prevout.n].nValue;
                 nTotalIn += nValueIn;
@@ -4308,9 +4282,6 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
             std::pop_heap(vecPriority.begin(), vecPriority.end(), comparer);
             vecPriority.pop_back();
 
-            // second layer cached modifications just for this transaction
-            CCoinsViewCache viewTemp(view, true);
-
             // Size limits
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             if (nBlockSize + nTxSize >= nBlockMaxSize)
@@ -4335,26 +4306,22 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
                 std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
             }
 
-            if (!tx.HaveInputs(viewTemp))
+            if (!tx.HaveInputs(view))
                 continue;
 
-            int64 nTxFees = tx.GetValueIn(viewTemp)-tx.GetValueOut();
+            int64 nTxFees = tx.GetValueIn(view)-tx.GetValueOut();
 
-            nTxSigOps += tx.GetP2SHSigOpCount(viewTemp);
+            nTxSigOps += tx.GetP2SHSigOpCount(view);
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
                 continue;
 
             CValidationState state;
-            if (!tx.CheckInputs(state, viewTemp, true, SCRIPT_VERIFY_P2SH))
+            if (!tx.CheckInputs(state, view, true, SCRIPT_VERIFY_P2SH))
                 continue;
 
             CTxUndo txundo;
             uint256 hash = tx.GetHash();
-            if (!tx.UpdateCoins(state, viewTemp, txundo, pindexPrev->nHeight+1, hash))
-                continue;
-
-            // push changes from the second layer cache to the first one
-            viewTemp.Flush();
+            tx.UpdateCoins(state, view, txundo, pindexPrev->nHeight+1, hash);
 
             // Added
             pblock->vtx.push_back(tx);
