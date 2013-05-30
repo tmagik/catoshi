@@ -41,43 +41,36 @@ An executable named `bitcoin-qt` will be built.
 
 .. _`Qt Creator`: http://qt-project.org/downloads/
 
-Windows
---------
-
-Windows build instructions:
-
-- Download the `Qt Windows SDK`_ and install it. You don't need the Symbian stuff, just the desktop Qt.
-
-- Download and extract the `dependencies archive`_  [#]_, or compile openssl, boost and dbcxx yourself.
-
-- Copy the contents of the folder "deps" to "X:\\QtSDK\\mingw", replace X:\\ with the location where you installed the Qt SDK. Make sure that the contents of "deps\\include" end up in the current "include" directory.
-
-- Open the bitcoin-qt.pro file in Qt Creator and build as normal (ctrl-B)
-
-.. _`Qt Windows SDK`: http://qt-project.org/downloads/
-.. _`dependencies archive`: https://download.visucore.com/bitcoin/qtgui_deps_1.zip
-.. [#] PGP signature: https://download.visucore.com/bitcoin/qtgui_deps_1.zip.sig (signed with RSA key ID `610945D0`_)
-.. _`610945D0`: http://pgp.mit.edu:11371/pks/lookup?op=get&search=0x610945D0
-
-
 Mac OS X
 --------
 
 - Download and install the `Qt Mac OS X SDK`_. It is recommended to also install Apple's Xcode with UNIX tools.
 
-- Download and install `MacPorts`_.
+- Download and install either `MacPorts`_ or `HomeBrew`_.
 
-- Execute the following commands in a terminal to get the dependencies:
+- Execute the following commands in a terminal to get the dependencies using MacPorts:
 
 ::
 
 	sudo port selfupdate
 	sudo port install boost db48 miniupnpc
 
+- Execute the following commands in a terminal to get the dependencies using HomeBrew:
+
+::
+
+	brew update
+	brew install boost miniupnpc openssl berkeley-db4
+
+- If using HomeBrew,  edit `bitcoin-qt.pro` to account for library location differences. There's a diff in `contrib/homebrew/bitcoin-qt-pro.patch` that shows what you need to change, or you can just patch by doing
+
+        patch -p1 < contrib/homebrew/bitcoin.qt.pro.patch
+
 - Open the bitcoin-qt.pro file in Qt Creator and build as normal (cmd-B)
 
 .. _`Qt Mac OS X SDK`: http://qt-project.org/downloads/
 .. _`MacPorts`: http://www.macports.org/install.php
+.. _`HomeBrew`: http://mxcl.github.io/homebrew/
 
 
 Build configuration options

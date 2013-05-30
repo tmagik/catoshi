@@ -1,10 +1,11 @@
 #include "optionsmodel.h"
-#include "bitcoinunits.h"
-#include <QSettings>
 
+#include "bitcoinunits.h"
 #include "init.h"
 #include "walletdb.h"
 #include "guiutil.h"
+
+#include <QSettings>
 
 OptionsModel::OptionsModel(QObject *parent) :
     QAbstractListModel(parent)
@@ -58,6 +59,24 @@ void OptionsModel::Init()
         SoftSetArg("-socks", settings.value("nSocksVersion").toString().toStdString());
     if (!language.isEmpty())
         SoftSetArg("-lang", language.toStdString());
+}
+
+void OptionsModel::Reset()
+{
+    QSettings settings;
+
+    // Remove all entries in this QSettings object
+    settings.clear();
+
+    // default setting for OptionsModel::StartAtStartup - disabled
+    if (GUIUtil::GetStartOnSystemStartup())
+        GUIUtil::SetStartOnSystemStartup(false);
+
+    // Re-Init to get default values
+    Init();
+
+    // Ensure Upgrade() is not running again by setting the bImportFinished flag
+    settings.setValue("bImportFinished", true);
 }
 
 bool OptionsModel::Upgrade()
@@ -200,9 +219,8 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             settings.setValue("fMinimizeToTray", fMinimizeToTray);
             break;
         case MapPortUPnP:
-            fUseUPnP = value.toBool();
-            settings.setValue("fUseUPnP", fUseUPnP);
-            MapPort();
+            settings.setValue("fUseUPnP", value.toBool());
+            MapPort(value.toBool());
             break;
         case MinimizeOnClose:
             fMinimizeOnClose = value.toBool();
