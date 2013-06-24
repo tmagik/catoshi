@@ -192,10 +192,10 @@ public:
         // which has units satoshis-per-kilobyte.
         // If you'd pay more than 1/3 in fees
         // to spend something, then we consider it dust.
-        // A typical txout is 33 bytes big, and will
+        // A typical txout is 34 bytes big, and will
         // need a CTxIn of at least 148 bytes to spend,
         // so dust is a txout less than 54 uBTC
-        // (5430 satoshis) with default nMinRelayTxFee
+        // (5460 satoshis) with default nMinRelayTxFee
         return ((nValue*1000)/(3*((int)GetSerializeSize(SER_DISK,0)+148)) < nMinRelayTxFee);
     }
 
@@ -730,6 +730,129 @@ public:
     int64 GetBlockTime() const
     {
         return (int64)nTime;
+    }
+};
+
+
+class CBlock : public CBlockHeader
+{
+public:
+    // network and disk
+    std::vector<CTransaction> vtx;
+
+    // memory only
+    mutable std::vector<uint256> vMerkleTree;
+
+    CBlock()
+    {
+        SetNull();
+    }
+
+    CBlock(const CBlockHeader &header)
+    {
+        SetNull();
+        *((CBlockHeader*)this) = header;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        READWRITE(*(CBlockHeader*)this);
+        READWRITE(vtx);
+    )
+
+    void SetNull()
+    {
+        CBlockHeader::SetNull();
+        vtx.clear();
+        vMerkleTree.clear();
+    }
+
+    CBlockHeader GetBlockHeader() const
+    {
+        CBlockHeader block;
+        block.nVersion       = nVersion;
+        block.hashPrevBlock  = hashPrevBlock;
+        block.hashMerkleRoot = hashMerkleRoot;
+        block.nTime          = nTime;
+        block.nBits          = nBits;
+        block.nNonce         = nNonce;
+        return block;
+    }
+
+    uint256 BuildMerkleTree() const
+    {
+        vMerkleTree.clear();
+        BOOST_FOREACH(const CTransaction& tx, vtx)
+            vMerkleTree.push_back(tx.GetHash());
+        int j = 0;
+        for (int nSize = vtx.size(); nSize > 1; nSize = (nSize + 1) / 2)
+        {
+            for (int i = 0; i < nSize; i += 2)
+            {
+                int i2 = std::min(i+1, nSize-1);
+                vMerkleTree.push_back(Hash(BEGIN(vMerkleTree[j+i]),  END(vMerkleTree[j+i]),
+                                           BEGIN(vMerkleTree[j+i2]), END(vMerkleTree[j+i2])));
+            }
+            j += nSize;
+        }
+        return (vMerkleTree.empty() ? 0 : vMerkleTree.back());
+    }
+
+    const uint256 &GetTxHash(unsigned int nIndex) const {
+        assert(vMerkleTree.size() > 0); // BuildMerkleTree must have been called first
+        assert(nIndex < vtx.size());
+        return vMerkleTree[nIndex];
+    }
+
+    std::vector<uint256> GetMerkleBranch(int nIndex) const
+    {
+        if (vMerkleTree.empty())
+            BuildMerkleTree();
+        std::vector<uint256> vMerkleBranch;
+        int j = 0;
+        for (int nSize = vtx.size(); nSize > 1; nSize = (nSize + 1) / 2)
+        {
+            int i = std::min(nIndex^1, nSize-1);
+            vMerkleBranch.push_back(vMerkleTree[j+i]);
+            nIndex >>= 1;
+            j += nSize;
+        }
+        return vMerkleBranch;
+    }
+
+    static uint256 CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex)
+    {
+        if (nIndex == -1)
+            return 0;
+        BOOST_FOREACH(const uint256& otherside, vMerkleBranch)
+        {
+            if (nIndex & 1)
+                hash = Hash(BEGIN(otherside), END(otherside), BEGIN(hash), END(hash));
+            else
+                hash = Hash(BEGIN(hash), END(hash), BEGIN(otherside), END(otherside));
+            nIndex >>= 1;
+        }
+        return hash;
+    }
+
+    void print() const
+    {
+        printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%"PRIszu")\n",
+            GetHash().ToString().c_str(),
+            nVersion,
+            hashPrevBlock.ToString().c_str(),
+            hashMerkleRoot.ToString().c_str(),
+            nTime, nBits, nNonce,
+            vtx.size());
+        for (unsigned int i = 0; i < vtx.size(); i++)
+        {
+            printf("  ");
+            vtx[i].print();
+        }
+        printf("  vMerkleTree: ");
+        for (unsigned int i = 0; i < vMerkleTree.size(); i++)
+            printf("%s ", vMerkleTree[i].ToString().c_str());
+        printf("\n");
     }
 };
 
