@@ -2573,7 +2573,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
     <message>
         <location line="-76"/>
         <source>Set the number of script verification threads (up to 16, 0 = auto, &lt;0 = leave that many cores free, default: 0)</source>
-        <translation type="unfinished"/>
+        <translation>設定指令碼驗證的執行緒數目 (最多為 16, 若為 0 表示程式自動決定, 小於 0 表示保留不用的處理器核心數目, 預設為 0)</translation>
     </message>
     <message>
         <location line="+77"/>
