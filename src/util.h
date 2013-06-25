@@ -7,12 +7,12 @@
 
 #include "uint256.h"
 
+#include <stdarg.h>
+
 #ifndef WIN32
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#else
-typedef int pid_t; /* define for Windows compatibility */
 #endif
 #include <map>
 #include <list>
@@ -20,6 +20,7 @@ typedef int pid_t; /* define for Windows compatibility */
 #include <vector>
 #include <string>
 
+#include <boost/version.hpp>
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
@@ -104,7 +105,11 @@ T* alignup(T* p)
 
 inline void MilliSleep(int64 n)
 {
-#if BOOST_VERSION >= 105000
+// Boost's sleep_for was uninterruptable when backed by nanosleep from 1.50
+// until fixed in 1.52. Use the deprecated sleep method for the broken case.
+// See: https://svn.boost.org/trac/boost/ticket/7238
+
+#if BOOST_VERSION >= 105000 && (!defined(BOOST_HAS_NANOSLEEP) || BOOST_VERSION >= 105200)
     boost::this_thread::sleep_for(boost::chrono::milliseconds(n));
 #else
     boost::this_thread::sleep(boost::posix_time::milliseconds(n));
@@ -138,7 +143,6 @@ extern bool fDaemon;
 extern bool fServer;
 extern bool fCommandLine;
 extern std::string strMiscWarning;
-extern bool fTestNet;
 extern bool fNoListen;
 extern bool fLogTimestamps;
 extern volatile bool fReopenDebugLog;
@@ -298,7 +302,8 @@ std::string HexStr(const T itbegin, const T itend, bool fSpaces=false)
     return rv;
 }
 
-inline std::string HexStr(const std::vector<unsigned char>& vch, bool fSpaces=false)
+template<typename T>
+inline std::string HexStr(const T& vch, bool fSpaces=false)
 {
     return HexStr(vch.begin(), vch.end(), fSpaces);
 }
@@ -389,7 +394,7 @@ int64 GetArg(const std::string& strArg, int64 nDefault);
  * @param default (true or false)
  * @return command-line argument or default value
  */
-bool GetBoolArg(const std::string& strArg, bool fDefault=false);
+bool GetBoolArg(const std::string& strArg, bool fDefault);
 
 /**
  * Set an argument if it doesn't already have a value
@@ -487,8 +492,6 @@ public:
     }
 };
 
-bool NewThread(void(*pfn)(void*), void* parg);
-
 #ifdef WIN32
 inline void SetThreadPriority(int nPriority)
 {
@@ -499,7 +502,7 @@ inline void SetThreadPriority(int nPriority)
 #define THREAD_PRIORITY_LOWEST          PRIO_MAX
 #define THREAD_PRIORITY_BELOW_NORMAL    2
 #define THREAD_PRIORITY_NORMAL          0
-#define THREAD_PRIORITY_ABOVE_NORMAL    0
+#define THREAD_PRIORITY_ABOVE_NORMAL    (-2)
 
 inline void SetThreadPriority(int nPriority)
 {
@@ -510,11 +513,6 @@ inline void SetThreadPriority(int nPriority)
 #else
     setpriority(PRIO_PROCESS, 0, nPriority);
 #endif
-}
-
-inline void ExitThread(size_t nExitCode)
-{
-    pthread_exit((void*)nExitCode);
 }
 #endif
 
@@ -529,7 +527,7 @@ inline uint32_t ByteReverse(uint32_t value)
 // Standard wrapper for do-something-forever thread functions.
 // "Forever" really means until the thread is interrupted.
 // Use it like:
-//   new boost::thread(boost::bind(&LoopForever<void (*)()>, "dumpaddr", &DumpAddresses, 10000));
+//   new boost::thread(boost::bind(&LoopForever<void (*)()>, "dumpaddr", &DumpAddresses, 900000));
 // or maybe:
 //    boost::function<void()> f = boost::bind(&FunctionWithArg, argument);
 //    threadGroup.create_thread(boost::bind(&LoopForever<boost::function<void()> >, "nothing", f, milliseconds));
@@ -542,8 +540,8 @@ template <typename Callable> void LoopForever(const char* name,  Callable func, 
     {
         while (1)
         {
-            func();
             MilliSleep(msecs);
+            func();
         }
     }
     catch (boost::thread_interrupted)
