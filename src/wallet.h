@@ -80,6 +80,9 @@ private:
     // the maximum wallet format version: memory-only variable that specifies to what version this wallet may be upgraded
     int nWalletMaxVersion;
 
+    int64 nNextResend;
+    int64 nLastResend;
+
 public:
     mutable CCriticalSection cs_wallet;
 
@@ -101,6 +104,8 @@ public:
         nMasterKeyMaxID = 0;
         pwalletdbEncryption = NULL;
         nOrderPosNext = 0;
+        nNextResend = 0;
+        nLastResend = 0;
     }
     CWallet(std::string strWalletFileIn)
     {
@@ -111,6 +116,8 @@ public:
         nMasterKeyMaxID = 0;
         pwalletdbEncryption = NULL;
         nOrderPosNext = 0;
+        nNextResend = 0;
+        nLastResend = 0;
     }
 
     std::map<uint256, CWalletTx> mapWallet;
@@ -195,7 +202,7 @@ public:
     std::string SendMoneyToDestination(const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
 
     bool NewKeyPool();
-    bool TopUpKeyPool();
+    bool TopUpKeyPool(unsigned int kpSize = 0);
     int64 AddReserveKey(const CKeyPool& keypool);
     void ReserveKeyFromKeyPool(int64& nIndex, CKeyPool& keypool);
     void KeepKey(int64 nIndex);
@@ -292,7 +299,7 @@ public:
         }
     }
 
-    int GetKeyPoolSize()
+    unsigned int GetKeyPoolSize()
     {
         return setKeyPool.size();
     }

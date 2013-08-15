@@ -1,5 +1,3 @@
-#include <QApplication>
-
 #include "guiutil.h"
 
 #include "bitcoinaddressvalidator.h"
@@ -9,6 +7,7 @@
 #include "util.h"
 #include "init.h"
 
+#include <QApplication>
 #include <QDateTime>
 #include <QDoubleValidator>
 #include <QFont>
@@ -24,6 +23,8 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QThread>
+#include <QSettings>
+#include <QDesktopWidget>
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -487,6 +488,29 @@ bool SetStartOnSystemStartup(bool fAutoStart) { return false; }
 
 #endif
 
+void saveWindowGeometry(const QString& strSetting, QWidget *parent)
+{
+    QSettings settings;
+    settings.setValue(strSetting + "Pos", parent->pos());
+    settings.setValue(strSetting + "Size", parent->size());
+}
+
+void restoreWindowGeometry(const QString& strSetting, const QSize& defaultSize, QWidget *parent)
+{
+    QSettings settings;
+    QPoint pos = settings.value(strSetting + "Pos").toPoint();
+    QSize size = settings.value(strSetting + "Size", defaultSize).toSize();
+
+    if (!pos.x() && !pos.y()) {
+        QRect screen = QApplication::desktop()->screenGeometry();
+        pos.setX((screen.width() - size.width()) / 2);
+        pos.setY((screen.height() - size.height()) / 2);
+    }
+
+    parent->resize(size);
+    parent->move(pos);
+}
+
 HelpMessageBox::HelpMessageBox(QWidget *parent) :
     QMessageBox(parent)
 {
@@ -500,7 +524,8 @@ HelpMessageBox::HelpMessageBox(QWidget *parent) :
     uiOptions = tr("UI options") + ":\n" +
         "  -lang=<lang>           " + tr("Set language, for example \"de_DE\" (default: system locale)") + "\n" +
         "  -min                   " + tr("Start minimized") + "\n" +
-        "  -splash                " + tr("Show splash screen on startup (default: 1)") + "\n";
+        "  -splash                " + tr("Show splash screen on startup (default: 1)") + "\n" +
+        "  -choosedatadir         " + tr("Choose data directory on startup (default: 0)") + "\n";
 
     setWindowTitle(tr("Bitcoin-Qt"));
     setTextFormat(Qt::PlainText);
