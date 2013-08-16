@@ -424,6 +424,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     fDebug = GetBoolArg("-debug", false);
     fBenchmark = GetBoolArg("-benchmark", false);
+    mempool.fChecks = GetBoolArg("-checkmempool", RegTest());
 
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = GetArg("-par", 0);
@@ -777,6 +778,7 @@ bool AppInit2(boost::thread_group& threadGroup)
                     break;
                 }
             } catch(std::exception &e) {
+                if (fDebug) printf("%s\n", e.what());
                 strLoadError = _("Error opening block database");
                 break;
             }
