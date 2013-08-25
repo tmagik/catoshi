@@ -12,6 +12,7 @@
 #include "bitcoinrpc.h"
 #include "net.h"
 #include "util.h"
+#include "miner.h"
 #include "ui_interface.h"
 #include "checkpoints.h"
 
@@ -29,6 +30,7 @@
 using namespace std;
 using namespace boost;
 
+std::string strWalletFile;
 CWallet* pwalletMain;
 CClientUIInterface uiInterface;
 
@@ -169,6 +171,7 @@ std::string HelpMessage()
     strUsage += "  -pid=<file>            " + _("Specify pid file (default: bitcoind.pid)") + "\n";
     strUsage += "  -gen                   " + _("Generate coins (default: 0)") + "\n";
     strUsage += "  -datadir=<dir>         " + _("Specify data directory") + "\n";
+    strUsage += "  -wallet=<file>         " + _("Specify wallet file (within data directory)") + "\n";
     strUsage += "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 25)") + "\n";
     strUsage += "  -timeout=<n>           " + _("Specify connection timeout in milliseconds (default: 5000)") + "\n";
     strUsage += "  -proxy=<ip:port>       " + _("Connect through socks proxy") + "\n";
@@ -225,7 +228,7 @@ std::string HelpMessage()
     strUsage += "  -rpcthreads=<n>        " + _("Set the number of threads to service RPC calls (default: 4)") + "\n";
     strUsage += "  -blocknotify=<cmd>     " + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n";
     strUsage += "  -walletnotify=<cmd>    " + _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)") + "\n";
-    strUsage += "  -alertnotify=<cmd>     " + _("Execute command when a relevant alert is received (%s in cmd is replaced by message)") + "\n";
+    strUsage += "  -alertnotify=<cmd>     " + _("Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)") + "\n";
     strUsage += "  -upgradewallet         " + _("Upgrade wallet to latest format") + "\n";
     strUsage += "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n";
     strUsage += "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + "\n";
@@ -370,9 +373,6 @@ bool AppInit2(boost::thread_group& threadGroup)
     // ********************************************************* Step 2: parameter interactions
 
     Checkpoints::fEnabled = GetBoolArg("-checkpoints", true);
-    if (!SelectParamsFromCommandLine()) {
-        return InitError("Invalid combination of -testnet and -regtest.");
-    }
 
     if (mapArgs.count("-bind")) {
         // when specifying an explicit binding address, you want to listen on it
@@ -421,6 +421,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     fDebug = GetBoolArg("-debug", false);
     fBenchmark = GetBoolArg("-benchmark", false);
+    mempool.fChecks = GetBoolArg("-checkmempool", RegTest());
 
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = GetArg("-par", 0);
@@ -493,9 +494,15 @@ bool AppInit2(boost::thread_group& threadGroup)
             InitWarning(_("Warning: -paytxfee is set very high! This is the transaction fee you will pay if you send a transaction."));
     }
 
+    strWalletFile = GetArg("-wallet", "wallet.dat");
+
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
     std::string strDataDir = GetDataDir().string();
+
+    // Wallet file must be a plain filename without a directory
+    if (strWalletFile != boost::filesystem::basename(strWalletFile) + boost::filesystem::extension(strWalletFile))
+        return InitError(strprintf(_("Wallet %s resides outside data directory %s"), strWalletFile.c_str(), strDataDir.c_str()));
 
     // Make sure only a single Bitcoin process is using the data directory.
     boost::filesystem::path pathLockFile = GetDataDir() / ".lock";
@@ -555,13 +562,13 @@ bool AppInit2(boost::thread_group& threadGroup)
     if (GetBoolArg("-salvagewallet", false))
     {
         // Recover readable keypairs:
-        if (!CWalletDB::Recover(bitdb, "wallet.dat", true))
+        if (!CWalletDB::Recover(bitdb, strWalletFile, true))
             return false;
     }
 
-    if (filesystem::exists(GetDataDir() / "wallet.dat"))
+    if (filesystem::exists(GetDataDir() / strWalletFile))
     {
-        CDBEnv::VerifyResult r = bitdb.Verify("wallet.dat", CWalletDB::Recover);
+        CDBEnv::VerifyResult r = bitdb.Verify(strWalletFile, CWalletDB::Recover);
         if (r == CDBEnv::RECOVER_OK)
         {
             string msg = strprintf(_("Warning: wallet.dat corrupt, data salvaged!"
@@ -768,6 +775,7 @@ bool AppInit2(boost::thread_group& threadGroup)
                     break;
                 }
             } catch(std::exception &e) {
+                if (fDebug) printf("%s\n", e.what());
                 strLoadError = _("Error opening block database");
                 break;
             }
@@ -839,7 +847,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     nStart = GetTimeMillis();
     bool fFirstRun = true;
-    pwalletMain = new CWallet("wallet.dat");
+    pwalletMain = new CWallet(strWalletFile);
     DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRun);
     if (nLoadWalletRet != DB_LOAD_OK)
     {
@@ -887,7 +895,7 @@ bool AppInit2(boost::thread_group& threadGroup)
         CPubKey newDefaultKey;
         if (pwalletMain->GetKeyFromPool(newDefaultKey, false)) {
             pwalletMain->SetDefaultKey(newDefaultKey);
-            if (!pwalletMain->SetAddressBookName(pwalletMain->vchDefaultKey.GetID(), ""))
+            if (!pwalletMain->SetAddressBook(pwalletMain->vchDefaultKey.GetID(), "", "receive"))
                 strErrors << _("Cannot write default address") << "\n";
         }
 
@@ -904,7 +912,7 @@ bool AppInit2(boost::thread_group& threadGroup)
         pindexRescan = pindexGenesisBlock;
     else
     {
-        CWalletDB walletdb("wallet.dat");
+        CWalletDB walletdb(strWalletFile);
         CBlockLocator locator;
         if (walletdb.ReadBestBlock(locator))
             pindexRescan = locator.GetBlockIndex();
