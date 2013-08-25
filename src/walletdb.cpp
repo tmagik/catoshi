@@ -5,6 +5,7 @@
 
 #include "walletdb.h"
 #include "wallet.h"
+#include <boost/version.hpp>
 #include <boost/filesystem.hpp>
 
 using namespace std;
@@ -29,6 +30,18 @@ bool CWalletDB::EraseName(const string& strAddress)
     // receiving addresses must always have an address book entry if they're not change return.
     nWalletDBUpdated++;
     return Erase(make_pair(string("name"), strAddress));
+}
+
+bool CWalletDB::WritePurpose(const string& strAddress, const string& strPurpose)
+{
+    nWalletDBUpdated++;
+    return Write(make_pair(string("purpose"), strAddress), strPurpose);
+}
+
+bool CWalletDB::ErasePurpose(const string& strPurpose)
+{
+    nWalletDBUpdated++;
+    return Erase(make_pair(string("purpose"), strPurpose));
 }
 
 bool CWalletDB::ReadAccount(const string& strAccount, CAccount& account)
@@ -72,7 +85,7 @@ void CWalletDB::ListAccountCreditDebit(const string& strAccount, list<CAccountin
     if (!pcursor)
         throw runtime_error("CWalletDB::ListAccountCreditDebit() : cannot create DB cursor");
     unsigned int fFlags = DB_SET_RANGE;
-    loop
+    while (true)
     {
         // Read next record
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);
@@ -211,7 +224,13 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             string strAddress;
             ssKey >> strAddress;
-            ssValue >> pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()];
+            ssValue >> pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()].name;
+        }
+        else if (strType == "purpose")
+        {
+            string strAddress;
+            ssKey >> strAddress;
+            ssValue >> pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()].purpose;
         }
         else if (strType == "tx")
         {
@@ -436,7 +455,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
             return DB_CORRUPT;
         }
 
-        loop
+        while (true)
         {
             // Read next record
             CDataStream ssKey(SER_DISK, CLIENT_VERSION);

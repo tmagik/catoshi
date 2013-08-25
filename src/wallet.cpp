@@ -496,7 +496,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
                         if (GetKeyFromPool(newDefaultKey, false))
                         {
                             SetDefaultKey(newDefaultKey);
-                            SetAddressBookName(vchDefaultKey.GetID(), "");
+                            SetAddressBook(vchDefaultKey.GetID(), "", "receive");
                         }
                     }
                 }
@@ -717,8 +717,8 @@ void CWalletTx::GetAccountAmounts(const string& strAccount, int64& nReceived,
         {
             if (pwallet->mapAddressBook.count(r.first))
             {
-                map<CTxDestination, string>::const_iterator mi = pwallet->mapAddressBook.find(r.first);
-                if (mi != pwallet->mapAddressBook.end() && (*mi).second == strAccount)
+                map<CTxDestination, CAddressBookData>::const_iterator mi = pwallet->mapAddressBook.find(r.first);
+                if (mi != pwallet->mapAddressBook.end() && (*mi).second.name == strAccount)
                     nReceived += r.second;
             }
             else if (strAccount.empty())
@@ -892,19 +892,17 @@ void CWallet::ResendWalletTransactions()
 {
     // Do this infrequently and randomly to avoid giving away
     // that these are our transactions.
-    static int64 nNextTime;
-    if (GetTime() < nNextTime)
+    if (GetTime() < nNextResend)
         return;
-    bool fFirst = (nNextTime == 0);
-    nNextTime = GetTime() + GetRand(30 * 60);
+    bool fFirst = (nNextResend == 0);
+    nNextResend = GetTime() + GetRand(30 * 60);
     if (fFirst)
         return;
 
     // Only do it if there's been a new block since last time
-    static int64 nLastTime;
-    if (nTimeBestReceived < nLastTime)
+    if (nTimeBestReceived < nLastResend)
         return;
-    nLastTime = GetTime();
+    nLastResend = GetTime();
 
     // Rebroadcast any of our txes that aren't in a block yet
     printf("ResendWalletTransactions()\n");
@@ -1196,7 +1194,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
         LOCK2(cs_main, cs_wallet);
         {
             nFeeRet = nTransactionFee;
-            loop
+            while (true)
             {
                 wtxNew.vin.clear();
                 wtxNew.vout.clear();
@@ -1459,25 +1457,27 @@ DBErrors CWallet::LoadWallet(bool& fFirstRunRet)
 }
 
 
-bool CWallet::SetAddressBookName(const CTxDestination& address, const string& strName)
+bool CWallet::SetAddressBook(const CTxDestination& address, const string& strName, const string& strPurpose)
 {
-    std::map<CTxDestination, std::string>::iterator mi = mapAddressBook.find(address);
-    mapAddressBook[address] = strName;
+    std::map<CTxDestination, CAddressBookData>::iterator mi = mapAddressBook.find(address);
+    mapAddressBook[address].name = strName;
     NotifyAddressBookChanged(this, address, strName, ::IsMine(*this, address), (mi == mapAddressBook.end()) ? CT_NEW : CT_UPDATED);
     if (!fFileBacked)
+        return false;
+    if (!strPurpose.empty() && !CWalletDB(strWalletFile).WritePurpose(CBitcoinAddress(address).ToString(), strPurpose))
         return false;
     return CWalletDB(strWalletFile).WriteName(CBitcoinAddress(address).ToString(), strName);
 }
 
-bool CWallet::DelAddressBookName(const CTxDestination& address)
+bool CWallet::DelAddressBook(const CTxDestination& address)
 {
     mapAddressBook.erase(address);
     NotifyAddressBookChanged(this, address, "", ::IsMine(*this, address), CT_DELETED);
     if (!fFileBacked)
         return false;
+    CWalletDB(strWalletFile).ErasePurpose(CBitcoinAddress(address).ToString());
     return CWalletDB(strWalletFile).EraseName(CBitcoinAddress(address).ToString());
 }
-
 
 void CWallet::PrintWallet(const CBlock& block)
 {
@@ -1553,7 +1553,7 @@ bool CWallet::NewKeyPool()
     return true;
 }
 
-bool CWallet::TopUpKeyPool()
+bool CWallet::TopUpKeyPool(unsigned int kpSize)
 {
     {
         LOCK(cs_wallet);
@@ -1564,7 +1564,12 @@ bool CWallet::TopUpKeyPool()
         CWalletDB walletdb(strWalletFile);
 
         // Top up key pool
-        unsigned int nTargetSize = max(GetArg("-keypool", 100), 0LL);
+        unsigned int nTargetSize;
+        if (kpSize > 0)
+            nTargetSize = kpSize;
+        else
+            nTargetSize = max(GetArg("-keypool", 100), 0LL);
+
         while (setKeyPool.size() < (nTargetSize + 1))
         {
             int64 nEnd = 1;
@@ -1807,6 +1812,19 @@ set< set<CTxDestination> > CWallet::GetAddressGroupings()
     }
 
     return ret;
+}
+
+set<CTxDestination> CWallet::GetAccountAddresses(string strAccount) const
+{
+    set<CTxDestination> result;
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, CAddressBookData)& item, mapAddressBook)
+    {
+        const CTxDestination& address = item.first;
+        const string& strName = item.second.name;
+        if (strName == strAccount)
+            result.insert(address);
+    }
+    return result;
 }
 
 bool CReserveKey::GetReservedKey(CPubKey& pubkey)
