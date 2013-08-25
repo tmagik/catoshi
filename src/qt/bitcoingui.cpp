@@ -5,8 +5,6 @@
  * The Bitcoin Developers 2011-2012
  */
 
-#include <QApplication>
-
 #include "bitcoingui.h"
 
 #include "transactiontablemodel.h"
@@ -30,6 +28,7 @@
 #include "macdockiconhandler.h"
 #endif
 
+#include <QApplication>
 #include <QMenuBar>
 #include <QMenu>
 #include <QIcon>
@@ -46,11 +45,10 @@
 #include <QDragEnterEvent>
 #if QT_VERSION < 0x050000
 #include <QUrl>
+#include <QTextDocument>
 #endif
 #include <QMimeData>
 #include <QStyle>
-#include <QSettings>
-#include <QDesktopWidget>
 #include <QListWidget>
 
 #include <iostream>
@@ -68,7 +66,7 @@ BitcoinGUI::BitcoinGUI(bool fIsTestnet, QWidget *parent) :
     rpcConsole(0),
     prevBlocks(0)
 {
-    restoreWindowGeometry();
+    GUIUtil::restoreWindowGeometry("nWindow", QSize(850, 550), this);
 
 #ifndef Q_OS_MAC
     if (!fIsTestnet)
@@ -166,7 +164,7 @@ BitcoinGUI::BitcoinGUI(bool fIsTestnet, QWidget *parent) :
 
 BitcoinGUI::~BitcoinGUI()
 {
-    saveWindowGeometry();
+    GUIUtil::saveWindowGeometry("nWindow", this);
     if(trayIcon) // Hide tray icon, as deleting will let it linger until quit (on Ubuntu)
         trayIcon->hide();
 #ifdef Q_OS_MAC
@@ -424,28 +422,6 @@ void BitcoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
     }
 }
 #endif
-
-void BitcoinGUI::saveWindowGeometry()
-{
-    QSettings settings;
-    settings.setValue("nWindowPos", pos());
-    settings.setValue("nWindowSize", size());
-}
-
-void BitcoinGUI::restoreWindowGeometry()
-{
-    QSettings settings;
-    QPoint pos = settings.value("nWindowPos").toPoint();
-    QSize size = settings.value("nWindowSize", QSize(850, 550)).toSize();
-    if (!pos.x() && !pos.y())
-    {
-        QRect screen = QApplication::desktop()->screenGeometry();
-        pos.setX((screen.width()-size.width())/2);
-        pos.setY((screen.height()-size.height())/2);
-    }
-    resize(size);
-    move(pos);
-}
 
 void BitcoinGUI::optionsClicked()
 {
@@ -732,7 +708,8 @@ void BitcoinGUI::dropEvent(QDropEvent *event)
         QList<QUrl> uris = event->mimeData()->urls();
         foreach(const QUrl &uri, uris)
         {
-            if (walletFrame->handleURI(uri.toString()))
+            SendCoinsRecipient r;
+            if (GUIUtil::parseBitcoinURI(uri, &r) && walletFrame->handlePaymentRequest(r))
                 nValidUrisFound++;
         }
 
@@ -759,12 +736,18 @@ bool BitcoinGUI::eventFilter(QObject *object, QEvent *event)
     return QMainWindow::eventFilter(object, event);
 }
 
-void BitcoinGUI::handleURI(QString strURI)
+void BitcoinGUI::handlePaymentRequest(const SendCoinsRecipient& recipient)
 {
-    // URI has to be valid
-    if (!walletFrame->handleURI(strURI))
-        message(tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters."),
-                  CClientUIInterface::ICON_WARNING);
+    walletFrame->handlePaymentRequest(recipient);
+}
+
+void BitcoinGUI::showPaymentACK(QString msg)
+{
+#if QT_VERSION < 0x050000
+    message(tr("Payment acknowledged"), Qt::escape(msg), CClientUIInterface::MODAL);
+#else
+    message(tr("Payment acknowledged"), msg.toHtmlEscaped(), CClientUIInterface::MODAL);
+#endif
 }
 
 void BitcoinGUI::setEncryptionStatus(int status)

@@ -35,7 +35,6 @@ typedef unsigned long long  uint64;
 static const int64 COIN = 100000000;
 static const int64 CENT = 1000000;
 
-#define loop                for (;;)
 #define BEGIN(a)            ((char*)&(a))
 #define END(a)              ((char*)&((&(a))[1]))
 #define UBEGIN(a)           ((unsigned char*)&(a))
@@ -212,7 +211,9 @@ boost::filesystem::path GetDefaultDataDir();
 const boost::filesystem::path &GetDataDir(bool fNetSpecific = true);
 boost::filesystem::path GetConfigFile();
 boost::filesystem::path GetPidFile();
+#ifndef WIN32
 void CreatePidFile(const boost::filesystem::path &path, pid_t pid);
+#endif
 void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
 #ifdef WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
@@ -439,6 +440,21 @@ static inline uint32_t insecure_rand(void)
  * @param Deterministic Use a determinstic seed
  */
 void seed_insecure_rand(bool fDeterministic=false);
+
+/**
+ * Timing-attack-resistant comparison.
+ * Takes time proportional to length
+ * of first argument.
+ */
+template <typename T>
+bool TimingResistantEqual(const T& a, const T& b)
+{
+    if (b.size() == 0) return a.size() == 0;
+    size_t accumulator = a.size() ^ b.size();
+    for (size_t i = 0; i < a.size(); i++)
+        accumulator |= a[i] ^ b[i%b.size()];
+    return accumulator == 0;
+}
 
 /** Median filter over a stream of values.
  * Returns the median of the last N numbers

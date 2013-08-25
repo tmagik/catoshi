@@ -133,7 +133,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer)
 bool RecvLine(SOCKET hSocket, string& strLine)
 {
     strLine = "";
-    loop
+    while (true)
     {
         char c;
         int nBytes = recv(hSocket, &c, 1, 0);
@@ -305,7 +305,7 @@ bool GetMyExternalIP2(const CService& addrConnect, const char* pszGet, const cha
     {
         if (strLine.empty()) // HTTP response is separated from headers by blank line
         {
-            loop
+            while (true)
             {
                 if (!RecvLine(hSocket, strLine))
                 {
@@ -745,7 +745,7 @@ static list<CNode*> vNodesDisconnected;
 void ThreadSocketHandler()
 {
     unsigned int nPrevNodeCount = 0;
-    loop
+    while (true)
     {
         //
         // Disconnect nodes
@@ -1109,7 +1109,7 @@ void ThreadMapPort()
         string strDesc = "Bitcoin " + FormatFullVersion();
 
         try {
-            loop {
+            while (true) {
 #ifndef UPNPDISCOVER_SUCCESS
                 /* miniupnpc 1.5 */
                 r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
@@ -1272,7 +1272,7 @@ void ThreadOpenConnections()
 
     // Initiate network connections
     int64 nStart = GetTime();
-    loop
+    while (true)
     {
         ProcessOneShot();
 
@@ -1313,7 +1313,7 @@ void ThreadOpenConnections()
         int64 nANow = GetAdjustedTime();
 
         int nTries = 0;
-        loop
+        while (true)
         {
             // use an nUnkBias between 10 (no outgoing connections) and 90 (8 outgoing connections)
             CAddress addr = addrman.Select(10 + min(nOutbound,8)*10);
@@ -1602,7 +1602,11 @@ bool BindListenPort(const CService &addrBind, string& strError)
     // and enable it by default or not. Try to enable it, if possible.
     if (addrBind.IsIPv6()) {
 #ifdef IPV6_V6ONLY
+#ifdef WIN32
+        setsockopt(hListenSocket, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&nOne, sizeof(int));
+#else
         setsockopt(hListenSocket, IPPROTO_IPV6, IPV6_V6ONLY, (void*)&nOne, sizeof(int));
+#endif
 #endif
 #ifdef WIN32
         int nProtLevel = 10 /* PROTECTION_LEVEL_UNRESTRICTED */;
