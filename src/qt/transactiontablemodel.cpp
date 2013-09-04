@@ -20,11 +20,11 @@
 
 // Amount column is right-aligned it contains numbers
 static int column_alignments[] = {
-        Qt::AlignLeft|Qt::AlignVCenter,
-        Qt::AlignLeft|Qt::AlignVCenter,
-        Qt::AlignLeft|Qt::AlignVCenter,
-        Qt::AlignLeft|Qt::AlignVCenter,
-        Qt::AlignRight|Qt::AlignVCenter
+        Qt::AlignLeft|Qt::AlignVCenter, /* status */
+        Qt::AlignLeft|Qt::AlignVCenter, /* date */
+        Qt::AlignLeft|Qt::AlignVCenter, /* type */
+        Qt::AlignLeft|Qt::AlignVCenter, /* address */
+        Qt::AlignRight|Qt::AlignVCenter /* amount */
     };
 
 // Comparison operator for sort/binary search of model tx list
@@ -48,11 +48,12 @@ struct TxLessThan
 class TransactionTablePriv
 {
 public:
-    TransactionTablePriv(CWallet *wallet, TransactionTableModel *parent):
-            wallet(wallet),
-            parent(parent)
+    TransactionTablePriv(CWallet *wallet, TransactionTableModel *parent) :
+        wallet(wallet),
+        parent(parent)
     {
     }
+
     CWallet *wallet;
     TransactionTableModel *parent;
 
@@ -200,19 +201,18 @@ public:
         }
     }
 
-    QString describe(TransactionRecord *rec)
+    QString describe(TransactionRecord *rec, int unit)
     {
         {
             LOCK(wallet->cs_wallet);
             std::map<uint256, CWalletTx>::iterator mi = wallet->mapWallet.find(rec->hash);
             if(mi != wallet->mapWallet.end())
             {
-                return TransactionDesc::toHTML(wallet, mi->second);
+                return TransactionDesc::toHTML(wallet, mi->second, unit);
             }
         }
         return QString("");
     }
-
 };
 
 TransactionTableModel::TransactionTableModel(CWallet* wallet, WalletModel *parent):
@@ -561,7 +561,7 @@ QVariant TransactionTableModel::data(const QModelIndex &index, int role) const
     case DateRole:
         return QDateTime::fromTime_t(static_cast<uint>(rec->time));
     case LongDescriptionRole:
-        return priv->describe(rec);
+        return priv->describe(rec, walletModel->getOptionsModel()->getDisplayUnit());
     case AddressRole:
         return QString::fromStdString(rec->address);
     case LabelRole:

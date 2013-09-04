@@ -493,7 +493,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
                     if (txout.scriptPubKey == scriptDefaultKey)
                     {
                         CPubKey newDefaultKey;
-                        if (GetKeyFromPool(newDefaultKey, false))
+                        if (GetKeyFromPool(newDefaultKey))
                         {
                             SetDefaultKey(newDefaultKey);
                             SetAddressBook(vchDefaultKey.GetID(), "", "receive");
@@ -1461,7 +1461,11 @@ bool CWallet::SetAddressBook(const CTxDestination& address, const string& strNam
 {
     std::map<CTxDestination, CAddressBookData>::iterator mi = mapAddressBook.find(address);
     mapAddressBook[address].name = strName;
-    NotifyAddressBookChanged(this, address, strName, ::IsMine(*this, address), (mi == mapAddressBook.end()) ? CT_NEW : CT_UPDATED);
+    if (!strPurpose.empty()) /* update purpose only if requested */
+        mapAddressBook[address].purpose = strPurpose;
+    NotifyAddressBookChanged(this, address, strName, ::IsMine(*this, address),
+            mapAddressBook[address].purpose,
+            (mi == mapAddressBook.end()) ?  CT_NEW : CT_UPDATED);
     if (!fFileBacked)
         return false;
     if (!strPurpose.empty() && !CWalletDB(strWalletFile).WritePurpose(CBitcoinAddress(address).ToString(), strPurpose))
@@ -1472,7 +1476,7 @@ bool CWallet::SetAddressBook(const CTxDestination& address, const string& strNam
 bool CWallet::DelAddressBook(const CTxDestination& address)
 {
     mapAddressBook.erase(address);
-    NotifyAddressBookChanged(this, address, "", ::IsMine(*this, address), CT_DELETED);
+    NotifyAddressBookChanged(this, address, "", ::IsMine(*this, address), "", CT_DELETED);
     if (!fFileBacked)
         return false;
     CWalletDB(strWalletFile).ErasePurpose(CBitcoinAddress(address).ToString());
@@ -1647,7 +1651,7 @@ void CWallet::ReturnKey(int64 nIndex)
     printf("keypool return %"PRI64d"\n", nIndex);
 }
 
-bool CWallet::GetKeyFromPool(CPubKey& result, bool fAllowReuse)
+bool CWallet::GetKeyFromPool(CPubKey& result)
 {
     int64 nIndex = 0;
     CKeyPool keypool;
@@ -1656,11 +1660,6 @@ bool CWallet::GetKeyFromPool(CPubKey& result, bool fAllowReuse)
         ReserveKeyFromKeyPool(nIndex, keypool);
         if (nIndex == -1)
         {
-            if (fAllowReuse && vchDefaultKey.IsValid())
-            {
-                result = vchDefaultKey;
-                return true;
-            }
             if (IsLocked()) return false;
             result = GenerateNewKey();
             return true;

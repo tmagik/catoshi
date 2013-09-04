@@ -220,7 +220,7 @@ public:
     void ReserveKeyFromKeyPool(int64& nIndex, CKeyPool& keypool);
     void KeepKey(int64 nIndex);
     void ReturnKey(int64 nIndex);
-    bool GetKeyFromPool(CPubKey &key, bool fAllowReuse=true);
+    bool GetKeyFromPool(CPubKey &key);
     int64 GetOldestKeyPoolTime();
     void GetAllReserveKeys(std::set<CKeyID>& setAddress) const;
 
@@ -335,12 +335,16 @@ public:
     /** Address book entry changed.
      * @note called with lock cs_wallet held.
      */
-    boost::signals2::signal<void (CWallet *wallet, const CTxDestination &address, const std::string &label, bool isMine, ChangeType status)> NotifyAddressBookChanged;
+    boost::signals2::signal<void (CWallet *wallet, const CTxDestination
+            &address, const std::string &label, bool isMine,
+            const std::string &purpose,
+            ChangeType status)> NotifyAddressBookChanged;
 
     /** Wallet transaction added, removed or updated.
      * @note called with lock cs_wallet held.
      */
-    boost::signals2::signal<void (CWallet *wallet, const uint256 &hashTx, ChangeType status)> NotifyTransactionChanged;
+    boost::signals2::signal<void (CWallet *wallet, const uint256 &hashTx,
+            ChangeType status)> NotifyTransactionChanged;
 };
 
 /** A key allocated from the key pool. */
