@@ -110,7 +110,7 @@ Value getnewaddress(const Array& params, bool fHelp)
 
     // Generate a new key that is added to wallet
     CPubKey newKey;
-    if (!pwalletMain->GetKeyFromPool(newKey, false))
+    if (!pwalletMain->GetKeyFromPool(newKey))
         throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
     CKeyID keyID = newKey.GetID();
 
@@ -148,7 +148,7 @@ CBitcoinAddress GetAccountAddress(string strAccount, bool bForceNew=false)
     // Generate a new key
     if (!account.vchPubKey.IsValid() || bForceNew || bKeyUsed)
     {
-        if (!pwalletMain->GetKeyFromPool(account.vchPubKey, false))
+        if (!pwalletMain->GetKeyFromPool(account.vchPubKey))
             throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
 
         pwalletMain->SetAddressBook(account.vchPubKey.GetID(), strAccount, "receive");
@@ -175,6 +175,29 @@ Value getaccountaddress(const Array& params, bool fHelp)
     return ret;
 }
 
+
+Value getrawchangeaddress(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "getrawchangeaddress\n"
+            "Returns a new Bitcoin address, for receiving change.  "
+            "This is for use with raw transactions, NOT normal use.");
+
+    if (!pwalletMain->IsLocked())
+        pwalletMain->TopUpKeyPool();
+
+    CReserveKey reservekey(pwalletMain);
+    CPubKey vchPubKey;
+    if (!reservekey.GetReservedKey(vchPubKey))
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Unable to obtain key for change");
+
+    reservekey.KeepKey();
+
+    CKeyID keyID = vchPubKey.GetID();
+
+    return CBitcoinAddress(keyID).ToString();
+}
 
 
 Value setaccount(const Array& params, bool fHelp)
