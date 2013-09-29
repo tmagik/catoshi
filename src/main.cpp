@@ -67,9 +67,6 @@ CScript COINBASE_FLAGS;
 
 const string strMessageMagic = "Bitcoin Signed Message:\n";
 
-double dHashesPerSec = 0.0;
-int64 nHPSTimerStart = 0;
-
 // Settings
 int64 nTransactionFee = 0;
 
@@ -787,7 +784,7 @@ void CTxMemPool::pruneSpent(const uint256 &hashTx, CCoins &coins)
 }
 
 bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fLimitFree,
-                        bool* pfMissingInputs)
+                        bool* pfMissingInputs, bool fRejectInsaneFee)
 {
     if (pfMissingInputs)
         *pfMissingInputs = false;
@@ -920,6 +917,11 @@ bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fL
                 LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
             dFreeCount += nSize;
         }
+
+        if (fRejectInsaneFee && nFees > CTransaction::nMinRelayTxFee * 10000)
+            return error("CTxMemPool::accept() : insane fees %s, %"PRI64d" > %"PRI64d,
+                         hash.ToString().c_str(),
+                         nFees, CTransaction::nMinRelayTxFee * 10000);
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
@@ -1776,6 +1778,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
             view.SetCoins(hash, CCoins());
         }
         CCoins &outs = view.GetCoins(hash);
+        outs.ClearUnspendable();
 
         CCoins outsBlock = CCoins(tx, pindex->nHeight);
         // The CCoins serialization does not serialize negative numbers.

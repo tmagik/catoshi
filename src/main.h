@@ -86,8 +86,6 @@ extern unsigned int nTransactionsUpdated;
 extern uint64 nLastBlockTx;
 extern uint64 nLastBlockSize;
 extern const std::string strMessageMagic;
-extern double dHashesPerSec;
-extern int64 nHPSTimerStart;
 extern int64 nTimeBestReceived;
 extern CCriticalSection cs_setpwalletRegistered;
 extern std::set<CWallet*> setpwalletRegistered;
@@ -655,7 +653,7 @@ public:
          if (nBlocks==0 || nTimeFirst > nTimeIn)
              nTimeFirst = nTimeIn;
          nBlocks++;
-         if (nHeightIn > nHeightFirst)
+         if (nHeightIn > nHeightLast)
              nHeightLast = nHeightIn;
          if (nTimeIn > nTimeLast)
              nTimeLast = nTimeIn;
@@ -1086,7 +1084,7 @@ public:
     std::map<uint256, CTransaction> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
 
-    bool accept(CValidationState &state, const CTransaction &tx, bool fLimitFree, bool* pfMissingInputs);
+    bool accept(CValidationState &state, const CTransaction &tx, bool fLimitFree, bool* pfMissingInputs, bool fRejectInsaneFee = false);
     bool addUnchecked(const uint256& hash, const CTransaction &tx);
     bool remove(const CTransaction &tx, bool fRecursive = false);
     bool removeConflicts(const CTransaction &tx);
@@ -1214,7 +1212,7 @@ public:
         @see CTransaction::FetchInputs
      */
     int64 GetValueIn(const CTransaction& tx);
-    
+
     // Check whether all prevouts of the transaction are present in the UTXO set represented by this view
     bool HaveInputs(const CTransaction& tx);
 
