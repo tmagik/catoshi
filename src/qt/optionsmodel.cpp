@@ -1,3 +1,7 @@
+#if defined(HAVE_CONFIG_H)
+#include "bitcoin-config.h"
+#endif
+
 #include "optionsmodel.h"
 
 #include "bitcoinunits.h"
@@ -289,4 +293,15 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
 qint64 OptionsModel::getTransactionFee()
 {
     return nTransactionFee;
+}
+
+bool OptionsModel::getProxySettings(QString& proxyIP, quint16 &proxyPort) const
+{
+    std::string proxy = GetArg("-proxy", "");
+    if (proxy.empty()) return false;
+
+    CService addrProxy(proxy);
+    proxyIP = QString(addrProxy.ToStringIP().c_str());
+    proxyPort = addrProxy.GetPort();
+    return true;
 }

@@ -3,6 +3,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#if defined(HAVE_CONFIG_H)
+#include "bitcoin-config.h"
+#endif
+
 #include "init.h"
 #include "main.h"
 #include "core.h"
@@ -228,7 +232,7 @@ std::string HelpMessage()
     strUsage += "  -rpcthreads=<n>        " + _("Set the number of threads to service RPC calls (default: 4)") + "\n";
     strUsage += "  -blocknotify=<cmd>     " + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n";
     strUsage += "  -walletnotify=<cmd>    " + _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)") + "\n";
-    strUsage += "  -alertnotify=<cmd>     " + _("Execute command when a relevant alert is received (%s in cmd is replaced by message)") + "\n";
+    strUsage += "  -alertnotify=<cmd>     " + _("Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)") + "\n";
     strUsage += "  -upgradewallet         " + _("Upgrade wallet to latest format") + "\n";
     strUsage += "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n";
     strUsage += "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + "\n";
@@ -280,13 +284,13 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
             FILE *file = OpenBlockFile(pos, true);
             if (!file)
                 break;
-            printf("Reindexing block file blk%05u.dat...\n", (unsigned int)nFile);
+            LogPrintf("Reindexing block file blk%05u.dat...\n", (unsigned int)nFile);
             LoadExternalBlockFile(file, &pos);
             nFile++;
         }
         pblocktree->WriteReindexing(false);
         fReindex = false;
-        printf("Reindexing finished\n");
+        LogPrintf("Reindexing finished\n");
         // To avoid ending up in a situation without genesis block, re-try initializing (no-op if reindexing worked):
         InitBlockIndex();
     }
@@ -298,7 +302,7 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
         if (file) {
             CImportingNow imp;
             filesystem::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
-            printf("Importing bootstrap.dat...\n");
+            LogPrintf("Importing bootstrap.dat...\n");
             LoadExternalBlockFile(file);
             RenameOver(pathBootstrap, pathBootstrapOld);
         }
@@ -309,7 +313,7 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
         FILE *file = fopen(path.string().c_str(), "rb");
         if (file) {
             CImportingNow imp;
-            printf("Importing %s...\n", path.string().c_str());
+            LogPrintf("Importing %s...\n", path.string().c_str());
             LoadExternalBlockFile(file);
         }
     }
@@ -335,8 +339,8 @@ bool AppInit2(boost::thread_group& threadGroup)
     // Minimum supported OS versions: WinXP SP3, WinVista >= SP1, Win Server 2008
     // A failure is non-critical and needs no further attention!
 #ifndef PROCESS_DEP_ENABLE
-// We define this here, because GCCs winbase.h limits this to _WIN32_WINNT >= 0x0601 (Windows 7),
-// which is not correct. Can be removed, when GCCs winbase.h is fixed!
+    // We define this here, because GCCs winbase.h limits this to _WIN32_WINNT >= 0x0601 (Windows 7),
+    // which is not correct. Can be removed, when GCCs winbase.h is fixed!
 #define PROCESS_DEP_ENABLE 0x00000001
 #endif
     typedef BOOL (WINAPI *PSETPROCDEPPOL)(DWORD);
@@ -368,14 +372,14 @@ bool AppInit2(boost::thread_group& threadGroup)
     sigemptyset(&sa_hup.sa_mask);
     sa_hup.sa_flags = 0;
     sigaction(SIGHUP, &sa_hup, NULL);
+
+#if defined (__SVR4) && defined (__sun)
+    // ignore SIGPIPE on Solaris
+    signal(SIGPIPE, SIG_IGN);
+#endif
 #endif
 
     // ********************************************************* Step 2: parameter interactions
-
-    Checkpoints::fEnabled = GetBoolArg("-checkpoints", true);
-    if (!SelectParamsFromCommandLine()) {
-        return InitError("Invalid combination of -testnet and -regtest.");
-    }
 
     if (mapArgs.count("-bind")) {
         // when specifying an explicit binding address, you want to listen on it
@@ -422,8 +426,10 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     // ********************************************************* Step 3: parameter-to-internal-flags
 
-    fDebug = GetBoolArg("-debug", false);
+    if (mapMultiArgs.count("-debug")) fDebug = true;
     fBenchmark = GetBoolArg("-benchmark", false);
+    mempool.fChecks = GetBoolArg("-checkmempool", RegTest());
+    Checkpoints::fEnabled = GetBoolArg("-checkpoints", true);
 
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = GetArg("-par", 0);
@@ -516,21 +522,21 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     if (GetBoolArg("-shrinkdebugfile", !fDebug))
         ShrinkDebugFile();
-    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    printf("Bitcoin version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
-    printf("Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
+    LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    LogPrintf("Bitcoin version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
+    LogPrintf("Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
     if (!fLogTimestamps)
-        printf("Startup time: %s\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()).c_str());
-    printf("Default data directory %s\n", GetDefaultDataDir().string().c_str());
-    printf("Using data directory %s\n", strDataDir.c_str());
-    printf("Using at most %i connections (%i file descriptors available)\n", nMaxConnections, nFD);
+        LogPrintf("Startup time: %s\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()).c_str());
+    LogPrintf("Default data directory %s\n", GetDefaultDataDir().string().c_str());
+    LogPrintf("Using data directory %s\n", strDataDir.c_str());
+    LogPrintf("Using at most %i connections (%i file descriptors available)\n", nMaxConnections, nFD);
     std::ostringstream strErrors;
 
     if (fDaemon)
         fprintf(stdout, "Bitcoin server starting\n");
 
     if (nScriptCheckThreads) {
-        printf("Using %u threads for script verification\n", nScriptCheckThreads);
+        LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
         for (int i=0; i<nScriptCheckThreads-1; i++)
             threadGroup.create_thread(&ThreadScriptCheck);
     }
@@ -548,7 +554,7 @@ bool AppInit2(boost::thread_group& threadGroup)
         boost::filesystem::path pathDatabaseBak = GetDataDir() / strprintf("database.%"PRI64d".bak", GetTime());
         try {
             boost::filesystem::rename(pathDatabase, pathDatabaseBak);
-            printf("Moved old %s to %s. Retrying.\n", pathDatabase.string().c_str(), pathDatabaseBak.string().c_str());
+            LogPrintf("Moved old %s to %s. Retrying.\n", pathDatabase.string().c_str(), pathDatabaseBak.string().c_str());
         } catch(boost::filesystem::filesystem_error &error) {
              // failure is ok (well, not really, but it's not worse than what we started with)
         }
@@ -699,12 +705,12 @@ bool AppInit2(boost::thread_group& threadGroup)
             filesystem::path dest = blocksDir / strprintf("blk%05u.dat", i-1);
             try {
                 filesystem::create_hard_link(source, dest);
-                printf("Hardlinked %s -> %s\n", source.string().c_str(), dest.string().c_str());
+                LogPrintf("Hardlinked %s -> %s\n", source.string().c_str(), dest.string().c_str());
                 linked = true;
             } catch (filesystem::filesystem_error & e) {
                 // Note: hardlink creation failing is not a disaster, it just means
                 // blocks will get re-downloaded from peers.
-                printf("Error hardlinking blk%04u.dat : %s\n", i, e.what());
+                LogPrintf("Error hardlinking blk%04u.dat : %s\n", i, e.what());
                 break;
             }
         }
@@ -772,11 +778,12 @@ bool AppInit2(boost::thread_group& threadGroup)
 
                 uiInterface.InitMessage(_("Verifying blocks..."));
                 if (!VerifyDB(GetArg("-checklevel", 3),
-                              GetArg( "-checkblocks", 288))) {
+                              GetArg("-checkblocks", 288))) {
                     strLoadError = _("Corrupted block database detected");
                     break;
                 }
             } catch(std::exception &e) {
+                if (fDebug) LogPrintf("%s\n", e.what());
                 strLoadError = _("Error opening block database");
                 break;
             }
@@ -794,7 +801,7 @@ bool AppInit2(boost::thread_group& threadGroup)
                     fReindex = true;
                     fRequestShutdown = false;
                 } else {
-                    printf("Aborted block database rebuild. Exiting.\n");
+                    LogPrintf("Aborted block database rebuild. Exiting.\n");
                     return false;
                 }
             } else {
@@ -808,10 +815,10 @@ bool AppInit2(boost::thread_group& threadGroup)
     // As the program has not fully started yet, Shutdown() is possibly overkill.
     if (fRequestShutdown)
     {
-        printf("Shutdown requested. Exiting.\n");
+        LogPrintf("Shutdown requested. Exiting.\n");
         return false;
     }
-    printf(" block index %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+    LogPrintf(" block index %15"PRI64d"ms\n", GetTimeMillis() - nStart);
 
     if (GetBoolArg("-printblockindex", false) || GetBoolArg("-printblocktree", false))
     {
@@ -833,12 +840,12 @@ bool AppInit2(boost::thread_group& threadGroup)
                 ReadBlockFromDisk(block, pindex);
                 block.BuildMerkleTree();
                 block.print();
-                printf("\n");
+                LogPrintf("\n");
                 nFound++;
             }
         }
         if (nFound == 0)
-            printf("No blocks matching %s were found\n", strMatch.c_str());
+            LogPrintf("No blocks matching %s were found\n", strMatch.c_str());
         return false;
     }
 
@@ -865,7 +872,7 @@ bool AppInit2(boost::thread_group& threadGroup)
         else if (nLoadWalletRet == DB_NEED_REWRITE)
         {
             strErrors << _("Wallet needed to be rewritten: restart Bitcoin to complete") << "\n";
-            printf("%s", strErrors.str().c_str());
+            LogPrintf("%s", strErrors.str().c_str());
             return InitError(strErrors.str());
         }
         else
@@ -877,12 +884,12 @@ bool AppInit2(boost::thread_group& threadGroup)
         int nMaxVersion = GetArg("-upgradewallet", 0);
         if (nMaxVersion == 0) // the -upgradewallet without argument case
         {
-            printf("Performing wallet upgrade to %i\n", FEATURE_LATEST);
+            LogPrintf("Performing wallet upgrade to %i\n", FEATURE_LATEST);
             nMaxVersion = CLIENT_VERSION;
             pwalletMain->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
         }
         else
-            printf("Allowing wallet upgrade up to %i\n", nMaxVersion);
+            LogPrintf("Allowing wallet upgrade up to %i\n", nMaxVersion);
         if (nMaxVersion < pwalletMain->GetVersion())
             strErrors << _("Cannot downgrade wallet") << "\n";
         pwalletMain->SetMaxVersion(nMaxVersion);
@@ -894,17 +901,17 @@ bool AppInit2(boost::thread_group& threadGroup)
         RandAddSeedPerfmon();
 
         CPubKey newDefaultKey;
-        if (pwalletMain->GetKeyFromPool(newDefaultKey, false)) {
+        if (pwalletMain->GetKeyFromPool(newDefaultKey)) {
             pwalletMain->SetDefaultKey(newDefaultKey);
-            if (!pwalletMain->SetAddressBookName(pwalletMain->vchDefaultKey.GetID(), ""))
+            if (!pwalletMain->SetAddressBook(pwalletMain->vchDefaultKey.GetID(), "", "receive"))
                 strErrors << _("Cannot write default address") << "\n";
         }
 
         pwalletMain->SetBestChain(CBlockLocator(pindexBest));
     }
 
-    printf("%s", strErrors.str().c_str());
-    printf(" wallet      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+    LogPrintf("%s", strErrors.str().c_str());
+    LogPrintf(" wallet      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
 
     RegisterWallet(pwalletMain);
 
@@ -923,10 +930,10 @@ bool AppInit2(boost::thread_group& threadGroup)
     if (pindexBest && pindexBest != pindexRescan)
     {
         uiInterface.InitMessage(_("Rescanning..."));
-        printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
+        LogPrintf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
         nStart = GetTimeMillis();
         pwalletMain->ScanForWalletTransactions(pindexRescan, true);
-        printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+        LogPrintf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
         pwalletMain->SetBestChain(CBlockLocator(pindexBest));
         nWalletDBUpdated++;
     }
@@ -955,10 +962,10 @@ bool AppInit2(boost::thread_group& threadGroup)
     {
         CAddrDB adb;
         if (!adb.Read(addrman))
-            printf("Invalid or missing peers.dat; recreating\n");
+            LogPrintf("Invalid or missing peers.dat; recreating\n");
     }
 
-    printf("Loaded %i addresses from peers.dat  %"PRI64d"ms\n",
+    LogPrintf("Loaded %i addresses from peers.dat  %"PRI64d"ms\n",
            addrman.size(), GetTimeMillis() - nStart);
 
     // ********************************************************* Step 11: start node
@@ -972,11 +979,11 @@ bool AppInit2(boost::thread_group& threadGroup)
     RandAddSeedPerfmon();
 
     //// debug print
-    printf("mapBlockIndex.size() = %"PRIszu"\n",   mapBlockIndex.size());
-    printf("nBestHeight = %d\n",                   nBestHeight);
-    printf("setKeyPool.size() = %"PRIszu"\n",      pwalletMain->setKeyPool.size());
-    printf("mapWallet.size() = %"PRIszu"\n",       pwalletMain->mapWallet.size());
-    printf("mapAddressBook.size() = %"PRIszu"\n",  pwalletMain->mapAddressBook.size());
+    LogPrintf("mapBlockIndex.size() = %"PRIszu"\n",   mapBlockIndex.size());
+    LogPrintf("nBestHeight = %d\n",                   nBestHeight);
+    LogPrintf("setKeyPool.size() = %"PRIszu"\n",      pwalletMain->setKeyPool.size());
+    LogPrintf("mapWallet.size() = %"PRIszu"\n",       pwalletMain->mapWallet.size());
+    LogPrintf("mapAddressBook.size() = %"PRIszu"\n",  pwalletMain->mapAddressBook.size());
 
     StartNode(threadGroup);
 
