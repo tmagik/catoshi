@@ -157,6 +157,8 @@ BitcoinGUI::BitcoinGUI(bool fIsTestnet, QWidget *parent) :
 
     rpcConsole = new RPCConsole(this);
     connect(openRPCConsoleAction, SIGNAL(triggered()), rpcConsole, SLOT(show()));
+    // prevents an oben debug window from becoming stuck/unusable on client shutdown
+    connect(quitAction, SIGNAL(triggered()), rpcConsole, SLOT(hide()));
 
     // Install event filter to be able to catch status tip events (QEvent::StatusTip)
     this->installEventFilter(this);
@@ -233,7 +235,11 @@ void BitcoinGUI::createActions(bool fIsTestnet)
         aboutAction = new QAction(QIcon(":/icons/bitcoin_testnet"), tr("&About Bitcoin"), this);
     aboutAction->setStatusTip(tr("Show information about Bitcoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
+#if QT_VERSION < 0x050000
     aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
+#else
+    aboutQtAction = new QAction(QIcon(":/qt-project.org/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
+#endif	
     aboutQtAction->setStatusTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
