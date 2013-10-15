@@ -298,8 +298,15 @@ public:
     }
 
 private:
+    // Network usage totals
+    static CCriticalSection cs_totalBytesRecv;
+    static CCriticalSection cs_totalBytesSent;
+    static uint64 nTotalBytesRecv;
+    static uint64 nTotalBytesSent;
+
     CNode(const CNode&);
     void operator=(const CNode&);
+
 public:
 
 
@@ -313,7 +320,7 @@ public:
     unsigned int GetTotalRecvSize()
     {
         unsigned int total = 0;
-        BOOST_FOREACH(const CNetMessage &msg, vRecvMsg) 
+        BOOST_FOREACH(const CNetMessage &msg, vRecvMsg)
             total += msg.vRecv.size() + 24;
         return total;
     }
@@ -646,6 +653,13 @@ public:
     static bool IsBanned(CNetAddr ip);
     bool Misbehaving(int howmuch); // 1 == a little, 100 == a lot
     void copyStats(CNodeStats &stats);
+
+    // Network stats
+    static void RecordBytesRecv(uint64 bytes);
+    static void RecordBytesSent(uint64 bytes);
+
+    static uint64 GetTotalBytesRecv();
+    static uint64 GetTotalBytesSent();
 };
 
 
