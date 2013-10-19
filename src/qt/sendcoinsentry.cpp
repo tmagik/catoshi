@@ -60,12 +60,7 @@ void SendCoinsEntry::on_addressBookButton_clicked()
 
 void SendCoinsEntry::on_payTo_textChanged(const QString &address)
 {
-    if(!model)
-        return;
-    // Fill in label from address book, if address has an associated label
-    QString associatedLabel = model->getAddressTableModel()->labelForAddress(address);
-    if(!associatedLabel.isEmpty())
-        ui->addAsLabel->setText(associatedLabel);
+    updateLabel(address);
 }
 
 void SendCoinsEntry::setModel(WalletModel *model)
@@ -85,10 +80,17 @@ void SendCoinsEntry::setRemoveEnabled(bool enabled)
 
 void SendCoinsEntry::clear()
 {
+    // clear UI elements for insecure payments
     ui->payTo->clear();
     ui->addAsLabel->clear();
     ui->payAmount->clear();
+    // and the ones for secure payments just to be sure
+    ui->payTo_s->clear();
+    ui->memoTextLabel_s->clear();
+    ui->payAmount_s->clear();
+
     ui->payTo->setFocus();
+
     // update the display unit, to not use the default ("BTC")
     updateDisplayUnit();
 }
@@ -154,17 +156,20 @@ void SendCoinsEntry::setValue(const SendCoinsRecipient &value)
 {
     recipient = value;
 
-    ui->payTo->setText(value.address);
-    ui->addAsLabel->setText(value.label);
-    ui->payAmount->setValue(value.amount);
-
-    if (!recipient.authenticatedMerchant.isEmpty())
+    if (recipient.authenticatedMerchant.isEmpty())
     {
-        const payments::PaymentDetails& details = value.paymentRequest.getDetails();
+        ui->payTo->setText(recipient.address);
+        ui->addAsLabel->setText(recipient.label);
+        ui->payAmount->setValue(recipient.amount);
+    }
+    else
+    {
+        const payments::PaymentDetails& details = recipient.paymentRequest.getDetails();
 
-        ui->payTo_s->setText(value.authenticatedMerchant);
+        ui->payTo_s->setText(recipient.authenticatedMerchant);
         ui->memoTextLabel_s->setText(QString::fromStdString(details.memo()));
-        ui->payAmount_s->setValue(value.amount);
+        ui->payAmount_s->setValue(recipient.amount);
+        ui->payAmount_s->setReadOnly(true);
         setCurrentWidget(ui->SendCoinsSecure);
     }
 }
@@ -193,4 +198,20 @@ void SendCoinsEntry::updateDisplayUnit()
         ui->payAmount->setDisplayUnit(model->getOptionsModel()->getDisplayUnit());
         ui->payAmount_s->setDisplayUnit(model->getOptionsModel()->getDisplayUnit());
     }
+}
+
+bool SendCoinsEntry::updateLabel(const QString &address)
+{
+    if(!model)
+        return false;
+
+    // Fill in label from address book, if address has an associated label
+    QString associatedLabel = model->getAddressTableModel()->labelForAddress(address);
+    if(!associatedLabel.isEmpty())
+    {
+        ui->addAsLabel->setText(associatedLabel);
+        return true;
+    }
+
+    return false;
 }

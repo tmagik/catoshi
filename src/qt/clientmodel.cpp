@@ -42,7 +42,7 @@ int ClientModel::getNumConnections() const
 
 int ClientModel::getNumBlocks() const
 {
-    return nBestHeight;
+    return chainActive.Height();
 }
 
 int ClientModel::getNumBlocksAtStartup()
@@ -51,19 +51,27 @@ int ClientModel::getNumBlocksAtStartup()
     return numBlocksAtStartup;
 }
 
+quint64 ClientModel::getTotalBytesRecv() const
+{
+    return CNode::GetTotalBytesRecv();
+}
+
+quint64 ClientModel::getTotalBytesSent() const
+{
+    return CNode::GetTotalBytesSent();
+}
+
 QDateTime ClientModel::getLastBlockDate() const
 {
-    if (pindexBest)
-        return QDateTime::fromTime_t(pindexBest->GetBlockTime());
-    else if(!isTestNet())
-        return QDateTime::fromTime_t(1231006505); // Genesis block's time
+    if (chainActive.Tip())
+        return QDateTime::fromTime_t(chainActive.Tip()->GetBlockTime());
     else
-        return QDateTime::fromTime_t(1296688602); // Genesis block's time (testnet)
+        return QDateTime::fromTime_t(Params().GenesisBlock().nTime); // Genesis block's time of current network
 }
 
 double ClientModel::getVerificationProgress() const
 {
-    return Checkpoints::GuessVerificationProgress(pindexBest);
+    return Checkpoints::GuessVerificationProgress(chainActive.Tip());
 }
 
 void ClientModel::updateTimer()
@@ -85,6 +93,8 @@ void ClientModel::updateTimer()
         // ensure we return the maximum of newNumBlocksOfPeers and newNumBlocks to not create weird displays in the GUI
         emit numBlocksChanged(newNumBlocks, std::max(newNumBlocksOfPeers, newNumBlocks));
     }
+
+    emit bytesChanged(getTotalBytesRecv(), getTotalBytesSent());
 }
 
 void ClientModel::updateNumConnections(int numConnections)
