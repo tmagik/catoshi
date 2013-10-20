@@ -7,6 +7,7 @@
 #include "base58.h"
 
 #include <QFont>
+#include <QDebug>
 
 const QString AddressTableModel::Send = "S";
 const QString AddressTableModel::Receive = "R";
@@ -15,7 +16,8 @@ struct AddressTableEntry
 {
     enum Type {
         Sending,
-        Receiving
+        Receiving,
+        Hidden /* QSortFilterProxyModel will filter these out */
     };
 
     Type type;
@@ -43,6 +45,20 @@ struct AddressTableEntryLessThan
     }
 };
 
+/* Determine address type from address purpose */
+static AddressTableEntry::Type translateTransactionType(const QString &strPurpose, bool isMine)
+{
+    AddressTableEntry::Type addressType = AddressTableEntry::Hidden;
+    // "refund" addresses aren't shown, and change addresses aren't in mapAddressBook at all.
+    if (strPurpose == "send")
+        addressType = AddressTableEntry::Sending;
+    else if (strPurpose == "receive")
+        addressType = AddressTableEntry::Receiving;
+    else if (strPurpose == "unknown" || strPurpose == "") // if purpose not set, guess
+        addressType = (isMine ? AddressTableEntry::Receiving : AddressTableEntry::Sending);
+    return addressType;
+}
+
 // Private implementation
 class AddressTablePriv
 {
@@ -62,17 +78,9 @@ public:
             BOOST_FOREACH(const PAIRTYPE(CTxDestination, CAddressBookData)& item, wallet->mapAddressBook)
             {
                 const CBitcoinAddress& address = item.first;
-
-                AddressTableEntry::Type addressType;
-                const std::string& strPurpose = item.second.purpose;
-                if (strPurpose == "send") addressType = AddressTableEntry::Sending;
-                else if (strPurpose == "receive") addressType = AddressTableEntry::Receiving;
-                else if (strPurpose == "unknown") {
-                    bool fMine = IsMine(*wallet, address.Get());
-                    addressType = (fMine ? AddressTableEntry::Receiving : AddressTableEntry::Sending);
-                }
-                else continue; // "refund" addresses aren't shown, and change addresses aren't in mapAddressBook at all.
-
+                bool fMine = IsMine(*wallet, address.Get());
+                AddressTableEntry::Type addressType = translateTransactionType(
+                        QString::fromStdString(item.second.purpose), fMine);
                 const std::string& strName = item.second.name;
                 cachedAddressTable.append(AddressTableEntry(addressType,
                                   QString::fromStdString(strName),
@@ -80,10 +88,12 @@ public:
             }
         }
         // qLowerBound() and qUpperBound() require our cachedAddressTable list to be sorted in asc order
+        // Even though the map is already sorted this re-sorting step is needed because the originating map
+        // is sorted by binary address, not by base58() address.
         qSort(cachedAddressTable.begin(), cachedAddressTable.end(), AddressTableEntryLessThan());
     }
 
-    void updateEntry(const QString &address, const QString &label, bool isMine, int status)
+    void updateEntry(const QString &address, const QString &label, bool isMine, const QString &purpose, int status)
     {
         // Find address / label in model
         QList<AddressTableEntry>::iterator lower = qLowerBound(
@@ -93,14 +103,14 @@ public:
         int lowerIndex = (lower - cachedAddressTable.begin());
         int upperIndex = (upper - cachedAddressTable.begin());
         bool inModel = (lower != upper);
-        AddressTableEntry::Type newEntryType = isMine ? AddressTableEntry::Receiving : AddressTableEntry::Sending;
+        AddressTableEntry::Type newEntryType = translateTransactionType(purpose, isMine);
 
         switch(status)
         {
         case CT_NEW:
             if(inModel)
             {
-                OutputDebugStringF("Warning: AddressTablePriv::updateEntry: Got CT_NOW, but entry is already in model\n");
+                qDebug() << "AddressTablePriv::updateEntry : Warning: Got CT_NOW, but entry is already in model";
                 break;
             }
             parent->beginInsertRows(QModelIndex(), lowerIndex, lowerIndex);
@@ -110,7 +120,7 @@ public:
         case CT_UPDATED:
             if(!inModel)
             {
-                OutputDebugStringF("Warning: AddressTablePriv::updateEntry: Got CT_UPDATED, but entry is not in model\n");
+                qDebug() << "AddressTablePriv::updateEntry : Warning: Got CT_UPDATED, but entry is not in model";
                 break;
             }
             lower->type = newEntryType;
@@ -120,7 +130,7 @@ public:
         case CT_DELETED:
             if(!inModel)
             {
-                OutputDebugStringF("Warning: AddressTablePriv::updateEntry: Got CT_DELETED, but entry is not in model\n");
+                qDebug() << "AddressTablePriv::updateEntry : Warning: Got CT_DELETED, but entry is not in model";
                 break;
             }
             parent->beginRemoveRows(QModelIndex(), lowerIndex, upperIndex-1);
@@ -322,10 +332,11 @@ QModelIndex AddressTableModel::index(int row, int column, const QModelIndex &par
     }
 }
 
-void AddressTableModel::updateEntry(const QString &address, const QString &label, bool isMine, int status)
+void AddressTableModel::updateEntry(const QString &address,
+        const QString &label, bool isMine, const QString &purpose, int status)
 {
     // Update address book model from Bitcoin core
-    priv->updateEntry(address, label, isMine, status);
+    priv->updateEntry(address, label, isMine, purpose, status);
 }
 
 QString AddressTableModel::addRow(const QString &type, const QString &label, const QString &address)
@@ -355,18 +366,21 @@ QString AddressTableModel::addRow(const QString &type, const QString &label, con
     else if(type == Receive)
     {
         // Generate a new address to associate with given label
-        WalletModel::UnlockContext ctx(walletModel->requestUnlock());
-        if(!ctx.isValid())
-        {
-            // Unlock wallet failed or was cancelled
-            editStatus = WALLET_UNLOCK_FAILURE;
-            return QString();
-        }
         CPubKey newKey;
-        if(!wallet->GetKeyFromPool(newKey, true))
+        if(!wallet->GetKeyFromPool(newKey))
         {
-            editStatus = KEY_GENERATION_FAILURE;
-            return QString();
+            WalletModel::UnlockContext ctx(walletModel->requestUnlock());
+            if(!ctx.isValid())
+            {
+                // Unlock wallet failed or was cancelled
+                editStatus = WALLET_UNLOCK_FAILURE;
+                return QString();
+            }
+            if(!wallet->GetKeyFromPool(newKey))
+            {
+                editStatus = KEY_GENERATION_FAILURE;
+                return QString();
+            }
         }
         strAddress = CBitcoinAddress(newKey.GetID()).ToString();
     }

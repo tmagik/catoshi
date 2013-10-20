@@ -62,7 +62,7 @@ static bool ThreadSafeMessageBox(const std::string& message, const std::string& 
     }
     else
     {
-        printf("%s: %s\n", caption.c_str(), message.c_str());
+        LogPrintf("%s: %s\n", caption.c_str(), message.c_str());
         fprintf(stderr, "%s: %s\n", caption.c_str(), message.c_str());
         return false;
     }
@@ -91,7 +91,7 @@ static void InitMessage(const std::string &message)
         splashref->showMessage(QString::fromStdString(message), Qt::AlignBottom|Qt::AlignHCenter, QColor(55,55,55));
         qApp->processEvents();
     }
-    printf("init message: %s\n", message.c_str());
+    LogPrintf("init message: %s\n", message.c_str());
 }
 
 /*
@@ -155,12 +155,15 @@ static void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTrans
 #if QT_VERSION < 0x050000
 void DebugMessageHandler(QtMsgType type, const char * msg)
 {
-    OutputDebugStringF("%s\n", msg);
+    Q_UNUSED(type);
+    LogPrint("qt", "Bitcoin-Qt: %s\n", msg);
 }
 #else
 void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg)
 {
-    OutputDebugStringF("%s\n", qPrintable(msg));
+    Q_UNUSED(type);
+    Q_UNUSED(context);
+    LogPrint("qt", "Bitcoin-Qt: %s\n", qPrintable(msg));
 }
 #endif
 
@@ -232,10 +235,16 @@ int main(int argc, char *argv[])
     PaymentServer* paymentServer = new PaymentServer(&app);
 
     // User language is set up: pick a data directory
-    Intro::pickDataDirectory();
+    Intro::pickDataDirectory(TestNet());
 
     // Install global event filter that makes sure that long tooltips can be word-wrapped
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
+    // Install qDebug() message handler to route to debug.log
+#if QT_VERSION < 0x050000
+    qInstallMsgHandler(DebugMessageHandler);
+#else
+    qInstallMessageHandler(DebugMessageHandler);
+#endif
 
     // ... now GUI settings:
     OptionsModel optionsModel;
@@ -254,13 +263,6 @@ int main(int argc, char *argv[])
         help.showOrPrint();
         return 1;
     }
-
-    // Install qDebug() message handler to route to debug.log:
-#if QT_VERSION < 0x050000
-    qInstallMsgHandler(DebugMessageHandler);
-#else
-    qInstallMessageHandler(DebugMessageHandler);
-#endif
 
     SplashScreen splash(QPixmap(), 0);
     if (GetBoolArg("-splash", true) && !GetBoolArg("-min", false))
@@ -300,7 +302,8 @@ int main(int argc, char *argv[])
                 optionsModel.Upgrade(); // Must be done after AppInit2
 
                 PaymentServer::LoadRootCAs();
-                paymentServer->initNetManager(optionsModel);
+                paymentServer->setOptionsModel(&optionsModel);
+                paymentServer->initNetManager();
 
                 if (splashref)
                     splash.finish(&window);
