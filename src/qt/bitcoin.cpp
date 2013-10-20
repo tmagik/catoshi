@@ -62,7 +62,7 @@ static bool ThreadSafeMessageBox(const std::string& message, const std::string& 
     }
     else
     {
-        printf("%s: %s\n", caption.c_str(), message.c_str());
+        LogPrintf("%s: %s\n", caption.c_str(), message.c_str());
         fprintf(stderr, "%s: %s\n", caption.c_str(), message.c_str());
         return false;
     }
@@ -91,7 +91,7 @@ static void InitMessage(const std::string &message)
         splashref->showMessage(QString::fromStdString(message), Qt::AlignBottom|Qt::AlignHCenter, QColor(55,55,55));
         qApp->processEvents();
     }
-    printf("init message: %s\n", message.c_str());
+    LogPrintf("init message: %s\n", message.c_str());
 }
 
 /*
@@ -151,13 +151,42 @@ static void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTrans
         QApplication::installTranslator(&translator);
 }
 
+/* qDebug() message handler --> debug.log */
+#if QT_VERSION < 0x050000
+void DebugMessageHandler(QtMsgType type, const char * msg)
+{
+    Q_UNUSED(type);
+    LogPrint("qt", "Bitcoin-Qt: %s\n", msg);
+}
+#else
+void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg)
+{
+    Q_UNUSED(type);
+    Q_UNUSED(context);
+    LogPrint("qt", "Bitcoin-Qt: %s\n", qPrintable(msg));
+}
+#endif
+
 #ifndef BITCOIN_QT_TEST
 int main(int argc, char *argv[])
 {
+    bool fMissingDatadir = false;
+    bool fSelParFromCLFailed = false;
+
     fHaveGUI = true;
 
     // Command-line options take precedence:
     ParseParameters(argc, argv);
+    // ... then bitcoin.conf:
+    if (!boost::filesystem::is_directory(GetDataDir(false))) {
+        fMissingDatadir = true;
+    } else {
+        ReadConfigFile(mapArgs, mapMultiArgs);
+    }
+    // Check for -testnet or -regtest parameter (TestNet() calls are only valid after this clause)
+    if (!SelectParamsFromCommandLine()) {
+        fSelParFromCLFailed = true;
+    }
 
 #if QT_VERSION < 0x050000
     // Internal string conversion is all UTF-8
@@ -175,7 +204,7 @@ int main(int argc, char *argv[])
     // as it is used to locate QSettings)
     QApplication::setOrganizationName("Bitcoin");
     QApplication::setOrganizationDomain("bitcoin.org");
-    if (GetBoolArg("-testnet", false)) // Separate UI settings for testnet
+    if (TestNet()) // Separate UI settings for testnet
         QApplication::setApplicationName("Bitcoin-Qt-testnet");
     else
         QApplication::setApplicationName("Bitcoin-Qt");
@@ -184,28 +213,40 @@ int main(int argc, char *argv[])
     QTranslator qtTranslatorBase, qtTranslator, translatorBase, translator;
     initTranslations(qtTranslatorBase, qtTranslator, translatorBase, translator);
 
-    // User language is set up: pick a data directory
-    Intro::pickDataDirectory();
-
     // Do this early as we don't want to bother initializing if we are just calling IPC
-    // ... but do it after creating app, so QCoreApplication::arguments is initialized:
-    if (PaymentServer::ipcSendCommandLine())
+    // ... but do it after creating app and setting up translations, so errors are
+    // translated properly.
+    if (PaymentServer::ipcSendCommandLine(argc, argv))
         exit(0);
-    PaymentServer* paymentServer = new PaymentServer(&app);
 
-    // Install global event filter that makes sure that long tooltips can be word-wrapped
-    app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
-
-    // ... then bitcoin.conf:
-    if (!boost::filesystem::is_directory(GetDataDir(false)))
-    {
+    // Now that translations are initialized check for errors and allow a translatable error message
+    if (fMissingDatadir) {
         QMessageBox::critical(0, QObject::tr("Bitcoin"),
                               QObject::tr("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(mapArgs["-datadir"])));
         return 1;
     }
-    ReadConfigFile(mapArgs, mapMultiArgs);
+    else if (fSelParFromCLFailed) {
+        QMessageBox::critical(0, QObject::tr("Bitcoin"), QObject::tr("Error: Invalid combination of -regtest and -testnet."));
+        return 1;
+    }
 
-    // ... then GUI settings:
+    // Start up the payment server early, too, so impatient users that click on
+    // bitcoin: links repeatedly have their payment requests routed to this process:
+    PaymentServer* paymentServer = new PaymentServer(&app);
+
+    // User language is set up: pick a data directory
+    Intro::pickDataDirectory(TestNet());
+
+    // Install global event filter that makes sure that long tooltips can be word-wrapped
+    app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
+    // Install qDebug() message handler to route to debug.log
+#if QT_VERSION < 0x050000
+    qInstallMsgHandler(DebugMessageHandler);
+#else
+    qInstallMessageHandler(DebugMessageHandler);
+#endif
+
+    // ... now GUI settings:
     OptionsModel optionsModel;
 
     // Subscribe to global signals from core
@@ -245,7 +286,7 @@ int main(int argc, char *argv[])
 
         boost::thread_group threadGroup;
 
-        BitcoinGUI window(GetBoolArg("-testnet", false), 0);
+        BitcoinGUI window(TestNet(), 0);
         guiref = &window;
 
         QTimer* pollShutdownTimer = new QTimer(guiref);
@@ -259,6 +300,10 @@ int main(int argc, char *argv[])
                 // calling Shutdown().
 
                 optionsModel.Upgrade(); // Must be done after AppInit2
+
+                PaymentServer::LoadRootCAs();
+                paymentServer->setOptionsModel(&optionsModel);
+                paymentServer->initNetManager();
 
                 if (splashref)
                     splash.finish(&window);
@@ -281,8 +326,15 @@ int main(int argc, char *argv[])
                 }
 
                 // Now that initialization/startup is done, process any command-line
-                // bitcoin: URIs
-                QObject::connect(paymentServer, SIGNAL(receivedURI(QString)), &window, SLOT(handleURI(QString)));
+                // bitcoin: URIs or payment requests:
+                QObject::connect(paymentServer, SIGNAL(receivedPaymentRequest(SendCoinsRecipient)),
+                                 &window, SLOT(handlePaymentRequest(SendCoinsRecipient)));
+                QObject::connect(&walletModel, SIGNAL(coinsSent(CWallet*,SendCoinsRecipient,QByteArray)),
+                                 paymentServer, SLOT(fetchPaymentACK(CWallet*,const SendCoinsRecipient&,QByteArray)));
+                QObject::connect(paymentServer, SIGNAL(receivedPaymentACK(QString)),
+                                 &window, SLOT(showPaymentACK(QString)));
+                QObject::connect(paymentServer, SIGNAL(reportError(QString, QString, unsigned int)),
+                                 guiref, SLOT(message(QString, QString, unsigned int)));
                 QTimer::singleShot(100, paymentServer, SLOT(uiReady()));
 
                 app.exec();

@@ -3,15 +3,11 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "core.h"
-#include "wallet.h"
 #include "miner.h"
 #include "main.h"
 
-
-
-
-
+double dHashesPerSec = 0.0;
+int64 nHPSTimerStart = 0;
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -106,10 +102,10 @@ public:
 
     void print() const
     {
-        printf("COrphan(hash=%s, dPriority=%.1f, dFeePerKb=%.1f)\n",
+        LogPrintf("COrphan(hash=%s, dPriority=%.1f, dFeePerKb=%.1f)\n",
                ptx->GetHash().ToString().c_str(), dPriority, dFeePerKb);
         BOOST_FOREACH(uint256 hash, setDependsOn)
-            printf("   setDependsOn %s\n", hash.ToString().c_str());
+            LogPrintf("   setDependsOn %s\n", hash.ToString().c_str());
     }
 };
 
@@ -141,7 +137,7 @@ public:
     }
 };
 
-CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
+CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     // Create new block
     auto_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
@@ -154,10 +150,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
     txNew.vin.resize(1);
     txNew.vin[0].prevout.SetNull();
     txNew.vout.resize(1);
-    CPubKey pubkey;
-    if (!reservekey.GetReservedKey(pubkey))
-        return NULL;
-    txNew.vout[0].scriptPubKey << pubkey << OP_CHECKSIG;
+    txNew.vout[0].scriptPubKey = scriptPubKeyIn;
 
     // Add our coinbase tx as first transaction
     pblock->vtx.push_back(txNew);
@@ -183,7 +176,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
     int64 nFees = 0;
     {
         LOCK2(cs_main, mempool.cs);
-        CBlockIndex* pindexPrev = pindexBest;
+        CBlockIndex* pindexPrev = chainActive.Tip();
         CCoinsViewCache view(*pcoinsTip, true);
 
         // Priority order to process transactions
@@ -214,7 +207,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
                     // or other transactions in the memory pool.
                     if (!mempool.mapTx.count(txin.prevout.hash))
                     {
-                        printf("ERROR: mempool transaction missing input\n");
+                        LogPrintf("ERROR: mempool transaction missing input\n");
                         if (fDebug) assert("mempool transaction missing input" == 0);
                         fMissingInputs = true;
                         if (porphan)
@@ -334,7 +327,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 
             if (fPrintPriority)
             {
-                printf("priority %.1f feeperkb %.1f txid %s\n",
+                LogPrintf("priority %.1f feeperkb %.1f txid %s\n",
                        dPriority, dFeePerKb, tx.GetHash().ToString().c_str());
             }
 
@@ -358,7 +351,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
-        printf("CreateNewBlock(): total size %"PRI64u"\n", nBlockSize);
+        LogPrintf("CreateNewBlock(): total size %"PRI64u"\n", nBlockSize);
 
         pblock->vtx[0].vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
         pblocktemplate->vTxFees[0] = -nFees;
@@ -383,6 +376,15 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
     return pblocktemplate.release();
 }
 
+CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
+{
+    CPubKey pubkey;
+    if (!reservekey.GetReservedKey(pubkey))
+        return NULL;
+
+    CScript scriptPubKey = CScript() << pubkey << OP_CHECKSIG;
+    return CreateNewBlock(scriptPubKey);
+}
 
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
@@ -457,15 +459,15 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
         return false;
 
     //// debug print
-    printf("BitcoinMiner:\n");
-    printf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", hash.GetHex().c_str(), hashTarget.GetHex().c_str());
+    LogPrintf("BitcoinMiner:\n");
+    LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", hash.GetHex().c_str(), hashTarget.GetHex().c_str());
     pblock->print();
-    printf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
+    LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
 
     // Found a solution
     {
         LOCK(cs_main);
-        if (pblock->hashPrevBlock != hashBestChain)
+        if (pblock->hashPrevBlock != chainActive.Tip()->GetBlockHash())
             return error("BitcoinMiner : generated block is stale");
 
         // Remove key from key pool
@@ -488,7 +490,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
 void static BitcoinMiner(CWallet *pwallet)
 {
-    printf("BitcoinMiner started\n");
+    LogPrintf("BitcoinMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("bitcoin-miner");
 
@@ -508,15 +510,15 @@ void static BitcoinMiner(CWallet *pwallet)
         // Create new block
         //
         unsigned int nTransactionsUpdatedLast = nTransactionsUpdated;
-        CBlockIndex* pindexPrev = pindexBest;
+        CBlockIndex* pindexPrev = chainActive.Tip();
 
-        auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(reservekey));
+        auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
         if (!pblocktemplate.get())
             return;
         CBlock *pblock = &pblocktemplate->block;
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-        printf("Running BitcoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
+        LogPrintf("Running BitcoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
         //
@@ -597,7 +599,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         if (GetTime() - nLogTime > 30 * 60)
                         {
                             nLogTime = GetTime();
-                            printf("hashmeter %6.0f khash/s\n", dHashesPerSec/1000.0);
+                            LogPrintf("hashmeter %6.0f khash/s\n", dHashesPerSec/1000.0);
                         }
                     }
                 }
@@ -611,7 +613,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 break;
             if (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 break;
-            if (pindexPrev != pindexBest)
+            if (pindexPrev != chainActive.Tip())
                 break;
 
             // Update nTime every few seconds
@@ -627,7 +629,7 @@ void static BitcoinMiner(CWallet *pwallet)
     } }
     catch (boost::thread_interrupted)
     {
-        printf("BitcoinMiner terminated\n");
+        LogPrintf("BitcoinMiner terminated\n");
         throw;
     }
 }

@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     uint256 hash;
 
     // Simple block creation, nothing special yet:
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
 
     // We can't make transactions until we have inputs
     // Therefore, load 100 blocks :)
@@ -65,10 +65,10 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     {
         CBlock *pblock = &pblocktemplate->block; // pointer for convenience
         pblock->nVersion = 1;
-        pblock->nTime = pindexBest->GetMedianTimePast()+1;
+        pblock->nTime = chainActive.Tip()->GetMedianTimePast()+1;
         pblock->vtx[0].vin[0].scriptSig = CScript();
         pblock->vtx[0].vin[0].scriptSig.push_back(blockinfo[i].extranonce);
-        pblock->vtx[0].vin[0].scriptSig.push_back(pindexBest->nHeight);
+        pblock->vtx[0].vin[0].scriptSig.push_back(chainActive.Height());
         pblock->vtx[0].vout[0].scriptPubKey = CScript();
         if (txFirst.size() < 2)
             txFirst.push_back(new CTransaction(pblock->vtx[0]));
@@ -82,7 +82,8 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     delete pblocktemplate;
 
     // Just to make sure we can still make simple blocks
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
+    delete pblocktemplate;
 
     // block sigops > limit: 1000 CHECKMULTISIG + 1
     tx.vin.resize(1);
@@ -99,7 +100,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         mempool.addUnchecked(hash, tx);
         tx.vin[0].prevout.hash = hash;
     }
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -119,14 +120,14 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         mempool.addUnchecked(hash, tx);
         tx.vin[0].prevout.hash = hash;
     }
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
     delete pblocktemplate;
     mempool.clear();
 
     // orphan in mempool
     hash = tx.GetHash();
     mempool.addUnchecked(hash, tx);
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -144,7 +145,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].nValue = 5900000000LL;
     hash = tx.GetHash();
     mempool.addUnchecked(hash, tx);
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -155,7 +156,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].nValue = 0;
     hash = tx.GetHash();
     mempool.addUnchecked(hash, tx);
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -173,7 +174,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].nValue -= 1000000;
     hash = tx.GetHash();
     mempool.addUnchecked(hash,tx);
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -187,19 +188,22 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].scriptPubKey = CScript() << OP_2;
     hash = tx.GetHash();
     mempool.addUnchecked(hash, tx);
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
     delete pblocktemplate;
     mempool.clear();
 
     // subsidy changing
-    int nHeight = pindexBest->nHeight;
-    pindexBest->nHeight = 209999;
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    int nHeight = chainActive.Height();
+    chainActive.Tip()->nHeight = 209999;
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
     delete pblocktemplate;
-    pindexBest->nHeight = 210000;
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(reservekey));
+    chainActive.Tip()->nHeight = 210000;
+    BOOST_CHECK(pblocktemplate = CreateNewBlockWithKey(reservekey));
     delete pblocktemplate;
-    pindexBest->nHeight = nHeight;
+    chainActive.Tip()->nHeight = nHeight;
+
+    BOOST_FOREACH(CTransaction *tx, txFirst)
+        delete tx;
 }
 
 BOOST_AUTO_TEST_CASE(sha256transform_equality)
