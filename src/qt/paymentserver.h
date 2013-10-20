@@ -17,7 +17,7 @@
 // received at or during startup in a list.
 //
 // When startup is finished and the main window is
-// show, a signal is sent to slot uiReady(), which
+// shown, a signal is sent to slot uiReady(), which
 // emits a receivedURL() signal for any payment
 // requests that happened during startup.
 //
@@ -36,6 +36,8 @@
 
 class CWallet;
 class OptionsModel;
+
+QT_BEGIN_NAMESPACE
 class QApplication;
 class QByteArray;
 class QLocalServer;
@@ -43,6 +45,7 @@ class QNetworkAccessManager;
 class QNetworkReply;
 class QSslError;
 class QUrl;
+QT_END_NAMESPACE
 
 class PaymentServer : public QObject
 {
@@ -56,8 +59,8 @@ public:
     // will be called so we startup in the right mode.
     static bool ipcSendCommandLine(int argc, char *argv[]);
 
-    PaymentServer(QObject* parent, // parent should be QApplication object
-                  bool startLocalServer=true);
+    // parent should be QApplication object
+    PaymentServer(QObject* parent, bool startLocalServer = true);
     ~PaymentServer();
 
     // Load root certificate authorities. Pass NULL (default)
@@ -65,17 +68,20 @@ public:
     // or, if that's not set, to use the system default root certificates.
     // If you pass in a store, you should not X509_STORE_free it: it will be
     // freed either at exit or when another set of CAs are loaded.
-    static void LoadRootCAs(X509_STORE* store=NULL);
+    static void LoadRootCAs(X509_STORE* store = NULL);
 
     // Return certificate store
     static X509_STORE* getCertStore() { return certStore; }
 
-    // Setup networking (options is used to get proxy settings)
-    void initNetManager(const OptionsModel& options);
+    // Setup networking
+    void initNetManager();
 
     // Constructor registers this on the parent QApplication to
     // receive QEvent::FileOpen events
     bool eventFilter(QObject *object, QEvent *event);
+
+    // OptionsModel is used for getting proxy settings and display unit
+    void setOptionsModel(OptionsModel *optionsModel);
 
 signals:
     // Fired when a valid payment request is received
@@ -106,12 +112,15 @@ private:
     void handleURIOrFile(const QString& s);
     void fetchRequest(const QUrl& url);
 
-    bool saveURIs;                 // true during startup
+    bool saveURIs;                      // true during startup
     QLocalServer* uriServer;
-    static X509_STORE* certStore; // Trusted root certificates
+
+    static X509_STORE* certStore;       // Trusted root certificates
     static void freeCertStore();
 
-    QNetworkAccessManager* netManager; // Used to fetch payment requests
+    QNetworkAccessManager* netManager;  // Used to fetch payment requests
+
+    OptionsModel *optionsModel;
 };
 
 #endif // PAYMENTSERVER_H
