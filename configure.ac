@@ -21,10 +21,6 @@ AH_BOTTOM([#endif //BITCOIN_CONFIG_H])
 # probably be removed when building on <= 10.6 is no longer supported.
 m4_include([pkg.m4])
 
-dnl reset CXXFLAGS if empty (autoconf adds its own defaults otherwise)
-: ${CFLAGS=""}
-: ${CXXFLAGS=""}
-
 dnl faketime breaks configure and is only needed for make. Disable it here.
 unset FAKETIME
 
@@ -66,13 +62,6 @@ AC_ARG_WITH([qt],
   [enable qt (default is yes)])],
   [use_qt=$withval],
   [use_qt=yes])
-
-dnl compile with full warnings and debugging symbols
-AC_ARG_ENABLE(debug,
-    AS_HELP_STRING([--enable-debug],[compile with debug symbols (default is yes)]),
-    [use_debug=$enableval],
-    [use_debug=yes])
-    AC_MSG_CHECKING([if compiling with debugging symbols])
 
 AC_ARG_ENABLE(tests,
     AS_HELP_STRING([--enable-tests],[compile tests (default is yes)]),
@@ -136,7 +125,6 @@ AC_PROG_MKDIR_P
 AC_PROG_SED
 AC_PATH_TOOL(AR, ar)
 AC_PATH_TOOL(RANLIB, ranlib)
-AC_PATH_TOOL(WINDRES, windres)
 AC_PATH_TOOL(STRIP, strip)
 AC_PATH_TOOL(GCOV, gcov)
 AC_PATH_PROG(LCOV, lcov)
@@ -159,8 +147,6 @@ PKG_PROG_PKG_CONFIG
 ##
 CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter"
 CPPFLAGS="$CPPFLAGS -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO"
-DEBUG_CXXFLAGS="-g -ggdb"
-RELEASE_CXXFLAGS="-O2"
 
 AC_LANG_PUSH([C++])
 
@@ -168,7 +154,7 @@ use_pkgconfig=yes
 case $host in
   *mingw*)
 
-     #pkgconfig does more harm than good with mingw
+     #pkgconfig does more harm than good with MinGW
      use_pkgconfig=no
 
      TARGET_OS=windows
@@ -190,10 +176,19 @@ case $host in
      AC_CHECK_LIB([mswsock],      [main],, AC_MSG_ERROR(lib missing))
      AC_CHECK_LIB([shlwapi],      [main],, AC_MSG_ERROR(lib missing))
      AC_CHECK_LIB([iphlpapi],      [main],, AC_MSG_ERROR(lib missing))
+     AC_CHECK_LIB([crypt32],      [main],, AC_MSG_ERROR(lib missing))
+
+     AX_CHECK_LINK_FLAG([[-static-libgcc]],[LDFLAGS="$LDFLAGS -static-libgcc"])
+     AX_CHECK_LINK_FLAG([[-static-libstdc++]],[LDFLAGS="$LDFLAGS -static-libstdc++"])
 
      AC_PATH_PROG([MAKENSIS], [makensis], none)
      if test x$MAKENSIS = xnone; then
        AC_MSG_WARN("makensis not found. Cannot create installer.")
+     fi
+
+     AC_PATH_TOOL(WINDRES, windres, none)
+     if test x$WINDRES = xnone; then
+       AC_MSG_ERROR("windres not found")
      fi
 
      CPPFLAGS="$CPPFLAGS -D_MT -DWIN32 -D_WINDOWS -DBOOST_THREAD_USE_LIB"
@@ -228,9 +223,6 @@ case $host in
        AX_CHECK_LINK_FLAG([[$base_frameworks]],[LIBS="$LIBS $base_frameworks"],[AC_MSG_ERROR(could not find base frameworks)])
      fi
 
-     AX_CHECK_COMPILE_FLAG([-mmacosx-version-min=10.5],[RELEASE_CXXFLAGS="$RELEASE_CXXFLAGS -mmacosx-version-min=10.5"])
-     AX_CHECK_COMPILE_FLAG([-arch i386],[RELEASE_CXXFLAGS="$RELEASE_CXXFLAGS -arch i386"])
-     RELEASE_CXXFLAGS="$RELEASE_CXXFLAGS -O3"
      CPPFLAGS="$CPPFLAGS -DMAC_OSX"
      TESTDEFS="-DBOOST_TEST_DYN_LINK"
      ;;
@@ -238,12 +230,6 @@ case $host in
      TESTDEFS="-DBOOST_TEST_DYN_LINK"
      ;;
 esac
-
-if test x$use_debug == xyes; then
-  CXXFLAGS="$DEBUG_CXXFLAGS $CXXFLAGS"
-else
-  CXXFLAGS="$RELEASE_CXXFLAGS $CXXFLAGS"
-fi
 
 if test x$use_comparison_tool != xno; then
   AC_SUBST(JAVA_COMPARISON_TOOL, $use_comparison_tool)
@@ -312,7 +298,7 @@ if test x$use_hardening != xno; then
     AX_CHECK_COMPILE_FLAG([-fno-stack-protector],[HARDENED_CXXFLAGS="$HARDENED_CXXFLAGS -fno-stack-protector"])
     AX_CHECK_COMPILE_FLAG([-fstack-protector-all],[HARDENED_CXXFLAGS="$HARDENED_CXXFLAGS -fstack-protector-all"])
 
-    # -pie will link successfully with mingw, but it's unsupported and leads to undeterministic binaries
+    # -pie will link successfully with MinGW, but it's unsupported and leads to undeterministic binaries
     AX_CHECK_LINK_FLAG([[-pie]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -pie"])
   fi
 
