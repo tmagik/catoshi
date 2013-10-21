@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -1231,9 +1231,10 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
                 }
 
                 int64 nChange = nValueIn - nValue - nFeeRet;
-                // if sub-cent change is required, the fee must be raised to at least nMinTxFee
-                // or until nChange becomes zero
-                // NOTE: this depends on the exact behaviour of GetMinFee
+                // The following if statement should be removed once enough miners
+                // have upgraded to the 0.9 GetMinFee() rules. Until then, this avoids
+                // creating free transactions that have change outputs less than
+                // CENT bitcoins.
                 if (nFeeRet < CTransaction::nMinTxFee && nChange > 0 && nChange < CENT)
                 {
                     int64 nMoveToFee = min(nChange, CTransaction::nMinTxFee - nFeeRet);
@@ -1299,7 +1300,15 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
                     strFailReason = _("Transaction too large");
                     return false;
                 }
-                dPriority /= nBytes;
+                unsigned int nTxSizeMod = nBytes;
+                // See miner.c's dPriority logic for the matching network-node side code.
+                BOOST_FOREACH(const CTxIn& txin, (*(CTransaction*)&wtxNew).vin)
+                {
+                    unsigned int offset = 41U + min(110U, (unsigned int)txin.scriptSig.size());
+                    if (nTxSizeMod > offset)
+                        nTxSizeMod -= offset;
+                }
+                dPriority /= nTxSizeMod;
 
                 // Check that enough fee is included
                 int64 nPayFee = nTransactionFee * (1 + (int64)nBytes / 1000);
