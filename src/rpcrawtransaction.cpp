@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -87,9 +87,9 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         if (mi != mapBlockIndex.end() && (*mi).second)
         {
             CBlockIndex* pindex = (*mi).second;
-            if (pindex->IsInMainChain())
+            if (chainActive.Contains(pindex))
             {
-                entry.push_back(Pair("confirmations", 1 + nBestHeight - pindex->nHeight));
+                entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pindex->nHeight));
                 entry.push_back(Pair("time", (boost::int64_t)pindex->nTime));
                 entry.push_back(Pair("blocktime", (boost::int64_t)pindex->nTime));
             }

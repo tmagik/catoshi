@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -76,7 +76,7 @@ Value getinfo(const Array& params, bool fHelp)
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
         obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
     }
-    obj.push_back(Pair("blocks",        (int)nBestHeight));
+    obj.push_back(Pair("blocks",        (int)chainActive.Height()));
     obj.push_back(Pair("timeoffset",    (boost::int64_t)GetTimeOffset()));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.first.IsValid() ? proxy.first.ToStringIPPort() : string())));
@@ -968,6 +968,13 @@ Value listreceivedbyaccount(const Array& params, bool fHelp)
     return ListReceived(params, true);
 }
 
+static void MaybePushAddress(Object & entry, const CTxDestination &dest)
+{
+    CBitcoinAddress addr;
+    if (addr.Set(dest))
+        entry.push_back(Pair("address", addr.ToString()));
+}
+
 void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret)
 {
     int64 nFee;
@@ -986,7 +993,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
         {
             Object entry;
             entry.push_back(Pair("account", strSentAccount));
-            entry.push_back(Pair("address", CBitcoinAddress(s.first).ToString()));
+            MaybePushAddress(entry, s.first);
             entry.push_back(Pair("category", "send"));
             entry.push_back(Pair("amount", ValueFromAmount(-s.second)));
             entry.push_back(Pair("fee", ValueFromAmount(-nFee)));
@@ -1008,7 +1015,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
             {
                 Object entry;
                 entry.push_back(Pair("account", account));
-                entry.push_back(Pair("address", CBitcoinAddress(r.first).ToString()));
+                MaybePushAddress(entry, r.first);
                 if (wtx.IsCoinBase())
                 {
                     if (wtx.GetDepthInMainChain() < 1)
@@ -1169,7 +1176,9 @@ Value listsinceblock(const Array& params, bool fHelp)
         uint256 blockId = 0;
 
         blockId.SetHex(params[0].get_str());
-        pindex = CBlockLocator(blockId).GetBlockIndex();
+        std::map<uint256, CBlockIndex*>::iterator it = mapBlockIndex.find(blockId);
+        if (it != mapBlockIndex.end())
+            pindex = it->second;
     }
 
     if (params.size() > 1)
@@ -1180,7 +1189,7 @@ Value listsinceblock(const Array& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter");
     }
 
-    int depth = pindex ? (1 + nBestHeight - pindex->nHeight) : -1;
+    int depth = pindex ? (1 + chainActive.Height() - pindex->nHeight) : -1;
 
     Array transactions;
 
@@ -1192,23 +1201,8 @@ Value listsinceblock(const Array& params, bool fHelp)
             ListTransactions(tx, "*", 0, true, transactions);
     }
 
-    uint256 lastblock;
-
-    if (target_confirms == 1)
-    {
-        lastblock = hashBestChain;
-    }
-    else
-    {
-        int target_height = pindexBest->nHeight + 1 - target_confirms;
-
-        CBlockIndex *block;
-        for (block = pindexBest;
-             block && block->nHeight > target_height;
-             block = block->pprev)  { }
-
-        lastblock = block ? block->GetBlockHash() : 0;
-    }
+    CBlockIndex *pblockLast = chainActive[chainActive.Height() + 1 - target_confirms];
+    uint256 lastblock = pblockLast ? pblockLast->GetBlockHash() : 0;
 
     Object ret;
     ret.push_back(Pair("transactions", transactions));

@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -176,7 +176,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     int64 nFees = 0;
     {
         LOCK2(cs_main, mempool.cs);
-        CBlockIndex* pindexPrev = pindexBest;
+        CBlockIndex* pindexPrev = chainActive.Tip();
         CCoinsViewCache view(*pcoinsTip, true);
 
         // Priority order to process transactions
@@ -238,9 +238,21 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             }
             if (fMissingInputs) continue;
 
-            // Priority is sum(valuein * age) / txsize
+            // Priority is sum(valuein * age) / modified_txsize
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-            dPriority /= nTxSize;
+            unsigned int nTxSizeMod = nTxSize;
+            // In order to avoid disincentivizing cleaning up the UTXO set we don't count
+            // the constant overhead for each txin and up to 110 bytes of scriptSig (which
+            // is enough to cover a compressed pubkey p2sh redemption) for priority.
+            // Providing any more cleanup incentive than making additional inputs free would
+            // risk encouraging people to create junk outputs to redeem later.
+            BOOST_FOREACH(const CTxIn& txin, tx.vin)
+            {
+                unsigned int offset = 41U + min(110U, (unsigned int)txin.scriptSig.size());
+                if (nTxSizeMod > offset)
+                    nTxSizeMod -= offset;
+            }
+            dPriority /= nTxSizeMod;
 
             // This is a more accurate fee-per-kilobyte than is used by the client code, because the
             // client code rounds up the size to the nearest 1K. That's good, because it gives an
@@ -467,7 +479,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     // Found a solution
     {
         LOCK(cs_main);
-        if (pblock->hashPrevBlock != hashBestChain)
+        if (pblock->hashPrevBlock != chainActive.Tip()->GetBlockHash())
             return error("BitcoinMiner : generated block is stale");
 
         // Remove key from key pool
@@ -510,7 +522,7 @@ void static BitcoinMiner(CWallet *pwallet)
         // Create new block
         //
         unsigned int nTransactionsUpdatedLast = nTransactionsUpdated;
-        CBlockIndex* pindexPrev = pindexBest;
+        CBlockIndex* pindexPrev = chainActive.Tip();
 
         auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
         if (!pblocktemplate.get())
@@ -613,7 +625,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 break;
             if (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 break;
-            if (pindexPrev != pindexBest)
+            if (pindexPrev != chainActive.Tip())
                 break;
 
             // Update nTime every few seconds
