@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_SERIALIZE_H
@@ -216,18 +216,24 @@ uint64 ReadCompactSize(Stream& is)
         unsigned short xSize;
         READDATA(is, xSize);
         nSizeRet = xSize;
+        if (nSizeRet < 253)
+            throw std::ios_base::failure("non-canonical ReadCompactSize()");
     }
     else if (chSize == 254)
     {
         unsigned int xSize;
         READDATA(is, xSize);
         nSizeRet = xSize;
+        if (nSizeRet < 0x10000u)
+            throw std::ios_base::failure("non-canonical ReadCompactSize()");
     }
     else
     {
         uint64 xSize;
         READDATA(is, xSize);
         nSizeRet = xSize;
+        if (nSizeRet < 0x100000000LLu)
+            throw std::ios_base::failure("non-canonical ReadCompactSize()");
     }
     if (nSizeRet > (uint64)MAX_SIZE)
         throw std::ios_base::failure("ReadCompactSize() : size too large");

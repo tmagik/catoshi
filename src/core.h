@@ -389,7 +389,9 @@ public:
     int nVersion;
 
     // construct a CCoins from a CTransaction, at a given height
-    CCoins(const CTransaction &tx, int nHeightIn) : fCoinBase(tx.IsCoinBase()), vout(tx.vout), nHeight(nHeightIn), nVersion(tx.nVersion) { }
+    CCoins(const CTransaction &tx, int nHeightIn) : fCoinBase(tx.IsCoinBase()), vout(tx.vout), nHeight(nHeightIn), nVersion(tx.nVersion) {
+        ClearUnspendable();
+    }
 
     // empty constructor
     CCoins() : fCoinBase(false), vout(0), nHeight(0), nVersion(0) { }
@@ -400,6 +402,14 @@ public:
             vout.pop_back();
         if (vout.empty())
             std::vector<CTxOut>().swap(vout);
+    }
+
+    void ClearUnspendable() {
+        BOOST_FOREACH(CTxOut &txout, vout) {
+            if (txout.scriptPubKey.IsUnspendable())
+                txout.SetNull();
+        }
+        Cleanup();
     }
 
     void swap(CCoins &to) {
@@ -649,6 +659,40 @@ public:
     std::vector<uint256> GetMerkleBranch(int nIndex) const;
     static uint256 CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex);
     void print() const;
+};
+
+
+/** Describes a place in the block chain to another node such that if the
+ * other node doesn't have the same branch, it can find a recent common trunk.
+ * The further back it is, the further before the fork it may be.
+ */
+struct CBlockLocator
+{
+    std::vector<uint256> vHave;
+
+    CBlockLocator() {}
+
+    CBlockLocator(const std::vector<uint256>& vHaveIn)
+    {
+        vHave = vHaveIn;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        if (!(nType & SER_GETHASH))
+            READWRITE(nVersion);
+        READWRITE(vHave);
+    )
+
+    void SetNull()
+    {
+        vHave.clear();
+    }
+
+    bool IsNull()
+    {
+        return vHave.empty();
+    }
 };
 
 #endif
