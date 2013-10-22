@@ -31,7 +31,7 @@ obj/build.h: FORCE
 	  $(abs_top_srcdir)
 version.o: obj/build.h
 
-libbitcoin_a_SOURCES = addrman.cpp alert.cpp bitcoinrpc.cpp bloom.cpp \
+libbitcoin_a_SOURCES = addrman.cpp alert.cpp allocators.cpp bitcoinrpc.cpp bloom.cpp \
   chainparams.cpp checkpoints.cpp core.cpp crypter.cpp db.cpp hash.cpp \
   init.cpp key.cpp keystore.cpp leveldb.cpp main.cpp miner.cpp \
   netbase.cpp net.cpp noui.cpp protocol.cpp rpcblockchain.cpp rpcdump.cpp \
@@ -49,7 +49,7 @@ bitcoind_SOURCES = bitcoind.cpp
 #
 
 if TARGET_WINDOWS
-bitcoind_SOURCES += bitcoin-res.rc
+bitcoind_SOURCES += bitcoind-res.rc
 endif
 
 AM_CPPFLAGS += $(BDB_CPPFLAGS)

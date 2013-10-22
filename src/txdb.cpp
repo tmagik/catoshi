@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -222,10 +222,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nNonce         = diskindex.nNonce;
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
-
-                // Watch for genesis block
-                if (pindexGenesisBlock == NULL && diskindex.GetBlockHash() == Params().HashGenesisBlock())
-                    pindexGenesisBlock = pindexNew;
 
                 if (!pindexNew->CheckIndex())
                     return error("LoadBlockIndex() : CheckIndex failed: %s", pindexNew->ToString().c_str());
