@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
     BOOST_FOREACH(Value& tv, tests)
     {
         Array test = tv.get_array();
-        string strTest = write_string(tv, false);
+        string strTest = write_string(tv, raw_utf8);
         if (test[0].type() == array_type)
         {
             if (test.size() != 3 || test[1].type() != str_type || test[2].type() != bool_type)
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
     BOOST_FOREACH(Value& tv, tests)
     {
         Array test = tv.get_array();
-        string strTest = write_string(tv, false);
+        string strTest = write_string(tv, raw_utf8);
         if (test[0].type() == array_type)
         {
             if (test.size() != 3 || test[1].type() != str_type || test[2].type() != bool_type)
@@ -272,6 +272,20 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
     BOOST_CHECK(IsStandardTx(t, reason));
 
     t.vout[0].scriptPubKey = CScript() << OP_1;
+    BOOST_CHECK(!IsStandardTx(t, reason));
+
+    // 80-byte TX_NULL_DATA (standard)
+    t.vout[0].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3804678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
+    BOOST_CHECK(IsStandardTx(t, reason));
+
+    // 81-byte TX_NULL_DATA (non-standard)
+    t.vout[0].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3804678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3800");
+    BOOST_CHECK(!IsStandardTx(t, reason));
+
+    // Only one TX_NULL_DATA permitted
+    t.vout.resize(2);
+    t.vout[0].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3804678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
+    t.vout[1].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3804678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
     BOOST_CHECK(!IsStandardTx(t, reason));
 }
 
