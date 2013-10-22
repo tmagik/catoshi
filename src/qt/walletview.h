@@ -16,6 +16,7 @@ class TransactionView;
 class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
+class SendCoinsRecipient;
 class SignVerifyMessageDialog;
 class RPCConsole;
 
@@ -35,7 +36,7 @@ class WalletView : public QStackedWidget
     Q_OBJECT
 
 public:
-    explicit WalletView(QWidget *parent, BitcoinGUI *_gui);
+    explicit WalletView(QWidget *parent);
     ~WalletView();
 
     void setBitcoinGUI(BitcoinGUI *gui);
@@ -49,7 +50,7 @@ public:
     */
     void setWalletModel(WalletModel *walletModel);
 
-    bool handleURI(const QString &uri);
+    bool handlePaymentRequest(const SendCoinsRecipient& recipient);
 
     void showOutOfSyncWarning(bool fShow);
 
@@ -63,7 +64,6 @@ private:
     AddressBookPage *addressBookPage;
     AddressBookPage *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
-    SignVerifyMessageDialog *signVerifyMessageDialog;
 
     TransactionView *transactionView;
 
@@ -99,6 +99,10 @@ public slots:
     void unlockWallet();
 
     void setEncryptionStatus();
+
+signals:
+    /** Signal that we want to show the main window */
+    void showNormalIfMinimized();
 };
 
 #endif // WALLETVIEW_H

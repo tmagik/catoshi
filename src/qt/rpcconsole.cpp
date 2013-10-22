@@ -22,6 +22,8 @@
 const int CONSOLE_HISTORY = 50;
 const QSize ICON_SIZE(24, 24);
 
+const int INITIAL_TRAFFIC_GRAPH_MINS = 30;
+
 const struct {
     const char *url;
     const char *source;
@@ -187,6 +189,7 @@ RPCConsole::RPCConsole(QWidget *parent) :
     historyPtr(0)
 {
     ui->setupUi(this);
+    GUIUtil::restoreWindowGeometry("nRPCConsoleWindow", this->size(), this);
 
 #ifndef Q_OS_MAC
     ui->openDebugLogfileButton->setIcon(QIcon(":/icons/export"));
@@ -203,12 +206,14 @@ RPCConsole::RPCConsole(QWidget *parent) :
     ui->openSSLVersion->setText(SSLeay_version(SSLEAY_VERSION));
 
     startExecutor();
+    setTrafficGraphRange(INITIAL_TRAFFIC_GRAPH_MINS);
 
     clear();
 }
 
 RPCConsole::~RPCConsole()
 {
+    GUIUtil::saveWindowGeometry("nRPCConsoleWindow", this);
     emit stopExecutor();
     delete ui;
 }
@@ -251,12 +256,19 @@ bool RPCConsole::eventFilter(QObject* obj, QEvent *event)
 
 void RPCConsole::setClientModel(ClientModel *model)
 {
-    this->clientModel = model;
+    clientModel = model;
+    ui->trafficGraph->setClientModel(model);
     if(model)
     {
-        // Subscribe to information, replies, messages, errors
+        // Keep up to date with client
+        setNumConnections(model->getNumConnections());
         connect(model, SIGNAL(numConnectionsChanged(int)), this, SLOT(setNumConnections(int)));
+
+        setNumBlocks(model->getNumBlocks(), model->getNumBlocksOfPeers());
         connect(model, SIGNAL(numBlocksChanged(int,int)), this, SLOT(setNumBlocks(int,int)));
+
+        updateTrafficStats(model->getTotalBytesRecv(), model->getTotalBytesSent());
+        connect(model, SIGNAL(bytesChanged(quint64,quint64)), this, SLOT(updateTrafficStats(quint64, quint64)));
 
         // Provide initial values
         ui->clientVersion->setText(model->formatFullVersion());
@@ -264,7 +276,6 @@ void RPCConsole::setClientModel(ClientModel *model)
         ui->buildDate->setText(model->formatBuildDate());
         ui->startupTime->setText(model->formatClientStartupTime());
 
-        setNumConnections(model->getNumConnections());
         ui->isTestNet->setChecked(model->isTestNet());
     }
 }
@@ -426,4 +437,50 @@ void RPCConsole::on_showCLOptionsButton_clicked()
 {
     GUIUtil::HelpMessageBox help;
     help.exec();
+}
+
+void RPCConsole::on_sldGraphRange_valueChanged(int value)
+{
+    const int multiplier = 5; // each position on the slider represents 5 min
+    int mins = value * multiplier;
+    setTrafficGraphRange(mins);
+}
+
+QString RPCConsole::FormatBytes(quint64 bytes)
+{
+    if(bytes < 1024)
+        return QString(tr("%1 B")).arg(bytes);
+    if(bytes < 1024 * 1024)
+        return QString(tr("%1 KB")).arg(bytes / 1024);
+    if(bytes < 1024 * 1024 * 1024)
+        return QString(tr("%1 MB")).arg(bytes / 1024 / 1024);
+
+    return QString(tr("%1 GB")).arg(bytes / 1024 / 1024 / 1024);
+}
+
+void RPCConsole::setTrafficGraphRange(int mins)
+{
+    ui->trafficGraph->setGraphRangeMins(mins);
+    if(mins < 60) {
+        ui->lblGraphRange->setText(QString(tr("%1 m")).arg(mins));
+    } else {
+        int hours = mins / 60;
+        int minsLeft = mins % 60;
+        if(minsLeft == 0) {
+            ui->lblGraphRange->setText(QString(tr("%1 h")).arg(hours));
+        } else {
+            ui->lblGraphRange->setText(QString(tr("%1 h %2 m")).arg(hours).arg(minsLeft));
+        }
+    }
+}
+
+void RPCConsole::updateTrafficStats(quint64 totalBytesIn, quint64 totalBytesOut)
+{
+    ui->lblBytesIn->setText(FormatBytes(totalBytesIn));
+    ui->lblBytesOut->setText(FormatBytes(totalBytesOut));
+}
+
+void RPCConsole::on_btnClearTrafficGraph_clicked()
+{
+    ui->trafficGraph->clear();
 }

@@ -1,20 +1,16 @@
-Copyright (c) 2009-2013 Bitcoin Developers
-
-Distributed under the MIT/X11 software license, see the accompanying
-file COPYING or http://www.opensource.org/licenses/mit-license.php.
-This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](http://www.openssl.org/). This product includes
-cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.
-
 UNIX BUILD NOTES
 ====================
+Some notes on how to build Bitcoin in Unix. 
 
 To Build
 ---------------------
 
-	cd src/
-	make -f makefile.unix		# Headless bitcoin
+	./autogen.sh
+	./configure
+	make
 
-See readme-qt.rst for instructions on building Bitcoin-Qt, the graphical user interface.
+This will build bitcoin-qt as well if the dependencies are met.
+See [readme-qt.md](readme-qt.md) for more information.
 
 Dependencies
 ---------------------
@@ -25,18 +21,21 @@ Dependencies
  libdb4.8    Berkeley DB       Blockchain & wallet storage
  libboost    Boost             C++ Library
  miniupnpc   UPnP Support      Optional firewall-jumping support
+ qt          GUI               GUI toolkit
+ protobuf    Payments in GUI   Data interchange format used for payment protocol
+ libqrencode QR codes in GUI   Optional for generating QR codes
 
 [miniupnpc](http://miniupnp.free.fr/) may be used for UPnP port mapping.  It can be downloaded from [here](
 http://miniupnp.tuxfamily.org/files/).  UPnP support is compiled in and
-turned off by default.  Set USE_UPNP to a different value to control this:
+turned off by default.  See the configure options for upnp behavior desired:
 
-	USE_UPNP=     No UPnP support miniupnp not required
-	USE_UPNP=0    (the default) UPnP support turned off by default at runtime
-	USE_UPNP=1    UPnP support turned on by default at runtime
+	--with-miniupnpc         No UPnP support miniupnp not required
+	--disable-upnp-default   (the default) UPnP support turned off by default at runtime
+	--enable-upnp-default    UPnP support turned on by default at runtime
 
 IPv6 support may be disabled by setting:
 
-	USE_IPV6=0    Disable IPv6 support
+	--disable-ipv6           Disable IPv6 support
 
 Licenses of statically linked libraries:
  Berkeley DB   New BSD license with additional requirement that linked
@@ -50,21 +49,25 @@ Licenses of statically linked libraries:
 -  Berkeley DB   4.8.30.NC
 -  Boost         1.37
 -  miniupnpc     1.6
+-  qt            4.8.3
+-  protobuf      2.5.0
+-  libqrencode   3.2.0
 
 Dependency Build Instructions: Ubuntu & Debian
 ----------------------------------------------
 Build requirements:
 
 	sudo apt-get install build-essential
+	sudo apt-get install libtool autotools-dev
 	sudo apt-get install libssl-dev
 
-for Ubuntu 12.04:
+for Ubuntu 12.04 and later:
 
 	sudo apt-get install libboost-all-dev
 
  db4.8 packages are available [here](https://launchpad.net/~bitcoin/+archive/bitcoin).
 
- Ubuntu precise has packages for libdb5.1-dev and libdb5.1++-dev,
+ Ubuntu 12.04 and later have packages for libdb5.1-dev and libdb5.1++-dev,
  but using these will break binary wallet compatibility, and is not recommended.
 
 for other Ubuntu & Debian:
@@ -76,23 +79,24 @@ for other Ubuntu & Debian:
 
 Optional:
 
-	sudo apt-get install libminiupnpc-dev (see USE_UPNP compile flag)
+	sudo apt-get install libminiupnpc-dev (see --with-miniupnpc and --enable-upnp-default)
 
+Dependencies for the GUI: Ubuntu & Debian
+-----------------------------------------
 
-Dependency Build Instructions: Gentoo
--------------------------------------
+If you want to build Bitcoin-Qt, make sure that the required packages for Qt development
+are installed. Qt 4 is currently necessary to build the GUI.
 
-Note: If you just want to install bitcoind on Gentoo, you can add the Bitcoin overlay and use your package manager:
+To build with Qt 4 you need the following:
 
-	layman -a bitcoin && emerge bitcoind
-	emerge -av1 --noreplace boost glib openssl sys-libs/db:4.8
+    apt-get install libqt4-dev libprotobuf-dev
 
-Take the following steps to build (no UPnP support):
+libqrencode (optional) can be installed with:
 
-	cd ${BITCOIN_DIR}/src
-	make -f makefile.unix USE_UPNP= USE_IPV6=1 BDB_INCLUDE_PATH='/usr/include/db4.8'
-	strip bitcoind
+    apt-get install libqrencode-dev
 
+Once these are installed, they will be found by configure and a bitcoin-qt executable will be
+built by default.
 
 Notes
 -----
@@ -129,7 +133,13 @@ If you need to build Boost yourself:
 Security
 --------
 To help make your bitcoin installation more secure by making certain attacks impossible to
-exploit even if a vulnerability is found, you can take the following measures:
+exploit even if a vulnerability is found, binaries are hardened by default.
+This can be disabled with:
+
+./configure --enable-hardening
+
+
+Hardening enables the following features:
 
 * Position Independent Executable
     Build position independent code to take advantage of Address Space Layout Randomization
@@ -140,10 +150,6 @@ exploit even if a vulnerability is found, you can take the following measures:
 
     On an Amd64 processor where a library was not compiled with -fPIC, this will cause an error
     such as: "relocation R_X86_64_32 against `......' can not be used when making a shared object;"
-
-    To build with PIE, use:
-
-    	make -f makefile.unix ... -e PIE=1
 
     To test that you have built PIE executable, install scanelf, part of paxutils, and use:
 

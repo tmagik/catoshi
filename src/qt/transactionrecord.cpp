@@ -89,7 +89,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             //
             // Debit
             //
-            int64 nTxFee = nDebit - wtx.GetValueOut();
+            int64 nTxFee = nDebit - GetValueOut(wtx);
 
             for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
             {
@@ -160,14 +160,14 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
         idx);
     status.confirmed = wtx.IsConfirmed();
     status.depth = wtx.GetDepthInMainChain();
-    status.cur_num_blocks = nBestHeight;
+    status.cur_num_blocks = chainActive.Height();
 
-    if (!wtx.IsFinal())
+    if (!IsFinalTx(wtx))
     {
         if (wtx.nLockTime < LOCKTIME_THRESHOLD)
         {
             status.status = TransactionStatus::OpenUntilBlock;
-            status.open_for = wtx.nLockTime - nBestHeight + 1;
+            status.open_for = wtx.nLockTime - chainActive.Height() + 1;
         }
         else
         {
@@ -221,11 +221,16 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
 
 bool TransactionRecord::statusUpdateNeeded()
 {
-    return status.cur_num_blocks != nBestHeight;
+    return status.cur_num_blocks != chainActive.Height();
 }
 
-std::string TransactionRecord::getTxID()
+QString TransactionRecord::getTxID() const
 {
-    return hash.ToString() + strprintf("-%03d", idx);
+    return formatSubTxId(hash, idx);
+}
+
+QString TransactionRecord::formatSubTxId(const uint256 &hash, int vout)
+{
+    return QString::fromStdString(hash.ToString() + strprintf("-%03d", vout));
 }
 
