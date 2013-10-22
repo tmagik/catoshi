@@ -8,11 +8,17 @@
 #define WALLETFRAME_H
 
 #include <QFrame>
+#include <QMap>
 
 class BitcoinGUI;
 class ClientModel;
+class SendCoinsRecipient;
 class WalletModel;
-class WalletStack;
+class WalletView;
+
+QT_BEGIN_NAMESPACE
+class QStackedWidget;
+QT_END_NAMESPACE
 
 class WalletFrame : public QFrame
 {
@@ -26,17 +32,20 @@ public:
 
     bool addWallet(const QString& name, WalletModel *walletModel);
     bool setCurrentWallet(const QString& name);
-
+    bool removeWallet(const QString &name);
     void removeAllWallets();
 
-    bool handleURI(const QString &uri);
+    bool handlePaymentRequest(const SendCoinsRecipient& recipient);
 
     void showOutOfSyncWarning(bool fShow);
 
 private:
+    QStackedWidget *walletStack;
     BitcoinGUI *gui;
     ClientModel *clientModel;
-    WalletStack *walletStack;
+    QMap<QString, WalletView*> mapWalletViews;
+
+    bool bOutOfSync;
 
 public slots:
     /** Switch to overview (home) page */

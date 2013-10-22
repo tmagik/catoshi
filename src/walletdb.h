@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_WALLETDB_H
@@ -68,8 +68,10 @@ private:
     void operator=(const CWalletDB&);
 public:
     bool WriteName(const std::string& strAddress, const std::string& strName);
-
     bool EraseName(const std::string& strAddress);
+
+    bool WritePurpose(const std::string& strAddress, const std::string& purpose);
+    bool ErasePurpose(const std::string& strAddress);
 
     bool WriteTx(uint256 hash, const CWalletTx& wtx)
     {
@@ -91,8 +93,14 @@ public:
         if (!Write(std::make_pair(std::string("keymeta"), vchPubKey),
                    keyMeta))
             return false;
-
-        return Write(std::make_pair(std::string("key"), vchPubKey), vchPrivKey, false);
+        
+        // hash pubkey/privkey to accelerate wallet load
+        std::vector<unsigned char> vchKey;
+        vchKey.reserve(vchPubKey.size() + vchPrivKey.size());
+        vchKey.insert(vchKey.end(), vchPubKey.begin(), vchPubKey.end());
+        vchKey.insert(vchKey.end(), vchPrivKey.begin(), vchPrivKey.end());
+        
+        return Write(std::make_pair(std::string("key"), vchPubKey), std::make_pair(vchPrivKey, Hash(vchKey.begin(), vchKey.end())), false);
     }
 
     bool WriteCryptedKey(const CPubKey& vchPubKey,
