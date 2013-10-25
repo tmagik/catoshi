@@ -230,7 +230,7 @@ void BitcoinGUI::createActions(bool fIsTestnet)
     aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
 #else
     aboutQtAction = new QAction(QIcon(":/qt-project.org/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
-#endif	
+#endif
     aboutQtAction->setStatusTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
@@ -637,6 +637,8 @@ void BitcoinGUI::message(const QString &title, const QString &message, unsigned 
         if (!(buttons = (QMessageBox::StandardButton)(style & CClientUIInterface::BTN_MASK)))
             buttons = QMessageBox::Ok;
 
+        // Ensure we get users attention
+        showNormalIfMinimized();
         QMessageBox mBox((QMessageBox::Icon)nMBoxIcon, strTitle, message, buttons, this);
         int r = mBox.exec();
         if (ret != NULL)
@@ -688,9 +690,8 @@ void BitcoinGUI::askFee(qint64 nFeeRequired, bool *payFee)
     QString strMessage = tr("This transaction is over the size limit. You can still send it for a fee of %1, "
         "which goes to the nodes that process your transaction and helps to support the network. "
         "Do you want to pay the fee?").arg(BitcoinUnits::formatWithUnit(clientModel->getOptionsModel()->getDisplayUnit(), nFeeRequired));
-    QMessageBox::StandardButton retval = QMessageBox::question(
-          this, tr("Confirm transaction fee"), strMessage,
-          QMessageBox::Yes|QMessageBox::Cancel, QMessageBox::Yes);
+    QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm transaction fee"), strMessage,
+        QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Yes);
     *payFee = (retval == QMessageBox::Yes);
 }
 
@@ -733,7 +734,7 @@ void BitcoinGUI::dropEvent(QDropEvent *event)
             walletFrame->gotoSendCoinsPage();
         else
             message(tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters."),
-                      CClientUIInterface::ICON_WARNING);
+                CClientUIInterface::ICON_WARNING);
     }
 
     event->acceptProposedAction();
@@ -754,11 +755,6 @@ bool BitcoinGUI::eventFilter(QObject *object, QEvent *event)
 void BitcoinGUI::handlePaymentRequest(const SendCoinsRecipient& recipient)
 {
     walletFrame->handlePaymentRequest(recipient);
-}
-
-void BitcoinGUI::showPaymentACK(const QString& msg)
-{
-    message(tr("Payment acknowledged"), GUIUtil::HtmlEscape(msg), CClientUIInterface::MODAL);
 }
 
 void BitcoinGUI::setEncryptionStatus(int status)
