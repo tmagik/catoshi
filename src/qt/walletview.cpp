@@ -18,21 +18,15 @@
 #include "overviewpage.h"
 #include "askpassphrasedialog.h"
 #include "ui_interface.h"
+#include "guiutil.h"
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QAction>
-#if QT_VERSION < 0x050000
-#include <QDesktopServices>
-#else
-#include <QStandardPaths>
-#endif
-#include <QFileDialog>
 #include <QPushButton>
 
 WalletView::WalletView(QWidget *parent):
     QStackedWidget(parent),
-    gui(0),
     clientModel(0),
     walletModel(0)
 {
@@ -62,7 +56,7 @@ WalletView::WalletView(QWidget *parent):
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
 
-    // Clicking on a transaction on the overview page simply sends you to transaction history page
+    // Clicking on a transaction on the overview pre-selects the transaction on the transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), transactionView, SLOT(focusTransaction(QModelIndex)));
 
     // Double-clicking on a transaction on the transaction history page shows details
@@ -70,6 +64,11 @@ WalletView::WalletView(QWidget *parent):
 
     // Clicking on "Export" allows to export the transaction list
     connect(exportButton, SIGNAL(clicked()), transactionView, SLOT(exportClicked()));
+
+    // Pass through messages from sendCoinsPage
+    connect(sendCoinsPage, SIGNAL(message(QString,QString,unsigned int)), this, SIGNAL(message(QString,QString,unsigned int)));
+    // Pass through messages from transactionView
+    connect(transactionView, SIGNAL(message(QString,QString,unsigned int)), this, SIGNAL(message(QString,QString,unsigned int)));
 }
 
 WalletView::~WalletView()
@@ -78,55 +77,58 @@ WalletView::~WalletView()
 
 void WalletView::setBitcoinGUI(BitcoinGUI *gui)
 {
-    this->gui = gui;
-
     if (gui)
     {
-        // Clicking on a transaction on the overview page sends you to the transactions tab
+        // Clicking on a transaction on the overview page simply sends you to transaction history page
         connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), gui, SLOT(gotoHistoryPage()));
 
         // Receive and report messages
         connect(this, SIGNAL(message(QString,QString,unsigned int)), gui, SLOT(message(QString,QString,unsigned int)));
-        connect(sendCoinsPage, SIGNAL(message(QString,QString,unsigned int)), gui, SLOT(message(QString,QString,unsigned int)));
+
+        // Pass through encryption status changed signals
+        connect(this, SIGNAL(encryptionStatusChanged(int)), gui, SLOT(setEncryptionStatus(int)));
+
+        // Pass through transaction notifications
+        connect(this, SIGNAL(incomingTransaction(QString,int,qint64,QString,QString)), gui, SLOT(incomingTransaction(QString,int,qint64,QString,QString)));
     }
 }
 
 void WalletView::setClientModel(ClientModel *clientModel)
 {
     this->clientModel = clientModel;
-    if (clientModel)
-    {
-        overviewPage->setClientModel(clientModel);
-    }
+
+    overviewPage->setClientModel(clientModel);
 }
 
 void WalletView::setWalletModel(WalletModel *walletModel)
 {
     this->walletModel = walletModel;
-    if (walletModel && gui)
+
+    // Put transaction list in tabs
+    transactionView->setModel(walletModel);
+    overviewPage->setWalletModel(walletModel);
+    receiveCoinsPage->setModel(walletModel);
+    sendCoinsPage->setModel(walletModel);
+
+    if (walletModel)
     {
-        // Receive and report messages from wallet thread
-        connect(walletModel, SIGNAL(message(QString,QString,unsigned int)), gui, SLOT(message(QString,QString,unsigned int)));
+        // Receive and pass through messages from wallet model
+        connect(walletModel, SIGNAL(message(QString,QString,unsigned int)), this, SIGNAL(message(QString,QString,unsigned int)));
 
-        // Put transaction list in tabs
-        transactionView->setModel(walletModel);
-        overviewPage->setWalletModel(walletModel);
-        receiveCoinsPage->setModel(walletModel);
-        sendCoinsPage->setModel(walletModel);
-
-        setEncryptionStatus();
-        connect(walletModel, SIGNAL(encryptionStatusChanged(int)), gui, SLOT(setEncryptionStatus(int)));
+        // Handle changes in encryption status
+        connect(walletModel, SIGNAL(encryptionStatusChanged(int)), this, SIGNAL(encryptionStatusChanged(int)));
+        updateEncryptionStatus();
 
         // Balloon pop-up for new transaction
         connect(walletModel->getTransactionTableModel(), SIGNAL(rowsInserted(QModelIndex,int,int)),
-                this, SLOT(incomingTransaction(QModelIndex,int,int)));
+                this, SLOT(processNewTransaction(QModelIndex,int,int)));
 
         // Ask for passphrase if needed
         connect(walletModel, SIGNAL(requireUnlock()), this, SLOT(unlockWallet()));
     }
 }
 
-void WalletView::incomingTransaction(const QModelIndex& parent, int start, int /*end*/)
+void WalletView::processNewTransaction(const QModelIndex& parent, int start, int /*end*/)
 {
     // Prevent balloon-spam when initial block download is in progress
     if (!walletModel || !clientModel || clientModel->inInitialBlockDownload())
@@ -139,7 +141,7 @@ void WalletView::incomingTransaction(const QModelIndex& parent, int start, int /
     QString type = ttm->index(start, TransactionTableModel::Type, parent).data().toString();
     QString address = ttm->index(start, TransactionTableModel::ToAddress, parent).data().toString();
 
-    gui->incomingTransaction(date, walletModel->getOptionsModel()->getDisplayUnit(), amount, type, address);
+    emit incomingTransaction(date, walletModel->getOptionsModel()->getDisplayUnit(), amount, type, address);
 }
 
 void WalletView::gotoOverviewPage()
@@ -199,9 +201,9 @@ void WalletView::showOutOfSyncWarning(bool fShow)
     overviewPage->showOutOfSyncWarning(fShow);
 }
 
-void WalletView::setEncryptionStatus()
+void WalletView::updateEncryptionStatus()
 {
-    gui->setEncryptionStatus(walletModel->getEncryptionStatus());
+    emit encryptionStatusChanged(walletModel->getEncryptionStatus());
 }
 
 void WalletView::encryptWallet(bool status)
@@ -212,25 +214,25 @@ void WalletView::encryptWallet(bool status)
     dlg.setModel(walletModel);
     dlg.exec();
 
-    setEncryptionStatus();
+    updateEncryptionStatus();
 }
 
 void WalletView::backupWallet()
 {
-#if QT_VERSION < 0x050000
-    QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
-#else
-    QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-#endif
-    QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Wallet Data (*.dat)"));
-    if (!filename.isEmpty()) {
-        if (!walletModel->backupWallet(filename)) {
-            emit message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the new location."),
-                CClientUIInterface::MSG_ERROR);
+    QString filename = GUIUtil::getSaveFileName(this,
+        tr("Backup Wallet"), QString(),
+        tr("Wallet Data (*.dat)"));
+
+    if (filename.isEmpty())
+        return;
+
+    if (!walletModel->backupWallet(filename)) {
+        emit message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to %1.").arg(filename),
+            CClientUIInterface::MSG_ERROR);
         }
-        else
-            emit message(tr("Backup Successful"), tr("The wallet data was successfully saved to the new location."),
-                CClientUIInterface::MSG_INFORMATION);
+    else {
+        emit message(tr("Backup Successful"), tr("The wallet data was successfully saved to %1.").arg(filename),
+            CClientUIInterface::MSG_INFORMATION);
     }
 }
 
