@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_UTIL_H
@@ -140,12 +140,10 @@ inline void MilliSleep(int64 n)
 extern std::map<std::string, std::string> mapArgs;
 extern std::map<std::string, std::vector<std::string> > mapMultiArgs;
 extern bool fDebug;
-extern bool fDebugNet;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugger;
 extern bool fDaemon;
 extern bool fServer;
-extern bool fCommandLine;
 extern std::string strMiscWarning;
 extern bool fNoListen;
 extern bool fLogTimestamps;

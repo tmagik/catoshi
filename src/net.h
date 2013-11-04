@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_NET_H
@@ -28,7 +28,6 @@ static const unsigned int MAX_INV_SZ = 50000;
 
 class CNode;
 class CBlockIndex;
-extern int nBestHeight;
 
 
 
@@ -52,6 +51,7 @@ void SocketSendData(CNode *pnode);
 // Signals for message handling
 struct CNodeSignals
 {
+    boost::signals2::signal<int ()> GetHeight;
     boost::signals2::signal<bool (CNode*)> ProcessMessages;
     boost::signals2::signal<bool (CNode*, bool)> SendMessages;
 };
@@ -119,6 +119,9 @@ public:
     uint64 nSendBytes;
     uint64 nRecvBytes;
     bool fSyncNode;
+    double dPingTime;
+    double dPingWait;
+    std::string addrLocal;
 };
 
 
@@ -215,6 +218,9 @@ protected:
     static CCriticalSection cs_setBanned;
     int nMisbehavior;
 
+    // Basic fuzz-testing
+    void Fuzz(int nChance); // modifies ssSend
+
 public:
     uint256 hashContinue;
     CBlockIndex* pindexLastGetBlocksBegin;
@@ -234,6 +240,12 @@ public:
     CCriticalSection cs_inventory;
     std::multimap<int64, CInv> mapAskFor;
 
+    // Ping time measurement
+    uint64 nPingNonceSent;
+    int64 nPingUsecStart;
+    int64 nPingUsecTime;
+    bool fPingQueued;
+    
     CNode(SOCKET hSocketIn, CAddress addrIn, std::string addrNameIn = "", bool fInboundIn=false) : ssSend(SER_NETWORK, MIN_PROTO_VERSION)
     {
         nServices = 0;
@@ -268,6 +280,10 @@ public:
         fRelayTxes = false;
         setInventoryKnown.max_size(SendBufferSize() / 1000);
         pfilter = new CBloomFilter();
+        nPingNonceSent = 0;
+        nPingUsecStart = 0;
+        nPingUsecTime = 0;
+        fPingQueued = false;
 
         // Be shy and don't send version until we hear
         if (hSocket != INVALID_SOCKET && !fInbound)
@@ -286,8 +302,15 @@ public:
     }
 
 private:
+    // Network usage totals
+    static CCriticalSection cs_totalBytesRecv;
+    static CCriticalSection cs_totalBytesSent;
+    static uint64 nTotalBytesRecv;
+    static uint64 nTotalBytesSent;
+
     CNode(const CNode&);
     void operator=(const CNode&);
+
 public:
 
 
@@ -301,7 +324,7 @@ public:
     unsigned int GetTotalRecvSize()
     {
         unsigned int total = 0;
-        BOOST_FOREACH(const CNetMessage &msg, vRecvMsg) 
+        BOOST_FOREACH(const CNetMessage &msg, vRecvMsg)
             total += msg.vRecv.size() + 24;
         return total;
     }
@@ -414,12 +437,17 @@ public:
     // TODO: Document the precondition of this function.  Is cs_vSend locked?
     void EndMessage() UNLOCK_FUNCTION(cs_vSend)
     {
-        if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
+        // The -*messagestest options are intentionally not documented in the help message,
+        // since they are only used during development to debug the networking code and are
+        // not intended for end-users.
+        if (mapArgs.count("-dropmessagestest") && GetRand(GetArg("-dropmessagestest", 2)) == 0)
         {
             LogPrint("net", "dropmessages DROPPING SEND MESSAGE\n");
             AbortMessage();
             return;
         }
+        if (mapArgs.count("-fuzzmessagestest"))
+            Fuzz(GetArg("-fuzzmessagestest", 10));
 
         if (ssSend.size() == 0)
             return;
@@ -634,6 +662,13 @@ public:
     static bool IsBanned(CNetAddr ip);
     bool Misbehaving(int howmuch); // 1 == a little, 100 == a lot
     void copyStats(CNodeStats &stats);
+
+    // Network stats
+    static void RecordBytesRecv(uint64 bytes);
+    static void RecordBytesSent(uint64 bytes);
+
+    static uint64 GetTotalBytesRecv();
+    static uint64 GetTotalBytesSent();
 };
 
 

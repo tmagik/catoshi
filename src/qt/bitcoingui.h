@@ -5,15 +5,12 @@
 #include <QSystemTrayIcon>
 #include <QMap>
 
-class TransactionTableModel;
 class WalletFrame;
 class WalletView;
 class ClientModel;
 class WalletModel;
 class WalletStack;
-class TransactionView;
 class OverviewPage;
-class AddressBookPage;
 class SendCoinsDialog;
 class SendCoinsRecipient;
 class SignVerifyMessageDialog;
@@ -51,23 +48,15 @@ public:
         The client model represents the part of the core that communicates with the P2P network, and is wallet-agnostic.
     */
     void setClientModel(ClientModel *clientModel);
+
     /** Set the wallet model.
         The wallet model represents a bitcoin wallet, and offers access to the list of transactions, address book and sending
         functionality.
     */
-
     bool addWallet(const QString& name, WalletModel *walletModel);
     bool setCurrentWallet(const QString& name);
 
     void removeAllWallets();
-
-    /** Used by WalletView to allow access to needed QActions */
-    // Todo: Use Qt signals for these
-    QAction * getOverviewAction() { return overviewAction; }
-    QAction * getHistoryAction() { return historyAction; }
-    QAction * getAddressBookAction() { return addressBookAction; }
-    QAction * getReceiveCoinsAction() { return receiveCoinsAction; }
-    QAction * getSendCoinsAction() { return sendCoinsAction; }
 
 protected:
     void changeEvent(QEvent *e);
@@ -91,7 +80,8 @@ private:
     QAction *historyAction;
     QAction *quitAction;
     QAction *sendCoinsAction;
-    QAction *addressBookAction;
+    QAction *usedSendingAddressesAction;
+    QAction *usedReceivingAddressesAction;
     QAction *signMessageAction;
     QAction *verifyMessageAction;
     QAction *aboutAction;
@@ -106,7 +96,6 @@ private:
 
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
-    TransactionView *transactionView;
     RPCConsole *rpcConsole;
 
     QMovie *syncIconMovie;
@@ -143,6 +132,7 @@ public slots:
        @param[in] ret       pointer to a bool that will be modified to whether Ok was clicked (modal only)
     */
     void message(const QString &title, const QString &message, unsigned int style, bool *ret = NULL);
+
     /** Asks the user whether to pay the transaction fee or to cancel the transaction.
        It is currently not possible to pass a return value to another thread through
        BlockingQueuedConnection, so an indirected pointer is used.
@@ -153,8 +143,7 @@ public slots:
     */
     void askFee(qint64 nFeeRequired, bool *payFee);
 
-    void handlePaymentRequest(const SendCoinsRecipient& recipient);
-    void showPaymentACK(const QString& msg);
+    bool handlePaymentRequest(const SendCoinsRecipient& recipient);
 
     /** Show incoming transaction notification for new transactions. */
     void incomingTransaction(const QString& date, int unit, qint64 amount, const QString& type, const QString& address);
@@ -164,8 +153,6 @@ private slots:
     void gotoOverviewPage();
     /** Switch to history (transactions) page */
     void gotoHistoryPage();
-    /** Switch to address book page */
-    void gotoAddressBookPage();
     /** Switch to receive coins page */
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */

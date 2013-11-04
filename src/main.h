@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_MAIN_H
@@ -12,22 +12,19 @@
 #include "core.h"
 #include "bignum.h"
 #include "sync.h"
+#include "txmempool.h"
 #include "net.h"
 #include "script.h"
 
 #include <list>
 
-class CWallet;
 class CBlock;
 class CBlockIndex;
-class CKeyItem;
-class CReserveKey;
-
-class CAddress;
 class CInv;
+class CKeyItem;
 class CNode;
-
-struct CBlockIndexWorkComparator;
+class CReserveKey;
+class CWallet;
 
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
@@ -73,22 +70,12 @@ extern CScript COINBASE_FLAGS;
 
 
 extern CCriticalSection cs_main;
+extern CTxMemPool mempool;
 extern std::map<uint256, CBlockIndex*> mapBlockIndex;
-extern std::vector<CBlockIndex*> vBlockIndexByHeight;
-extern std::set<CBlockIndex*, CBlockIndexWorkComparator> setBlockIndexValid;
-extern CBlockIndex* pindexGenesisBlock;
-extern int nBestHeight;
-extern uint256 nBestChainWork;
-extern uint256 nBestInvalidWork;
-extern uint256 hashBestChain;
-extern CBlockIndex* pindexBest;
-extern unsigned int nTransactionsUpdated;
 extern uint64 nLastBlockTx;
 extern uint64 nLastBlockSize;
 extern const std::string strMessageMagic;
 extern int64 nTimeBestReceived;
-extern CCriticalSection cs_setpwalletRegistered;
-extern std::set<CWallet*> setpwalletRegistered;
 extern bool fImporting;
 extern bool fReindex;
 extern bool fBenchmark;
@@ -114,17 +101,18 @@ class CCoinsView;
 class CCoinsViewCache;
 class CScriptCheck;
 class CValidationState;
+class CWalletInterface;
 
 struct CBlockTemplate;
 
 /** Register a wallet to receive updates from core */
-void RegisterWallet(CWallet* pwalletIn);
+void RegisterWallet(CWalletInterface* pwalletIn);
 /** Unregister a wallet from core */
-void UnregisterWallet(CWallet* pwalletIn);
+void UnregisterWallet(CWalletInterface* pwalletIn);
 /** Unregister all wallets from core */
 void UnregisterAllWallets();
 /** Push an updated transaction to all registered wallets */
-void SyncWithWallets(const uint256 &hash, const CTransaction& tx, const CBlock* pblock = NULL, bool fUpdate = false);
+void SyncWithWallets(const uint256 &hash, const CTransaction& tx, const CBlock* pblock = NULL);
 
 /** Register with a network node to receive its signals */
 void RegisterNodeSignals(CNodeSignals& nodeSignals);
@@ -153,8 +141,6 @@ void UnloadBlockIndex();
 bool VerifyDB(int nCheckLevel, int nCheckDepth);
 /** Print the loaded block tree */
 void PrintBlockTree();
-/** Find a block by height in the currently-connected chain */
-CBlockIndex* FindBlockByHeight(int nHeight);
 /** Process protocol messages received from a given node */
 bool ProcessMessages(CNode* pfrom);
 /** Send queued protocol messages to be sent to a give node */
@@ -189,6 +175,9 @@ bool VerifySignature(const CCoins& txFrom, const CTransaction& txTo, unsigned in
 /** Abort with a message */
 bool AbortNode(const std::string &msg);
 
+/** (try to) add transaction to memory pool **/
+bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
+                        bool* pfMissingInputs, bool fRejectInsaneFee=false);
 
 
 
@@ -196,10 +185,6 @@ bool AbortNode(const std::string &msg);
 
 
 
-
-
-
-bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
 
 struct CDiskBlockPos
 {
@@ -660,10 +645,6 @@ public:
      }
 };
 
-extern CCriticalSection cs_LastBlockFile;
-extern CBlockFileInfo infoLastBlockFile;
-extern int nLastBlockFile;
-
 enum BlockStatus {
     BLOCK_VALID_UNKNOWN      =    0,
     BLOCK_VALID_HEADER       =    1, // parsed, version ok, hash satisfies claimed PoW, 1 <= vtx count <= max, timestamp not in future
@@ -819,15 +800,6 @@ public:
         return (CBigNum(1)<<256) / (bnTarget+1);
     }
 
-    bool IsInMainChain() const
-    {
-        return nHeight < (int)vBlockIndexByHeight.size() && vBlockIndexByHeight[nHeight] == this;
-    }
-
-    CBlockIndex *GetNextInMainChain() const {
-        return nHeight+1 >= (int)vBlockIndexByHeight.size() ? NULL : vBlockIndexByHeight[nHeight+1];
-    }
-
     bool CheckIndex() const
     {
         return CheckProofOfWork(GetBlockHash(), nBits);
@@ -849,17 +821,7 @@ public:
         return pbegin[(pend - pbegin)/2];
     }
 
-    int64 GetMedianTime() const
-    {
-        const CBlockIndex* pindex = this;
-        for (int i = 0; i < nMedianTimeSpan/2; i++)
-        {
-            if (!pindex->GetNextInMainChain())
-                return GetBlockTime();
-            pindex = pindex->GetNextInMainChain();
-        }
-        return pindex->GetMedianTimePast();
-    }
+    int64 GetMedianTime() const;
 
     /**
      * Returns true if there are nRequired or more blocks of minVersion or above
@@ -870,8 +832,8 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(pprev=%p, pnext=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
-            pprev, GetNextInMainChain(), nHeight,
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+            pprev, nHeight,
             hashMerkleRoot.ToString().c_str(),
             GetBlockHash().ToString().c_str());
     }
@@ -879,19 +841,6 @@ public:
     void print() const
     {
         LogPrintf("%s\n", ToString().c_str());
-    }
-};
-
-struct CBlockIndexWorkComparator
-{
-    bool operator()(CBlockIndex *pa, CBlockIndex *pb) {
-        if (pa->nChainWork > pb->nChainWork) return false;
-        if (pa->nChainWork < pb->nChainWork) return true;
-
-        if (pa->GetBlockHash() < pb->GetBlockHash()) return false;
-        if (pa->GetBlockHash() > pb->GetBlockHash()) return true;
-
-        return false; // identical blocks
     }
 };
 
@@ -973,13 +922,15 @@ private:
         MODE_ERROR,   // run-time error
     } mode;
     int nDoS;
+    bool corruptionPossible;
 public:
     CValidationState() : mode(MODE_VALID), nDoS(0) {}
-    bool DoS(int level, bool ret = false) {
+    bool DoS(int level, bool ret = false, bool corruptionIn = false) {
         if (mode == MODE_ERROR)
             return ret;
         nDoS += level;
         mode = MODE_INVALID;
+        corruptionPossible = corruptionIn;
         return ret;
     }
     bool Invalid(bool ret = false) {
@@ -1009,108 +960,76 @@ public:
         }
         return false;
     }
+    bool CorruptionPossible() {
+        return corruptionPossible;
+    }
 };
 
+/** An in-memory indexed chain of blocks. */
+class CChain {
+private:
+    std::vector<CBlockIndex*> vChain;
 
-
-
-
-
-
-/** Describes a place in the block chain to another node such that if the
- * other node doesn't have the same branch, it can find a recent common trunk.
- * The further back it is, the further before the fork it may be.
- */
-class CBlockLocator
-{
-protected:
-    std::vector<uint256> vHave;
 public:
-    CBlockLocator() {}
-
-    explicit CBlockLocator(const CBlockIndex* pindex)
-    {
-        Set(pindex);
+    /** Returns the index entry for the genesis block of this chain, or NULL if none. */
+    CBlockIndex *Genesis() const {
+        return vChain.size() > 0 ? vChain[0] : NULL;
     }
 
-    explicit CBlockLocator(uint256 hashBlock);
-
-    CBlockLocator(const std::vector<uint256>& vHaveIn)
-    {
-        vHave = vHaveIn;
+    /** Returns the index entry for the tip of this chain, or NULL if none. */
+    CBlockIndex *Tip() const {
+        return vChain.size() > 0 ? vChain[vChain.size() - 1] : NULL;
     }
 
-    IMPLEMENT_SERIALIZE
-    (
-        if (!(nType & SER_GETHASH))
-            READWRITE(nVersion);
-        READWRITE(vHave);
-    )
-
-    void SetNull()
-    {
-        vHave.clear();
+    /** Returns the index entry at a particular height in this chain, or NULL if no such height exists. */
+    CBlockIndex *operator[](int nHeight) const {
+        if (nHeight < 0 || nHeight >= (int)vChain.size())
+            return NULL;
+        return vChain[nHeight];
     }
 
-    bool IsNull()
-    {
-        return vHave.empty();
+    /** Compare two chains efficiently. */
+    friend bool operator==(const CChain &a, const CChain &b) {
+        return a.vChain.size() == b.vChain.size() &&
+               a.vChain[a.vChain.size() - 1] == b.vChain[b.vChain.size() - 1];
     }
 
-    /** Given a block initialises the locator to that point in the chain. */
-    void Set(const CBlockIndex* pindex);
-    /** Returns the distance in blocks this locator is from our chain head. */
-    int GetDistanceBack();
-    /** Returns the first best-chain block the locator contains. */
-    CBlockIndex* GetBlockIndex();
-    /** Returns the hash of the first best chain block the locator contains. */
-    uint256 GetBlockHash();
-    /** Returns the height of the first best chain block the locator has. */
-    int GetHeight();
+    /** Efficiently check whether a block is present in this chain. */
+    bool Contains(const CBlockIndex *pindex) const {
+        return (*this)[pindex->nHeight] == pindex;
+    }
+
+    /** Find the successor of a block in this chain, or NULL if the given index is not found or is the tip. */
+    CBlockIndex *Next(const CBlockIndex *pindex) const {
+        if (Contains(pindex))
+            return (*this)[pindex->nHeight + 1];
+        else
+            return NULL;
+    }
+
+    /** Return the maximal height in the chain. Is equal to chain.Tip() ? chain.Tip()->nHeight : -1. */
+    int Height() const {
+        return vChain.size() - 1;
+    }
+
+    /** Set/initialize a chain with a given tip. Returns the forking point. */
+    CBlockIndex *SetTip(CBlockIndex *pindex);
+
+    /** Return a CBlockLocator that refers to a block in this chain (by default the tip). */
+    CBlockLocator GetLocator(const CBlockIndex *pindex = NULL) const;
+
+    /** Find the last common block between this chain and a locator. */
+    CBlockIndex *FindFork(const CBlockLocator &locator) const;
 };
 
+/** The currently-connected chain of blocks. */
+extern CChain chainActive;
 
 
 
 
 
 
-
-class CTxMemPool
-{
-public:
-    static bool fChecks;
-    mutable CCriticalSection cs;
-    std::map<uint256, CTransaction> mapTx;
-    std::map<COutPoint, CInPoint> mapNextTx;
-
-    bool accept(CValidationState &state, const CTransaction &tx, bool fLimitFree, bool* pfMissingInputs, bool fRejectInsaneFee = false);
-    bool addUnchecked(const uint256& hash, const CTransaction &tx);
-    bool remove(const CTransaction &tx, bool fRecursive = false);
-    bool removeConflicts(const CTransaction &tx);
-    void clear();
-    void queryHashes(std::vector<uint256>& vtxid);
-    void pruneSpent(const uint256& hash, CCoins &coins);
-    void check(CCoinsViewCache *pcoins) const;
-
-    unsigned long size()
-    {
-        LOCK(cs);
-        return mapTx.size();
-    }
-
-    bool exists(uint256 hash)
-    {
-        return (mapTx.count(hash) != 0);
-    }
-
-    CTransaction& lookup(uint256 hash)
-    {
-        return mapTx[hash];
-    }
-};
-
-extern CTxMemPool mempool;
 
 struct CCoinsStats
 {
@@ -1278,6 +1197,20 @@ public:
         READWRITE(header);
         READWRITE(txn);
     )
+};
+
+
+class CWalletInterface {
+protected:
+    virtual void SyncTransaction(const uint256 &hash, const CTransaction &tx, const CBlock *pblock) =0;
+    virtual void EraseFromWallet(const uint256 &hash) =0;
+    virtual void SetBestChain(const CBlockLocator &locator) =0;
+    virtual void UpdatedTransaction(const uint256 &hash) =0;
+    virtual void Inventory(const uint256 &hash) =0;
+    virtual void ResendWalletTransactions() =0;
+    friend void ::RegisterWallet(CWalletInterface*);
+    friend void ::UnregisterWallet(CWalletInterface*);
+    friend void ::UnregisterAllWallets();
 };
 
 #endif

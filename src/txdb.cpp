@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -74,13 +74,9 @@ bool CBlockTreeDB::WriteBlockIndex(const CDiskBlockIndex& blockindex)
     return Write(make_pair('b', blockindex.GetBlockHash()), blockindex);
 }
 
-bool CBlockTreeDB::ReadBestInvalidWork(CBigNum& bnBestInvalidWork)
-{
-    return Read('I', bnBestInvalidWork);
-}
-
 bool CBlockTreeDB::WriteBestInvalidWork(const CBigNum& bnBestInvalidWork)
 {
+    // Obsolete; only written for backward compatibility.
     return Write('I', bnBestInvalidWork);
 }
 
@@ -222,10 +218,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nNonce         = diskindex.nNonce;
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
-
-                // Watch for genesis block
-                if (pindexGenesisBlock == NULL && diskindex.GetBlockHash() == Params().HashGenesisBlock())
-                    pindexGenesisBlock = pindexNew;
 
                 if (!pindexNew->CheckIndex())
                     return error("LoadBlockIndex() : CheckIndex failed: %s", pindexNew->ToString().c_str());

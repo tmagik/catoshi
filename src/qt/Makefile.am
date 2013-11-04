@@ -34,7 +34,8 @@ QT_TS = locale/bitcoin_ach.ts locale/bitcoin_af_ZA.ts locale/bitcoin_ar.ts \
 
 QT_FORMS_UI = forms/aboutdialog.ui forms/addressbookpage.ui \
   forms/askpassphrasedialog.ui forms/editaddressdialog.ui forms/intro.ui \
-  forms/optionsdialog.ui forms/overviewpage.ui forms/qrcodedialog.ui \
+  forms/optionsdialog.ui forms/overviewpage.ui forms/receiverequestdialog.ui \
+  forms/receivecoinsdialog.ui \
   forms/rpcconsole.ui forms/sendcoinsdialog.ui forms/sendcoinsentry.ui \
   forms/signverifymessagedialog.ui forms/transactiondescdialog.ui
 
@@ -46,15 +47,15 @@ QT_MOC_CPP = moc_aboutdialog.cpp moc_addressbookpage.cpp \
   moc_intro.cpp moc_macdockiconhandler.cpp moc_macnotificationhandler.cpp \
   moc_monitoreddatamapper.cpp moc_notificator.cpp moc_optionsdialog.cpp \
   moc_optionsmodel.cpp moc_overviewpage.cpp moc_paymentserver.cpp \
-  moc_qrcodedialog.cpp moc_qvalidatedlineedit.cpp moc_qvaluecombobox.cpp \
+  moc_receiverequestdialog.cpp moc_qvalidatedlineedit.cpp moc_qvaluecombobox.cpp \
+  moc_receivecoinsdialog.cpp \
   moc_rpcconsole.cpp moc_sendcoinsdialog.cpp moc_sendcoinsentry.cpp \
-  moc_signverifymessagedialog.cpp moc_splashscreen.cpp moc_transactiondesc.cpp \
+  moc_signverifymessagedialog.cpp moc_splashscreen.cpp moc_trafficgraphwidget.cpp moc_transactiondesc.cpp \
   moc_transactiondescdialog.cpp moc_transactionfilterproxy.cpp \
   moc_transactiontablemodel.cpp moc_transactionview.cpp moc_walletframe.cpp \
-  moc_walletmodel.cpp moc_walletstack.cpp moc_walletview.cpp
+  moc_walletmodel.cpp moc_walletview.cpp
 
 BITCOIN_MM = macdockiconhandler.mm macnotificationhandler.mm
-QR_CPP = qrcodedialog.cpp
 
 QT_MOC = intro.moc overviewpage.moc rpcconsole.moc
 
@@ -71,11 +72,12 @@ BITCOIN_QT_H  = aboutdialog.h addressbookpage.h addresstablemodel.h \
   editaddressdialog.h guiconstants.h guiutil.h intro.h macdockiconhandler.h \
   macnotificationhandler.h monitoreddatamapper.h notificator.h optionsdialog.h \
   optionsmodel.h overviewpage.h paymentrequestplus.h paymentserver.h \
-  qrcodedialog.h qvalidatedlineedit.h qvaluecombobox.h rpcconsole.h \
+  receivecoinsdialog.h \
+  receiverequestdialog.h qvalidatedlineedit.h qvaluecombobox.h rpcconsole.h \
   sendcoinsdialog.h sendcoinsentry.h signverifymessagedialog.h splashscreen.h \
-  transactiondescdialog.h transactiondesc.h transactionfilterproxy.h \
+  trafficgraphwidget.h transactiondescdialog.h transactiondesc.h transactionfilterproxy.h \
   transactionrecord.h transactiontablemodel.h transactionview.h walletframe.h \
-  walletmodel.h walletmodeltransaction.h walletstack.h walletview.h
+  walletmodel.h walletmodeltransaction.h walletview.h
 
 RES_ICONS = res/icons/bitcoin.png res/icons/address-book.png \
   res/icons/quit.png res/icons/send.png res/icons/toolbar.png \
@@ -101,11 +103,12 @@ BITCOIN_QT_CPP = aboutdialog.cpp addressbookpage.cpp \
   guiutil.cpp intro.cpp monitoreddatamapper.cpp notificator.cpp \
   optionsdialog.cpp optionsmodel.cpp overviewpage.cpp paymentrequestplus.cpp \
   paymentserver.cpp qvalidatedlineedit.cpp qvaluecombobox.cpp \
+  receivecoinsdialog.cpp receiverequestdialog.cpp \
   rpcconsole.cpp sendcoinsdialog.cpp sendcoinsentry.cpp \
-  signverifymessagedialog.cpp splashscreen.cpp transactiondesc.cpp \
+  signverifymessagedialog.cpp splashscreen.cpp trafficgraphwidget.cpp transactiondesc.cpp \
   transactiondescdialog.cpp transactionfilterproxy.cpp transactionrecord.cpp \
   transactiontablemodel.cpp transactionview.cpp walletframe.cpp \
-  walletmodel.cpp walletmodeltransaction.cpp walletstack.cpp walletview.cpp
+  walletmodel.cpp walletmodeltransaction.cpp walletview.cpp
 
 RES_IMAGES = res/images/about.png res/images/splash.png \
   res/images/splash_testnet.png
@@ -135,9 +138,6 @@ endif
 if TARGET_WINDOWS
   libbitcoinqt_a_SOURCES += $(BITCOIN_RC)
 endif
-if USE_QRCODE
-  libbitcoinqt_a_SOURCES += $(QR_CPP)
-endif
 #
 
 # bitcoin-qt binary #
@@ -159,7 +159,7 @@ QT_QM=$(QT_TS:.ts=.qm)
 bitcoinstrings.cpp: FORCE
 	$(MAKE) -C $(top_srcdir)/src qt/bitcoinstrings.cpp
 
-translate: bitcoinstrings.cpp $(QT_FORMS_UI) $(QT_FORMS_UI) $(BITCOIN_QT_CPP) $(BITCOIN_QT_H) $(BITCOIN_MM) $(QR_CPP)
+translate: bitcoinstrings.cpp $(QT_FORMS_UI) $(QT_FORMS_UI) $(BITCOIN_QT_CPP) $(BITCOIN_QT_H) $(BITCOIN_MM)
 	@test -n $(LUPDATE) || echo "lupdate is required for updating translations"
 	@$(LUPDATE) $^ -locations relative -no-obsolete -ts locale/bitcoin_en.ts
 

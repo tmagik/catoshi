@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -73,16 +73,13 @@ using namespace std;
 map<string, string> mapArgs;
 map<string, vector<string> > mapMultiArgs;
 bool fDebug = false;
-bool fDebugNet = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugger = false;
 bool fDaemon = false;
 bool fServer = false;
-bool fCommandLine = false;
 string strMiscWarning;
 bool fNoListen = false;
 bool fLogTimestamps = false;
-CMedianFilter<int64> vTimeOffsets(200,0);
 volatile bool fReopenDebugLog = false;
 
 // Init OpenSSL library multithreading support
@@ -95,8 +92,6 @@ void locking_callback(int mode, int i, const char* file, int line)
         LEAVE_CRITICAL_SECTION(*ppmutexOpenSSL[i]);
     }
 }
-
-LockedPageManager LockedPageManager::instance;
 
 // Init
 class CInit
@@ -229,10 +224,20 @@ int LogPrint(const char* category, const char* pszFormat, ...)
 {
     if (category != NULL)
     {
-        if (!fDebug) return 0;
-        const vector<string>& categories = mapMultiArgs["-debug"];
-        if (find(categories.begin(), categories.end(), string(category)) == categories.end())
+        if (!fDebug)
             return 0;
+
+        const vector<string>& categories = mapMultiArgs["-debug"];
+        bool allCategories = count(categories.begin(), categories.end(), string(""));
+
+        // Only look for categories, if not -debug/-debug=1 was passed,
+        // as that implies every category should be logged.
+        if (!allCategories)
+        {
+            // Category was not found (not supplied via -debug=<category>)
+            if (find(categories.begin(), categories.end(), string(category)) == categories.end())
+                return 0;
+        }
     }
 
     int ret = 0; // Returns total number of characters written
@@ -1299,10 +1304,12 @@ void SetMockTime(int64 nMockTimeIn)
     nMockTime = nMockTimeIn;
 }
 
+static CCriticalSection cs_nTimeOffset;
 static int64 nTimeOffset = 0;
 
 int64 GetTimeOffset()
 {
+    LOCK(cs_nTimeOffset);
     return nTimeOffset;
 }
 
@@ -1315,12 +1322,14 @@ void AddTimeData(const CNetAddr& ip, int64 nTime)
 {
     int64 nOffsetSample = nTime - GetTime();
 
+    LOCK(cs_nTimeOffset);
     // Ignore duplicates
     static set<CNetAddr> setKnown;
     if (!setKnown.insert(ip).second)
         return;
 
     // Add data
+    static CMedianFilter<int64> vTimeOffsets(200,0);
     vTimeOffsets.input(nOffsetSample);
     LogPrintf("Added time data, samples %d, offset %+"PRI64d" (%+"PRI64d" minutes)\n", vTimeOffsets.size(), nOffsetSample, nOffsetSample/60);
     if (vTimeOffsets.size() >= 5 && vTimeOffsets.size() % 2 == 1)
