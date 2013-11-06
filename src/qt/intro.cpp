@@ -1,3 +1,7 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "intro.h"
 #include "ui_intro.h"
 #include "util.h"
@@ -177,8 +181,8 @@ void Intro::pickDataDirectory(bool fIsTestnet)
                 fs::create_directory(dataDir.toStdString());
                 break;
             } catch(fs::filesystem_error &e) {
-                QMessageBox::critical(0, QObject::tr("Bitcoin"),
-                                      QObject::tr("Error: Specified data directory \"%1\" can not be created.").arg(dataDir));
+                QMessageBox::critical(0, tr("Bitcoin"),
+                    tr("Error: Specified data directory \"%1\" can not be created.").arg(dataDir));
                 /* fall through, back to choosing screen */
             }
         }
