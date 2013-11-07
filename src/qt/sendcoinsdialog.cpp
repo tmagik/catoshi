@@ -1,3 +1,7 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "sendcoinsdialog.h"
 #include "ui_sendcoinsdialog.h"
 
@@ -102,7 +106,7 @@ void SendCoinsDialog::on_sendButton_clicked()
 
         QString recipientElement;
 
-        if (rcp.authenticatedMerchant.isEmpty())
+        if (!rcp.paymentRequest.IsInitialized()) // normal payment
         {
             if(rcp.label.length() > 0) // label with address
             {
@@ -114,9 +118,13 @@ void SendCoinsDialog::on_sendButton_clicked()
                 recipientElement = tr("%1 to %2").arg(amount, address);
             }
         }
-        else // just merchant
+        else if(!rcp.authenticatedMerchant.isEmpty()) // secure payment request
         {
             recipientElement = tr("%1 to %2").arg(amount, GUIUtil::HtmlEscape(rcp.authenticatedMerchant));
+        }
+        else // insecure payment request
+        {
+            recipientElement = tr("%1 to %2").arg(amount, address);
         }
 
         formatted.append(recipientElement);
@@ -313,7 +321,7 @@ void SendCoinsDialog::pasteEntry(const SendCoinsRecipient &rv)
 bool SendCoinsDialog::handlePaymentRequest(const SendCoinsRecipient &rv)
 {
     QString strSendCoins = tr("Send Coins");
-    if (!rv.authenticatedMerchant.isEmpty()) {
+    if (rv.paymentRequest.IsInitialized()) {
         // Expired payment request?
         const payments::PaymentDetails& details = rv.paymentRequest.getDetails();
         if (details.has_expires() && (int64)details.expires() < GetTime())
