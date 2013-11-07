@@ -106,7 +106,7 @@ void Shutdown()
     if (!lockShutdown) return;
 
     RenameThread("bitcoin-shutoff");
-    nTransactionsUpdated++;
+    mempool.AddTransactionsUpdated(1);
     StopRPCThreads();
     ShutdownRPCMining();
     if (pwalletMain)
@@ -227,7 +227,7 @@ std::string HelpMessage(HelpMessageMode hmm)
     {
         strUsage += ".\n";
     }
-        strUsage += "  -logtimestamps         " + _("Prepend debug output with timestamp") + "\n";
+        strUsage += "  -logtimestamps         " + _("Prepend debug output with timestamp (default: 1)") + "\n";
         strUsage += "  -shrinkdebugfile       " + _("Shrink debug.log file on client startup (default: 1 when no -debug)") + "\n";
         strUsage += "  -printtoconsole        " + _("Send trace/debug info to console instead of debug.log file") + "\n";
         strUsage += "  -regtest               " + _("Enter regression test mode, which uses a special chain in which blocks can be "
@@ -363,7 +363,7 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
 /** Initialize bitcoin.
  *  @pre Parameters should be parsed and config file should be read.
  */
-bool AppInit2(boost::thread_group& threadGroup)
+bool AppInit2(boost::thread_group& threadGroup, bool fForceServer)
 {
     // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
@@ -478,7 +478,7 @@ bool AppInit2(boost::thread_group& threadGroup)
         InitWarning(_("Warning: Deprecated argument -debugnet ignored, use -debug=net"));
 
     fBenchmark = GetBoolArg("-benchmark", false);
-    mempool.fChecks = GetBoolArg("-checkmempool", RegTest());
+    mempool.setSanityCheck(GetBoolArg("-checkmempool", RegTest()));
     Checkpoints::fEnabled = GetBoolArg("-checkpoints", true);
 
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
@@ -490,17 +490,14 @@ bool AppInit2(boost::thread_group& threadGroup)
     else if (nScriptCheckThreads > MAX_SCRIPTCHECK_THREADS)
         nScriptCheckThreads = MAX_SCRIPTCHECK_THREADS;
 
-    if (fDaemon)
+    if (fDaemon || fForceServer)
         fServer = true;
     else
         fServer = GetBoolArg("-server", false);
 
-    /* force fServer when running without GUI */
-    if (!fHaveGUI)
-        fServer = true;
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
     fPrintToDebugger = GetBoolArg("-printtodebugger", false);
-    fLogTimestamps = GetBoolArg("-logtimestamps", false);
+    fLogTimestamps = GetBoolArg("-logtimestamps", true);
 
     if (mapArgs.count("-timeout"))
     {

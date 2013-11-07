@@ -1,3 +1,7 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef PAYMENTSERVER_H
 #define PAYMENTSERVER_H
 
@@ -109,7 +113,7 @@ private slots:
 
 private:
     static bool readPaymentRequest(const QString& filename, PaymentRequestPlus& request);
-    bool processPaymentRequest(PaymentRequestPlus& request, QList<SendCoinsRecipient>& recipients);
+    bool processPaymentRequest(PaymentRequestPlus& request, SendCoinsRecipient& recipient);
     void handleURIOrFile(const QString& s);
     void fetchRequest(const QUrl& url);
 
