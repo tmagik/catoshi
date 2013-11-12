@@ -1,16 +1,27 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "walletmodel.h"
-#include "guiconstants.h"
-#include "optionsmodel.h"
+
 #include "addresstablemodel.h"
+#include "guiconstants.h"
 #include "transactiontablemodel.h"
 
-#include "ui_interface.h"
-#include "walletdb.h" // for BackupWallet
 #include "base58.h"
+#include "db.h"
+#include "keystore.h"
+#include "main.h"
+#include "sync.h"
+#include "ui_interface.h"
+#include "wallet.h"
+#include "walletdb.h" // for BackupWallet
 
+#include <stdint.h>
+
+#include <QDebug>
 #include <QSet>
 #include <QTimer>
-#include <QDebug>
 
 WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), wallet(wallet), optionsModel(optionsModel), addressTableModel(0),
@@ -73,10 +84,10 @@ void WalletModel::updateStatus()
 
 void WalletModel::pollBalanceChanged()
 {
-    if(nBestHeight != cachedNumBlocks)
+    if(chainActive.Height() != cachedNumBlocks)
     {
         // Balance and number of transactions might have changed
-        cachedNumBlocks = nBestHeight;
+        cachedNumBlocks = chainActive.Height();
         checkBalanceChanged();
     }
 }
@@ -129,7 +140,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
 {
     qint64 total = 0;
     QList<SendCoinsRecipient> recipients = transaction.getRecipients();
-    std::vector<std::pair<CScript, int64> > vecSend;
+    std::vector<std::pair<CScript, int64_t> > vecSend;
 
     if(recipients.empty())
     {
@@ -143,8 +154,8 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
     foreach(const SendCoinsRecipient &rcp, recipients)
     {
         if (rcp.paymentRequest.IsInitialized())
-        {    // PaymentRequest...
-            int64 subtotal = 0;
+        {   // PaymentRequest...
+            int64_t subtotal = 0;
             const payments::PaymentDetails& details = rcp.paymentRequest.getDetails();
             for (int i = 0; i < details.outputs_size(); i++)
             {
@@ -153,7 +164,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
                 subtotal += out.amount();
                 const unsigned char* scriptStr = (const unsigned char*)out.script().data();
                 CScript scriptPubKey(scriptStr, scriptStr+out.script().size());
-                vecSend.push_back(std::pair<CScript, int64>(scriptPubKey, out.amount()));
+                vecSend.push_back(std::pair<CScript, int64_t>(scriptPubKey, out.amount()));
             }
             if (subtotal <= 0)
             {
@@ -176,7 +187,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
 
             CScript scriptPubKey;
             scriptPubKey.SetDestination(CBitcoinAddress(rcp.address.toStdString()).Get());
-            vecSend.push_back(std::pair<CScript, int64>(scriptPubKey, rcp.amount));
+            vecSend.push_back(std::pair<CScript, int64_t>(scriptPubKey, rcp.amount));
 
             total += rcp.amount;
         }
@@ -201,7 +212,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
         LOCK2(cs_main, wallet->cs_wallet);
 
         transaction.newPossibleKeyChange(wallet);
-        int64 nFeeRequired = 0;
+        int64_t nFeeRequired = 0;
         std::string strFailReason;
 
         CWalletTx *newTx = transaction.getTransaction();
@@ -258,22 +269,26 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(WalletModelTransaction &tran
     // and emit coinsSent signal for each recipient
     foreach(const SendCoinsRecipient &rcp, transaction.getRecipients())
     {
-        std::string strAddress = rcp.address.toStdString();
-        CTxDestination dest = CBitcoinAddress(strAddress).Get();
-        std::string strLabel = rcp.label.toStdString();
+        // Don't touch the address book when we have a payment request
+        if (!rcp.paymentRequest.IsInitialized())
         {
-            LOCK(wallet->cs_wallet);
-
-            std::map<CTxDestination, CAddressBookData>::iterator mi = wallet->mapAddressBook.find(dest);
-
-            // Check if we have a new address or an updated label
-            if (mi == wallet->mapAddressBook.end())
+            std::string strAddress = rcp.address.toStdString();
+            CTxDestination dest = CBitcoinAddress(strAddress).Get();
+            std::string strLabel = rcp.label.toStdString();
             {
-                wallet->SetAddressBook(dest, strLabel, "send");
-            }
-            else if (mi->second.name != strLabel)
-            {
-                wallet->SetAddressBook(dest, strLabel, ""); // "" means don't change purpose
+                LOCK(wallet->cs_wallet);
+
+                std::map<CTxDestination, CAddressBookData>::iterator mi = wallet->mapAddressBook.find(dest);
+
+                // Check if we have a new address or an updated label
+                if (mi == wallet->mapAddressBook.end())
+                {
+                    wallet->SetAddressBook(dest, strLabel, "send");
+                }
+                else if (mi->second.name != strLabel)
+                {
+                    wallet->SetAddressBook(dest, strLabel, ""); // "" means don't change purpose
+                }
             }
         }
         emit coinsSent(wallet, rcp, transaction_array);

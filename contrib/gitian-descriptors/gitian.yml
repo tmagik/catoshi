@@ -23,6 +23,7 @@ packages:
 - "libtool"
 - "automake"
 - "faketime"
+- "bsdmainutils"
 reference_datetime: "2013-06-01 00:00:00"
 remotes:
 - "url": "https://github.com/bitcoin/bitcoin.git"
@@ -34,7 +35,11 @@ files:
 script: |
   STAGING="$HOME/install"
   export LIBRARY_PATH="$STAGING/lib"
-  #
+  # Integrity Check
+  echo "bbd6b756e6af44b5a5b0f9b93eada3fb8922ed1d6451b7d6f184d0ae0c813994  miniupnpc-1.6.tar.gz"   | sha256sum -c
+  echo "03c4bc7cd9a75747c3815d509bbe061907d615764f2357923f0db948c567068f  qrencode-3.2.0.tar.bz2" | sha256sum -c
+  echo "13bfc5ae543cf3aa180ac2485c0bc89495e3ae711fc6fab4f8ffe90dfb4bb677  protobuf-2.5.0.tar.bz2" | sha256sum -c
+
   tar xzfm miniupnpc-1.6.tar.gz
   cd miniupnpc-1.6
   INSTALLPREFIX=$STAGING make $MAKEOPTS install
@@ -57,12 +62,12 @@ script: |
   cd bitcoin
   export TAR_OPTIONS=--mtime=`echo $REFERENCE_DATETIME | awk '{ print $1 }'`
   ./autogen.sh
-  ./configure --disable-debug --prefix=$STAGING --bindir=$OUTDIR --with-protoc-bindir=$STAGING/host/bin --disable-maintainer-mode --disable-dependency-tracking PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" CPPFLAGS="-I$STAGING/include" LDFLAGS="-L$STAGING/lib" CXXFLAGS="-frandom-seed=bitcoin"
+  ./configure --prefix=$STAGING --bindir=$OUTDIR --with-protoc-bindir=$STAGING/host/bin --disable-maintainer-mode --disable-dependency-tracking PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" CPPFLAGS="-I$STAGING/include" LDFLAGS="-L$STAGING/lib" CXXFLAGS="-frandom-seed=bitcoin"
   make dist
   mkdir -p distsrc
   cd distsrc
   tar --strip-components=1 -xf ../bitcoin-*.tar.*
-  ./configure --disable-debug --prefix=$STAGING --bindir=$OUTDIR --with-protoc-bindir=$STAGING/host/bin --disable-maintainer-mode --disable-dependency-tracking PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" CPPFLAGS="-I$STAGING/include" LDFLAGS="-L$STAGING/lib" CXXFLAGS="-frandom-seed=bitcoin"
+  ./configure --prefix=$STAGING --bindir=$OUTDIR --with-protoc-bindir=$STAGING/host/bin --disable-maintainer-mode --disable-dependency-tracking PKG_CONFIG_PATH="$STAGING/lib/pkgconfig" CPPFLAGS="-I$STAGING/include" LDFLAGS="-L$STAGING/lib" CXXFLAGS="-frandom-seed=bitcoin"
   make $MAKEOPTS
   make $MAKEOPTS install-strip
   mkdir -p $OUTDIR/src

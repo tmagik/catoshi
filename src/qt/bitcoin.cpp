@@ -1,30 +1,37 @@
-/*
- * W.J. van der Laan 2011-2012
- */
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "bitcoingui.h"
+
 #include "clientmodel.h"
-#include "walletmodel.h"
-#include "optionsmodel.h"
-#include "guiutil.h"
 #include "guiconstants.h"
-#include "init.h"
-#include "util.h"
-#include "ui_interface.h"
+#include "guiutil.h"
+#include "intro.h"
+#include "optionsmodel.h"
 #include "paymentserver.h"
 #include "splashscreen.h"
-#include "intro.h"
+#include "walletmodel.h"
 
+#include "init.h"
+#include "main.h"
+#include "ui_interface.h"
+#include "util.h"
+
+#include <stdint.h>
+
+#include <boost/filesystem/operations.hpp>
 #include <QApplication>
+#include <QLibraryInfo>
+#include <QLocale>
 #include <QMessageBox>
+#include <QSettings>
+#include <QTimer>
+#include <QTranslator>
+
 #if QT_VERSION < 0x050000
 #include <QTextCodec>
 #endif
-#include <QLocale>
-#include <QTimer>
-#include <QTranslator>
-#include <QLibraryInfo>
-#include <QSettings>
 
 #if defined(BITCOIN_NEED_QT_PLUGINS) && !defined(_BITCOIN_QT_PLUGINS_INCLUDED)
 #define _BITCOIN_QT_PLUGINS_INCLUDED
@@ -62,13 +69,13 @@ static bool ThreadSafeMessageBox(const std::string& message, const std::string& 
     }
     else
     {
-        printf("%s: %s\n", caption.c_str(), message.c_str());
+        LogPrintf("%s: %s\n", caption.c_str(), message.c_str());
         fprintf(stderr, "%s: %s\n", caption.c_str(), message.c_str());
         return false;
     }
 }
 
-static bool ThreadSafeAskFee(int64 nFeeRequired)
+static bool ThreadSafeAskFee(int64_t nFeeRequired)
 {
     if(!guiref)
         return false;
@@ -91,7 +98,7 @@ static void InitMessage(const std::string &message)
         splashref->showMessage(QString::fromStdString(message), Qt::AlignBottom|Qt::AlignHCenter, QColor(55,55,55));
         qApp->processEvents();
     }
-    printf("init message: %s\n", message.c_str());
+    LogPrintf("init message: %s\n", message.c_str());
 }
 
 /*
@@ -155,12 +162,15 @@ static void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTrans
 #if QT_VERSION < 0x050000
 void DebugMessageHandler(QtMsgType type, const char * msg)
 {
-    OutputDebugStringF("Bitcoin-Qt: %s\n", msg);
+    Q_UNUSED(type);
+    LogPrint("qt", "Bitcoin-Qt: %s\n", msg);
 }
 #else
 void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg)
 {
-    OutputDebugStringF("Bitcoin-Qt: %s\n", qPrintable(msg));
+    Q_UNUSED(type);
+    Q_UNUSED(context);
+    LogPrint("qt", "Bitcoin-Qt: %s\n", qPrintable(msg));
 }
 #endif
 
@@ -169,8 +179,6 @@ int main(int argc, char *argv[])
 {
     bool fMissingDatadir = false;
     bool fSelParFromCLFailed = false;
-
-    fHaveGUI = true;
 
     // Command-line options take precedence:
     ParseParameters(argc, argv);
@@ -290,7 +298,7 @@ int main(int argc, char *argv[])
         QObject::connect(pollShutdownTimer, SIGNAL(timeout()), guiref, SLOT(detectShutdown()));
         pollShutdownTimer->start(200);
 
-        if(AppInit2(threadGroup))
+        if(AppInit2(threadGroup, false))
         {
             {
                 // Put this in a block, so that the Model objects are cleaned up before
@@ -300,7 +308,6 @@ int main(int argc, char *argv[])
 
                 PaymentServer::LoadRootCAs();
                 paymentServer->setOptionsModel(&optionsModel);
-                paymentServer->initNetManager();
 
                 if (splashref)
                     splash.finish(&window);
@@ -326,12 +333,12 @@ int main(int argc, char *argv[])
                 // bitcoin: URIs or payment requests:
                 QObject::connect(paymentServer, SIGNAL(receivedPaymentRequest(SendCoinsRecipient)),
                                  &window, SLOT(handlePaymentRequest(SendCoinsRecipient)));
+                QObject::connect(&window, SIGNAL(receivedURI(QString)),
+                                 paymentServer, SLOT(handleURIOrFile(QString)));
                 QObject::connect(&walletModel, SIGNAL(coinsSent(CWallet*,SendCoinsRecipient,QByteArray)),
                                  paymentServer, SLOT(fetchPaymentACK(CWallet*,const SendCoinsRecipient&,QByteArray)));
-                QObject::connect(paymentServer, SIGNAL(receivedPaymentACK(QString)),
-                                 &window, SLOT(showPaymentACK(QString)));
-                QObject::connect(paymentServer, SIGNAL(reportError(QString, QString, unsigned int)),
-                                 guiref, SLOT(message(QString, QString, unsigned int)));
+                QObject::connect(paymentServer, SIGNAL(message(QString,QString,unsigned int)),
+                                 guiref, SLOT(message(QString,QString,unsigned int)));
                 QTimer::singleShot(100, paymentServer, SLOT(uiReady()));
 
                 app.exec();

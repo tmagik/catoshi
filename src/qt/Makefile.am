@@ -1,11 +1,10 @@
 include $(top_srcdir)/src/Makefile.include
 
-AM_CPPFLAGS =  $(INCLUDES) -I$(top_builddir)/src/obj \
-  -I$(top_srcdir)/src/leveldb/include -I$(top_srcdir)/src \
-  -I$(top_srcdir)/src/leveldb/helpers -I$(top_builddir)/src/qt \
-  -I$(top_builddir)/src/qt/forms $(BOOST_INCLUDES) $(PROTOBUF_CFLAGS) \
+AM_CPPFLAGS += -I$(top_srcdir)/src \
+  -I$(top_builddir)/src/qt \
+  -I$(top_builddir)/src/qt/forms \
+  $(PROTOBUF_CFLAGS) \
   $(QR_CFLAGS)
-AM_LDFLAGS = $(PTHREAD_CFLAGS)
 bin_PROGRAMS = bitcoin-qt
 noinst_LIBRARIES = libbitcoinqt.a
 SUBDIRS = $(BUILD_TEST_QT)
@@ -34,7 +33,9 @@ QT_TS = locale/bitcoin_ach.ts locale/bitcoin_af_ZA.ts locale/bitcoin_ar.ts \
 
 QT_FORMS_UI = forms/aboutdialog.ui forms/addressbookpage.ui \
   forms/askpassphrasedialog.ui forms/editaddressdialog.ui forms/intro.ui \
-  forms/optionsdialog.ui forms/overviewpage.ui forms/qrcodedialog.ui \
+  forms/openuridialog.ui \
+  forms/optionsdialog.ui forms/overviewpage.ui forms/receiverequestdialog.ui \
+  forms/receivecoinsdialog.ui \
   forms/rpcconsole.ui forms/sendcoinsdialog.ui forms/sendcoinsentry.ui \
   forms/signverifymessagedialog.ui forms/transactiondescdialog.ui
 
@@ -44,14 +45,19 @@ QT_MOC_CPP = moc_aboutdialog.cpp moc_addressbookpage.cpp \
   moc_bitcoingui.cpp moc_bitcoinunits.cpp moc_clientmodel.cpp \
   moc_csvmodelwriter.cpp moc_editaddressdialog.cpp moc_guiutil.cpp \
   moc_intro.cpp moc_macdockiconhandler.cpp moc_macnotificationhandler.cpp \
-  moc_monitoreddatamapper.cpp moc_notificator.cpp moc_optionsdialog.cpp \
+  moc_monitoreddatamapper.cpp moc_notificator.cpp \
+  moc_openuridialog.cpp \
+  moc_optionsdialog.cpp \
   moc_optionsmodel.cpp moc_overviewpage.cpp moc_paymentserver.cpp \
-  moc_qrcodedialog.cpp moc_qvalidatedlineedit.cpp moc_qvaluecombobox.cpp \
+  moc_receiverequestdialog.cpp moc_qvalidatedlineedit.cpp moc_qvaluecombobox.cpp \
+  moc_receivecoinsdialog.cpp \
   moc_rpcconsole.cpp moc_sendcoinsdialog.cpp moc_sendcoinsentry.cpp \
-  moc_signverifymessagedialog.cpp moc_splashscreen.cpp moc_transactiondesc.cpp \
+  moc_signverifymessagedialog.cpp moc_splashscreen.cpp moc_trafficgraphwidget.cpp moc_transactiondesc.cpp \
   moc_transactiondescdialog.cpp moc_transactionfilterproxy.cpp \
   moc_transactiontablemodel.cpp moc_transactionview.cpp moc_walletframe.cpp \
-  moc_walletmodel.cpp moc_walletstack.cpp moc_walletview.cpp
+  moc_walletmodel.cpp moc_walletview.cpp
+
+BITCOIN_MM = macdockiconhandler.mm macnotificationhandler.mm
 
 QT_MOC = intro.moc overviewpage.moc rpcconsole.moc
 
@@ -66,13 +72,16 @@ BITCOIN_QT_H  = aboutdialog.h addressbookpage.h addresstablemodel.h \
   askpassphrasedialog.h bitcoinaddressvalidator.h bitcoinamountfield.h \
   bitcoingui.h bitcoinunits.h clientmodel.h csvmodelwriter.h \
   editaddressdialog.h guiconstants.h guiutil.h intro.h macdockiconhandler.h \
-  macnotificationhandler.h monitoreddatamapper.h notificator.h optionsdialog.h \
+  macnotificationhandler.h monitoreddatamapper.h notificator.h \
+  openuridialog.h \
+  optionsdialog.h \
   optionsmodel.h overviewpage.h paymentrequestplus.h paymentserver.h \
-  qrcodedialog.h qvalidatedlineedit.h qvaluecombobox.h rpcconsole.h \
+  receivecoinsdialog.h \
+  receiverequestdialog.h qvalidatedlineedit.h qvaluecombobox.h rpcconsole.h \
   sendcoinsdialog.h sendcoinsentry.h signverifymessagedialog.h splashscreen.h \
-  transactiondescdialog.h transactiondesc.h transactionfilterproxy.h \
+  trafficgraphwidget.h transactiondescdialog.h transactiondesc.h transactionfilterproxy.h \
   transactionrecord.h transactiontablemodel.h transactionview.h walletframe.h \
-  walletmodel.h walletmodeltransaction.h walletstack.h walletview.h
+  walletmodel.h walletmodeltransaction.h walletview.h
 
 RES_ICONS = res/icons/bitcoin.png res/icons/address-book.png \
   res/icons/quit.png res/icons/send.png res/icons/toolbar.png \
@@ -91,6 +100,21 @@ RES_ICONS = res/icons/bitcoin.png res/icons/address-book.png \
   res/icons/qrcode.png res/icons/debugwindow.png res/icons/bitcoin.ico \
   res/icons/bitcoin_testnet.ico
 
+BITCOIN_QT_CPP = aboutdialog.cpp addressbookpage.cpp \
+  addresstablemodel.cpp askpassphrasedialog.cpp bitcoinaddressvalidator.cpp \
+  bitcoinamountfield.cpp bitcoin.cpp bitcoingui.cpp \
+  bitcoinunits.cpp clientmodel.cpp csvmodelwriter.cpp editaddressdialog.cpp \
+  guiutil.cpp intro.cpp monitoreddatamapper.cpp notificator.cpp \
+  openuridialog.cpp \
+  optionsdialog.cpp optionsmodel.cpp overviewpage.cpp paymentrequestplus.cpp \
+  paymentserver.cpp qvalidatedlineedit.cpp qvaluecombobox.cpp \
+  receivecoinsdialog.cpp receiverequestdialog.cpp \
+  rpcconsole.cpp sendcoinsdialog.cpp sendcoinsentry.cpp \
+  signverifymessagedialog.cpp splashscreen.cpp trafficgraphwidget.cpp transactiondesc.cpp \
+  transactiondescdialog.cpp transactionfilterproxy.cpp transactionrecord.cpp \
+  transactiontablemodel.cpp transactionview.cpp walletframe.cpp \
+  walletmodel.cpp walletmodeltransaction.cpp walletview.cpp
+
 RES_IMAGES = res/images/about.png res/images/splash.png \
   res/images/splash_testnet.png
 
@@ -100,20 +124,8 @@ BITCOIN_RC = res/bitcoin-qt-res.rc
 
 libbitcoinqt_a_CPPFLAGS = $(AM_CPPFLAGS) $(QT_INCLUDES) \
   -I$(top_srcdir)/src/qt/forms $(QT_DBUS_INCLUDES)
-libbitcoinqt_a_SOURCES = aboutdialog.cpp addressbookpage.cpp \
-  addresstablemodel.cpp askpassphrasedialog.cpp bitcoinaddressvalidator.cpp \
-  bitcoinamountfield.cpp bitcoin.cpp bitcoingui.cpp bitcoinstrings.cpp \
-  bitcoinunits.cpp clientmodel.cpp csvmodelwriter.cpp editaddressdialog.cpp \
-  guiutil.cpp intro.cpp monitoreddatamapper.cpp notificator.cpp \
-  optionsdialog.cpp optionsmodel.cpp overviewpage.cpp paymentrequestplus.cpp \
-  paymentserver.cpp qvalidatedlineedit.cpp qvaluecombobox.cpp \
-  rpcconsole.cpp sendcoinsdialog.cpp sendcoinsentry.cpp \
-  signverifymessagedialog.cpp splashscreen.cpp transactiondesc.cpp \
-  transactiondescdialog.cpp transactionfilterproxy.cpp transactionrecord.cpp \
-  transactiontablemodel.cpp transactionview.cpp walletframe.cpp \
-  walletmodel.cpp walletmodeltransaction.cpp walletstack.cpp walletview.cpp \
-  $(BITCOIN_QT_H) $(QT_FORMS_UI) $(QT_QRC) $(QT_TS) $(PROTOBUF_PROTO) \
-  $(RES_ICONS) $(RES_IMAGES) $(RES_MOVIES)
+libbitcoinqt_a_SOURCES = $(BITCOIN_QT_CPP) $(BITCOIN_QT_H) $(QT_FORMS_UI) \
+  $(QT_QRC) $(QT_TS) $(PROTOBUF_PROTO) $(RES_ICONS) $(RES_IMAGES) $(RES_MOVIES)
 
 nodist_libbitcoinqt_a_SOURCES = $(QT_MOC_CPP) $(QT_MOC) $(PROTOBUF_CC) \
   $(PROTOBUF_H) $(QT_QRC_CPP)
@@ -126,13 +138,10 @@ $(QT_MOC): $(PROTOBUF_H)
 $(QT_MOC_CPP): $(PROTOBUF_H)
 
 if TARGET_DARWIN
-  libbitcoinqt_a_SOURCES += macdockiconhandler.mm macnotificationhandler.mm
+  libbitcoinqt_a_SOURCES += $(BITCOIN_MM)
 endif
 if TARGET_WINDOWS
   libbitcoinqt_a_SOURCES += $(BITCOIN_RC)
-endif
-if USE_QRCODE
-  libbitcoinqt_a_SOURCES += qrcodedialog.cpp
 endif
 #
 
@@ -141,7 +150,7 @@ bitcoin_qt_CPPFLAGS = $(AM_CPPFLAGS) $(QT_INCLUDES) \
   -I$(top_srcdir)/src/qt/forms
 bitcoin_qt_SOURCES = bitcoin.cpp
 bitcoin_qt_LDADD = libbitcoinqt.a $(LIBBITCOIN) $(LIBLEVELDB) $(LIBMEMENV) \
-  $(BOOST_LIBS) $(QT_LIBS) $(QT_DBUS_LIBS) $(QR_LIBS) $(PROTOBUF_LIBS)
+  $(BOOST_LIBS) $(QT_LIBS) $(QT_DBUS_LIBS) $(QR_LIBS) $(PROTOBUF_LIBS) $(BDB_LIBS)
 
 # forms/foo.h -> forms/ui_foo.h
 QT_FORMS_H=$(join $(dir $(QT_FORMS_UI)),$(addprefix ui_, $(notdir $(QT_FORMS_UI:.ui=.h))))
@@ -149,7 +158,15 @@ QT_FORMS_H=$(join $(dir $(QT_FORMS_UI)),$(addprefix ui_, $(notdir $(QT_FORMS_UI:
 #locale/foo.ts -> locale/foo.qm
 QT_QM=$(QT_TS:.ts=.qm)
 
+.PHONY: FORCE
 .SECONDARY: $(QT_QM)
+
+bitcoinstrings.cpp: FORCE
+	$(MAKE) -C $(top_srcdir)/src qt/bitcoinstrings.cpp
+
+translate: bitcoinstrings.cpp $(QT_FORMS_UI) $(QT_FORMS_UI) $(BITCOIN_QT_CPP) $(BITCOIN_QT_H) $(BITCOIN_MM)
+	@test -n $(LUPDATE) || echo "lupdate is required for updating translations"
+	@$(LUPDATE) $^ -locations relative -no-obsolete -ts locale/bitcoin_en.ts
 
 $(QT_QRC_CPP): $(QT_QRC) $(QT_QM) $(QT_FORMS_H) $(RES_ICONS) $(RES_IMAGES) $(RES_MOVIES) $(PROTOBUF_H)
 	@cd $(abs_srcdir); test -f $(RCC) && $(RCC) -name bitcoin -o $(abs_builddir)/$@ $< || \

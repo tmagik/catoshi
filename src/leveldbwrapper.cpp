@@ -1,21 +1,21 @@
-// Copyright (c) 2012 The Bitcoin developers
+// Copyright (c) 2012-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "leveldb.h"
+#include "leveldbwrapper.h"
+
 #include "util.h"
 
-#include <leveldb/env.h>
-#include <leveldb/cache.h>
-#include <leveldb/filter_policy.h>
-#include <memenv/memenv.h>
-
 #include <boost/filesystem.hpp>
+#include <leveldb/cache.h>
+#include <leveldb/env.h>
+#include <leveldb/filter_policy.h>
+#include <memenv.h>
 
 void HandleError(const leveldb::Status &status) throw(leveldb_error) {
     if (status.ok())
         return;
-    printf("%s\n", status.ToString().c_str());
+    LogPrintf("%s\n", status.ToString().c_str());
     if (status.IsCorruption())
         throw leveldb_error("Database corrupted");
     if (status.IsIOError())
@@ -35,7 +35,7 @@ static leveldb::Options GetOptions(size_t nCacheSize) {
     return options;
 }
 
-CLevelDB::CLevelDB(const boost::filesystem::path &path, size_t nCacheSize, bool fMemory, bool fWipe) {
+CLevelDBWrapper::CLevelDBWrapper(const boost::filesystem::path &path, size_t nCacheSize, bool fMemory, bool fWipe) {
     penv = NULL;
     readoptions.verify_checksums = true;
     iteroptions.verify_checksums = true;
@@ -48,18 +48,18 @@ CLevelDB::CLevelDB(const boost::filesystem::path &path, size_t nCacheSize, bool 
         options.env = penv;
     } else {
         if (fWipe) {
-            printf("Wiping LevelDB in %s\n", path.string().c_str());
+            LogPrintf("Wiping LevelDB in %s\n", path.string().c_str());
             leveldb::DestroyDB(path.string(), options);
         }
         boost::filesystem::create_directory(path);
-        printf("Opening LevelDB in %s\n", path.string().c_str());
+        LogPrintf("Opening LevelDB in %s\n", path.string().c_str());
     }
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
     HandleError(status);
-    printf("Opened LevelDB successfully\n");
+    LogPrintf("Opened LevelDB successfully\n");
 }
 
-CLevelDB::~CLevelDB() {
+CLevelDBWrapper::~CLevelDBWrapper() {
     delete pdb;
     pdb = NULL;
     delete options.filter_policy;
@@ -70,7 +70,7 @@ CLevelDB::~CLevelDB() {
     options.env = NULL;
 }
 
-bool CLevelDB::WriteBatch(CLevelDBBatch &batch, bool fSync) throw(leveldb_error) {
+bool CLevelDBWrapper::WriteBatch(CLevelDBBatch &batch, bool fSync) throw(leveldb_error) {
     leveldb::Status status = pdb->Write(fSync ? syncoptions : writeoptions, &batch.batch);
     HandleError(status);
     return true;

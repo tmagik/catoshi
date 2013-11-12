@@ -1,33 +1,35 @@
-// Copyright (c) 2009-2012 Bitcoin Developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <iostream>
-#include <fstream>
 
-#include "init.h" // for pwalletMain
-#include "bitcoinrpc.h"
-#include "ui_interface.h"
+
 #include "base58.h"
+#include "bitcoinrpc.h"
+#include "init.h"
+#include "main.h"
+#include "sync.h"
+#include "wallet.h"
 
+#include <fstream>
+#include <stdint.h>
+
+#include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/variant/get.hpp>
-#include <boost/algorithm/string.hpp>
-
-#define printf OutputDebugStringF
+#include "json/json_spirit_value.h"
 
 using namespace json_spirit;
 using namespace std;
 
 void EnsureWalletIsUnlocked();
 
-std::string static EncodeDumpTime(int64 nTime) {
-    return DateTimeStrFormat("%Y-%m-%dT%H:%M:%SZ", nTime);
+std::string static EncodeDumpTime(int64_t nTime) {
+    return DateTimeStrFormat("%Y-%m-%"PRId64"T%H:%M:%SZ", nTime);
 }
 
-int64 static DecodeDumpTime(const std::string &str) {
-    static const boost::posix_time::time_input_facet facet("%Y-%m-%dT%H:%M:%SZ");
+int64_t static DecodeDumpTime(const std::string &str) {
+    static boost::posix_time::time_input_facet facet("%Y-%m-%dT%H:%M:%SZ");
     static const boost::posix_time::ptime epoch = boost::posix_time::from_time_t(0);
     const std::locale loc(std::locale::classic(), &facet);
     std::istringstream iss(str);
@@ -104,7 +106,7 @@ Value importprivkey(const Array& params, bool fHelp)
             throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet");
 
         if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(pindexGenesisBlock, true);
+            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
             pwalletMain->ReacceptWalletTransactions();
         }
     }
@@ -126,7 +128,8 @@ Value importwallet(const Array& params, bool fHelp)
     if (!file.is_open())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot open wallet dump file");
 
-    int64 nTimeBegin = pindexBest->nTime;
+    int64_t nTimeBegin = chainActive.Tip()->nTime;
+
 
     bool fGood = true;
 
@@ -147,10 +150,10 @@ Value importwallet(const Array& params, bool fHelp)
         CPubKey pubkey = key.GetPubKey();
         CKeyID keyid = pubkey.GetID();
         if (pwalletMain->HaveKey(keyid)) {
-            printf("Skipping import of %s (key already present)\n", CBitcoinAddress(keyid).ToString().c_str());
+            LogPrintf("Skipping import of %s (key already present)\n", CBitcoinAddress(keyid).ToString().c_str());
             continue;
         }
-        int64 nTime = DecodeDumpTime(vstr[1]);
+        int64_t nTime = DecodeDumpTime(vstr[1]);
         std::string strLabel;
         bool fLabel = true;
         for (unsigned int nStr = 2; nStr < vstr.size(); nStr++) {
@@ -165,7 +168,7 @@ Value importwallet(const Array& params, bool fHelp)
                 fLabel = true;
             }
         }
-        printf("Importing %s...\n", CBitcoinAddress(keyid).ToString().c_str());
+        LogPrintf("Importing %s...\n", CBitcoinAddress(keyid).ToString().c_str());
         if (!pwalletMain->AddKeyPubKey(key, pubkey)) {
             fGood = false;
             continue;
@@ -177,11 +180,11 @@ Value importwallet(const Array& params, bool fHelp)
     }
     file.close();
 
-    CBlockIndex *pindex = pindexBest;
+    CBlockIndex *pindex = chainActive.Tip();
     while (pindex && pindex->pprev && pindex->nTime > nTimeBegin - 7200)
         pindex = pindex->pprev;
 
-    printf("Rescanning last %i blocks\n", pindexBest->nHeight - pindex->nHeight + 1);
+    LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->nHeight + 1);
     pwalletMain->ScanForWalletTransactions(pindex);
     pwalletMain->ReacceptWalletTransactions();
     pwalletMain->MarkDirty();
@@ -229,14 +232,14 @@ Value dumpwallet(const Array& params, bool fHelp)
     if (!file.is_open())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot open wallet dump file");
 
-    std::map<CKeyID, int64> mapKeyBirth;
+    std::map<CKeyID, int64_t> mapKeyBirth;
     std::set<CKeyID> setKeyPool;
     pwalletMain->GetKeyBirthTimes(mapKeyBirth);
     pwalletMain->GetAllReserveKeys(setKeyPool);
 
     // sort time/key pairs
-    std::vector<std::pair<int64, CKeyID> > vKeyBirth;
-    for (std::map<CKeyID, int64>::const_iterator it = mapKeyBirth.begin(); it != mapKeyBirth.end(); it++) {
+    std::vector<std::pair<int64_t, CKeyID> > vKeyBirth;
+    for (std::map<CKeyID, int64_t>::const_iterator it = mapKeyBirth.begin(); it != mapKeyBirth.end(); it++) {
         vKeyBirth.push_back(std::make_pair(it->second, it->first));
     }
     mapKeyBirth.clear();
@@ -245,10 +248,10 @@ Value dumpwallet(const Array& params, bool fHelp)
     // produce output
     file << strprintf("# Wallet dump created by Bitcoin %s (%s)\n", CLIENT_BUILD.c_str(), CLIENT_DATE.c_str());
     file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()).c_str());
-    file << strprintf("# * Best block at time of backup was %i (%s),\n", nBestHeight, hashBestChain.ToString().c_str());
-    file << strprintf("#   mined on %s\n", EncodeDumpTime(pindexBest->nTime).c_str());
+    file << strprintf("# * Best block at time of backup was %i (%s),\n", chainActive.Height(), chainActive.Tip()->GetBlockHash().ToString().c_str());
+    file << strprintf("#   mined on %s\n", EncodeDumpTime(chainActive.Tip()->nTime).c_str());
     file << "\n";
-    for (std::vector<std::pair<int64, CKeyID> >::const_iterator it = vKeyBirth.begin(); it != vKeyBirth.end(); it++) {
+    for (std::vector<std::pair<int64_t, CKeyID> >::const_iterator it = vKeyBirth.begin(); it != vKeyBirth.end(); it++) {
         const CKeyID &keyid = it->second;
         std::string strTime = EncodeDumpTime(it->first);
         std::string strAddr = CBitcoinAddress(keyid).ToString();

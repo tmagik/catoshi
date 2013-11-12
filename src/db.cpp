@@ -1,20 +1,25 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "chainparams.h"
 #include "db.h"
-#include "util.h"
-#include "hash.h"
+
 #include "addrman.h"
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <openssl/rand.h>
+#include "hash.h"
+#include "protocol.h"
+#include "util.h"
+
+#include <inttypes.h>
+#include <stdint.h>
 
 #ifndef WIN32
-#include "sys/stat.h"
+#include <sys/stat.h>
 #endif
+
+#include <boost/filesystem.hpp>
+#include <boost/version.hpp>
+#include <openssl/rand.h>
 
 using namespace std;
 using namespace boost;
@@ -38,7 +43,7 @@ void CDBEnv::EnvShutdown()
     fDbEnvInit = false;
     int ret = dbenv.close(0);
     if (ret != 0)
-        printf("EnvShutdown exception: %s (%d)\n", DbEnv::strerror(ret), ret);
+        LogPrintf("EnvShutdown exception: %s (%d)\n", DbEnv::strerror(ret), ret);
     if (!fMockDb)
         DbEnv(0).remove(path.string().c_str(), 0);
 }
@@ -70,7 +75,7 @@ bool CDBEnv::Open(const boost::filesystem::path& pathIn)
     filesystem::path pathLogDir = path / "database";
     filesystem::create_directory(pathLogDir);
     filesystem::path pathErrorFile = path / "db.log";
-    printf("dbenv.open LogDir=%s ErrorFile=%s\n", pathLogDir.string().c_str(), pathErrorFile.string().c_str());
+    LogPrintf("dbenv.open LogDir=%s ErrorFile=%s\n", pathLogDir.string().c_str(), pathErrorFile.string().c_str());
 
     unsigned int nEnvFlags = 0;
     if (GetBoolArg("-privdb", true))
@@ -111,7 +116,7 @@ void CDBEnv::MakeMock()
 
     boost::this_thread::interruption_point();
 
-    printf("CDBEnv::MakeMock()\n");
+    LogPrint("db", "CDBEnv::MakeMock()\n");
 
     dbenv.set_cachesize(1, 0, 1);
     dbenv.set_lg_bsize(10485760*4);
@@ -168,16 +173,16 @@ bool CDBEnv::Salvage(std::string strFile, bool fAggressive,
     int result = db.verify(strFile.c_str(), NULL, &strDump, flags);
     if (result == DB_VERIFY_BAD)
     {
-        printf("Error: Salvage found errors, all data may not be recoverable.\n");
+        LogPrintf("Error: Salvage found errors, all data may not be recoverable.\n");
         if (!fAggressive)
         {
-            printf("Error: Rerun with aggressive mode to ignore errors and continue.\n");
+            LogPrintf("Error: Rerun with aggressive mode to ignore errors and continue.\n");
             return false;
         }
     }
     if (result != 0 && result != DB_VERIFY_BAD)
     {
-        printf("ERROR: db salvage failed: %d\n",result);
+        LogPrintf("ERROR: db salvage failed: %d\n",result);
         return false;
     }
 
@@ -348,7 +353,7 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                 bitdb.mapFileUseCount.erase(strFile);
 
                 bool fSuccess = true;
-                printf("Rewriting %s...\n", strFile.c_str());
+                LogPrintf("Rewriting %s...\n", strFile.c_str());
                 string strFileRes = strFile + ".rewrite";
                 { // surround usage of db with extra {}
                     CDB db(strFile.c_str(), "r");
@@ -362,7 +367,7 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                                             0);
                     if (ret > 0)
                     {
-                        printf("Cannot create database file %s\n", strFileRes.c_str());
+                        LogPrintf("Cannot create database file %s\n", strFileRes.c_str());
                         fSuccess = false;
                     }
 
@@ -418,7 +423,7 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                         fSuccess = false;
                 }
                 if (!fSuccess)
-                    printf("Rewriting of %s FAILED!\n", strFileRes.c_str());
+                    LogPrintf("Rewriting of %s FAILED!\n", strFileRes.c_str());
                 return fSuccess;
             }
         }
@@ -430,10 +435,10 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
 
 void CDBEnv::Flush(bool fShutdown)
 {
-    int64 nStart = GetTimeMillis();
+    int64_t nStart = GetTimeMillis();
     // Flush log data to the actual data file
     //  on all files that are not in use
-    printf("Flush(%s)%s\n", fShutdown ? "true" : "false", fDbEnvInit ? "" : " db not started");
+    LogPrint("db", "Flush(%s)%s\n", fShutdown ? "true" : "false", fDbEnvInit ? "" : " db not started");
     if (!fDbEnvInit)
         return;
     {
@@ -443,23 +448,23 @@ void CDBEnv::Flush(bool fShutdown)
         {
             string strFile = (*mi).first;
             int nRefCount = (*mi).second;
-            printf("%s refcount=%d\n", strFile.c_str(), nRefCount);
+            LogPrint("db", "%s refcount=%d\n", strFile.c_str(), nRefCount);
             if (nRefCount == 0)
             {
                 // Move log data to the dat file
                 CloseDb(strFile);
-                printf("%s checkpoint\n", strFile.c_str());
+                LogPrint("db", "%s checkpoint\n", strFile.c_str());
                 dbenv.txn_checkpoint(0, 0, 0);
-                printf("%s detach\n", strFile.c_str());
+                LogPrint("db", "%s detach\n", strFile.c_str());
                 if (!fMockDb)
                     dbenv.lsn_reset(strFile.c_str(), 0);
-                printf("%s closed\n", strFile.c_str());
+                LogPrint("db", "%s closed\n", strFile.c_str());
                 mapFileUseCount.erase(mi++);
             }
             else
                 mi++;
         }
-        printf("DBFlush(%s)%s ended %15"PRI64d"ms\n", fShutdown ? "true" : "false", fDbEnvInit ? "" : " db not started", GetTimeMillis() - nStart);
+        LogPrint("db", "DBFlush(%s)%s ended %15"PRId64"ms\n", fShutdown ? "true" : "false", fDbEnvInit ? "" : " db not started", GetTimeMillis() - nStart);
         if (fShutdown)
         {
             char** listp;
