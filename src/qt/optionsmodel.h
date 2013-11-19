@@ -1,3 +1,7 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef OPTIONSMODEL_H
 #define OPTIONSMODEL_H
 
@@ -17,18 +21,19 @@ public:
     explicit OptionsModel(QObject *parent = 0);
 
     enum OptionID {
-        StartAtStartup,    // bool
-        MinimizeToTray,    // bool
-        MapPortUPnP,       // bool
-        MinimizeOnClose,   // bool
-        ProxyUse,          // bool
-        ProxyIP,           // QString
-        ProxyPort,         // int
-        ProxySocksVersion, // int
-        Fee,               // qint64
-        DisplayUnit,       // BitcoinUnits::Unit
-        DisplayAddresses,  // bool
-        Language,          // QString
+        StartAtStartup,         // bool
+        MinimizeToTray,         // bool
+        MapPortUPnP,            // bool
+        MinimizeOnClose,        // bool
+        ProxyUse,               // bool
+        ProxyIP,                // QString
+        ProxyPort,              // int
+        ProxySocksVersion,      // int
+        Fee,                    // qint64
+        DisplayUnit,            // BitcoinUnits::Unit
+        DisplayAddresses,       // bool
+        Language,               // QString
+        CoinControlFeatures,    // bool
         OptionIDRowCount,
     };
 
@@ -50,6 +55,7 @@ public:
     bool getDisplayAddresses() { return bDisplayAddresses; }
     QString getLanguage() { return language; }
     bool getProxySettings(QString& proxyIP, quint16 &proxyPort) const;
+    bool getCoinControlFeatures() { return fCoinControlFeatures; }
 
 private:
     int nDisplayUnit;
@@ -57,9 +63,12 @@ private:
     bool fMinimizeToTray;
     bool fMinimizeOnClose;
     QString language;
+    bool fCoinControlFeatures;
 
 signals:
     void displayUnitChanged(int unit);
+    void transactionFeeChanged(qint64);
+    void coinControlFeaturesChanged(bool);
 };
 
 #endif // OPTIONSMODEL_H

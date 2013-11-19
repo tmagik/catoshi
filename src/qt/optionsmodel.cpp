@@ -1,3 +1,7 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #if defined(HAVE_CONFIG_H)
 #include "bitcoin-config.h"
 #endif
@@ -5,9 +9,12 @@
 #include "optionsmodel.h"
 
 #include "bitcoinunits.h"
-#include "init.h"
-#include "walletdb.h"
 #include "guiutil.h"
+
+#include "init.h"
+#include "main.h"
+#include "net.h"
+#include "walletdb.h"
 
 #include <QSettings>
 
@@ -52,6 +59,7 @@ void OptionsModel::Init()
     fMinimizeOnClose = settings.value("fMinimizeOnClose", false).toBool();
     nTransactionFee = settings.value("nTransactionFee").toLongLong();
     language = settings.value("language", "").toString();
+    fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
 
     // These are shared with core Bitcoin; we want
     // command-line options to override the GUI settings:
@@ -193,13 +201,15 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
                 return QVariant(5);
         }
         case Fee:
-            return QVariant(nTransactionFee);
+            return QVariant((qint64) nTransactionFee);
         case DisplayUnit:
             return QVariant(nDisplayUnit);
         case DisplayAddresses:
             return QVariant(bDisplayAddresses);
         case Language:
             return settings.value("language", "");
+        case CoinControlFeatures:
+            return QVariant(fCoinControlFeatures);
         default:
             return QVariant();
         }
@@ -267,7 +277,8 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         break;
         case Fee:
             nTransactionFee = value.toLongLong();
-            settings.setValue("nTransactionFee", nTransactionFee);
+            settings.setValue("nTransactionFee", (qint64) nTransactionFee);
+            emit transactionFeeChanged(nTransactionFee);
             break;
         case DisplayUnit:
             nDisplayUnit = value.toInt();
@@ -281,6 +292,11 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         case Language:
             settings.setValue("language", value);
             break;
+        case CoinControlFeatures:
+            fCoinControlFeatures = value.toBool();
+            settings.setValue("fCoinControlFeatures", fCoinControlFeatures);
+            emit coinControlFeaturesChanged(fCoinControlFeatures);
+            break;
         default:
             break;
         }
@@ -292,7 +308,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
 
 qint64 OptionsModel::getTransactionFee()
 {
-    return nTransactionFee;
+    return (qint64) nTransactionFee;
 }
 
 bool OptionsModel::getProxySettings(QString& proxyIP, quint16 &proxyPort) const

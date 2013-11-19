@@ -1,23 +1,30 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "transactiontablemodel.h"
 
-#include "guiutil.h"
-#include "transactionrecord.h"
-#include "guiconstants.h"
-#include "transactiondesc.h"
-#include "walletmodel.h"
-#include "optionsmodel.h"
 #include "addresstablemodel.h"
 #include "bitcoinunits.h"
+#include "guiconstants.h"
+#include "guiutil.h"
+#include "optionsmodel.h"
+#include "transactiondesc.h"
+#include "transactionrecord.h"
+#include "walletmodel.h"
 
+#include "main.h"
+#include "sync.h"
+#include "uint256.h"
+#include "util.h"
 #include "wallet.h"
-#include "ui_interface.h"
 
-#include <QList>
 #include <QColor>
-#include <QTimer>
-#include <QIcon>
 #include <QDateTime>
 #include <QDebug>
+#include <QIcon>
+#include <QList>
+#include <QTimer>
 
 // Amount column is right-aligned it contains numbers
 static int column_alignments[] = {
@@ -250,9 +257,9 @@ void TransactionTableModel::updateTransaction(const QString &hash, int status)
 
 void TransactionTableModel::updateConfirmations()
 {
-    if(nBestHeight != cachedNumBlocks)
+    if(chainActive.Height() != cachedNumBlocks)
     {
-        cachedNumBlocks = nBestHeight;
+        cachedNumBlocks = chainActive.Height();
         // Blocks came in since last poll.
         // Invalidate status (number of confirmations) and (possibly) description
         //  for all rows. Qt is smart enough to only actually request the data for the
