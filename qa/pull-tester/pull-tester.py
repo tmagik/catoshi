@@ -67,7 +67,12 @@ Contact BlueMatt on freenode if something looks broken."""
                                   auth=(os.environ['GITHUB_USER'], os.environ["GITHUB_AUTH_TOKEN"]))
 
     if success == True:
-        post_data = { "body" : "Automatic sanity-testing: PASSED, see " + linkUrl + " for binaries and test log." + common_message}
+        if needTests:
+            message = "Automatic sanity-testing: PLEASE ADD TEST-CASES, though technically passed. See " + linkUrl + " for binaries and test log."
+        else:
+            message = "Automatic sanity-testing: PASSED, see " + linkUrl + " for binaries and test log."
+
+        post_data = { "body" : message + common_message}
     elif inMerge:
         post_data = { "body" : "Automatic sanity-testing: FAILED MERGE, see " + linkUrl + " for test log." + """
 
@@ -76,7 +81,7 @@ This pull does not merge cleanly onto current master""" + common_message}
         post_data = { "body" : "Automatic sanity-testing: FAILED BUILD/TEST, see " + linkUrl + " for binaries and test log." + """
 
 This could happen for one of several reasons:
-1. It chanages paths in makefile.linux-mingw or otherwise changes build scripts in a way that made them incompatible with the automated testing scripts (please tweak those patches in qa/pull-tester)
+1. It chanages changes build scripts in a way that made them incompatible with the automated testing scripts (please tweak those patches in qa/pull-tester)
 2. It adds/modifies tests which test network rules (thanks for doing that), which conflicts with a patch applied at test time
 3. It does not build on either Linux i386 or Win32 (via MinGW cross compile)
 4. The test suite fails on either Linux i386 or Win32
@@ -113,7 +118,7 @@ def testpull(number, comment_url, clone_url, commit):
     run("chown -R ${BUILD_USER}:${BUILD_GROUP} ${CHROOT_COPY}/${OUT_DIR}", fail_hard=False)
 
     script = os.environ["BUILD_PATH"]+"/qa/pull-tester/pull-tester.sh"
-    script += " ${BUILD_PATH} ${MINGW_DEPS_DIR} ${SCRIPTS_DIR}/BitcoindComparisonTool.jar 6 ${OUT_DIR}"
+    script += " ${BUILD_PATH} ${MINGW_DEPS_DIR} ${SCRIPTS_DIR}/BitcoindComparisonTool_jar/BitcoindComparisonTool.jar 0 6 ${OUT_DIR}"
     returncode = run("chroot ${CHROOT_COPY} sudo -u ${BUILD_USER} -H timeout ${TEST_TIMEOUT} "+script,
                      fail_hard=False, stdout=out, stderr=out)
 

@@ -1,20 +1,26 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef SENDCOINSDIALOG_H
 #define SENDCOINSDIALOG_H
 
-#include <QDialog>
-#include <QVariant>
+#include "walletmodel.h"
 
-namespace Ui {
-    class SendCoinsDialog;
-}
-class WalletModel;
+#include <QDialog>
+#include <QString>
+
+class OptionsModel;
 class SendCoinsEntry;
 class SendCoinsRecipient;
-class OptionsModel;
 
 QT_BEGIN_NAMESPACE
 class QUrl;
 QT_END_NAMESPACE
+
+namespace Ui {
+    class SendCoinsDialog;
+}
 
 /** Dialog for sending bitcoins */
 class SendCoinsDialog : public QDialog
@@ -48,10 +54,32 @@ private:
     WalletModel *model;
     bool fNewRecipientAllowed;
 
+    // Process WalletModel::SendCoinsReturn and generate a pair consisting
+    // of a message and message flags for use in emit message().
+    // Additional parameter msgArg can be used via .arg(msgArg).
+    void processSendCoinsReturn(const WalletModel::SendCoinsReturn &sendCoinsReturn, const QString &msgArg = QString());
+
 private slots:
     void on_sendButton_clicked();
     void removeEntry(SendCoinsEntry* entry);
     void updateDisplayUnit();
+    void coinControlFeatureChanged(bool);
+    void coinControlButtonClicked();
+    void coinControlChangeChecked(int);
+    void coinControlChangeEdited(const QString &);
+    void coinControlUpdateLabels();
+    void coinControlClipboardQuantity();
+    void coinControlClipboardAmount();
+    void coinControlClipboardFee();
+    void coinControlClipboardAfterFee();
+    void coinControlClipboardBytes();
+    void coinControlClipboardPriority();
+    void coinControlClipboardLowOutput();
+    void coinControlClipboardChange();
+
+signals:
+    // Fired when a message should be reported to the user
+    void message(const QString &title, const QString &message, unsigned int style);
 };
 
 #endif // SENDCOINSDIALOG_H

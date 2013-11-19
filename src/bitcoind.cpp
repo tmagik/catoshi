@@ -3,9 +3,31 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "init.h"
 #include "bitcoinrpc.h"
+#include "init.h"
+#include "main.h"
+#include "noui.h"
+#include "ui_interface.h"
+#include "util.h"
+
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
+
+/* Introduction text for doxygen: */
+
+/*! \mainpage Developer documentation
+ *
+ * \section intro_sec Introduction
+ *
+ * This is the developer documentation of the reference client for an experimental new digital currency called Bitcoin (http://www.bitcoin.org/),
+ * which enables instant payments to anyone, anywhere in the world. Bitcoin uses peer-to-peer technology to operate
+ * with no central authority: managing transactions and issuing money are carried out collectively by the network.
+ *
+ * The software is a community-driven open source project, released under the MIT license.
+ *
+ * \section Navigation
+ * Use the buttons <code>Namespaces</code>, <code>Classes</code> or <code>Files</code> at the top of the page to start navigating the code.
+ */
 
 void DetectShutdownThread(boost::thread_group* threadGroup)
 {
@@ -57,12 +79,13 @@ bool AppInit(int argc, char* argv[])
             // First part of help message is specific to bitcoind / RPC client
             std::string strUsage = _("Bitcoin version") + " " + FormatFullVersion() + "\n\n" +
                 _("Usage:") + "\n" +
-                  "  bitcoind [options]                     " + "\n" +
-                  "  bitcoind [options] <command> [params]  " + _("Send command to -server or bitcoind") + "\n" +
+                  "  bitcoind [options]                     " + _("Start Bitcoin server") + "\n" +
+                _("Usage (deprecated, use bitcoin-cli):") + "\n" +
+                  "  bitcoind [options] <command> [params]  " + _("Send command to Bitcoin server") + "\n" +
                   "  bitcoind [options] help                " + _("List commands") + "\n" +
                   "  bitcoind [options] help <command>      " + _("Get help for a command") + "\n";
 
-            strUsage += "\n" + HelpMessage();
+            strUsage += "\n" + HelpMessage(HMM_BITCOIND);
 
             fprintf(stdout, "%s", strUsage.c_str());
             return false;
@@ -104,7 +127,7 @@ bool AppInit(int argc, char* argv[])
 #endif
 
         detectShutdownThread = new boost::thread(boost::bind(&DetectShutdownThread, &threadGroup));
-        fRet = AppInit2(threadGroup);
+        fRet = AppInit2(threadGroup, true);
     }
     catch (std::exception& e) {
         PrintExceptionContinue(&e, "AppInit()");
@@ -134,11 +157,9 @@ bool AppInit(int argc, char* argv[])
     return fRet;
 }
 
-extern void noui_connect();
 int main(int argc, char* argv[])
 {
     bool fRet = false;
-    fHaveGUI = false;
 
     // Connect bitcoind signal handlers
     noui_connect();

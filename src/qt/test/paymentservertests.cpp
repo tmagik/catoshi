@@ -1,17 +1,17 @@
-#include <QCoreApplication>
-#include <QDebug>
-#include <QTemporaryFile>
-#include <QVariant>
-#include <QFileOpenEvent>
+#include "paymentservertests.h"
+
+#include "optionsmodel.h"
+#include "paymentrequestdata.h"
+
+#include "util.h"
 
 #include <openssl/x509.h>
 #include <openssl/x509_vfy.h>
-
-#include "optionsmodel.h"
-#include "paymentservertests.h"
-#include "paymentrequestdata.h"
-#include "util.h"
-
+#include <QCoreApplication>
+#include <QDebug>
+#include <QFileOpenEvent>
+#include <QTemporaryFile>
+#include <QVariant>
 
 
 X509 *parse_b64der_cert(const char* cert_data)
@@ -60,7 +60,6 @@ void PaymentServerTests::paymentServerTests()
     X509_STORE_add_cert(caStore, parse_b64der_cert(caCert_BASE64));
     PaymentServer::LoadRootCAs(caStore);
     server->setOptionsModel(&optionsModel);
-    server->initNetManager();
     server->uiReady();
 
     // Now feed PaymentRequests to server, and observe signals it produces:

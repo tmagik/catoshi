@@ -1,25 +1,33 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "notificator.h"
 
-#include <QApplication>
-#include <QMetaType>
-#include <QVariant>
-#include <QIcon>
-#include <QStyle>
-#include <QByteArray>
-#include <QSystemTrayIcon>
-#include <QMessageBox>
-#include <QTemporaryFile>
-#include <QImageWriter>
 
-#ifdef USE_DBUS
-#include <QtDBus>
-#include <stdint.h>
-#endif
+#include <QApplication>
+#include <QByteArray>
+#include <QIcon>
+#include <QImageWriter>
+#include <QMessageBox>
+#include <QMetaType>
+#include <QStyle>
+#include <QSystemTrayIcon>
+#include <QTemporaryFile>
+#include <QVariant>
 
 #ifdef Q_OS_MAC
-#include <ApplicationServices/ApplicationServices.h>
 #include "macnotificationhandler.h"
+
+#include <ApplicationServices/ApplicationServices.h>
 #endif
+
+#ifdef USE_DBUS
+#include <stdint.h>
+
+#include <QtDBus>
+#endif
+
 
 // https://wiki.ubuntu.com/NotificationDevelopmentGuidelines recommends at least 128
 const int FREEDESKTOP_NOTIFICATION_ICON_SIZE = 128;

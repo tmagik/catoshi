@@ -1,10 +1,6 @@
 include $(top_srcdir)/src/Makefile.include
 
-AM_CPPFLAGS =  $(INCLUDES) -I$(top_builddir)/src/obj \
-  -I$(top_srcdir)/src/leveldb/include -I$(top_srcdir)/src/leveldb/helpers \
-  -I$(top_srcdir)/src $(BOOST_INCLUDES) $(BDB_CPPFLAGS)
-
-AM_LDFLAGS = $(PTHREAD_CFLAGS)
+AM_CPPFLAGS += -I$(top_srcdir)/src
 
 bin_PROGRAMS = test_bitcoin
 
@@ -34,7 +30,7 @@ test_bitcoin_SOURCES = accounting_tests.cpp alert_tests.cpp \
   netbase_tests.cpp pmt_tests.cpp rpc_tests.cpp script_P2SH_tests.cpp \
   script_tests.cpp serialize_tests.cpp sigopcount_tests.cpp test_bitcoin.cpp \
   transaction_tests.cpp uint160_tests.cpp uint256_tests.cpp util_tests.cpp \
-  wallet_tests.cpp $(JSON_TEST_FILES) $(RAW_TEST_FILES)
+  wallet_tests.cpp sighash_tests.cpp $(JSON_TEST_FILES) $(RAW_TEST_FILES)
 
 nodist_test_bitcoin_SOURCES = $(BUILT_SOURCES)
 

@@ -1,11 +1,16 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef CLIENTMODEL_H
 #define CLIENTMODEL_H
 
 #include <QObject>
 
-class OptionsModel;
 class AddressTableModel;
+class OptionsModel;
 class TransactionTableModel;
+
 class CWallet;
 
 QT_BEGIN_NAMESPACE
@@ -34,6 +39,9 @@ public:
     int getNumConnections() const;
     int getNumBlocks() const;
     int getNumBlocksAtStartup();
+
+    quint64 getTotalBytesRecv() const;
+    quint64 getTotalBytesSent() const;
 
     double getVerificationProgress() const;
     QDateTime getLastBlockDate() const;
@@ -74,6 +82,7 @@ signals:
     void numConnectionsChanged(int count);
     void numBlocksChanged(int count, int countOfPeers);
     void alertsChanged(const QString &warnings);
+    void bytesChanged(quint64 totalBytesIn, quint64 totalBytesOut);
 
     //! Asynchronous message notification
     void message(const QString &title, const QString &message, unsigned int style);

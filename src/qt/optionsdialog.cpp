@@ -1,3 +1,7 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #if defined(HAVE_CONFIG_H)
 #include "bitcoin-config.h"
 #endif
@@ -7,8 +11,9 @@
 
 #include "bitcoinunits.h"
 #include "monitoreddatamapper.h"
-#include "netbase.h"
 #include "optionsmodel.h"
+
+#include "netbase.h"
 
 #include <QDir>
 #include <QIntValidator>
@@ -150,6 +155,7 @@ void OptionsDialog::setMapper()
     mapper->addMapping(ui->lang, OptionsModel::Language);
     mapper->addMapping(ui->unit, OptionsModel::DisplayUnit);
     mapper->addMapping(ui->displayAddresses, OptionsModel::DisplayAddresses);
+    mapper->addMapping(ui->coinControlFeatures, OptionsModel::CoinControlFeatures);
 }
 
 void OptionsDialog::enableApplyButton()

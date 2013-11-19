@@ -1,10 +1,14 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "transactionfilterproxy.h"
 
 #include "transactiontablemodel.h"
 
-#include <QDateTime>
-
 #include <cstdlib>
+
+#include <QDateTime>
 
 // Earliest date that can be represented (far in the past)
 const QDateTime TransactionFilterProxy::MIN_DATE = QDateTime::fromTime_t(0);
