@@ -3,10 +3,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-
-
 #include "base58.h"
-#include "bitcoinrpc.h"
+#include "rpcserver.h"
 #include "init.h"
 #include "net.h"
 #include "netbase.h"
@@ -1675,7 +1673,7 @@ Value gettransaction(const Array& params, bool fHelp)
     int64_t nCredit = wtx.GetCredit();
     int64_t nDebit = wtx.GetDebit();
     int64_t nNet = nCredit - nDebit;
-    int64_t nFee = (wtx.IsFromMe() ? GetValueOut(wtx) - nDebit : 0);
+    int64_t nFee = (wtx.IsFromMe() ? wtx.GetValueOut() - nDebit : 0);
 
     entry.push_back(Pair("amount", ValueFromAmount(nNet - nFee)));
     if (wtx.IsFromMe())
