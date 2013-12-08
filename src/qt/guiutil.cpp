@@ -1,33 +1,16 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "guiutil.h"
 
 #include "bitcoinaddressvalidator.h"
-#include "walletmodel.h"
 #include "bitcoinunits.h"
+#include "walletmodel.h"
 
-#include "util.h"
+#include "core.h"
 #include "init.h"
-
-#include <QApplication>
-#include <QDateTime>
-#include <QDoubleValidator>
-#include <QFont>
-#include <QLineEdit>
-#if QT_VERSION >= 0x050000
-#include <QUrlQuery>
-#else
-#include <QUrl>
-#endif
-#include <QTextDocument> // for Qt::mightBeRichText
-#include <QAbstractItemView>
-#include <QClipboard>
-#include <QFileDialog>
-#include <QDesktopServices>
-#include <QThread>
-#include <QSettings>
-#include <QDesktopWidget>
-
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
+#include "util.h"
 
 #ifdef WIN32
 #ifdef _WIN32_WINNT
@@ -42,9 +25,31 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include "shlwapi.h"
-#include "shlobj.h"
 #include "shellapi.h"
+#include "shlobj.h"
+#include "shlwapi.h"
+#endif
+
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <QAbstractItemView>
+#include <QApplication>
+#include <QClipboard>
+#include <QDateTime>
+#include <QDesktopServices>
+#include <QDesktopWidget>
+#include <QDoubleValidator>
+#include <QFileDialog>
+#include <QFont>
+#include <QLineEdit>
+#include <QSettings>
+#include <QTextDocument> // for Qt::mightBeRichText
+#include <QThread>
+
+#if QT_VERSION < 0x050000
+#include <QUrl>
+#else
+#include <QUrlQuery>
 #endif
 
 namespace GUIUtil {
@@ -145,7 +150,7 @@ bool parseBitcoinURI(QString uri, SendCoinsRecipient *out)
     //
     //    Cannot handle this later, because bitcoin:// will cause Qt to see the part after // as host,
     //    which will lower-case it (and thus invalidate the address).
-    if(uri.startsWith("bitcoin://"))
+    if(uri.startsWith("bitcoin://", Qt::CaseInsensitive))
     {
         uri.replace(0, 10, "bitcoin:");
     }
@@ -216,10 +221,8 @@ void copyEntryData(QAbstractItemView *view, int column, int role)
 
     if(!selection.isEmpty())
     {
-        // Copy first item (global clipboard)
-        QApplication::clipboard()->setText(selection.at(0).data(role).toString(), QClipboard::Clipboard);
-        // Copy first item (global mouse selection for e.g. X11 - NOP on Windows)
-        QApplication::clipboard()->setText(selection.at(0).data(role).toString(), QClipboard::Selection);
+        // Copy first item
+        setClipboard(selection.at(0).data(role).toString());
     }
 }
 
@@ -268,6 +271,41 @@ QString getSaveFileName(QWidget *parent, const QString &caption, const QString &
     /* Return selected suffix if asked to */
     if(selectedSuffixOut)
     {
+        *selectedSuffixOut = selectedSuffix;
+    }
+    return result;
+}
+
+QString getOpenFileName(QWidget *parent, const QString &caption, const QString &dir,
+    const QString &filter,
+    QString *selectedSuffixOut)
+{
+    QString selectedFilter;
+    QString myDir;
+    if(dir.isEmpty()) // Default to user documents location
+    {
+#if QT_VERSION < 0x050000
+        myDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+        myDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+    }
+    else
+    {
+        myDir = dir;
+    }
+    /* Directly convert path to native OS path separators */
+    QString result = QDir::toNativeSeparators(QFileDialog::getOpenFileName(parent, caption, myDir, filter, &selectedFilter));
+
+    if(selectedSuffixOut)
+    {
+        /* Extract first suffix from filter pattern "Description (*.foo)" or "Description (*.foo *.bar ...) */
+        QRegExp filter_re(".* \\(\\*\\.(.*)[ \\)]");
+        QString selectedSuffix;
+        if(filter_re.exactMatch(selectedFilter))
+        {
+            selectedSuffix = filter_re.cap(1);
+        }
         *selectedSuffixOut = selectedSuffix;
     }
     return result;
@@ -591,6 +629,12 @@ void HelpMessageBox::showOrPrint()
         // On other operating systems, print help text to console
         printToConsole();
 #endif
+}
+
+void setClipboard(const QString& str)
+{
+    QApplication::clipboard()->setText(str, QClipboard::Clipboard);
+    QApplication::clipboard()->setText(str, QClipboard::Selection);
 }
 
 } // namespace GUIUtil

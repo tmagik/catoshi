@@ -1,3 +1,7 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #if defined(HAVE_CONFIG_H)
 #include "bitcoin-config.h"
 #endif
@@ -6,22 +10,20 @@
 #include "ui_addressbookpage.h"
 
 #include "addresstablemodel.h"
-#include "optionsmodel.h"
 #include "bitcoingui.h"
-#include "editaddressdialog.h"
 #include "csvmodelwriter.h"
+#include "editaddressdialog.h"
 #include "guiutil.h"
 
-#include <QSortFilterProxyModel>
-#include <QClipboard>
-#include <QMessageBox>
+#include <QIcon>
 #include <QMenu>
+#include <QMessageBox>
+#include <QSortFilterProxyModel>
 
 AddressBookPage::AddressBookPage(Mode mode, Tabs tab, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AddressBookPage),
     model(0),
-    optionsModel(0),
     mode(mode),
     tab(tab)
 {
@@ -144,11 +146,6 @@ void AddressBookPage::setModel(AddressTableModel *model)
     selectionChanged();
 }
 
-void AddressBookPage::setOptionsModel(OptionsModel *optionsModel)
-{
-    this->optionsModel = optionsModel;
-}
-
 void AddressBookPage::on_copyAddress_clicked()
 {
     GUIUtil::copyEntryData(ui->tableView, AddressTableModel::Address);
@@ -161,6 +158,9 @@ void AddressBookPage::onCopyLabelAction()
 
 void AddressBookPage::onEditAction()
 {
+    if(!model)
+        return;
+
     if(!ui->tableView->selectionModel())
         return;
     QModelIndexList indexes = ui->tableView->selectionModel()->selectedRows();
@@ -168,9 +168,9 @@ void AddressBookPage::onEditAction()
         return;
 
     EditAddressDialog dlg(
-            tab == SendingTab ?
-            EditAddressDialog::EditSendingAddress :
-            EditAddressDialog::EditReceivingAddress);
+        tab == SendingTab ?
+        EditAddressDialog::EditSendingAddress :
+        EditAddressDialog::EditReceivingAddress, this);
     dlg.setModel(model);
     QModelIndex origIndex = proxyModel->mapToSource(indexes.at(0));
     dlg.loadRow(origIndex.row());
@@ -183,9 +183,9 @@ void AddressBookPage::on_newAddress_clicked()
         return;
 
     EditAddressDialog dlg(
-            tab == SendingTab ?
-            EditAddressDialog::NewSendingAddress :
-            EditAddressDialog::NewReceivingAddress, this);
+        tab == SendingTab ?
+        EditAddressDialog::NewSendingAddress :
+        EditAddressDialog::NewReceivingAddress, this);
     dlg.setModel(model);
     if(dlg.exec())
     {
@@ -266,10 +266,9 @@ void AddressBookPage::done(int retval)
 void AddressBookPage::on_exportButton_clicked()
 {
     // CSV is currently the only supported format
-    QString filename = GUIUtil::getSaveFileName(
-            this,
-            tr("Export Address List"), QString(),
-            tr("Comma separated file (*.csv)"));
+    QString filename = GUIUtil::getSaveFileName(this,
+        tr("Export Address List"), QString(),
+        tr("Comma separated file (*.csv)"), NULL);
 
     if (filename.isNull()) return;
 

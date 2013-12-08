@@ -2,13 +2,12 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <openssl/bn.h>
-#include <openssl/ecdsa.h>
-#include <openssl/rand.h>
-#include <openssl/obj_mac.h>
-
 #include "key.h"
 
+#include <openssl/bn.h>
+#include <openssl/ecdsa.h>
+#include <openssl/obj_mac.h>
+#include <openssl/rand.h>
 
 // anonymous namespace with local implementation code (OpenSSL interaction)
 namespace {
@@ -149,10 +148,13 @@ public:
     }
 
     void SetSecretBytes(const unsigned char vch[32]) {
+        bool ret;
         BIGNUM bn;
         BN_init(&bn);
-        assert(BN_bin2bn(vch, 32, &bn));
-        assert(EC_KEY_regenerate_key(pkey, &bn));
+        ret = BN_bin2bn(vch, 32, &bn);
+        assert(ret);
+        ret = EC_KEY_regenerate_key(pkey, &bn);
+        assert(ret);
         BN_clear_free(&bn);
     }
 

@@ -1,18 +1,32 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef WALLETMODEL_H
 #define WALLETMODEL_H
 
-#include <QObject>
+#include "paymentrequestplus.h"
+#include "walletmodeltransaction.h"
 
 #include "allocators.h" /* for SecureString */
-#include "wallet.h"
-#include "walletmodeltransaction.h"
-#include "paymentrequestplus.h"
 
-class OptionsModel;
+#include <map>
+#include <vector>
+
+#include <QObject>
+
 class AddressTableModel;
+class OptionsModel;
 class TransactionTableModel;
-class CWallet;
 class WalletModelTransaction;
+
+class CCoinControl;
+class CKeyID;
+class COutPoint;
+class COutput;
+class CPubKey;
+class CWallet;
+class uint256;
 
 QT_BEGIN_NAMESPACE
 class QTimer;
@@ -25,14 +39,21 @@ public:
     explicit SendCoinsRecipient(const QString &addr, const QString &label, quint64 amount, const QString &message):
         address(addr), label(label), amount(amount), message(message) {}
 
+    // If from an insecure payment request, this is used for storing
+    // the addresses, e.g. address-A<br />address-B<br />address-C.
+    // Info: As we don't need to process addresses in here when using
+    // payment requests, we can abuse it for displaying an address list.
+    // Todo: This is a hack, should be replaced with a cleaner solution!
     QString address;
     QString label;
     qint64 amount;
+    // If from a payment request, this is used for storing the memo
     QString message;
 
     // If from a payment request, paymentRequest.IsInitialized() will be true
     PaymentRequestPlus paymentRequest;
-    QString authenticatedMerchant; // Empty if no authentication or invalid signature/cert/etc.
+    // Empty if no authentication or invalid signature/cert/etc.
+    QString authenticatedMerchant;
 };
 
 /** Interface to Bitcoin wallet from Qt view code. */
@@ -68,7 +89,7 @@ public:
     AddressTableModel *getAddressTableModel();
     TransactionTableModel *getTransactionTableModel();
 
-    qint64 getBalance() const;
+    qint64 getBalance(const CCoinControl *coinControl = NULL) const;
     qint64 getUnconfirmedBalance() const;
     qint64 getImmatureBalance() const;
     int getNumTransactions() const;
@@ -80,13 +101,13 @@ public:
     // Return status record for SendCoins, contains error id + information
     struct SendCoinsReturn
     {
-        SendCoinsReturn(StatusCode status):
+        SendCoinsReturn(StatusCode status = Aborted):
             status(status) {}
         StatusCode status;
     };
 
     // prepare transaction for getting txfee before sending coins
-    SendCoinsReturn prepareTransaction(WalletModelTransaction &transaction);
+    SendCoinsReturn prepareTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl = NULL);
 
     // Send coins to a list of recipients
     SendCoinsReturn sendCoins(WalletModelTransaction &transaction);
@@ -120,6 +141,15 @@ public:
     };
 
     UnlockContext requestUnlock();
+
+    bool getPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const;
+    void getOutputs(const std::vector<COutPoint>& vOutpoints, std::vector<COutput>& vOutputs);
+    void listCoins(std::map<QString, std::vector<COutput> >& mapCoins) const;
+
+    bool isLockedCoin(uint256 hash, unsigned int n) const;
+    void lockCoin(COutPoint& output);
+    void unlockCoin(COutPoint& output);
+    void listLockedCoins(std::vector<COutPoint>& vOutpts);
 
 private:
     CWallet *wallet;
@@ -160,7 +190,7 @@ signals:
     // this means that the unlocking failed or was cancelled.
     void requireUnlock();
 
-    // Asynchronous message notification
+    // Fired when a message should be reported to the user
     void message(const QString &title, const QString &message, unsigned int style);
 
     // Coins sent: from wallet, to recipient, in (serialized) transaction:

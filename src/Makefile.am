@@ -1,10 +1,12 @@
 include Makefile.include
-AM_CPPFLAGS =  $(INCLUDES) -I$(top_builddir)/src/obj \
-  -I$(top_srcdir)/src/leveldb/include -I$(top_srcdir)/src/leveldb/helpers \
-  -I$(builddir) $(BOOST_INCLUDES) $(BDB_CPPFLAGS)
-AM_LDFLAGS = $(PTHREAD_CFLAGS)
 
-noinst_LIBRARIES = libbitcoin.a
+AM_CPPFLAGS += -I$(top_srcdir)/src/leveldb/helpers/memenv \
+  -I$(builddir)
+
+noinst_LIBRARIES = libbitcoin_server.a libbitcoin_common.a libbitcoin_cli.a
+if ENABLE_WALLET
+noinst_LIBRARIES += libbitcoin_wallet.a
+endif
 
 bin_PROGRAMS = bitcoind bitcoin-cli
 
@@ -13,11 +15,14 @@ DIST_SUBDIRS = . qt test
 .PHONY: FORCE
 # bitcoin core #
 BITCOIN_CORE_H = addrman.h alert.h allocators.h base58.h bignum.h \
-  bitcoinrpc.h bloom.h chainparams.h checkpoints.h checkqueue.h \
-  clientversion.h compat.h core.h crypter.h db.h hash.h init.h \
-  key.h keystore.h leveldb.h limitedmap.h main.h miner.h mruset.h \
-  netbase.h net.h protocol.h script.h serialize.h sync.h threadsafety.h \
-  txdb.h ui_interface.h uint256.h util.h version.h walletdb.h wallet.h
+  rpcclient.h \
+  rpcprotocol.h \
+  rpcserver.h \
+  bloom.h chainparams.h checkpoints.h checkqueue.h \
+  clientversion.h coincontrol.h compat.h core.h coins.h crypter.h db.h hash.h init.h \
+  key.h keystore.h leveldbwrapper.h limitedmap.h main.h miner.h mruset.h \
+  netbase.h net.h noui.h protocol.h script.h serialize.h sync.h threadsafety.h \
+  txdb.h txmempool.h ui_interface.h uint256.h util.h version.h walletdb.h wallet.h
 
 JSON_H = json/json_spirit.h json/json_spirit_error_position.h \
   json/json_spirit_reader.h json/json_spirit_reader_template.h \
@@ -31,20 +36,67 @@ obj/build.h: FORCE
 	  $(abs_top_srcdir)
 version.o: obj/build.h
 
-libbitcoin_a_SOURCES = addrman.cpp alert.cpp allocators.cpp bitcoinrpc.cpp bloom.cpp \
-  chainparams.cpp checkpoints.cpp core.cpp crypter.cpp db.cpp hash.cpp \
-  init.cpp key.cpp keystore.cpp leveldb.cpp main.cpp miner.cpp \
-  netbase.cpp net.cpp noui.cpp protocol.cpp rpcblockchain.cpp rpcdump.cpp \
-  rpcmining.cpp rpcnet.cpp rpcrawtransaction.cpp rpcwallet.cpp script.cpp \
-  sync.cpp txdb.cpp util.cpp version.cpp wallet.cpp walletdb.cpp $(JSON_H) \
+libbitcoin_server_a_SOURCES = \
+  addrman.cpp \
+  alert.cpp \
+  rpcserver.cpp \
+  bloom.cpp \
+  chainparams.cpp \
+  checkpoints.cpp \
+  coins.cpp \
+  init.cpp \
+  keystore.cpp \
+  leveldbwrapper.cpp \
+  main.cpp \
+  net.cpp \
+  noui.cpp \
+  rpcblockchain.cpp \
+  rpcnet.cpp \
+  rpcrawtransaction.cpp \
+  txdb.cpp \
+  txmempool.cpp \
+  $(JSON_H) \
   $(BITCOIN_CORE_H)
 
-nodist_libbitcoin_a_SOURCES = $(top_srcdir)/src/obj/build.h
+libbitcoin_wallet_a_SOURCES = \
+  db.cpp \
+  crypter.cpp \
+  miner.cpp \
+  rpcdump.cpp \
+  rpcmining.cpp \
+  rpcwallet.cpp \
+  wallet.cpp \
+  walletdb.cpp \
+  $(BITCOIN_CORE_H)
+
+libbitcoin_common_a_SOURCES = \
+  allocators.cpp \
+  chainparams.cpp \
+  core.cpp \
+  hash.cpp \
+  key.cpp \
+  netbase.cpp \
+  protocol.cpp \
+  rpcprotocol.cpp \
+  script.cpp \
+  sync.cpp \
+  util.cpp \
+  version.cpp \
+  $(BITCOIN_CORE_H)
+
+libbitcoin_cli_a_SOURCES = \
+  rpcclient.cpp \
+  $(BITCOIN_CORE_H)
+
+nodist_libbitcoin_common_a_SOURCES = $(top_srcdir)/src/obj/build.h
 #
 
 # bitcoind binary #
-bitcoind_LDADD = libbitcoin.a leveldb/libleveldb.a leveldb/libmemenv.a \
+bitcoind_LDADD = libbitcoin_server.a libbitcoin_cli.a libbitcoin_common.a leveldb/libleveldb.a leveldb/libmemenv.a \
   $(BOOST_LIBS)
+if ENABLE_WALLET
+bitcoind_LDADD += libbitcoin_wallet.a
+endif
 bitcoind_SOURCES = bitcoind.cpp
 #
 
@@ -56,15 +108,13 @@ AM_CPPFLAGS += $(BDB_CPPFLAGS)
 bitcoind_LDADD += $(BDB_LIBS)
 
 # bitcoin-cli binary #
-bitcoin_cli_LDADD = libbitcoin.a leveldb/libleveldb.a leveldb/libmemenv.a \
-  $(BOOST_LIBS)
+bitcoin_cli_LDADD = libbitcoin_cli.a libbitcoin_common.a $(BOOST_LIBS)
 bitcoin_cli_SOURCES = bitcoin-cli.cpp
 #
 
 if TARGET_WINDOWS
 bitcoin_cli_SOURCES += bitcoin-cli-res.rc
 endif
-bitcoin_cli_LDADD += $(BDB_LIBS)
 
 leveldb/libleveldb.a: leveldb/libmemenv.a
 
@@ -73,7 +123,7 @@ leveldb/%.a:
 	  CC="$(CC)" PLATFORM=$(TARGET_OS) AR="$(AR)" $(LEVELDB_TARGET_FLAGS) \
 	  OPT="$(CXXFLAGS) $(CPPFLAGS)"
 
-qt/bitcoinstrings.cpp: $(libbitcoin_a_SOURCES)
+qt/bitcoinstrings.cpp: $(libbitcoin_server_a_SOURCES) $(libbitcoin_common_a_SOURCES) $(libbitcoin_cli_a_SOURCES)
 	@test -n $(XGETTEXT) || echo "xgettext is required for updating translations"
 	@cd $(top_srcdir); XGETTEXT=$(XGETTEXT) share/qt/extract_strings_qt.py
 

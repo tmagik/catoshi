@@ -4,10 +4,14 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "miner.h"
+
+#include "core.h"
 #include "main.h"
+#include "net.h"
+#include "wallet.h"
 
 double dHashesPerSec = 0.0;
-int64 nHPSTimerStart = 0;
+int64_t nHPSTimerStart = 0;
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -89,12 +93,12 @@ unsigned int static ScanHash_CryptoPP(char* pmidstate, char* pdata, char* phash1
 class COrphan
 {
 public:
-    CTransaction* ptx;
+    const CTransaction* ptx;
     set<uint256> setDependsOn;
     double dPriority;
     double dFeePerKb;
 
-    COrphan(CTransaction* ptxIn)
+    COrphan(const CTransaction* ptxIn)
     {
         ptx = ptxIn;
         dPriority = dFeePerKb = 0;
@@ -110,11 +114,11 @@ public:
 };
 
 
-uint64 nLastBlockTx = 0;
-uint64 nLastBlockSize = 0;
+uint64_t nLastBlockTx = 0;
+uint64_t nLastBlockSize = 0;
 
 // We want to sort transactions by priority and fee, so:
-typedef boost::tuple<double, double, CTransaction*> TxPriority;
+typedef boost::tuple<double, double, const CTransaction*> TxPriority;
 class TxPriorityCompare
 {
     bool byFee;
@@ -173,7 +177,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     nBlockMinSize = std::min(nBlockMaxSize, nBlockMinSize);
 
     // Collect memory pool transactions into the block
-    int64 nFees = 0;
+    int64_t nFees = 0;
     {
         LOCK2(cs_main, mempool.cs);
         CBlockIndex* pindexPrev = chainActive.Tip();
@@ -187,15 +191,16 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
         vecPriority.reserve(mempool.mapTx.size());
-        for (map<uint256, CTransaction>::iterator mi = mempool.mapTx.begin(); mi != mempool.mapTx.end(); ++mi)
+        for (map<uint256, CTxMemPoolEntry>::iterator mi = mempool.mapTx.begin();
+             mi != mempool.mapTx.end(); ++mi)
         {
-            CTransaction& tx = (*mi).second;
+            const CTransaction& tx = mi->second.GetTx();
             if (tx.IsCoinBase() || !IsFinalTx(tx))
                 continue;
 
             COrphan* porphan = NULL;
             double dPriority = 0;
-            int64 nTotalIn = 0;
+            int64_t nTotalIn = 0;
             bool fMissingInputs = false;
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
             {
@@ -224,12 +229,12 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     }
                     mapDependers[txin.prevout.hash].push_back(porphan);
                     porphan->setDependsOn.insert(txin.prevout.hash);
-                    nTotalIn += mempool.mapTx[txin.prevout.hash].vout[txin.prevout.n].nValue;
+                    nTotalIn += mempool.mapTx[txin.prevout.hash].GetTx().vout[txin.prevout.n].nValue;
                     continue;
                 }
                 const CCoins &coins = view.GetCoins(txin.prevout.hash);
 
-                int64 nValueIn = coins.vout[txin.prevout.n].nValue;
+                int64_t nValueIn = coins.vout[txin.prevout.n].nValue;
                 nTotalIn += nValueIn;
 
                 int nConf = pindexPrev->nHeight - coins.nHeight + 1;
@@ -240,24 +245,12 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
             // Priority is sum(valuein * age) / modified_txsize
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-            unsigned int nTxSizeMod = nTxSize;
-            // In order to avoid disincentivizing cleaning up the UTXO set we don't count
-            // the constant overhead for each txin and up to 110 bytes of scriptSig (which
-            // is enough to cover a compressed pubkey p2sh redemption) for priority.
-            // Providing any more cleanup incentive than making additional inputs free would
-            // risk encouraging people to create junk outputs to redeem later.
-            BOOST_FOREACH(const CTxIn& txin, tx.vin)
-            {
-                unsigned int offset = 41U + min(110U, (unsigned int)txin.scriptSig.size());
-                if (nTxSizeMod > offset)
-                    nTxSizeMod -= offset;
-            }
-            dPriority /= nTxSizeMod;
+            dPriority = tx.ComputePriority(dPriority, nTxSize);
 
             // This is a more accurate fee-per-kilobyte than is used by the client code, because the
             // client code rounds up the size to the nearest 1K. That's good, because it gives an
             // incentive to create smaller transactions.
-            double dFeePerKb =  double(nTotalIn-GetValueOut(tx)) / (double(nTxSize)/1000.0);
+            double dFeePerKb =  double(nTotalIn-tx.GetValueOut()) / (double(nTxSize)/1000.0);
 
             if (porphan)
             {
@@ -265,12 +258,12 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 porphan->dFeePerKb = dFeePerKb;
             }
             else
-                vecPriority.push_back(TxPriority(dPriority, dFeePerKb, &(*mi).second));
+                vecPriority.push_back(TxPriority(dPriority, dFeePerKb, &mi->second.GetTx()));
         }
 
         // Collect transactions into block
-        uint64 nBlockSize = 1000;
-        uint64 nBlockTx = 0;
+        uint64_t nBlockSize = 1000;
+        uint64_t nBlockTx = 0;
         int nBlockSigOps = 100;
         bool fSortedByFee = (nBlockPrioritySize <= 0);
 
@@ -282,7 +275,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             // Take highest priority transaction off the priority queue:
             double dPriority = vecPriority.front().get<0>();
             double dFeePerKb = vecPriority.front().get<1>();
-            CTransaction& tx = *(vecPriority.front().get<2>());
+            const CTransaction& tx = *(vecPriority.front().get<2>());
 
             std::pop_heap(vecPriority.begin(), vecPriority.end(), comparer);
             vecPriority.pop_back();
@@ -314,7 +307,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if (!view.HaveInputs(tx))
                 continue;
 
-            int64 nTxFees = view.GetValueIn(tx)-GetValueOut(tx);
+            int64_t nTxFees = view.GetValueIn(tx)-tx.GetValueOut();
 
             nTxSigOps += GetP2SHSigOpCount(tx, view);
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
@@ -363,7 +356,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
-        LogPrintf("CreateNewBlock(): total size %"PRI64u"\n", nBlockSize);
+        LogPrintf("CreateNewBlock(): total size %"PRIu64"\n", nBlockSize);
 
         pblock->vtx[0].vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
         pblocktemplate->vTxFees[0] = -nFees;
@@ -521,7 +514,7 @@ void static BitcoinMiner(CWallet *pwallet)
         //
         // Create new block
         //
-        unsigned int nTransactionsUpdatedLast = nTransactionsUpdated;
+        unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
         CBlockIndex* pindexPrev = chainActive.Tip();
 
         auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
@@ -550,7 +543,7 @@ void static BitcoinMiner(CWallet *pwallet)
         //
         // Search
         //
-        int64 nStart = GetTime();
+        int64_t nStart = GetTime();
         uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
         uint256 hashbuf[2];
         uint256& hash = *alignup<16>(hashbuf);
@@ -589,7 +582,7 @@ void static BitcoinMiner(CWallet *pwallet)
             }
 
             // Meter hashes/sec
-            static int64 nHashCounter;
+            static int64_t nHashCounter;
             if (nHPSTimerStart == 0)
             {
                 nHPSTimerStart = GetTimeMillis();
@@ -607,7 +600,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         dHashesPerSec = 1000.0 * nHashCounter / (GetTimeMillis() - nHPSTimerStart);
                         nHPSTimerStart = GetTimeMillis();
                         nHashCounter = 0;
-                        static int64 nLogTime;
+                        static int64_t nLogTime;
                         if (GetTime() - nLogTime > 30 * 60)
                         {
                             nLogTime = GetTime();
@@ -623,7 +616,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 break;
             if (nBlockNonce >= 0xffff0000)
                 break;
-            if (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60)
+            if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 break;
             if (pindexPrev != chainActive.Tip())
                 break;
@@ -646,11 +639,10 @@ void static BitcoinMiner(CWallet *pwallet)
     }
 }
 
-void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
+void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
 {
     static boost::thread_group* minerThreads = NULL;
 
-    int nThreads = GetArg("-genproclimit", -1);
     if (nThreads < 0) {
         if (Params().NetworkID() == CChainParams::REGTEST)
             nThreads = 1;
