@@ -1,7 +1,24 @@
-// Copyright (c) 2009-2013 The Bitcoin developers
+// Copyright (c) 2011-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "paymentserver.h"
+
+#include "bitcoinunits.h"
+#include "guiconstants.h"
+#include "guiutil.h"
+#include "optionsmodel.h"
+#include "paymentserver.h"
+#include "walletmodel.h"
+
+#include "base58.h"
+#include "ui_interface.h"
+#include "wallet.h"
+
+#include <cstdlib>
+
+#include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
 #include <QApplication>
 #include <QByteArray>
 #include <QDataStream>
@@ -13,8 +30,6 @@
 #include <QList>
 #include <QLocalServer>
 #include <QLocalSocket>
-#include <QStringList>
-#include <QTextDocument>
 #include <QNetworkAccessManager>
 #include <QNetworkProxy>
 #include <QNetworkReply>
@@ -22,27 +37,16 @@
 #include <QSslCertificate>
 #include <QSslError>
 #include <QSslSocket>
+#include <QStringList>
+#include <QTextDocument>
+
 #if QT_VERSION < 0x050000
 #include <QUrl>
 #else
 #include <QUrlQuery>
 #endif
 
-#include <cstdlib>
-
-#include <openssl/x509.h>
-#include <openssl/x509_vfy.h>
-
-#include "base58.h"
-#include "bitcoinunits.h"
-#include "guiconstants.h"
-#include "guiutil.h"
-#include "optionsmodel.h"
-#include "paymentserver.h"
-#include "ui_interface.h"
-#include "util.h"
-#include "wallet.h"
-#include "walletmodel.h"
+using namespace boost;
 
 const int BITCOIN_IPC_CONNECT_TIMEOUT = 1000; // milliseconds
 const QString BITCOIN_IPC_PREFIX("bitcoin:");
@@ -228,7 +232,10 @@ bool PaymentServer::ipcSendCommandLine(int argc, char* argv[])
         QLocalSocket* socket = new QLocalSocket();
         socket->connectToServer(ipcServerName(), QIODevice::WriteOnly);
         if (!socket->waitForConnected(BITCOIN_IPC_CONNECT_TIMEOUT))
+        {
+            delete socket;
             return false;
+        }
 
         QByteArray block;
         QDataStream out(&block, QIODevice::WriteOnly);
@@ -273,16 +280,16 @@ PaymentServer::PaymentServer(QObject* parent, bool startLocalServer) :
     {
         uriServer = new QLocalServer(this);
 
-        if (!uriServer->listen(name))
-            qDebug() << "PaymentServer::PaymentServer : Cannot start bitcoin: click-to-pay handler";
+        if (!uriServer->listen(name)) {
+            // constructor is called early in init, so don't use "emit message()" here
+            QMessageBox::critical(0, tr("Payment request error"),
+                tr("Cannot start bitcoin: click-to-pay handler"));
+        }
         else {
             connect(uriServer, SIGNAL(newConnection()), this, SLOT(handleURIConnection()));
             connect(this, SIGNAL(receivedPaymentACK(QString)), this, SLOT(handlePaymentACK(QString)));
         }
     }
-
-    // netManager is null until uiReady() is called
-    netManager = NULL;
 }
 
 PaymentServer::~PaymentServer()
@@ -294,12 +301,12 @@ PaymentServer::~PaymentServer()
 // OSX-specific way of handling bitcoin: URIs and
 // PaymentRequest mime types
 //
-bool PaymentServer::eventFilter(QObject *, QEvent *event)
+bool PaymentServer::eventFilter(QObject *object, QEvent *event)
 {
-    // clicking on bitcoin: URIs creates FileOpen events on the Mac:
+    // clicking on bitcoin: URIs creates FileOpen events on the Mac
     if (event->type() == QEvent::FileOpen)
     {
-        QFileOpenEvent* fileEvent = static_cast<QFileOpenEvent*>(event);
+        QFileOpenEvent *fileEvent = static_cast<QFileOpenEvent*>(event);
         if (!fileEvent->file().isEmpty())
             handleURIOrFile(fileEvent->file());
         else if (!fileEvent->url().isEmpty())
@@ -307,7 +314,8 @@ bool PaymentServer::eventFilter(QObject *, QEvent *event)
 
         return true;
     }
-    return false;
+
+    return QObject::eventFilter(object, event);
 }
 
 void PaymentServer::initNetManager()
@@ -340,7 +348,7 @@ void PaymentServer::initNetManager()
 
 void PaymentServer::uiReady()
 {
-    assert(netManager != NULL); // Must call initNetManager before uiReady()
+    initNetManager();
 
     saveURIs = false;
     foreach (const QString& s, savedPaymentRequests)
@@ -358,17 +366,17 @@ void PaymentServer::handleURIOrFile(const QString& s)
         return;
     }
 
-    if (s.startsWith(BITCOIN_IPC_PREFIX, Qt::CaseInsensitive)) // bitcoin:
+    if (s.startsWith(BITCOIN_IPC_PREFIX, Qt::CaseInsensitive)) // bitcoin: URI
     {
-#if QT_VERSION >= 0x050000
-        QUrlQuery uri((QUrl(s)));
-#else
+#if QT_VERSION < 0x050000
         QUrl uri(s);
+#else
+        QUrlQuery uri((QUrl(s)));
 #endif
-        if (uri.hasQueryItem("request"))
+        if (uri.hasQueryItem("r"))
         {
             QByteArray temp;
-            temp.append(uri.queryItemValue("request"));
+            temp.append(uri.queryItemValue("r"));
             QString decoded = QUrl::fromPercentEncoding(temp);
             QUrl fetchUrl(decoded, QUrl::StrictMode);
 
@@ -378,6 +386,7 @@ void PaymentServer::handleURIOrFile(const QString& s)
                 fetchRequest(fetchUrl);
             else
                 qDebug() << "PaymentServer::handleURIOrFile : Invalid URL: " << fetchUrl;
+
             return;
         }
 
@@ -388,18 +397,17 @@ void PaymentServer::handleURIOrFile(const QString& s)
             emit message(tr("URI handling"),
                 tr("URI can not be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters."),
                 CClientUIInterface::ICON_WARNING);
+
         return;
     }
 
     if (QFile::exists(s))
     {
         PaymentRequestPlus request;
-        QList<SendCoinsRecipient> recipients;
-        if (readPaymentRequest(s, request) && processPaymentRequest(request, recipients)) {
-            foreach (const SendCoinsRecipient& recipient, recipients){
-                emit receivedPaymentRequest(recipient);
-            }
-        }
+        SendCoinsRecipient recipient;
+        if (readPaymentRequest(s, request) && processPaymentRequest(request, recipient))
+            emit receivedPaymentRequest(recipient);
+
         return;
     }
 }
@@ -445,14 +453,37 @@ bool PaymentServer::readPaymentRequest(const QString& filename, PaymentRequestPl
     return request.parse(data);
 }
 
-bool PaymentServer::processPaymentRequest(PaymentRequestPlus& request, QList<SendCoinsRecipient>& recipients)
+bool PaymentServer::processPaymentRequest(PaymentRequestPlus& request, SendCoinsRecipient& recipient)
 {
     if (!optionsModel)
         return false;
 
-    QList<std::pair<CScript,qint64> > sendingTos = request.getPayTo();
-    qint64 totalAmount = 0;
+    recipient.paymentRequest = request;
+    recipient.message = GUIUtil::HtmlEscape(request.getDetails().memo());
+
+    request.getMerchant(PaymentServer::certStore, recipient.authenticatedMerchant);
+
+    QList<std::pair<CScript, qint64> > sendingTos = request.getPayTo();
+    QStringList addresses;
+
     foreach(const PAIRTYPE(CScript, qint64)& sendingTo, sendingTos) {
+        // Extract and check destination addresses
+        CTxDestination dest;
+        if (ExtractDestination(sendingTo.first, dest)) {
+            // Append destination address
+            addresses.append(QString::fromStdString(CBitcoinAddress(dest).ToString()));
+        }
+        else if (!recipient.authenticatedMerchant.isEmpty()){
+            // Insecure payments to custom bitcoin addresses are not supported
+            // (there is no good way to tell the user where they are paying in a way
+            // they'd have a chance of understanding).
+            emit message(tr("Payment request error"),
+                tr("Unverified payment requests to custom payment scripts are unsupported."),
+                CClientUIInterface::MSG_ERROR);
+            return false;
+        }
+
+        // Extract and check amounts
         CTxOut txOut(sendingTo.second, sendingTo.first);
         if (txOut.IsDust(CTransaction::nMinRelayTxFee)) {
             QString msg = tr("Requested payment amount of %1 is too small (considered dust).")
@@ -463,43 +494,16 @@ bool PaymentServer::processPaymentRequest(PaymentRequestPlus& request, QList<Sen
             return false;
         }
 
-        totalAmount += sendingTo.second;
+        recipient.amount += sendingTo.second;
     }
+    // Store addresses and format them to fit nicely into the GUI
+    recipient.address = addresses.join("<br />");
 
-    recipients.append(SendCoinsRecipient());
-
-    if (request.getMerchant(PaymentServer::certStore, recipients[0].authenticatedMerchant)) {
-        recipients[0].paymentRequest = request;
-        recipients[0].amount = totalAmount;
-        qDebug() << "PaymentServer::processPaymentRequest : Payment request from " << recipients[0].authenticatedMerchant;
+    if (!recipient.authenticatedMerchant.isEmpty()) {
+        qDebug() << "PaymentServer::processPaymentRequest : Secure payment request from " << recipient.authenticatedMerchant;
     }
     else {
-        recipients.clear();
-        // Insecure payment requests may turn into more than one recipient if
-        // the merchant is requesting payment to more than one address.
-        for (int i = 0; i < sendingTos.size(); i++) {
-            std::pair<CScript, qint64>& sendingTo = sendingTos[i];
-            recipients.append(SendCoinsRecipient());
-            recipients[i].amount = sendingTo.second;
-            QString memo = QString::fromStdString(request.getDetails().memo());
-            recipients[i].label = GUIUtil::HtmlEscape(memo);
-            CTxDestination dest;
-            if (ExtractDestination(sendingTo.first, dest)) {
-                if (i == 0) // Tie request to first pay-to, we don't want multiple ACKs
-                    recipients[i].paymentRequest = request;
-                recipients[i].address = QString::fromStdString(CBitcoinAddress(dest).ToString());
-                qDebug() << "PaymentServer::processPaymentRequest : Payment request, insecure " << recipients[i].address;
-            }
-            else {
-                // Insecure payments to custom bitcoin addresses are not supported
-                // (there is no good way to tell the user where they are paying in a way
-                // they'd have a chance of understanding).
-                emit message(tr("Payment request error"),
-                    tr("Insecure requests to custom payment scripts unsupported"),
-                    CClientUIInterface::MSG_ERROR);
-                return false;
-            }
-        }
+        qDebug() << "PaymentServer::processPaymentRequest : Insecure payment request to " << addresses.join(", ");
     }
 
     return true;
@@ -590,12 +594,9 @@ void PaymentServer::netRequestFinished(QNetworkReply* reply)
     if (requestType == "PaymentRequest")
     {
         PaymentRequestPlus request;
-        QList<SendCoinsRecipient> recipients;
-        if (request.parse(data) && processPaymentRequest(request, recipients)) {
-            foreach (const SendCoinsRecipient& recipient, recipients) {
-                emit receivedPaymentRequest(recipient);
-            }
-        }
+        SendCoinsRecipient recipient;
+        if (request.parse(data) && processPaymentRequest(request, recipient))
+            emit receivedPaymentRequest(recipient);
         else
             qDebug() << "PaymentServer::netRequestFinished : Error processing payment request";
 

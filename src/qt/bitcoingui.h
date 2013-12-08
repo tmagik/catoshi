@@ -1,33 +1,27 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef BITCOINGUI_H
 #define BITCOINGUI_H
 
 #include <QMainWindow>
-#include <QSystemTrayIcon>
 #include <QMap>
+#include <QSystemTrayIcon>
 
-class WalletFrame;
-class WalletView;
 class ClientModel;
-class WalletModel;
-class WalletStack;
-class OverviewPage;
-class SendCoinsDialog;
-class SendCoinsRecipient;
-class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
+class SendCoinsRecipient;
+class WalletFrame;
+class WalletModel;
 
 class CWallet;
 
 QT_BEGIN_NAMESPACE
-class QLabel;
-class QModelIndex;
-class QProgressBar;
-class QStackedWidget;
-class QUrl;
-class QListWidget;
-class QPushButton;
 class QAction;
+class QLabel;
+class QProgressBar;
 QT_END_NAMESPACE
 
 /**
@@ -93,6 +87,7 @@ private:
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
     QAction *openRPCConsoleAction;
+    QAction *openAction;
 
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
@@ -112,6 +107,13 @@ private:
     void createTrayIcon(bool fIsTestnet);
     /** Create system tray menu (or setup the dock menu) */
     void createTrayIconMenu();
+
+    /** Enable or disable all wallet-related actions */
+    void setWalletActionsEnabled(bool enabled);
+
+signals:
+    /** Signal raised when a URI was entered or dragged to the GUI */
+    void receivedURI(const QString &uri);
 
 public slots:
     /** Set number of connections shown in the UI */
@@ -171,6 +173,8 @@ private slots:
     /** Handle tray icon clicked */
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 #endif
+    /** Show open dialog */
+    void openClicked();
 
     /** Show window if hidden, unminimize when minimized, rise when obscured or show if hidden and fToggleHidden is true */
     void showNormalIfMinimized(bool fToggleHidden = false);

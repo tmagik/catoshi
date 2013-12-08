@@ -1,12 +1,17 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef RPCCONSOLE_H
 #define RPCCONSOLE_H
 
 #include <QDialog>
 
+class ClientModel;
+
 namespace Ui {
     class RPCConsole;
 }
-class ClientModel;
 
 /** Local Bitcoin RPC console. */
 class RPCConsole: public QDialog
@@ -14,7 +19,7 @@ class RPCConsole: public QDialog
     Q_OBJECT
 
 public:
-    explicit RPCConsole(QWidget *parent = 0);
+    explicit RPCConsole(QWidget *parent);
     ~RPCConsole();
 
     void setClientModel(ClientModel *model);
@@ -41,8 +46,6 @@ private slots:
     void on_sldGraphRange_valueChanged(int value);
     /** update traffic statistics */
     void updateTrafficStats(quint64 totalBytesIn, quint64 totalBytesOut);
-    /** clear traffic graph */
-    void on_btnClearTrafficGraph_clicked();
 
 public slots:
     void clear();
@@ -55,6 +58,7 @@ public slots:
     void browseHistory(int offset);
     /** Scroll console view to end */
     void scrollToEnd();
+
 signals:
     // For RPC command executor
     void stopExecutor();

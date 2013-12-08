@@ -1,29 +1,31 @@
-/*
- * Qt4 bitcoin GUI.
- *
- * W.J. van der Laan 2011-2012
- * The Bitcoin Developers 2011-2013
- */
-#include "walletview.h"
-#include "bitcoingui.h"
-#include "transactiontablemodel.h"
-#include "addressbookpage.h"
-#include "sendcoinsdialog.h"
-#include "receivecoinsdialog.h"
-#include "signverifymessagedialog.h"
-#include "clientmodel.h"
-#include "walletmodel.h"
-#include "optionsmodel.h"
-#include "transactionview.h"
-#include "overviewpage.h"
-#include "askpassphrasedialog.h"
-#include "ui_interface.h"
-#include "guiutil.h"
+// Copyright (c) 2011-2013 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <QHBoxLayout>
-#include <QVBoxLayout>
+#include "walletview.h"
+
+#include "addressbookpage.h"
+#include "askpassphrasedialog.h"
+#include "bitcoingui.h"
+#include "clientmodel.h"
+#include "guiutil.h"
+#include "optionsmodel.h"
+#include "overviewpage.h"
+#include "receivecoinsdialog.h"
+#include "sendcoinsdialog.h"
+#include "signverifymessagedialog.h"
+#include "transactiontablemodel.h"
+#include "transactionview.h"
+#include "walletmodel.h"
+
+#include "ui_interface.h"
+
 #include <QAction>
+#include <QActionGroup>
+#include <QFileDialog>
+#include <QHBoxLayout>
 #include <QPushButton>
+#include <QVBoxLayout>
 
 WalletView::WalletView(QWidget *parent):
     QStackedWidget(parent),
@@ -221,7 +223,7 @@ void WalletView::backupWallet()
 {
     QString filename = GUIUtil::getSaveFileName(this,
         tr("Backup Wallet"), QString(),
-        tr("Wallet Data (*.dat)"));
+        tr("Wallet Data (*.dat)"), NULL);
 
     if (filename.isEmpty())
         return;
