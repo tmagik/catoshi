@@ -216,12 +216,19 @@ void SendCoinsDialog::on_sendButton_clicked()
         questionString.append("</span> ");
         questionString.append(tr("added as transaction fee"));
     }
-    if(txFee > 0 || recipients.count() > 1)
+
+    // add total amount in all subdivision units
+    questionString.append("<hr />");
+    qint64 totalAmount = currentTransaction.getTotalTransactionAmount() + txFee;
+    QStringList alternativeUnits;
+    foreach(BitcoinUnits::Unit u, BitcoinUnits::availableUnits())
     {
-        // add total amount string if there are more then one recipients or a fee is required
-        questionString.append("<hr />");
-        questionString.append(tr("Total Amount %1").arg(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), currentTransaction.getTotalTransactionAmount()+txFee)));
+        if(u != model->getOptionsModel()->getDisplayUnit())
+            alternativeUnits.append(BitcoinUnits::formatWithUnit(u, totalAmount));
     }
+    questionString.append(tr("Total Amount %1 (= %2)")
+        .arg(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), totalAmount))
+        .arg(alternativeUnits.join(" " + tr("or") + " ")));
 
     QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm send coins"),
         questionString.arg(formatted.join("<br />")),
@@ -253,13 +260,11 @@ void SendCoinsDialog::clear()
     // Remove entries until only one left
     while(ui->entries->count())
     {
-        delete ui->entries->takeAt(0)->widget();
+        ui->entries->takeAt(0)->widget()->deleteLater();
     }
     addEntry();
 
-    updateRemoveEnabled();
-
-    ui->sendButton->setDefault(true);
+    updateTabsAndLabels();
 }
 
 void SendCoinsDialog::reject()
@@ -280,7 +285,7 @@ SendCoinsEntry *SendCoinsDialog::addEntry()
     connect(entry, SIGNAL(removeEntry(SendCoinsEntry*)), this, SLOT(removeEntry(SendCoinsEntry*)));
     connect(entry, SIGNAL(payAmountChanged()), this, SLOT(coinControlUpdateLabels()));
 
-    updateRemoveEnabled();
+    updateTabsAndLabels();
 
     // Focus the field, so that entry can start immediately
     entry->clear();
@@ -293,27 +298,21 @@ SendCoinsEntry *SendCoinsDialog::addEntry()
     return entry;
 }
 
-void SendCoinsDialog::updateRemoveEnabled()
+void SendCoinsDialog::updateTabsAndLabels()
 {
-    // Remove buttons are enabled as soon as there is more than one send-entry
-    bool enabled = (ui->entries->count() > 1);
-    for(int i = 0; i < ui->entries->count(); ++i)
-    {
-        SendCoinsEntry *entry = qobject_cast<SendCoinsEntry*>(ui->entries->itemAt(i)->widget());
-        if(entry)
-        {
-            entry->setRemoveEnabled(enabled);
-        }
-    }
     setupTabChain(0);
-
     coinControlUpdateLabels();
 }
 
 void SendCoinsDialog::removeEntry(SendCoinsEntry* entry)
 {
-    delete entry;
-    updateRemoveEnabled();
+    entry->deleteLater();
+
+    // If the last entry was removed add an empty one
+    if (!ui->entries->count())
+        addEntry();
+
+    updateTabsAndLabels();
 }
 
 QWidget *SendCoinsDialog::setupTabChain(QWidget *prev)
@@ -372,7 +371,7 @@ void SendCoinsDialog::pasteEntry(const SendCoinsRecipient &rv)
     }
 
     entry->setValue(rv);
-    coinControlUpdateLabels();
+    updateTabsAndLabels();
 }
 
 bool SendCoinsDialog::handlePaymentRequest(const SendCoinsRecipient &rv)
@@ -530,16 +529,17 @@ void SendCoinsDialog::coinControlButtonClicked()
 // Coin Control: checkbox custom change address
 void SendCoinsDialog::coinControlChangeChecked(int state)
 {
-    if (model)
+    if (state == Qt::Unchecked)
     {
-        if (state == Qt::Checked)
-            CoinControlDialog::coinControl->destChange = CBitcoinAddress(ui->lineEditCoinControlChange->text().toStdString()).Get();
-        else
-            CoinControlDialog::coinControl->destChange = CNoDestination();
+        CoinControlDialog::coinControl->destChange = CNoDestination();
+        ui->lineEditCoinControlChange->setValid(true);
+        ui->labelCoinControlChangeLabel->clear();
     }
+    else
+        // use this to re-validate an already entered address
+        coinControlChangeEdited(ui->lineEditCoinControlChange->text());
 
     ui->lineEditCoinControlChange->setEnabled((state == Qt::Checked));
-    ui->labelCoinControlChangeLabel->setVisible((state == Qt::Checked));
 }
 
 // Coin Control: custom change address changed
@@ -555,6 +555,10 @@ void SendCoinsDialog::coinControlChangeEdited(const QString & text)
             ui->labelCoinControlChangeLabel->setText("");
         else if (!CBitcoinAddress(text.toStdString()).IsValid())
         {
+            // invalid change address
+            CoinControlDialog::coinControl->destChange = CNoDestination();
+
+            ui->lineEditCoinControlChange->setValid(false);
             ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:red;}");
             ui->labelCoinControlChangeLabel->setText(tr("Warning: Invalid Bitcoin address"));
         }
@@ -572,6 +576,10 @@ void SendCoinsDialog::coinControlChangeEdited(const QString & text)
                     ui->labelCoinControlChangeLabel->setText(tr("(no label)"));
                 else
                 {
+                    // unknown change address
+                    CoinControlDialog::coinControl->destChange = CNoDestination();
+
+                    ui->lineEditCoinControlChange->setValid(false);
                     ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:red;}");
                     ui->labelCoinControlChangeLabel->setText(tr("Warning: Unknown change address"));
                 }
@@ -612,4 +620,3 @@ void SendCoinsDialog::coinControlUpdateLabels()
         ui->labelCoinControlInsuffFunds->hide();
     }
 }
-

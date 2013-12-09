@@ -75,13 +75,11 @@ void SendCoinsEntry::setModel(WalletModel *model)
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
 
     connect(ui->payAmount, SIGNAL(textChanged()), this, SIGNAL(payAmountChanged()));
+    connect(ui->deleteButton, SIGNAL(clicked()), this, SLOT(deleteClicked()));
+    connect(ui->deleteButton_is, SIGNAL(clicked()), this, SLOT(deleteClicked()));
+    connect(ui->deleteButton_s, SIGNAL(clicked()), this, SLOT(deleteClicked()));
 
     clear();
-}
-
-void SendCoinsEntry::setRemoveEnabled(bool enabled)
-{
-    ui->deleteButton->setEnabled(enabled);
 }
 
 void SendCoinsEntry::clear()
@@ -99,13 +97,11 @@ void SendCoinsEntry::clear()
     ui->memoTextLabel_s->clear();
     ui->payAmount_s->clear();
 
-    ui->payTo->setFocus();
-
     // update the display unit, to not use the default ("BTC")
     updateDisplayUnit();
 }
 
-void SendCoinsEntry::on_deleteButton_clicked()
+void SendCoinsEntry::deleteClicked()
 {
     emit removeEntry(this);
 }

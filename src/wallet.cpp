@@ -10,7 +10,6 @@
 #include "net.h"
 
 #include <inttypes.h>
-#include <stdint.h>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <openssl/rand.h>
@@ -656,7 +655,7 @@ void CWalletTx::GetAmounts(list<pair<CTxDestination, int64_t> >& listReceived,
     int64_t nDebit = GetDebit();
     if (nDebit > 0) // debit>0 means we signed/sent this transaction
     {
-        int64_t nValueOut = GetValueOut(*this);
+        int64_t nValueOut = GetValueOut();
         nFee = nDebit - nValueOut;
     }
 
@@ -765,6 +764,10 @@ void CWalletTx::AddSupportingTransactions()
                 else if (mapWalletPrev.count(hash))
                 {
                     tx = *mapWalletPrev[hash];
+                }
+                else
+                {
+                    continue;
                 }
 
                 int nDepth = tx.SetMerkleBranch();
@@ -896,7 +899,10 @@ void CWalletTx::RelayWalletTransaction()
 {
     BOOST_FOREACH(const CMerkleTx& tx, vtxPrev)
     {
-        if (!tx.IsCoinBase())
+        // Important: versions of bitcoin before 0.8.6 had a bug that inserted
+        // empty transactions into the vtxPrev, which will cause the node to be
+        // banned when retransmitted, hence the check for !tx.vin.empty()
+        if (!tx.IsCoinBase() && !tx.vin.empty())
             if (tx.GetDepthInMainChain() == 0)
                 RelayTransaction((CTransaction)tx, tx.GetHash());
     }
@@ -1299,7 +1305,9 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64_t> >& vecSend,
 
                         // Reserve a new key pair from key pool
                         CPubKey vchPubKey;
-                        assert(reservekey.GetReservedKey(vchPubKey)); // should never fail, as we just unlocked
+                        bool ret;
+                        ret = reservekey.GetReservedKey(vchPubKey);
+                        assert(ret); // should never fail, as we just unlocked
 
                         scriptChange.SetDestination(vchPubKey.GetID());
                     }
@@ -1343,15 +1351,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64_t> >& vecSend,
                     strFailReason = _("Transaction too large");
                     return false;
                 }
-                unsigned int nTxSizeMod = nBytes;
-                // See miner.c's dPriority logic for the matching network-node side code.
-                BOOST_FOREACH(const CTxIn& txin, (*(CTransaction*)&wtxNew).vin)
-                {
-                    unsigned int offset = 41U + min(110U, (unsigned int)txin.scriptSig.size());
-                    if (nTxSizeMod > offset)
-                        nTxSizeMod -= offset;
-                }
-                dPriority /= nTxSizeMod;
+                dPriority = wtxNew.ComputePriority(dPriority, nBytes);
 
                 // Check that enough fee is included
                 int64_t nPayFee = nTransactionFee * (1 + (int64_t)nBytes / 1000);
