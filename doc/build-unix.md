@@ -93,7 +93,7 @@ are installed. Qt 4 is currently necessary to build the GUI.
 
 To build with Qt 4 you need the following:
 
-    apt-get install libqt4-dev libprotobuf-dev
+    apt-get install libqt4-dev libprotobuf-dev protobuf-compiler
 
 libqrencode (optional) can be installed with:
 
@@ -187,3 +187,7 @@ disable-wallet mode with:
     ./configure --disable-wallet
 
 In this case there is no dependency on Berkeley DB 4.8.
+
+Mining is also possible in disable-wallet mode, but only using the `getblocktemplate` RPC
+call not `getwork`.
+
