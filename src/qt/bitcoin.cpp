@@ -75,22 +75,6 @@ static bool ThreadSafeMessageBox(const std::string& message, const std::string& 
     }
 }
 
-static bool ThreadSafeAskFee(int64_t nFeeRequired)
-{
-    if(!guiref)
-        return false;
-    if(nFeeRequired < CTransaction::nMinTxFee || nFeeRequired <= nTransactionFee || fDaemon)
-        return true;
-
-    bool payFee = false;
-
-    QMetaObject::invokeMethod(guiref, "askFee", GUIUtil::blockingGUIThreadConnection(),
-                               Q_ARG(qint64, nFeeRequired),
-                               Q_ARG(bool*, &payFee));
-
-    return payFee;
-}
-
 static void InitMessage(const std::string &message)
 {
     if(splashref)
@@ -163,14 +147,14 @@ static void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTrans
 void DebugMessageHandler(QtMsgType type, const char *msg)
 {
     Q_UNUSED(type);
-    LogPrint("qt", "Bitcoin-Qt: %s\n", msg);
+    LogPrint("qt", "GUI: %s\n", msg);
 }
 #else
 void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg)
 {
     Q_UNUSED(type);
     Q_UNUSED(context);
-    LogPrint("qt", "Bitcoin-Qt: %s\n", qPrintable(msg));
+    LogPrint("qt", "GUI: %s\n", qPrintable(msg));
 }
 #endif
 
@@ -263,7 +247,6 @@ int main(int argc, char *argv[])
 
     // Subscribe to global signals from core
     uiInterface.ThreadSafeMessageBox.connect(ThreadSafeMessageBox);
-    uiInterface.ThreadSafeAskFee.connect(ThreadSafeAskFee);
     uiInterface.InitMessage.connect(InitMessage);
     uiInterface.Translate.connect(Translate);
 
@@ -365,7 +348,7 @@ int main(int argc, char *argv[])
                 guiref = 0;
                 delete walletModel;
             }
-            // Shutdown the core and its threads, but don't exit Bitcoin-Qt here
+            // Shutdown the core and its threads, but don't exit the GUI here
             threadGroup.interrupt_all();
             threadGroup.join_all();
             Shutdown();
