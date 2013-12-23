@@ -17,6 +17,7 @@
 #include "main.h"
 #include "ui_interface.h"
 #include "util.h"
+#include "wallet.h"
 
 #include <stdint.h>
 
@@ -72,22 +73,6 @@ static bool ThreadSafeMessageBox(const std::string& message, const std::string& 
         fprintf(stderr, "%s: %s\n", caption.c_str(), message.c_str());
         return false;
     }
-}
-
-static bool ThreadSafeAskFee(int64_t nFeeRequired)
-{
-    if(!guiref)
-        return false;
-    if(nFeeRequired < CTransaction::nMinTxFee || nFeeRequired <= nTransactionFee || fDaemon)
-        return true;
-
-    bool payFee = false;
-
-    QMetaObject::invokeMethod(guiref, "askFee", GUIUtil::blockingGUIThreadConnection(),
-                               Q_ARG(qint64, nFeeRequired),
-                               Q_ARG(bool*, &payFee));
-
-    return payFee;
 }
 
 static void InitMessage(const std::string &message)
@@ -213,9 +198,10 @@ int main(int argc, char *argv[])
 
     // Application identification (must be set before OptionsModel is initialized,
     // as it is used to locate QSettings)
+    bool isaTestNet = TestNet() || RegTest();
     QApplication::setOrganizationName("Bitcoin");
     QApplication::setOrganizationDomain("bitcoin.org");
-    if (TestNet()) // Separate UI settings for testnet
+    if (isaTestNet) // Separate UI settings for testnets
         QApplication::setApplicationName("Bitcoin-Qt-testnet");
     else
         QApplication::setApplicationName("Bitcoin-Qt");
@@ -246,7 +232,7 @@ int main(int argc, char *argv[])
     PaymentServer* paymentServer = new PaymentServer(&app);
 
     // User language is set up: pick a data directory
-    Intro::pickDataDirectory(TestNet());
+    Intro::pickDataDirectory(isaTestNet);
 
     // Install global event filter that makes sure that long tooltips can be word-wrapped
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
@@ -262,7 +248,6 @@ int main(int argc, char *argv[])
 
     // Subscribe to global signals from core
     uiInterface.ThreadSafeMessageBox.connect(ThreadSafeMessageBox);
-    uiInterface.ThreadSafeAskFee.connect(ThreadSafeAskFee);
     uiInterface.InitMessage.connect(InitMessage);
     uiInterface.Translate.connect(Translate);
 
@@ -275,7 +260,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    SplashScreen splash(QPixmap(), 0);
+    SplashScreen splash(QPixmap(), 0, isaTestNet);
     if (GetBoolArg("-splash", true) && !GetBoolArg("-min", false))
     {
         splash.show();
@@ -297,7 +282,7 @@ int main(int argc, char *argv[])
 
         boost::thread_group threadGroup;
 
-        BitcoinGUI window(TestNet(), 0);
+        BitcoinGUI window(isaTestNet, 0);
         guiref = &window;
 
         QTimer* pollShutdownTimer = new QTimer(guiref);
