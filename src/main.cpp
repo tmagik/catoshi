@@ -1,8 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Copyright (c) 2013-2014 The Catcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "alert.h"
 #include "checkpoints.h"
@@ -1072,6 +1073,7 @@ int64 static GetBlockValue(int nHeight, int64 nFees)
     return nSubsidy + nFees;
 }
 
+/* FIXME and use RETARGET_INTERVAL */
 static const int64 nTargetTimespan = 6 * 60 * 60; // 6 hours
 static const int64 nTargetSpacing = 10 * 60;
 static const int64 nInterval = nTargetTimespan / nTargetSpacing;
@@ -1112,6 +1114,8 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     int64 nTargetTimespanLocal = 0;
     int64 nIntervalLocal = 0;
     int forkBlock = 20290 - 1;
+    //int fork2Block = 20736; // Um yeah, make this a little more general - hozer
+    int fork2Block = 20723; // fork early, fork often
 
     unsigned int nProofOfWorkLimit = bnProofOfWorkLimit.GetCompact();
 
@@ -1121,7 +1125,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 
     // Starting from block 20,290 the network diff was set to 16
     // and the retarget interval was changed to 36
-	if(pindexLast->nHeight < forkBlock) {
+    if(pindexLast->nHeight < forkBlock) {
         nTargetTimespanLocal = nTargetTimespanOld;
         nIntervalLocal = nIntervalOld;
     } else if(pindexLast->nHeight == forkBlock) {
@@ -1136,18 +1140,19 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         nIntervalLocal = nInterval;
     }
 
-    // Only change once per interval
-    if ((pindexLast->nHeight+1) % nIntervalLocal != 0)
-    {
-        // Special difficulty rule for testnet:
-        if (fTestNet)
+    if(pindexLast->nHeight < fork2Block){    
+        // Only change once per interval
+        if ((pindexLast->nHeight+1) % nIntervalLocal != 0)
         {
-            // If the new block's timestamp is more than 2* 10 minutes
-            // then allow mining of a min-difficulty block.
-            if (pblock->nTime > pindexLast->nTime + nTargetSpacing*2)
-                return nProofOfWorkLimit;
-            else
+            // Special difficulty rule for testnet:
+            if (fTestNet)
             {
+                // If the new block's timestamp is more than 2* 10 minutes
+                // then allow mining of a min-difficulty block.
+                if (pblock->nTime > pindexLast->nTime + nTargetSpacing*2)
+                    return nProofOfWorkLimit;
+                else
+                {
                 // Return the last non-special-min-difficulty-rules-block
                 const CBlockIndex* pindex = pindexLast;
                 while (pindex->pprev && pindex->nHeight % nIntervalLocal != 0 && pindex->nBits == nProofOfWorkLimit)
@@ -1157,11 +1162,13 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         }
 
         return pindexLast->nBits;
+        }
     }
 
-    // Catcoin: This fixes an issue where a 51% attack can change difficulty at will.
+    
+    // From bitcoin: This fixes an issue where a 51% attack can change difficulty at will.
     // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
-    int blockstogoback = nIntervalLocal-1;
+    int blockstogoback = nIntervalLocal-1;  // Do we really need this? -hozer
     if ((pindexLast->nHeight+1) != nIntervalLocal)
         blockstogoback = nIntervalLocal;
 
@@ -2190,7 +2197,7 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 
         // Check proof of work
         if (nBits != GetNextWorkRequired(pindexPrev, this))
-            return state.DoS(100, error("AcceptBlock() : incorrect proof of work"));
+            return state.DoS(100, error("AcceptBlock(height=%d) : incorrect proof of work", nHeight));
 
         // Check timestamp against prev
         if (GetBlockTime() <= pindexPrev->GetMedianTimePast())

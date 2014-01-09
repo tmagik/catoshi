@@ -1,8 +1,9 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Copyright (c) 2013-2014 The Catcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "main.h"
 #include "db.h"
@@ -24,9 +25,9 @@ Value GetNetworkHashPS(int lookup, int height) {
     if (pb == NULL || !pb->nHeight)
         return 0;
 
-    // If lookup is -1, then use blocks since last difficulty change.
+    // If lookup is -1, then use RETARGET_INTERVAL 
     if (lookup <= 0)
-        lookup = pb->nHeight % 36 + 1;
+        lookup = RETARGET_INTERVAL;
 
     // If lookup is larger than chain, then set it to chain length.
     if (lookup > pb->nHeight)
