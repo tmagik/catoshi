@@ -1114,8 +1114,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     int64 nTargetTimespanLocal = 0;
     int64 nIntervalLocal = 0;
     int forkBlock = 20290 - 1;
-    //int fork2Block = 20999; // Um yeah, make this a little more general - hozer
-    int fork2Block = 20905; // fork early, fork often
+    int fork2Block = 20999; // Um yeah, make this a little more general - hozer
 
     unsigned int nProofOfWorkLimit = bnProofOfWorkLimit.GetCompact();
 
@@ -1140,7 +1139,8 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         nIntervalLocal = nInterval;
     }
 
-    if(pindexLast->nHeight < fork2Block){    
+    // after fork2Block we retarget every block   
+    if(pindexLast->nHeight < fork2Block){
         // Only change once per interval
         if ((pindexLast->nHeight+1) % nIntervalLocal != 0)
         {
@@ -1153,15 +1153,15 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
                     return nProofOfWorkLimit;
                 else
                 {
-                // Return the last non-special-min-difficulty-rules-block
-                const CBlockIndex* pindex = pindexLast;
-                while (pindex->pprev && pindex->nHeight % nIntervalLocal != 0 && pindex->nBits == nProofOfWorkLimit)
-                    pindex = pindex->pprev;
-                return pindex->nBits;
+                    // Return the last non-special-min-difficulty-rules-block
+                    const CBlockIndex* pindex = pindexLast;
+                    while (pindex->pprev && pindex->nHeight % nIntervalLocal != 0 && pindex->nBits == nProofOfWorkLimit)
+                        pindex = pindex->pprev;
+                    return pindex->nBits;
+                }
             }
-        }
 
-        return pindexLast->nBits;
+            return pindexLast->nBits;
         }
     }
 
