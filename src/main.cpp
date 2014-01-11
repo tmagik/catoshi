@@ -1114,8 +1114,8 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     int64 nTargetTimespanLocal = 0;
     int64 nIntervalLocal = 0;
     int forkBlock = 20290 - 1;
-    //int fork2Block = 20736; // Um yeah, make this a little more general - hozer
-    int fork2Block = 20723; // fork early, fork often
+    //int fork2Block = 20999; // Um yeah, make this a little more general - hozer
+    int fork2Block = 20905; // fork early, fork often
 
     unsigned int nProofOfWorkLimit = bnProofOfWorkLimit.GetCompact();
 
