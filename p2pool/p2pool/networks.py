@@ -122,6 +122,44 @@ nets = dict(
         VERSION_CHECK=lambda v: True,
         VERSION_WARNING=lambda v: 'Upgrade Terracoin to >= 0.8.0.1!' if v < 80001 else None,
     ),
+    catcoin=math.Object(
+        PARENT=networks.nets['catcoin'],
+        SHARE_PERIOD=30, # seconds target spacing
+        CHAIN_LENGTH=24*60*60//10, # shares
+        REAL_CHAIN_LENGTH=24*60*60//10, # shares
+        TARGET_LOOKBEHIND=200, # shares coinbase maturity
+        SPREAD=3, # blocks
+        IDENTIFIER='cacacacae0e0e0e0'.decode('hex'),
+        PREFIX='fefecfcf0e0f3434'.decode('hex'),
+        P2P_PORT=8333,
+        MIN_TARGET=0,
+        MAX_TARGET=2**256//2**20 - 1,
+        PERSIST=False,
+        WORKER_PORT=9927,
+        BOOTSTRAP_ADDRS=[],
+#        BOOTSTRAP_ADDRS='p2pool.gotgeeks.com doge.dtdns.net pool.hostv.pl rav3n.dtdns.net p2pool.org'.split(' '),
+#        ANNOUNCE_CHANNEL='#p2pool-alt',
+        VERSION_CHECK=lambda v: True,
+        VERSION_WARNING=lambda v: 'Upgrade Catcoin to >= 0.8.0.8!' if v < 80008 else None,
+    ),
+    catcoin_testnet=math.Object(
+        PARENT=networks.nets['catcoin'],  # FIXME make this _testnet!!
+        SHARE_PERIOD=30, # seconds target spacing
+        CHAIN_LENGTH=24*60*60//10, # shares
+        REAL_CHAIN_LENGTH=24*60*60//10, # shares
+        TARGET_LOOKBEHIND=200, # shares coinbase maturity
+        SPREAD=3, # blocks
+        IDENTIFIER='eaeacacae0e0e0e0'.decode('hex'),
+        PREFIX='cacacfcf0e0f3434'.decode('hex'),
+        P2P_PORT=18333,
+        MIN_TARGET=0,
+        MAX_TARGET=2**256//2**20 - 1,
+        PERSIST=False,
+        WORKER_PORT=19927,
+        BOOTSTRAP_ADDRS=[],
+        VERSION_CHECK=lambda v: True,
+        VERSION_WARNING=lambda v: 'Upgrade Catcoin to >= 0.8.0.8!' if v < 80008 else None,
+    ),
 
 )
 for net_name, net in nets.iteritems():
