@@ -77,7 +77,7 @@ on debian:
     sudo apt-get install mercurial build-essential libboost-dev libdb++-dev \
 		libssl-dev libminiupnpc-dev libboost-filesytem-dev \
 		libboost-system-dev libboost-program-options-dev \
-		libboost-thread-dev
+		libboost-thread-dev libboost-test-dev libboost-test1.49-dev 
     cd src; make
 
 ### Automated Testing
