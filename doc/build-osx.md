@@ -45,7 +45,7 @@ Instructions: MacPorts
 
 Installing the dependencies using MacPorts is very straightforward.
 
-    sudo port install boost db48@+no_java openssl miniupnpc
+    sudo port install boost db48@+no_java openssl miniupnpc autoconf pkgconfig
 
 ### Building `bitcoind`
 
@@ -62,7 +62,7 @@ Installing the dependencies using MacPorts is very straightforward.
 
 3.  It is a good idea to build and run the unit tests, too:
 
-        make test
+        make check
 
 Instructions: HomeBrew
 ----------------------
@@ -87,7 +87,7 @@ Rerunning "openssl version" should now return the correct version.
 
 1. Clone the github tree to get the source code and go into the directory.
 
-        git clone git@github.com:bitcoin/bitcoin.git bitcoin
+        git clone https://github.com/bitcoin/bitcoin.git
         cd bitcoin
 
 2.  Build bitcoind:
@@ -98,7 +98,7 @@ Rerunning "openssl version" should now return the correct version.
 
 3.  It is a good idea to build and run the unit tests, too:
 
-        make test
+        make check
 
 Creating a release build
 ------------------------
