@@ -3,7 +3,10 @@ include Makefile.include
 AM_CPPFLAGS += -I$(top_srcdir)/src/leveldb/helpers/memenv \
   -I$(builddir)
 
-noinst_LIBRARIES = libbitcoin_server.a libbitcoin_common.a libbitcoin_cli.a
+noinst_LIBRARIES = \
+  libbitcoin_server.a \
+  libbitcoin_common.a \
+  libbitcoin_cli.a
 if ENABLE_WALLET
 noinst_LIBRARIES += libbitcoin_wallet.a
 endif
@@ -14,20 +17,60 @@ SUBDIRS = . $(BUILD_QT) $(BUILD_TEST)
 DIST_SUBDIRS = . qt test
 .PHONY: FORCE
 # bitcoin core #
-BITCOIN_CORE_H = addrman.h alert.h allocators.h base58.h bignum.h \
+BITCOIN_CORE_H = \
+  addrman.h \
+  alert.h \
+  allocators.h \
+  base58.h bignum.h \
+  bloom.h \
+  chainparams.h \
+  checkpoints.h \
+  checkqueue.h \
+  clientversion.h \
+  coincontrol.h \
+  coins.h \
+  compat.h \
+  core.h \
+  crypter.h \
+  db.h \
+  hash.h \
+  init.h \
+  key.h \
+  keystore.h \
+  leveldbwrapper.h \
+  limitedmap.h \
+  main.h \
+  miner.h \
+  mruset.h \
+  netbase.h \
+  net.h \
+  noui.h \
+  protocol.h \
   rpcclient.h \
   rpcprotocol.h \
   rpcserver.h \
-  bloom.h chainparams.h checkpoints.h checkqueue.h \
-  clientversion.h coincontrol.h compat.h core.h coins.h crypter.h db.h hash.h init.h \
-  key.h keystore.h leveldbwrapper.h limitedmap.h main.h miner.h mruset.h \
-  netbase.h net.h noui.h protocol.h script.h serialize.h sync.h threadsafety.h \
-  txdb.h txmempool.h ui_interface.h uint256.h util.h version.h walletdb.h wallet.h
+  script.h \
+  serialize.h \
+  sync.h \
+  threadsafety.h \
+  txdb.h \
+  txmempool.h \
+  ui_interface.h \
+  uint256.h \
+  util.h \
+  version.h \
+  walletdb.h \
+  wallet.h
 
-JSON_H = json/json_spirit.h json/json_spirit_error_position.h \
-  json/json_spirit_reader.h json/json_spirit_reader_template.h \
-  json/json_spirit_stream_reader.h json/json_spirit_utils.h \
-  json/json_spirit_value.h json/json_spirit_writer.h \
+JSON_H = \
+  json/json_spirit.h \
+  json/json_spirit_error_position.h \
+  json/json_spirit_reader.h \
+  json/json_spirit_reader_template.h \
+  json/json_spirit_stream_reader.h \
+  json/json_spirit_utils.h \
+  json/json_spirit_value.h \
+  json/json_spirit_writer.h \
   json/json_spirit_writer_template.h
 
 obj/build.h: FORCE
@@ -53,6 +96,7 @@ libbitcoin_server_a_SOURCES = \
   noui.cpp \
   rpcblockchain.cpp \
   rpcmining.cpp \
+  rpcmisc.cpp \
   rpcnet.cpp \
   rpcrawtransaction.cpp \
   txdb.cpp \
@@ -92,8 +136,12 @@ nodist_libbitcoin_common_a_SOURCES = $(top_srcdir)/src/obj/build.h
 #
 
 # bitcoind binary #
-bitcoind_LDADD = libbitcoin_server.a libbitcoin_cli.a libbitcoin_common.a leveldb/libleveldb.a leveldb/libmemenv.a \
-  $(BOOST_LIBS)
+bitcoind_LDADD = \
+  libbitcoin_server.a \
+  libbitcoin_cli.a \
+  libbitcoin_common.a \
+  leveldb/libleveldb.a \
+  leveldb/libmemenv.a
 if ENABLE_WALLET
 bitcoind_LDADD += libbitcoin_wallet.a
 endif
@@ -105,10 +153,13 @@ bitcoind_SOURCES += bitcoind-res.rc
 endif
 
 AM_CPPFLAGS += $(BDB_CPPFLAGS)
-bitcoind_LDADD += $(BDB_LIBS)
+bitcoind_LDADD += $(BOOST_LIBS) $(BDB_LIBS)
 
 # bitcoin-cli binary #
-bitcoin_cli_LDADD = libbitcoin_cli.a libbitcoin_common.a $(BOOST_LIBS)
+bitcoin_cli_LDADD = \
+  libbitcoin_cli.a \
+  libbitcoin_common.a \
+  $(BOOST_LIBS)
 bitcoin_cli_SOURCES = bitcoin-cli.cpp
 #
 

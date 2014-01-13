@@ -180,10 +180,8 @@ void PaymentServer::LoadRootCAs(X509_STORE* _store)
 // and the items in savedPaymentRequest will be handled
 // when uiReady() is called.
 //
-bool PaymentServer::ipcSendCommandLine(int argc, char* argv[])
+bool PaymentServer::ipcParseCommandLine(int argc, char* argv[])
 {
-    bool fResult = false;
-
     for (int i = 1; i < argc; i++)
     {
         QString arg(argv[i]);
@@ -226,7 +224,18 @@ bool PaymentServer::ipcSendCommandLine(int argc, char* argv[])
             qDebug() << "PaymentServer::ipcSendCommandLine : Payment request file does not exist: " << arg;
         }
     }
+    return true;
+}
 
+//
+// Sending to the server is done synchronously, at startup.
+// If the server isn't already running, startup continues,
+// and the items in savedPaymentRequest will be handled
+// when uiReady() is called.
+//
+bool PaymentServer::ipcSendCommandLine()
+{
+    bool fResult = false;
     foreach (const QString& r, savedPaymentRequests)
     {
         QLocalSocket* socket = new QLocalSocket();
@@ -560,6 +569,7 @@ void PaymentServer::fetchPaymentACK(CWallet* wallet, SendCoinsRecipient recipien
     else {
         CPubKey newKey;
         if (wallet->GetKeyFromPool(newKey)) {
+            LOCK(wallet->cs_wallet); // SetAddressBook
             CKeyID keyID = newKey.GetID();
             wallet->SetAddressBook(keyID, strAccount, "refund");
 
