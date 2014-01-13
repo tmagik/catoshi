@@ -35,6 +35,21 @@ I grow commodities, and if you're a farmer, all the micronutrients and
 fertilizer in a biomass-based catbox start looking like the most valuable 
 thing in the world.
 
+And this:
+
+Seymour Cray was a friend of my dad's. I asked him what it was like to know
+the genius who had built the world's first supercomputer company. My dad said,
+‘Well, actually, son, he wasn't so much smarter than me. He just made mistakes
+a hundred times faster.’
+
+~~ Townes Duncan
+
+What do we do with Catcoin better than any other coin? 
+	make
+			mistakes
+					faster
+And then land on our feet.
+
 License
 -------
 
@@ -77,7 +92,7 @@ on debian:
     sudo apt-get install mercurial build-essential libboost-dev libdb++-dev \
 		libssl-dev libminiupnpc-dev libboost-filesytem-dev \
 		libboost-system-dev libboost-program-options-dev \
-		libboost-thread-dev
+		libboost-thread-dev libboost-test-dev libboost-test1.49-dev
     cd src; make
 
 ### Automated Testing
