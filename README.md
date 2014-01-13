@@ -71,6 +71,15 @@ Testing
 
 Testing is good. Do it. It makes aforementioned consensus easier.
 
+### Building
+on debian:
+
+    sudo apt-get install mercurial build-essential libboost-dev libdb++-dev \
+		libssl-dev libminiupnpc-dev libboost-filesytem-dev \
+		libboost-system-dev libboost-program-options-dev \
+		libboost-thread-dev
+    cd src; make
+
 ### Automated Testing
 
 Developers are strongly encouraged to write unit tests for new code, and to
