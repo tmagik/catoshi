@@ -11,6 +11,10 @@ USE_UPNP:=0
 # :=0 --> Disable IPv6 support
 USE_IPV6:=1
 
+# :=1 --> enable SSE
+# :=0 --> disable SSE
+USE_SSE2:=1
+
 LINK:=$(CXX)
 
 DEFS=-DBOOST_SPIRIT_THREADSAFE -D_FILE_OFFSET_BITS=64
