@@ -2111,32 +2111,14 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
     if (vtx.empty() || vtx.size() > MAX_BLOCK_SIZE || ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
         return state.DoS(100, error("CheckBlock() : size limits failed"));
 
-    // Catcoin: Special short-term limits to avoid 10,000 BDB lock limit:
-    if (GetBlockTime() < 1376568000)  // stop enforcing 15 August 2013 00:00:00
-    {
-        // Rule is: #unique txids referenced <= 4,500
-        // ... to prevent 10,000 BDB lock exhaustion on old clients
-        set<uint256> setTxIn;
-        for (size_t i = 0; i < vtx.size(); i++)
-        {
-            setTxIn.insert(vtx[i].GetHash());
-            if (i == 0) continue; // skip coinbase txin
-            BOOST_FOREACH(const CTxIn& txin, vtx[i].vin)
-                setTxIn.insert(txin.prevout.hash);
-        }
-        size_t nTxids = setTxIn.size();
-        if (nTxids > 4500)
-            return error("CheckBlock() : 15 August maxlocks violation");
-    }
-
     // Check proof of work matches claimed amount
     if (fCheckPOW && !CheckProofOfWork(GetPoWHash(), nBits))
         return state.DoS(50, error("CheckBlock() : proof of work failed"));
 
-    // Check timestamp
+    // Check timestamp is not too far ahead
     if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
         return state.Invalid(error("CheckBlock() : block timestamp too far in the future"));
-
+    
     // First transaction must be coinbase, the rest must not be
     if (vtx.empty() || !vtx[0].IsCoinBase())
         return state.DoS(100, error("CheckBlock() : first tx is not coinbase"));
@@ -2199,9 +2181,16 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
         if (nBits != GetNextWorkRequired(pindexPrev, this))
             return state.DoS(100, error("AcceptBlock(height=%d) : incorrect proof of work", nHeight));
 
-        // Check timestamp against prev
-        if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
-            return state.Invalid(error("AcceptBlock() : block's timestamp is too early"));
+	if (pindexLast->nHeight < fork3Block){
+            // Check timestamp against prev, as normal
+            if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
+                return state.Invalid(error("AcceptBlock() : block's timestamp is too early"));
+	} else {
+            // Check timestamp against prev, after fork3,
+            // luck and/or lots of hash do not get you a free block, 2 minute minimum.
+            if (GetBlockTime() <= pindexPrev->GetMedianTimePast() + 2*60)
+                return state.Invalid(error("AcceptBlock() : block's timestamp is too early (spacing is < 2 minutes)"));
+        }
 
         // Check that all transactions are finalized
         BOOST_FOREACH(const CTransaction& tx, vtx)
@@ -2756,7 +2745,7 @@ bool LoadBlockIndex()
     if (fTestNet)
     {
         pchMessageStart[0] = 0xfc;
-        pchMessageStart[1] = 0xc1;
+        pchMessageStart[1] = 0xca;
         pchMessageStart[2] = 0xb7;
         pchMessageStart[3] = 0xdc;
         hashGenesisBlock = uint256("0xec7987a2ab5225246c5cf9b8d93b4b75bcef383a4a65d5a265bc09ed54006188");
