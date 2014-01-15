@@ -1088,8 +1088,9 @@ int64 static GetBlockValue(CBlockIndex *block, int64 nFees)
     if ( block->nHeight >= fork4Block ) {
 	printf("GetBlockValue (%d) should do new adjustment here\n", block->nHeight);
     }
-    assert(fTestNet);
-    assert(!fTestNet);
+    if (fork4Block < 99999){
+        assert(fTestNet);
+    }
 
     return nSubsidy + nFees;
 }
