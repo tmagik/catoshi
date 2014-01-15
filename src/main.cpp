@@ -2763,11 +2763,11 @@ void UnloadBlockIndex()
 bool LoadBlockIndex()
 {
     if (fTestNet)
-    {
-        pchMessageStart[0] = 0xfc;
-        pchMessageStart[1] = 0xca;
-        pchMessageStart[2] = 0xb7;
-        pchMessageStart[3] = 0xdc;
+    {	/* add 1 to litecoin values (3 to bitcoins) */
+        pchMessageStart[0] = 0xfd;
+        pchMessageStart[1] = 0xcb;
+        pchMessageStart[2] = 0xb8;
+        pchMessageStart[3] = 0xdd;
         hashGenesisBlock = uint256("0xec7987a2ab5225246c5cf9b8d93b4b75bcef383a4a65d5a265bc09ed54006188");
     }
 
