@@ -143,7 +143,7 @@ nets = dict(
         VERSION_WARNING=lambda v: 'Upgrade Catcoin to >= 0.8.0.8!' if v < 80008 else None,
     ),
     catcoin_testnet=math.Object(
-        PARENT=networks.nets['catcoin'],  # FIXME make this _testnet!!
+        PARENT=networks.nets['catcoin_testnet'],  
         SHARE_PERIOD=30, # seconds target spacing
         CHAIN_LENGTH=24*60*60//10, # shares
         REAL_CHAIN_LENGTH=24*60*60//10, # shares
