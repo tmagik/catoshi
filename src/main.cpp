@@ -1063,12 +1063,33 @@ uint256 static GetOrphanRoot(const CBlockHeader* pblock)
     return pblock->GetHash();
 }
 
-int64 static GetBlockValue(int nHeight, int64 nFees)
+#define I_KNOW_NOT_WHAT_I_DO 1
+//#define I_CAN_HAZ_CATZ_CLUE 1
+
+#ifdef I_KNOW_NOT_WHAT_I_DO
+static const int forkBlock = 20290 - 1;
+static const int fork2Block = 99999; // Not for awhile
+static const int fork3Block = 99999; 
+static const int fork4Block = 99999;
+#else /* testing */
+#warning TESTING EARLY FORKS
+static const int forkBlock = 1;  //fork this right away
+static const int fork2Block = 10;
+static const int fork3Block = 20; 
+static const int fork4Block = 40;
+#endif
+
+int64 static GetBlockValue(CBlockIndex *block, int64 nFees)
 {
     int64 nSubsidy = 50 * COIN;
 
     // Subsidy is cut in half every 210000 blocks, which will occur approximately every 4 years
-    nSubsidy >>= (nHeight / 210000);
+    nSubsidy >>= (block->nHeight / 210000);
+    if ( block->nHeight >= fork4Block ) {
+	printf("GetBlockValue (%d) should do new adjustment here\n", block->nHeight);
+    }
+    assert(fTestNet);
+    assert(!fTestNet);
 
     return nSubsidy + nFees;
 }
@@ -1109,13 +1130,11 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime, int height)
     return bnResult.GetCompact();
 }
 
+
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
     int64 nTargetTimespanLocal = 0;
     int64 nIntervalLocal = 0;
-    int forkBlock = 20290 - 1;
-    int fork2Block = 99999; // Not for awhile
-
     unsigned int nProofOfWorkLimit = bnProofOfWorkLimit.GetCompact();
 
     // Genesis block
@@ -1729,8 +1748,8 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
     if (fBenchmark)
         printf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)vtx.size(), 0.001 * nTime, 0.001 * nTime / vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
 
-    if (vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
-        return state.DoS(100, error("ConnectBlock() : coinbase pays too much (actual=%"PRI64d" vs limit=%"PRI64d")", vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees)));
+    if (vtx[0].GetValueOut() > GetBlockValue(pindex, nFees))
+        return state.DoS(100, error("ConnectBlock() : coinbase pays too much (actual=%"PRI64d" vs limit=%"PRI64d")", vtx[0].GetValueOut(), GetBlockValue(pindex, nFees)));
 
     if (!control.Wait())
         return state.DoS(100, false);
@@ -2181,7 +2200,7 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
         if (nBits != GetNextWorkRequired(pindexPrev, this))
             return state.DoS(100, error("AcceptBlock(height=%d) : incorrect proof of work", nHeight));
 
-	if (pindexLast->nHeight < fork3Block){
+	if (pindexPrev->nHeight < fork3Block){
             // Check timestamp against prev, as normal
             if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
                 return state.Invalid(error("AcceptBlock() : block's timestamp is too early"));
@@ -2762,6 +2781,10 @@ bool LoadBlockIndex()
 
 
 bool InitBlockIndex() {
+#ifndef I_CAN_HAZ_CATZ_CLUE
+    assert(fTestNet);
+#endif
+
     // Check whether we're already initialized
     if (pindexGenesisBlock != NULL)
         return true;
@@ -2810,6 +2833,7 @@ bool InitBlockIndex() {
         printf("%s\n", block.hashMerkleRoot.ToString().c_str());
         assert(block.hashMerkleRoot == uint256("0x4007a33db5d9cdf2aab117335eb8431c8d13fb86e0214031fdaebe69a0f29cf7"));
 
+#ifdef LET_THERE_BE_LIGHT
 	// FIXME put this in a util lib/python/etc that uses cgminer
         // If genesis block hash does not match, then generate new genesis hash.
         if (false && block.GetHash() != hashGenesisBlock)
@@ -2841,6 +2865,9 @@ bool InitBlockIndex() {
             printf("block.nNonce = %u \n", block.nNonce);
             printf("block.GetHash = %s\n", block.GetHash().ToString().c_str());
         }
+#endif /* And lo, the dev looked down on the block and said
+		"but if they forget to ..."
+			marketing said "it runs, Ship it!" */
 
         block.print();
         assert(hash == hashGenesisBlock);
@@ -4463,7 +4490,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         nLastBlockSize = nBlockSize;
         printf("CreateNewBlock(): total size %"PRI64u"\n", nBlockSize);
 
-        pblock->vtx[0].vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
         pblocktemplate->vTxFees[0] = -nFees;
 
         // Fill in header
@@ -4477,10 +4503,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CBlockIndex indexDummy(*pblock);
         indexDummy.pprev = pindexPrev;
         indexDummy.nHeight = pindexPrev->nHeight + 1;
+
+        pblock->vtx[0].vout[0].nValue = GetBlockValue(&indexDummy, nFees);
+
         CCoinsViewCache viewNew(*pcoinsTip, true);
         CValidationState state;
         if (!pblock->ConnectBlock(state, &indexDummy, viewNew, true))
             throw std::runtime_error("CreateNewBlock() : ConnectBlock failed");
+	
     }
 
     return pblocktemplate.release();
