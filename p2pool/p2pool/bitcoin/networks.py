@@ -115,7 +115,7 @@ nets = dict(
         DUST_THRESHOLD=0.03e8,
     ),
     litecoin_testnet=math.Object(
-        P2P_PREFIX='fcc1b7dc'.decode('hex'),
+        P2P_PREFIX='fccab7dc'.decode('hex'),
         P2P_PORT=19333,
         ADDRESS_VERSION=111,
         RPC_PORT=19332,
@@ -200,13 +200,13 @@ nets = dict(
         DUST_THRESHOLD=0.03e8,
     ),
     catcoin_testnet=math.Object(
-        P2P_PREFIX='fcc1b7dc'.decode('hex'),
+        P2P_PREFIX='fdcbb8dd'.decode('hex'),
         P2P_PORT=19933,
-        ADDRESS_VERSION=21,
+        ADDRESS_VERSION=23,
         RPC_PORT=9432,
         RPC_CHECK=defer.inlineCallbacks(lambda bitcoind: defer.returnValue(
             'catcoinaddress' in (yield bitcoind.rpc_help()) and
-            not (yield bitcoind.rpc_getinfo())['testnet']
+            (yield bitcoind.rpc_getinfo())['testnet']
         )),
         SUBSIDY_FUNC=lambda height: 50*100000000,
         POW_FUNC=lambda data: pack.IntType(256).unpack(__import__('ltc_scrypt').getPoWHash(data)),
