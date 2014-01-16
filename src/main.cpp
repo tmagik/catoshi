@@ -1074,9 +1074,9 @@ static const int fork4Block = 99999;
 #else /* testing */
 #warning TESTING EARLY FORKS
 static const int forkBlock = 36;  //fork this right away
-static const int fork2Block = 36;
+static const int fork2Block = 72;
 static const int fork3Block = 9999; // this requires a LOT of work to get right
-static const int fork4Block = 42;
+static const int fork4Block = 9999; // this is time-based reward
 #endif
 
 int64 static GetBlockValue(CBlockIndex *block, int64 nFees)
@@ -1102,7 +1102,6 @@ int64 static GetBlockValue(CBlockIndex *block, int64 nFees)
     if ( block->nHeight >= fork4Block ) {
 	int64 delta = block->GetBlockTime() - block->pprev->GetBlockTime();
 	if (delta < 1){
-		printf("Early block(%d)hoppers (delta %lld) only get fees\n", block->nHeight, delta);
 		nSubsidy = 0;
 	} else if (delta <= 1200) { /* FIXME make target time x 2 */
 		nSubsidy = delta * COIN / 12;
@@ -1228,13 +1227,23 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         pindexFirst = pindexFirst->pprev;
     assert(pindexFirst);
 
+    int maxUP;
+    int maxDN;
+    if(pindexLast->nHeight < fork2Block){
+        maxUP=4;
+        maxDN=4;
+    } else {
+        maxUP=1.5;
+        maxDN=1.5;
+    }
+
     // Limit adjustment step
     int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
     printf("  nActualTimespan = %"PRI64d"  before bounds\n", nActualTimespan);
-    if (nActualTimespan < nTargetTimespanLocal/4)
-        nActualTimespan = nTargetTimespanLocal/4;
-    if (nActualTimespan > nTargetTimespanLocal*4)
-        nActualTimespan = nTargetTimespanLocal*4;
+    if (nActualTimespan < nTargetTimespanLocal/maxDN)
+        nActualTimespan = nTargetTimespanLocal/maxDN;
+    if (nActualTimespan > nTargetTimespanLocal*maxUP)
+        nActualTimespan = nTargetTimespanLocal*maxUP;
 
     // Retarget
     CBigNum bnNew;
@@ -1248,8 +1257,8 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     /// debug print
     printf("GetNextWorkRequired RETARGET\n");
     printf("nTargetTimespan = %"PRI64d"    nActualTimespan = %"PRI64d"\n", nTargetTimespanLocal, nActualTimespan);
-    printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
-    printf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+    //printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
+    //printf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
 
     return bnNew.GetCompact();
 }
