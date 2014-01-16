@@ -1227,23 +1227,23 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         pindexFirst = pindexFirst->pprev;
     assert(pindexFirst);
 
-    int maxUP;
-    int maxDN;
+    int numerator;
+    int denominator;
     if(pindexLast->nHeight < fork2Block){
-        maxUP=4;
-        maxDN=4;
+        numerator=4;
+        denominator=1;
     } else {
-        maxUP=1.5;
-        maxDN=1.5;
+        numerator=1;
+        denominator=2;
     }
 
     // Limit adjustment step
     int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
     printf("  nActualTimespan = %"PRI64d"  before bounds\n", nActualTimespan);
-    if (nActualTimespan < nTargetTimespanLocal/maxDN)
-        nActualTimespan = nTargetTimespanLocal/maxDN;
-    if (nActualTimespan > nTargetTimespanLocal*maxUP)
-        nActualTimespan = nTargetTimespanLocal*maxUP;
+    if (nActualTimespan < nTargetTimespanLocal*denominator/numerator)
+        nActualTimespan = nTargetTimespanLocal*denominator/numerator;
+    if (nActualTimespan > nTargetTimespanLocal*numerator/denominator)
+        nActualTimespan = nTargetTimespanLocal*numerator/denominator;
 
     // Retarget
     CBigNum bnNew;
