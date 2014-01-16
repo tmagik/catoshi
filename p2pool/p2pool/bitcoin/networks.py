@@ -211,7 +211,7 @@ nets = dict(
         SUBSIDY_FUNC=lambda height: 50*100000000,
         POW_FUNC=lambda data: pack.IntType(256).unpack(__import__('ltc_scrypt').getPoWHash(data)),
         BLOCK_PERIOD=60, # s
-        SYMBOL='CAT',
+        SYMBOL='CAT.testnet0.1',
         CONF_FILE_FUNC=lambda: os.path.join(os.path.join(os.environ['APPDATA'], 'CatCoin') if platform.system() == 'Windows' else os.path.expanduser('~/Library/Application Support/Catcoin/') if platform.system() == 'Darwin' else os.path.expanduser('~/.catcoin'), 'catcoin.conf'),
         BLOCK_EXPLORER_URL_PREFIX='http://catchain.info/block/',
         ADDRESS_EXPLORER_URL_PREFIX='http://catchain.info/address/',

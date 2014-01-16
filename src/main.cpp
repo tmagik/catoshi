@@ -1063,30 +1063,58 @@ uint256 static GetOrphanRoot(const CBlockHeader* pblock)
     return pblock->GetHash();
 }
 
-#define I_KNOW_NOT_WHAT_I_DO 1
+//#define I_KNOW_NOT_WHAT_I_DO 1
 //#define I_CAN_HAZ_CATZ_CLUE 1
 
 #ifdef I_KNOW_NOT_WHAT_I_DO
 static const int forkBlock = 20290 - 1;
-static const int fork2Block = 99999; // Not for awhile
-static const int fork3Block = 99999; 
+static const int fork2Block = 99999; // Can we please do block 21132 y'all?
+static const int fork3Block = 99999; // Not for awhile
 static const int fork4Block = 99999;
 #else /* testing */
 #warning TESTING EARLY FORKS
-static const int forkBlock = 1;  //fork this right away
-static const int fork2Block = 10;
-static const int fork3Block = 20; 
-static const int fork4Block = 40;
+static const int forkBlock = 36;  //fork this right away
+static const int fork2Block = 36;
+static const int fork3Block = 9999; // this requires a LOT of work to get right
+static const int fork4Block = 42;
 #endif
 
 int64 static GetBlockValue(CBlockIndex *block, int64 nFees)
 {
     int64 nSubsidy = 50 * COIN;
 
+    // Bitcoin/Litecoin used to have this
     // Subsidy is cut in half every 210000 blocks, which will occur approximately every 4 years
-    nSubsidy >>= (block->nHeight / 210000);
+    // nSubsidy >>= (block->nHeight / 210000);
+    //
+    // Making some sort of 'promise' of 21 million coins is like Monsanto trying to patent
+    // any roundup-resistant plant, or insisting on only running the 'Genuine IBM PC'
+    // Sure you can try to do that, but weeds evolve resistance, China makes clones,
+    // and copycatcoins print money faster than Zimbabwe after they got rid of the farmers.
+    //
+    // Sound currency will come from a robust community that values something in common.
+    // like Cat pictures.  -- Farmer Troy
+    //
+    // FIXME: add Depurrage based on last year of Cat food prices in the blockchain
+    // FIXME2: come up with a way to GET cat food prices in the blockchain
+    // FIXME3: do this more elegantly while maintaining readability
+
     if ( block->nHeight >= fork4Block ) {
-	printf("GetBlockValue (%d) should do new adjustment here\n", block->nHeight);
+	int64 delta = block->GetBlockTime() - block->pprev->GetBlockTime();
+	if (delta < 1){
+		printf("Early block(%d)hoppers (delta %lld) only get fees\n", block->nHeight, delta);
+		nSubsidy = 0;
+	} else if (delta <= 1200) { /* FIXME make target time x 2 */
+		nSubsidy = delta * COIN / 12;
+	} else if (delta > 1200) {
+		nSubsidy = 100 * COIN;
+	} else {
+		printf("we should not be here\n");
+		assert(false);
+	}
+    	printf("GetBlockValue (%d) time delta is %lld subsidy %lld\n", block->nHeight, delta, nSubsidy);
+    } else {
+    	printf("GetBlockValue (%d) subsidy %lld\n", block->nHeight, nSubsidy);
     }
     if (fork4Block < 99999){
         assert(fTestNet);
@@ -1148,12 +1176,14 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         nTargetTimespanLocal = nTargetTimespanOld;
         nIntervalLocal = nIntervalOld;
     } else if(pindexLast->nHeight == forkBlock) {
-        CBigNum bnNew;
-        bnNew.SetCompact(0x1c0ffff0); // Difficulty 16
-        printf("GetNextWorkRequired RETARGET (fork at block 20290)\n");
-        printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
-        printf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
-        return bnNew.GetCompact();
+        #warning "this one-time-wonder needs to die and just use checkpoints instead. Arg"
+	if (fTestNet){
+		return nProofOfWorkLimit;
+	} else {
+        	CBigNum bnNew;
+        	bnNew.SetCompact(0x1c0ffff0); // Difficulty 16
+        	return bnNew.GetCompact();
+	}
     } else {
         nTargetTimespanLocal = nTargetTimespan;
         nIntervalLocal = nInterval;
@@ -2208,7 +2238,10 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 	} else {
             // Check timestamp against prev, after fork3,
             // luck and/or lots of hash do not get you a free block, 2 minute minimum.
-            if (GetBlockTime() <= pindexPrev->GetMedianTimePast() + 2*60)
+            int64 delta = GetBlockTime() - pindexPrev->GetMedianTime();
+            printf("Fork3check: GetBlockTime %lld prev->MedianTime %lld prev->GetBlocktime %lld delta %lld\n", 
+			GetBlockTime(), pindexPrev->GetMedianTime(), pindexPrev->GetBlockTime(), delta);
+            if (delta <= 2*60)
                 return state.Invalid(error("AcceptBlock() : block's timestamp is too early (spacing is < 2 minutes)"));
         }
 
