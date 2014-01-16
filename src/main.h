@@ -61,8 +61,6 @@ inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONE
 static const int RETARGET_INTERVAL = 36; // can we stake-vote on changing this? -- Troy
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = RETARGET_INTERVAL * 3;
-/** orginal code release **/
-static const int COINBASE_MATURITY_OLDCATS = 100;
 /** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 /** Maximum number of script-checking threads allowed */
