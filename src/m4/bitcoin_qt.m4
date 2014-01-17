@@ -100,13 +100,13 @@ AC_DEFUN([BITCOIN_QT_CONFIGURE],[
   BITCOIN_QT_PATH_PROGS([LRELEASE], [lrelease-qt${bitcoin_qt_got_major_vers} lrelease${bitcoin_qt_got_major_vers} lrelease], $qt_bin_path)
   BITCOIN_QT_PATH_PROGS([LUPDATE], [lupdate-qt${bitcoin_qt_got_major_vers} lupdate${bitcoin_qt_got_major_vers} lupdate],$qt_bin_path, yes)
 
+  MOC_DEFS='-DHAVE_CONFIG_H -I$(top_srcdir)/src'
   case $host in
     *darwin*)
      BITCOIN_QT_CHECK([
-       MOC_DEFS="-DQ_OS_MAC"
+       MOC_DEFS="${MOC_DEFS} -DQ_OS_MAC"
        base_frameworks="-framework Foundation -framework ApplicationServices -framework AppKit"
        AX_CHECK_LINK_FLAG([[$base_frameworks]],[QT_LIBS="$QT_LIBS $base_frameworks"],[AC_MSG_ERROR(could not find base frameworks)])
-       AC_SUBST(MOC_DEFS)
      ])
     ;;
   esac
@@ -142,6 +142,7 @@ AC_DEFUN([BITCOIN_QT_CONFIGURE],[
   AC_SUBST(QT_TEST_INCLUDES)
   AC_SUBST(QT_TEST_LIBS)
   AC_SUBST(QT_SELECT, qt${bitcoin_qt_got_major_vers})
+  AC_SUBST(MOC_DEFS)
 ])
 
 dnl All macros below are internal and should _not_ be used from the main
@@ -316,6 +317,7 @@ AC_DEFUN([_BITCOIN_QT_FIND_LIBS_WITHOUT_PKGCONFIG],[
   ])
 
   BITCOIN_QT_CHECK(AC_CHECK_LIB([z] ,[main],,BITCOIN_QT_FAIL(zlib not found)))
+  BITCOIN_QT_CHECK(AC_CHECK_LIB([png] ,[main],,BITCOIN_QT_FAIL(png not found)))
   BITCOIN_QT_CHECK(AC_CHECK_LIB([${QT_LIB_PREFIX}Core]   ,[main],,BITCOIN_QT_FAIL(lib$QT_LIB_PREFIXCore not found)))
   BITCOIN_QT_CHECK(AC_CHECK_LIB([${QT_LIB_PREFIX}Gui]    ,[main],,BITCOIN_QT_FAIL(lib$QT_LIB_PREFIXGui not found)))
   BITCOIN_QT_CHECK(AC_CHECK_LIB([${QT_LIB_PREFIX}Network],[main],,BITCOIN_QT_FAIL(lib$QT_LIB_PREFIXNetwork not found)))
