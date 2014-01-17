@@ -2,7 +2,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#if defined(HAVE_CONFIG_H)
 #include "bitcoin-config.h"
+#endif
+
 #include "bitcoingui.h"
 
 #include "clientmodel.h"
@@ -356,7 +359,7 @@ void BitcoinApplication::requestShutdown()
     QWidget *shutdownWindow = new QWidget();
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(new QLabel(
-        tr("Bitcoin Core is shutting down...\n") +
+        tr("Bitcoin Core is shutting down...") + "<br /><br />" +
         tr("Do not shut down the computer until this window disappears.")));
     shutdownWindow->setLayout(layout);
 
@@ -552,15 +555,6 @@ int main(int argc, char *argv[])
 
     // Subscribe to global signals from core
     uiInterface.InitMessage.connect(InitMessage);
-
-    // Show help message immediately after parsing command-line options (for "-lang") and setting locale,
-    // but before showing splash screen.
-    if (mapArgs.count("-?") || mapArgs.count("--help"))
-    {
-        GUIUtil::HelpMessageBox help;
-        help.showOrPrint();
-        return 1;
-    }
 
     if (GetBoolArg("-splash", true) && !GetBoolArg("-min", false))
         app.createSplashScreen(isaTestNet);
