@@ -1063,14 +1063,11 @@ uint256 static GetOrphanRoot(const CBlockHeader* pblock)
     return pblock->GetHash();
 }
 
-//#define I_KNOW_NOT_WHAT_I_DO 1
-//#define I_CAN_HAZ_CATZ_CLUE 1
-
-#ifdef I_KNOW_NOT_WHAT_I_DO
+#if 1
 static const int forkBlock = 20290 - 1;
-static const int fork2Block = 99999; // Can we please do block 21132 y'all?
-static const int fork3Block = 99999; // Not for awhile
-static const int fork4Block = 99999;
+static const int fork2Block = 210000; // Can we please do block 21132 y'all?
+static const int fork3Block = 210000; // Not for awhile
+static const int fork4Block = 210000;
 #else /* testing */
 #warning TESTING EARLY FORKS
 static const int forkBlock = 36;  //fork this right away
@@ -1115,14 +1112,10 @@ int64 static GetBlockValue(CBlockIndex *block, int64 nFees)
     } else {
     	printf("GetBlockValue (%d) subsidy %lld\n", block->nHeight, nSubsidy);
     }
-    if (fork4Block < 99999){
-        assert(fTestNet);
-    }
 
     return nSubsidy + nFees;
 }
 
-/* FIXME and use RETARGET_INTERVAL */
 static const int64 nTargetTimespan = 6 * 60 * 60; // 6 hours
 static const int64 nTargetSpacing = 10 * 60;
 static const int64 nInterval = nTargetTimespan / nTargetSpacing;
@@ -1158,11 +1151,15 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime, int height)
     return bnResult.GetCompact();
 }
 
-
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
     int64 nTargetTimespanLocal = 0;
     int64 nIntervalLocal = 0;
+    if(fTestNet){
+        forkBlock = -1;
+        fork2Block = 36;
+    }
+
     unsigned int nProofOfWorkLimit = bnProofOfWorkLimit.GetCompact();
 
     // Genesis block
@@ -1171,7 +1168,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 
     // Starting from block 20,290 the network diff was set to 16
     // and the retarget interval was changed to 36
-    if(pindexLast->nHeight < forkBlock) {
+	if(pindexLast->nHeight < forkBlock) {
         nTargetTimespanLocal = nTargetTimespanOld;
         nIntervalLocal = nIntervalOld;
     } else if(pindexLast->nHeight == forkBlock) {
@@ -1214,10 +1211,9 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         }
     }
 
-    
     // From bitcoin: This fixes an issue where a 51% attack can change difficulty at will.
     // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
-    int blockstogoback = nIntervalLocal-1;  // Do we really need this? -hozer
+    int blockstogoback = nIntervalLocal-1;
     if ((pindexLast->nHeight+1) != nIntervalLocal)
         blockstogoback = nIntervalLocal;
 
@@ -1227,23 +1223,21 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         pindexFirst = pindexFirst->pprev;
     assert(pindexFirst);
 
-    int numerator;
-    int denominator;
-    if(pindexLast->nHeight < fork2Block){
-        numerator=4;
-        denominator=1;
-    } else {
-        numerator=1;
-        denominator=2;
-    }
-
     // Limit adjustment step
+    int numerator = 4;
+    int denominator = 1;
+    if(pindexLast->nHeight >= fork2Block){
+        numerator = 112;
+        denominator = 100;
+    }
     int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
+    int64 lowLimit = nTargetTimespanLocal*denominator/numerator;
+    int64 highLimit = nTargetTimespanLocal*numerator/denominator;
     printf("  nActualTimespan = %"PRI64d"  before bounds\n", nActualTimespan);
-    if (nActualTimespan < nTargetTimespanLocal*denominator/numerator)
-        nActualTimespan = nTargetTimespanLocal*denominator/numerator;
-    if (nActualTimespan > nTargetTimespanLocal*numerator/denominator)
-        nActualTimespan = nTargetTimespanLocal*numerator/denominator;
+    if (nActualTimespan < lowLimit)
+        nActualTimespan = lowLimit;
+    if (nActualTimespan > highLimit)
+        nActualTimespan = highLimit;
 
     // Retarget
     CBigNum bnNew;
@@ -1257,8 +1251,8 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     /// debug print
     printf("GetNextWorkRequired RETARGET\n");
     printf("nTargetTimespan = %"PRI64d"    nActualTimespan = %"PRI64d"\n", nTargetTimespanLocal, nActualTimespan);
-    //printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
-    //printf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+    printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
+    printf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
 
     return bnNew.GetCompact();
 }
@@ -1788,8 +1782,8 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
     if (fBenchmark)
         printf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)vtx.size(), 0.001 * nTime, 0.001 * nTime / vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
 
-    if (vtx[0].GetValueOut() > GetBlockValue(pindex, nFees))
-        return state.DoS(100, error("ConnectBlock() : coinbase pays too much (actual=%"PRI64d" vs limit=%"PRI64d")", vtx[0].GetValueOut(), GetBlockValue(pindex, nFees)));
+    if (vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
+        return state.DoS(100, error("ConnectBlock() : coinbase pays too much (actual=%"PRI64d" vs limit=%"PRI64d")", vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees)));
 
     if (!control.Wait())
         return state.DoS(100, false);
@@ -2170,14 +2164,32 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
     if (vtx.empty() || vtx.size() > MAX_BLOCK_SIZE || ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
         return state.DoS(100, error("CheckBlock() : size limits failed"));
 
+    // Catcoin: Special short-term limits to avoid 10,000 BDB lock limit:
+    if (GetBlockTime() < 1376568000)  // stop enforcing 15 August 2013 00:00:00
+    {
+        // Rule is: #unique txids referenced <= 4,500
+        // ... to prevent 10,000 BDB lock exhaustion on old clients
+        set<uint256> setTxIn;
+        for (size_t i = 0; i < vtx.size(); i++)
+        {
+            setTxIn.insert(vtx[i].GetHash());
+            if (i == 0) continue; // skip coinbase txin
+            BOOST_FOREACH(const CTxIn& txin, vtx[i].vin)
+                setTxIn.insert(txin.prevout.hash);
+        }
+        size_t nTxids = setTxIn.size();
+        if (nTxids > 4500)
+            return error("CheckBlock() : 15 August maxlocks violation");
+    }
+
     // Check proof of work matches claimed amount
     if (fCheckPOW && !CheckProofOfWork(GetPoWHash(), nBits))
         return state.DoS(50, error("CheckBlock() : proof of work failed"));
 
-    // Check timestamp is not too far ahead
+    // Check timestamp
     if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
         return state.Invalid(error("CheckBlock() : block timestamp too far in the future"));
-    
+
     // First transaction must be coinbase, the rest must not be
     if (vtx.empty() || !vtx[0].IsCoinBase())
         return state.DoS(100, error("CheckBlock() : first tx is not coinbase"));
@@ -2240,19 +2252,9 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
         if (nBits != GetNextWorkRequired(pindexPrev, this))
             return state.DoS(100, error("AcceptBlock(height=%d) : incorrect proof of work", nHeight));
 
-	if (pindexPrev->nHeight < fork3Block){
-            // Check timestamp against prev, as normal
-            if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
-                return state.Invalid(error("AcceptBlock() : block's timestamp is too early"));
-	} else {
-            // Check timestamp against prev, after fork3,
-            // luck and/or lots of hash do not get you a free block, 2 minute minimum.
-            int64 delta = GetBlockTime() - pindexPrev->GetMedianTime();
-            printf("Fork3check: GetBlockTime %lld prev->MedianTime %lld prev->GetBlocktime %lld delta %lld\n", 
-			GetBlockTime(), pindexPrev->GetMedianTime(), pindexPrev->GetBlockTime(), delta);
-            if (delta <= 2*60)
-                return state.Invalid(error("AcceptBlock() : block's timestamp is too early (spacing is < 2 minutes)"));
-        }
+        // Check timestamp against prev
+        if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
+            return state.Invalid(error("AcceptBlock() : block's timestamp is too early"));
 
         // Check that all transactions are finalized
         BOOST_FOREACH(const CTransaction& tx, vtx)
@@ -2824,10 +2826,6 @@ bool LoadBlockIndex()
 
 
 bool InitBlockIndex() {
-#ifndef I_CAN_HAZ_CATZ_CLUE
-    assert(fTestNet);
-#endif
-
     // Check whether we're already initialized
     if (pindexGenesisBlock != NULL)
         return true;
@@ -4533,6 +4531,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         nLastBlockSize = nBlockSize;
         printf("CreateNewBlock(): total size %"PRI64u"\n", nBlockSize);
 
+        pblock->vtx[0].vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
         pblocktemplate->vTxFees[0] = -nFees;
 
         // Fill in header
@@ -4546,14 +4545,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CBlockIndex indexDummy(*pblock);
         indexDummy.pprev = pindexPrev;
         indexDummy.nHeight = pindexPrev->nHeight + 1;
-
-        pblock->vtx[0].vout[0].nValue = GetBlockValue(&indexDummy, nFees);
-
         CCoinsViewCache viewNew(*pcoinsTip, true);
         CValidationState state;
         if (!pblock->ConnectBlock(state, &indexDummy, viewNew, true))
             throw std::runtime_error("CreateNewBlock() : ConnectBlock failed");
-	
     }
 
     return pblocktemplate.release();
