@@ -1,7 +1,7 @@
 Copyright (c) 2009-2013 Bitcoin Developers
-
-Distributed under the MIT/X11 software license, see the accompanying
-file COPYING or http://www.opensource.org/licenses/mit-license.php.
+Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+Distributed under the Affero GNU General public license version 3
+file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](http://www.openssl.org/). This product includes
 cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.
 
@@ -12,9 +12,9 @@ To Build
 ---------------------
 
 	cd src/
-	make -f makefile.unix		# Headless catcoin
+	make			# Headless c0pyc4tcoin
 
-See readme-qt.rst for instructions on building Catcoin-Qt, the graphical user interface.
+See readme-qt.rst for instructions on building *Coin-Qt, the graphical user interface.
 
 Dependencies
 ---------------------
@@ -113,7 +113,7 @@ If you need to build Boost yourself:
 
 Security
 --------
-To help make your catcoin installation more secure by making certain attacks impossible to
+To help make your *coin installation more secure by making certain attacks impossible to
 exploit even if a vulnerability is found, you can take the following measures:
 
 * Position Independent Executable
@@ -131,7 +131,7 @@ exploit even if a vulnerability is found, you can take the following measures:
 
     To test that you have built PIE executable, install scanelf, part of paxutils, and use:
 
-    	scanelf -e ./catcoin
+    	scanelf -e ./*coin
 
     The output should contain:
      TYPE
@@ -145,7 +145,7 @@ exploit even if a vulnerability is found, you can take the following measures:
     executable without the non-executable stack protection.
 
     To verify that the stack is non-executable after compiling use:
-    `scanelf -e ./catcoin`
+    `scanelf -e ./*coin`
 
     the output should contain:
 	STK/REL/PTL

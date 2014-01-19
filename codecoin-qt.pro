@@ -1,6 +1,6 @@
 TEMPLATE = app
-TARGET = catcoin-qt
-macx:TARGET = "Catcoin-Qt"
+TARGET = codecoin-qt
+macx:TARGET = "codecoin-Qt"
 VERSION = 0.8.7
 INCLUDEPATH += src src/json src/qt
 QT += core gui network
@@ -334,7 +334,7 @@ SOURCES += src/qt/test/test_main.cpp \
 HEADERS += src/qt/test/uritests.h
 DEPENDPATH += src/qt/test
 QT += testlib
-TARGET = catcoin-qt_test
+TARGET = codecoin-qt_test
 DEFINES += BITCOIN_QT_TEST
   macx: CONFIG -= app_bundle
 }

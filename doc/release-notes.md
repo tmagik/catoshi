@@ -1,3 +1,10 @@
+0.8.8 changes
+=============
+
+- Add testnet, start janitor work so copycatcoins can just leave *Coin everywhere instead of
+this silly search & replace nonsens.
+- 1 block retarget interval using last 36 blocks SMA (simple moving average)
+
 0.8.7 changes
 =============
 
