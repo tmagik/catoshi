@@ -1,11 +1,12 @@
 Copyright (c) 2009-2013 Bitcoin Developers
-Distributed under the MIT/X11 software license, see the accompanying
-file COPYING or http://www.opensource.org/licenses/mit-license.php.
+Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+Distributed under the Affero GNU General public license version 3
+file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](http://www.openssl.org/). This product includes
 cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.
 
 
-See readme-qt.rst for instructions on building Catcoin-Qt, the
+See readme-qt.rst for instructions on building *C0in-Qt, the
 graphical user interface.
 
 WINDOWS BUILD NOTES
@@ -80,10 +81,10 @@ MSYS shell:
 	mkdir miniupnpc
 	cp *.h miniupnpc/
 
-Catcoin
+*Coin
 -------
 DOS prompt:
 
-	cd \catcoin\src
+	cd \*coin\src
 	mingw32-make -f makefile.mingw
-	strip catcoind.exe
+	strip *coind.exe

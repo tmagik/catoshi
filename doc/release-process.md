@@ -6,7 +6,7 @@ Release Process
 ###update (commit) version in sources
 
 
-	catcoin-qt.pro
+	*coin-qt.pro
 	contrib/verifysfbinaries/verify.sh
 	doc/README*
 	share/setup.nsi
@@ -24,7 +24,7 @@ Release Process
 
 ##perform gitian builds
 
- From a directory containing the catcoin source, gitian-builder and gitian.sigs
+ From a directory containing the *coin source, gitian-builder and gitian.sigs
   
 	export SIGNER=(your gitian key, ie bluematt, sipa, etc)
 	export VERSION=0.8.0
@@ -42,54 +42,54 @@ Release Process
 	wget 'http://downloads.sourceforge.net/project/boost/boost/1.50.0/boost_1_50_0.tar.bz2'
 	wget 'http://releases.qt-project.org/qt4/source/qt-everywhere-opensource-src-4.8.3.tar.gz'
 	cd ..
-	./bin/gbuild ../catcoin/contrib/gitian-descriptors/boost-win32.yml
+	./bin/gbuild ../*coin/contrib/gitian-descriptors/boost-win32.yml
 	mv build/out/boost-win32-1.50.0-gitian2.zip inputs/
-	./bin/gbuild ../catcoin/contrib/gitian-descriptors/qt-win32.yml
+	./bin/gbuild ../*coin/contrib/gitian-descriptors/qt-win32.yml
 	mv build/out/qt-win32-4.8.3-gitian-r1.zip inputs/
-	./bin/gbuild ../catcoin/contrib/gitian-descriptors/deps-win32.yml
-	mv build/out/catcoin-deps-0.0.5.zip inputs/
+	./bin/gbuild ../*coin/contrib/gitian-descriptors/deps-win32.yml
+	mv build/out/*coin-deps-0.0.5.zip inputs/
 
- Build catcoind and catcoin-qt on Linux32, Linux64, and Win32:
+ Build *coind and *coin-qt on Linux32, Linux64, and Win32:
   
-	./bin/gbuild --commit catcoin=v${VERSION} ../catcoin/contrib/gitian-descriptors/gitian.yml
-	./bin/gsign --signer $SIGNER --release ${VERSION} --destination ../gitian.sigs/ ../catcoin/contrib/gitian-descriptors/gitian.yml
+	./bin/gbuild --commit *coin=v${VERSION} ../*coin/contrib/gitian-descriptors/gitian.yml
+	./bin/gsign --signer $SIGNER --release ${VERSION} --destination ../gitian.sigs/ ../*coin/contrib/gitian-descriptors/gitian.yml
 	pushd build/out
-	zip -r catcoin-${VERSION}-linux-gitian.zip *
-	mv catcoin-${VERSION}-linux-gitian.zip ../../
+	zip -r *coin-${VERSION}-linux-gitian.zip *
+	mv *coin-${VERSION}-linux-gitian.zip ../../
 	popd
-	./bin/gbuild --commit catcoin=v${VERSION} ../catcoin/contrib/gitian-descriptors/gitian-win32.yml
-	./bin/gsign --signer $SIGNER --release ${VERSION}-win32 --destination ../gitian.sigs/ ../catcoin/contrib/gitian-descriptors/gitian-win32.yml
+	./bin/gbuild --commit *coin=v${VERSION} ../*coin/contrib/gitian-descriptors/gitian-win32.yml
+	./bin/gsign --signer $SIGNER --release ${VERSION}-win32 --destination ../gitian.sigs/ ../*coin/contrib/gitian-descriptors/gitian-win32.yml
 	pushd build/out
-	zip -r catcoin-${VERSION}-win32-gitian.zip *
-	mv catcoin-${VERSION}-win32-gitian.zip ../../
+	zip -r *coin-${VERSION}-win32-gitian.zip *
+	mv *coin-${VERSION}-win32-gitian.zip ../../
 	popd
 
   Build output expected:
 
-  1. linux 32-bit and 64-bit binaries + source (catcoin-${VERSION}-linux-gitian.zip)
-  2. windows 32-bit binary, installer + source (catcoin-${VERSION}-win32-gitian.zip)
+  1. linux 32-bit and 64-bit binaries + source (*coin-${VERSION}-linux-gitian.zip)
+  2. windows 32-bit binary, installer + source (*coin-${VERSION}-win32-gitian.zip)
   3. Gitian signatures (in gitian.sigs/${VERSION}[-win32]/(your gitian key)/
 
 repackage gitian builds for release as stand-alone zip/tar/installer exe
 
 **Linux .tar.gz:**
 
-	unzip catcoin-${VERSION}-linux-gitian.zip -d catcoin-${VERSION}-linux
-	tar czvf catcoin-${VERSION}-linux.tar.gz catcoin-${VERSION}-linux
-	rm -rf catcoin-${VERSION}-linux
+	unzip *coin-${VERSION}-linux-gitian.zip -d *coin-${VERSION}-linux
+	tar czvf *coin-${VERSION}-linux.tar.gz *coin-${VERSION}-linux
+	rm -rf *coin-${VERSION}-linux
 
 **Windows .zip and setup.exe:**
 
-	unzip catcoin-${VERSION}-win32-gitian.zip -d catcoin-${VERSION}-win32
-	mv catcoin-${VERSION}-win32/catcoin-*-setup.exe .
-	zip -r catcoin-${VERSION}-win32.zip bitcoin-${VERSION}-win32
-	rm -rf catcoin-${VERSION}-win32
+	unzip *coin-${VERSION}-win32-gitian.zip -d *coin-${VERSION}-win32
+	mv *coin-${VERSION}-win32/*coin-*-setup.exe .
+	zip -r *coin-${VERSION}-win32.zip bitcoin-${VERSION}-win32
+	rm -rf *coin-${VERSION}-win32
 
 **Perform Mac build:**
 
   OSX binaries are created by Gavin Andresen on a 32-bit, OSX 10.6 machine.
 
-	qmake RELEASE=1 USE_UPNP=1 USE_QRCODE=1 catcoin-qt.pro
+	qmake RELEASE=1 USE_UPNP=1 USE_QRCODE=1 *coin-qt.pro
 	make
 	export QTDIR=/opt/local/share/qt4  # needed to find translations/qt_*.qm files
 	T=$(contrib/qt_translations.py $QTDIR/translations src/qt/locale)
@@ -107,7 +107,7 @@ repackage gitian builds for release as stand-alone zip/tar/installer exe
 
 * create SHA256SUMS for builds, and PGP-sign it
 
-* update catcoin.pw version
+* update *coin.pw version
   make sure all OS download links go to the right versions
 
 * update forum version
@@ -129,32 +129,32 @@ Commit your signature to gitian.sigs:
 
 ### After 3 or more people have gitian-built, repackage gitian-signed zips:
 
-From a directory containing catcoin source, gitian.sigs and gitian zips
+From a directory containing *coin source, gitian.sigs and gitian zips
 
 	export VERSION=0.5.1
-	mkdir catcoin-${VERSION}-linux-gitian
-	pushd catcoin-${VERSION}-linux-gitian
-	unzip ../catcoin-${VERSION}-linux-gitian.zip
+	mkdir *coin-${VERSION}-linux-gitian
+	pushd *coin-${VERSION}-linux-gitian
+	unzip ../*coin-${VERSION}-linux-gitian.zip
 	mkdir gitian
-	cp ../catcoin/contrib/gitian-downloader/*.pgp ./gitian/
+	cp ../*coin/contrib/gitian-downloader/*.pgp ./gitian/
 	for signer in $(ls ../gitian.sigs/${VERSION}/); do
-	 cp ../gitian.sigs/${VERSION}/${signer}/catcoin-build.assert ./gitian/${signer}-build.assert
-	 cp ../gitian.sigs/${VERSION}/${signer}/catcoin-build.assert.sig ./gitian/${signer}-build.assert.sig
+	 cp ../gitian.sigs/${VERSION}/${signer}/*coin-build.assert ./gitian/${signer}-build.assert
+	 cp ../gitian.sigs/${VERSION}/${signer}/*coin-build.assert.sig ./gitian/${signer}-build.assert.sig
 	done
-	zip -r catcoin-${VERSION}-linux-gitian.zip *
-	cp catcoin-${VERSION}-linux-gitian.zip ../
+	zip -r *coin-${VERSION}-linux-gitian.zip *
+	cp *coin-${VERSION}-linux-gitian.zip ../
 	popd
-	mkdir catcoin-${VERSION}-win32-gitian
-	pushd catcoin-${VERSION}-win32-gitian
-	unzip ../catcoin-${VERSION}-win32-gitian.zip
+	mkdir *coin-${VERSION}-win32-gitian
+	pushd *coin-${VERSION}-win32-gitian
+	unzip ../*coin-${VERSION}-win32-gitian.zip
 	mkdir gitian
-	cp ../catcoin/contrib/gitian-downloader/*.pgp ./gitian/
+	cp ../*coin/contrib/gitian-downloader/*.pgp ./gitian/
 	for signer in $(ls ../gitian.sigs/${VERSION}-win32/); do
-	 cp ../gitian.sigs/${VERSION}-win32/${signer}/catcoin-build.assert ./gitian/${signer}-build.assert
-	 cp ../gitian.sigs/${VERSION}-win32/${signer}/catcoin-build.assert.sig ./gitian/${signer}-build.assert.sig
+	 cp ../gitian.sigs/${VERSION}-win32/${signer}/*coin-build.assert ./gitian/${signer}-build.assert
+	 cp ../gitian.sigs/${VERSION}-win32/${signer}/*coin-build.assert.sig ./gitian/${signer}-build.assert.sig
 	done
-	zip -r catcoin-${VERSION}-win32-gitian.zip *
-	cp catcoin-${VERSION}-win32-gitian.zip ../
+	zip -r *coin-${VERSION}-win32-gitian.zip *
+	cp *coin-${VERSION}-win32-gitian.zip ../
 	popd
 
 - Upload gitian zips to SourceForge
