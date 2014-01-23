@@ -200,7 +200,6 @@ RPCConsole::RPCConsole(QWidget *parent) :
 
 #ifndef Q_OS_MAC
     ui->openDebugLogfileButton->setIcon(QIcon(":/icons/export"));
-    ui->showCLOptionsButton->setIcon(QIcon(":/icons/options"));
 #endif
 
     // Install event filter for up and down arrow
@@ -439,12 +438,6 @@ void RPCConsole::scrollToEnd()
 {
     QScrollBar *scrollbar = ui->messagesWidget->verticalScrollBar();
     scrollbar->setValue(scrollbar->maximum());
-}
-
-void RPCConsole::on_showCLOptionsButton_clicked()
-{
-    GUIUtil::HelpMessageBox help;
-    help.exec();
 }
 
 void RPCConsole::on_sldGraphRange_valueChanged(int value)
