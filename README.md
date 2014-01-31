@@ -8,6 +8,10 @@ Copyright (c) 2011-2013 Litecoin Developers
 Copyright (c) 2013-2014 Catcoin Developers
 Copyright (c) 2014 Troy Benjegerdes <hozer@hozed.org>
 
+For the latest Official Catcoin release, use the 
+[github](https://github.com/CatcoinOfficial/CatcoinRelease)
+
+
 What is kittycoin?
 ----------------
 
