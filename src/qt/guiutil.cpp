@@ -4,7 +4,7 @@
 
 #include "bitcoinaddressvalidator.h"
 #include "walletmodel.h"
-#include "bitcoinunits.h"
+#include "codecoinunits.h"
 
 #include "util.h"
 #include "init.h"
@@ -115,7 +115,7 @@ bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
         {
             if(!i->second.isEmpty())
             {
-                if(!BitcoinUnits::parse(BitcoinUnits::BTC, i->second, &rv.amount))
+                if(!CodecoinUnits::parse(CodecoinUnits::CC, i->second, &rv.amount))
                 {
                     return false;
                 }

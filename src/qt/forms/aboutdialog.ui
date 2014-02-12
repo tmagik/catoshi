@@ -23,7 +23,7 @@
       </sizepolicy>
      </property>
      <property name="pixmap">
-      <pixmap resource="../bitcoin.qrc">:/images/about</pixmap>
+      <pixmap resource="../codecoin.qrc">:/images/about</pixmap>
      </property>
     </widget>
    </item>
@@ -93,7 +93,8 @@
        <property name="text">
         <string notr="true">Copyright &amp;copy; 2009-YYYY The Bitcoin developers
 Copyright &amp;copy; 2011-YYYY The Litecoin developers
-Copyright &amp;copy; 2013-YYYY The Catcoin developers</string>
+Copyright &amp;copy; 2013-YYYY The Catcoin developers
+Copyright &amp;copy; 2014-YYYY 7 Elements LLC Troy Benjegerdes</string>
        </property>
        <property name="textFormat">
         <enum>Qt::RichText</enum>
@@ -112,7 +113,8 @@ Copyright &amp;copy; 2013-YYYY The Catcoin developers</string>
         <string>
 This is experimental software.
 
-Distributed under the MIT/X11 software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php.
+Distributed under the Affero GNU General public license version 3, see the accompanying file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+Portions orginally distributed under the MIT/X11 software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.</string>
        </property>
@@ -152,7 +154,7 @@ This product includes software developed by the OpenSSL Project for use in the O
   </layout>
  </widget>
  <resources>
-  <include location="../bitcoin.qrc"/>
+  <include location="../codecoin.qrc"/>
  </resources>
  <connections>
   <connection>

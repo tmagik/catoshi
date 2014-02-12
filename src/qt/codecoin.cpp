@@ -4,7 +4,7 @@
 
 #include <QApplication>
 
-#include "bitcoingui.h"
+#include "codecoingui.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
 #include "optionsmodel.h"
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     QTextCodec::setCodecForCStrings(QTextCodec::codecForTr());
 #endif
 
-    Q_INIT_RESOURCE(bitcoin);
+    Q_INIT_RESOURCE(codecoin);
     QApplication app(argc, argv);
 
     // Register meta types used for QMetaObject::invokeMethod
