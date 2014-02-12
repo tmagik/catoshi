@@ -2,7 +2,7 @@
 #include "ui_sendcoinsentry.h"
 
 #include "guiutil.h"
-#include "bitcoinunits.h"
+#include "codecoinunits.h"
 #include "addressbookpage.h"
 #include "walletmodel.h"
 #include "optionsmodel.h"

@@ -5,10 +5,11 @@
 
 #include "init.h"
 #include "util.h"
+#include "codecoin.h"
 #include "sync.h"
 #include "ui_interface.h"
 #include "base58.h"
-#include "bitcoinrpc.h"
+#include "codecoinrpc.h"
 #include "db.h"
 
 #include <boost/asio.hpp>
@@ -39,7 +40,7 @@ static boost::thread_group* rpc_worker_group = NULL;
 
 static inline unsigned short GetDefaultRPCPort()
 {
-    return GetBoolArg("-testnet", false) ? 19932 : 9932;
+    return GetBoolArg("-testnet", false) ? RPC_PORT_TESTNET: RPC_PORT;
 }
 
 Object JSONRPCError(int code, const string& message)

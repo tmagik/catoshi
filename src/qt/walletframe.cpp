@@ -5,7 +5,7 @@
  * The Bitcoin Developers 2011-2013
  */
 #include "walletframe.h"
-#include "bitcoingui.h"
+#include "codecoingui.h"
 #include "walletstack.h"
 #include "walletview.h"
 

@@ -5,7 +5,7 @@
  * The Bitcoin Developers 2011-2013
  */
 #include "walletview.h"
-#include "bitcoingui.h"
+#include "codecoingui.h"
 #include "transactiontablemodel.h"
 #include "addressbookpage.h"
 #include "sendcoinsdialog.h"
