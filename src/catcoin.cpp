@@ -25,8 +25,32 @@ uint256 hashGenesisBlock = 0;			// TODO: objectize this for multicoin support
 CBigNum bnProofOfWorkLimit(~uint256(0) >> 12);	// *coin: starting difficulty is 1 / 2^12
 
 const string strMessageMagic = "Catcoin Signed Message:\n";
+/* value, in percent of what difficulty value we'll accept for orphans */
+const int ORPHAN_WORK_THRESHOLD = 5; // FIXME WAY TOO WIDE right now
 
+// DNS seeds
+// Each pair gives a source name and a seed name.
+// The first name is used as information source for addrman.
+// The second name should resolve to a list of seed addresses.
+// FIXME use a single string and/or objectify this
+/*
+  Catcoin policy for getting on this list:
+   1) have a catcoind with port 9933 open
+   2) be avaible for #catcoin-dev people to contact you for debug and testing
+   3) be willing to take a haircut on generates if we determine on irc and on
+      (a future) mailing list that we need to do it to fix the network
+ */
+const char *strMainNetDNSSeed[][2] = {
+    {"catstat.info", "seed.catstat.info"},
+    {"catcoinwallets.com", "seed.catcoinwallets.com"},
+    {"geekhash.org", "cat.geekhash.org"},
+    {NULL, NULL}
+};
 
+const char *strTestNetDNSSeed[][2] = {
+    {"catstat.info", "testnet-seed.catstat.info"},
+    {NULL, NULL}
+};
 
 int64 GetBlockValue(CBlockIndex *block, int64 nFees)
 {
