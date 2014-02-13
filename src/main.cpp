@@ -2149,17 +2149,21 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 		{
 			return state.DoS(100, error("ProcessBlock() : block with timestamp before last checkpoint"));
 		}
+		// https://bitbucket.org/dahozer/catcoin/issue/14/add-a-threshold-for-orphans-with-slightly
 		CBigNum bnNewBlock;
 		bnNewBlock.SetCompact(pblock->nBits);
 		CBigNum bnRequired;
 		bnRequired.SetCompact(ComputeMinWork(pcheckpoint->nBits, deltaTime, pcheckpoint->nHeight));
+		CBigNum bnThreshold = bnRequired * 100 / ORPHAN_WORK_THRESHOLD;
 
-		if (bnNewBlock > bnRequired)
+		if (bnNewBlock > bnThreshold )
 		{
-			return state.DoS(100, error("ProcessBlock() : block with too little proof-of-work"));
+			printf("bnNewBlock: %08x bnRequired: %08x bnThreshold %08x\n", 
+					pblock->nBits, bnRequired.GetCompact(), bnThreshold.GetCompact());
+			return state.DoS(100, error(
+				"ProcessBlock() : ophan block work below threshold %d%%", ORPHAN_WORK_THRESHOLD));
 		}
 	}
-
 
 	// If we don't already have its previous block, shunt it off to holding area until we get it
 	if (pblock->hashPrevBlock != 0 && !mapBlockIndex.count(pblock->hashPrevBlock))
