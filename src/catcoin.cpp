@@ -26,7 +26,7 @@ CBigNum bnProofOfWorkLimit(~uint256(0) >> 12);	// *coin: starting difficulty is 
 
 const string strMessageMagic = "Catcoin Signed Message:\n";
 /* value, in percent of what difficulty value we'll accept for orphans */
-const int ORPHAN_WORK_THRESHOLD = 5; // FIXME WAY TOO WIDE right now
+const int ORPHAN_WORK_THRESHOLD = 1; // FIXME WAY TOO WIDE right now
 
 // DNS seeds
 // Each pair gives a source name and a seed name.
