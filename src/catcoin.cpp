@@ -49,6 +49,7 @@ const char *strMainNetDNSSeed[][2] = {
 
 const char *strTestNetDNSSeed[][2] = {
     {"catstat.info", "testnet-seed.catstat.info"},
+    {"catcoinwallets.com", "seed.catcoinwallets.com"},
     {NULL, NULL}
 };
 

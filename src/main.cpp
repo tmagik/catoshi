@@ -1192,16 +1192,6 @@ void CBlockHeader::UpdateTime(const CBlockIndex* pindexPrev)
 		nBits = GetNextWorkRequired(pindexPrev, this);
 }
 
-
-
-
-
-
-
-
-
-
-
 const CTxOut &CTransaction::GetOutputFor(const CTxIn& input, CCoinsViewCache& view)
 {
 	const CCoins &coins = view.GetCoins(input.prevout.hash);
@@ -2155,13 +2145,15 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 		CBigNum bnRequired;
 		bnRequired.SetCompact(ComputeMinWork(pcheckpoint->nBits, deltaTime, pcheckpoint->nHeight));
 		CBigNum bnThreshold = bnRequired * 100 / ORPHAN_WORK_THRESHOLD;
-
+		
+		if (bnNewBlock > bnRequired ){
+			printf("WARN: low proof of work: bnNewBlock: %08x deltaTime: %d nHeight: %d bnRequired: %08x bnThreshold %08x\n", 
+					pblock->nBits, deltaTime, pcheckpoint->nHeight, bnRequired.GetCompact(), bnThreshold.GetCompact());
+		}
 		if (bnNewBlock > bnThreshold )
 		{
-			printf("bnNewBlock: %08x bnRequired: %08x bnThreshold %08x\n", 
-					pblock->nBits, bnRequired.GetCompact(), bnThreshold.GetCompact());
 			return state.DoS(100, error(
-				"ProcessBlock() : ophan block work below threshold %d%%", ORPHAN_WORK_THRESHOLD));
+				"ProcessBlock() : proof of work below threshold %d%%", ORPHAN_WORK_THRESHOLD));
 		}
 	}
 
