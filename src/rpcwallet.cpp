@@ -621,7 +621,7 @@ Value getbalance(const Array& params, bool fHelp)
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
-            if (!wtx.IsConfirmed())
+            if (!wtx.IsTrusted())
                 continue;
 
             int64_t allFee;
@@ -1448,7 +1448,8 @@ Value gettransaction(const Array& params, bool fHelp)
             "      \"amount\" : x.xxx                  (numeric) The amount in btc\n"
             "    }\n"
             "    ,...\n"
-            "  ]\n"
+            "  ],\n"
+            "  \"hex\" : \"data\"         (string) Raw data for transaction\n"
             "}\n"
 
             "\nbExamples\n"
@@ -1478,6 +1479,11 @@ Value gettransaction(const Array& params, bool fHelp)
     Array details;
     ListTransactions(wtx, "*", 0, false, details);
     entry.push_back(Pair("details", details));
+
+    CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+    ssTx << wtx;
+    string strHex = HexStr(ssTx.begin(), ssTx.end());
+    entry.push_back(Pair("hex", strHex));
 
     return entry;
 }
