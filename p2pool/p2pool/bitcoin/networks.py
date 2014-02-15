@@ -182,7 +182,7 @@ nets = dict(
         P2P_PREFIX='fcc1b7dc'.decode('hex'),
         P2P_PORT=9933,
         ADDRESS_VERSION=21,
-        RPC_PORT=9432,
+        RPC_PORT=9932,
         RPC_CHECK=defer.inlineCallbacks(lambda bitcoind: defer.returnValue(
             'catcoinaddress' in (yield bitcoind.rpc_help()) and
             not (yield bitcoind.rpc_getinfo())['testnet']
@@ -203,7 +203,7 @@ nets = dict(
         P2P_PREFIX='fdcbb8dd'.decode('hex'),
         P2P_PORT=19933,
         ADDRESS_VERSION=23,
-        RPC_PORT=9432,
+        RPC_PORT=9932,
         RPC_CHECK=defer.inlineCallbacks(lambda bitcoind: defer.returnValue(
             'catcoinaddress' in (yield bitcoind.rpc_help()) and
             (yield bitcoind.rpc_getinfo())['testnet']
