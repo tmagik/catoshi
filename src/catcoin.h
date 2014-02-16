@@ -1,8 +1,8 @@
 // Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-#ifndef CODECOIN_7coin_H
-#define CODECOIN_7coin_H
+#ifndef CODECOIN_catcoin_H
+#define CODECOIN_catcoin_H
 
 #include "util.h"
 
