@@ -164,7 +164,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
         (wtx.IsCoinBase() ? 1 : 0),
         wtx.nTimeReceived,
         idx);
-    status.confirmed = wtx.IsConfirmed();
+    status.confirmed = wtx.IsTrusted();
     status.depth = wtx.GetDepthInMainChain();
     status.cur_num_blocks = chainActive.Height();
 
@@ -183,7 +183,11 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
     }
     else
     {
-        if (GetAdjustedTime() - wtx.nTimeReceived > 2 * 60 && wtx.GetRequestCount() == 0)
+        if (status.depth < 0)
+        {
+            status.status = TransactionStatus::Conflicted;
+        }
+        else if (GetAdjustedTime() - wtx.nTimeReceived > 2 * 60 && wtx.GetRequestCount() == 0)
         {
             status.status = TransactionStatus::Offline;
         }

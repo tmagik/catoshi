@@ -76,6 +76,11 @@ void OptionsModel::Init()
     nTransactionFee = settings.value("nTransactionFee").toLongLong(); // if -paytxfee is set, this will be overridden later in init.cpp
     if (mapArgs.count("-paytxfee"))
         strOverriddenByCommandLine += "-paytxfee ";
+
+    if (!settings.contains("bSpendZeroConfChange"))
+        settings.setValue("bSpendZeroConfChange", true);
+    if (!SoftSetBoolArg("-spendzeroconfchange", settings.value("bSpendZeroConfChange").toBool()))
+        strOverriddenByCommandLine += "-spendzeroconfchange ";
 #endif
 
     if (!settings.contains("nDatabaseCache"))
@@ -130,69 +135,6 @@ void OptionsModel::Reset()
     // default setting for OptionsModel::StartAtStartup - disabled
     if (GUIUtil::GetStartOnSystemStartup())
         GUIUtil::SetStartOnSystemStartup(false);
-
-    // Ensure Upgrade() is not running again by setting the bImportFinished flag
-    settings.setValue("bImportFinished", true);
-}
-
-void OptionsModel::Upgrade()
-{
-    QSettings settings;
-
-    // Already upgraded
-    if (settings.contains("bImportFinished"))
-        return;
-
-    settings.setValue("bImportFinished", true);
-
-#ifdef ENABLE_WALLET
-    // Move settings from old wallet.dat (if any):
-    CWalletDB walletdb(strWalletFile);
-
-    QList<QString> intOptions;
-    intOptions << "nDisplayUnit" << "nTransactionFee";
-    foreach(QString key, intOptions)
-    {
-        int value = 0;
-        if (walletdb.ReadSetting(key.toStdString(), value))
-        {
-            settings.setValue(key, value);
-            walletdb.EraseSetting(key.toStdString());
-        }
-    }
-    QList<QString> boolOptions;
-    boolOptions << "bDisplayAddresses" << "fMinimizeToTray" << "fMinimizeOnClose" << "fUseProxy" << "fUseUPnP";
-    foreach(QString key, boolOptions)
-    {
-        bool value = false;
-        if (walletdb.ReadSetting(key.toStdString(), value))
-        {
-            settings.setValue(key, value);
-            walletdb.EraseSetting(key.toStdString());
-        }
-    }
-    try
-    {
-        CAddress addrProxyAddress;
-        if (walletdb.ReadSetting("addrProxy", addrProxyAddress))
-        {
-            settings.setValue("addrProxy", addrProxyAddress.ToStringIPPort().c_str());
-            walletdb.EraseSetting("addrProxy");
-        }
-    }
-    catch (std::ios_base::failure &e)
-    {
-        // 0.6.0rc1 saved this as a CService, which causes failure when parsing as a CAddress
-        CService addrProxy;
-        if (walletdb.ReadSetting("addrProxy", addrProxy))
-        {
-            settings.setValue("addrProxy", addrProxy.ToStringIPPort().c_str());
-            walletdb.EraseSetting("addrProxy");
-        }
-    }
-#endif
-
-    Init();
 }
 
 int OptionsModel::rowCount(const QModelIndex & parent) const
@@ -247,6 +189,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             // Todo: Consider to revert back to use just nTransactionFee here, if we don't want
             // -paytxfee to update our QSettings!
             return settings.value("nTransactionFee");
+        case SpendZeroConfChange:
+            return settings.value("bSpendZeroConfChange");
 #endif
         case DisplayUnit:
             return nDisplayUnit;
@@ -336,6 +280,12 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             nTransactionFee = value.toLongLong();
             settings.setValue("nTransactionFee", (qint64)nTransactionFee);
             emit transactionFeeChanged(nTransactionFee);
+            break;
+        case SpendZeroConfChange:
+            if (settings.value("bSpendZeroConfChange") != value) {
+                settings.setValue("bSpendZeroConfChange", value);
+                setRestartRequired(true);
+            }
             break;
 #endif
         case DisplayUnit:
