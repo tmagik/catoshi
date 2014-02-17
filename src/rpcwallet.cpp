@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2013 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -45,13 +45,18 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
     entry.push_back(Pair("confirmations", confirms));
     if (wtx.IsCoinBase())
         entry.push_back(Pair("generated", true));
-    if (confirms)
+    if (confirms > 0)
     {
         entry.push_back(Pair("blockhash", wtx.hashBlock.GetHex()));
         entry.push_back(Pair("blockindex", wtx.nIndex));
         entry.push_back(Pair("blocktime", (boost::int64_t)(mapBlockIndex[wtx.hashBlock]->nTime)));
     }
-    entry.push_back(Pair("txid", wtx.GetHash().GetHex()));
+    uint256 hash = wtx.GetHash();
+    entry.push_back(Pair("txid", hash.GetHex()));
+    Array conflicts;
+    BOOST_FOREACH(const uint256& conflict, wtx.GetConflicts())
+        conflicts.push_back(conflict.GetHex());
+    entry.push_back(Pair("walletconflicts", conflicts));
     entry.push_back(Pair("time", (boost::int64_t)wtx.GetTxTime()));
     entry.push_back(Pair("timereceived", (boost::int64_t)wtx.nTimeReceived));
     BOOST_FOREACH(const PAIRTYPE(string,string)& item, wtx.mapValue)
@@ -621,7 +626,7 @@ Value getbalance(const Array& params, bool fHelp)
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
-            if (!wtx.IsConfirmed())
+            if (!wtx.IsTrusted() || wtx.GetBlocksToMaturity() > 0)
                 continue;
 
             int64_t allFee;
@@ -1109,7 +1114,10 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
             Object entry;
             entry.push_back(Pair("account", strSentAccount));
             MaybePushAddress(entry, s.first);
-            entry.push_back(Pair("category", "send"));
+            if (wtx.GetDepthInMainChain() < 0)
+                entry.push_back(Pair("category", "conflicted"));
+            else
+                entry.push_back(Pair("category", "send"));
             entry.push_back(Pair("amount", ValueFromAmount(-s.second)));
             entry.push_back(Pair("fee", ValueFromAmount(-nFee)));
             if (fLong)
@@ -1141,7 +1149,12 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                         entry.push_back(Pair("category", "generate"));
                 }
                 else
-                    entry.push_back(Pair("category", "receive"));
+                {
+                    if (wtx.GetDepthInMainChain() < 0)
+                        entry.push_back(Pair("category", "conflicted"));
+                    else
+                        entry.push_back(Pair("category", "receive"));
+                }
                 entry.push_back(Pair("amount", ValueFromAmount(r.second)));
                 if (fLong)
                     WalletTxToJSON(wtx, entry);
@@ -1317,6 +1330,8 @@ Value listaccounts(const Array& params, bool fHelp)
         string strSentAccount;
         list<pair<CTxDestination, int64_t> > listReceived;
         list<pair<CTxDestination, int64_t> > listSent;
+        if (wtx.GetBlocksToMaturity() > 0)
+            continue;
         wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount);
         mapAccountBalances[strSentAccount] -= nFee;
         BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64_t)& s, listSent)
@@ -1448,7 +1463,8 @@ Value gettransaction(const Array& params, bool fHelp)
             "      \"amount\" : x.xxx                  (numeric) The amount in btc\n"
             "    }\n"
             "    ,...\n"
-            "  ]\n"
+            "  ],\n"
+            "  \"hex\" : \"data\"         (string) Raw data for transaction\n"
             "}\n"
 
             "\nbExamples\n"
@@ -1478,6 +1494,11 @@ Value gettransaction(const Array& params, bool fHelp)
     Array details;
     ListTransactions(wtx, "*", 0, false, details);
     entry.push_back(Pair("details", details));
+
+    CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+    ssTx << wtx;
+    string strHex = HexStr(ssTx.begin(), ssTx.end());
+    entry.push_back(Pair("hex", strHex));
 
     return entry;
 }
