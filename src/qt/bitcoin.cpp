@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
+// Copyright (c) 2011-2014 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,6 +14,7 @@
 #include "intro.h"
 #include "optionsmodel.h"
 #include "splashscreen.h"
+#include "utilitydialog.h"
 #ifdef ENABLE_WALLET
 #include "paymentserver.h"
 #include "walletmodel.h"
@@ -21,6 +22,7 @@
 
 #include "init.h"
 #include "main.h"
+#include "rpcserver.h"
 #include "ui_interface.h"
 #include "util.h"
 #include "wallet.h"
@@ -36,8 +38,6 @@
 #include <QTimer>
 #include <QTranslator>
 #include <QThread>
-#include <QVBoxLayout>
-#include <QLabel>
 
 #if defined(QT_STATICPLUGIN)
 #include <QtPlugin>
@@ -62,7 +62,7 @@ Q_DECLARE_METATYPE(bool*)
 
 static void InitMessage(const std::string &message)
 {
-    LogPrintf("init message: %s\n", message.c_str());
+    LogPrintf("init message: %s\n", message);
 }
 
 /*
@@ -227,6 +227,13 @@ void BitcoinCore::initialize()
     {
         LogPrintf("Running AppInit2 in thread\n");
         int rv = AppInit2(threadGroup);
+        if(rv)
+        {
+            /* Start a dummy RPC thread if no RPC thread is active yet
+             * to handle timeouts.
+             */
+            StartDummyRPCThread();
+        }
         emit initializeResult(rv);
     } catch (std::exception& e) {
         handleRunawayException(&e);
@@ -356,17 +363,7 @@ void BitcoinApplication::requestShutdown()
     clientModel = 0;
 
     // Show a simple window indicating shutdown status
-    QWidget *shutdownWindow = new QWidget();
-    QVBoxLayout *layout = new QVBoxLayout();
-    layout->addWidget(new QLabel(
-        tr("Bitcoin Core is shutting down...") + "<br /><br />" +
-        tr("Do not shut down the computer until this window disappears.")));
-    shutdownWindow->setLayout(layout);
-
-    // Center shutdown window at where main window was
-    const QPoint global = window->mapToGlobal(window->rect().center());
-    shutdownWindow->move(global.x() - shutdownWindow->width() / 2, global.y() - shutdownWindow->height() / 2);
-    shutdownWindow->show();
+    ShutdownWindow::showShutdownWindow(window);
 
     // Request shutdown from core thread
     emit requestedShutdown();
@@ -379,9 +376,6 @@ void BitcoinApplication::initializeResult(int retval)
     returnValue = retval ? 0 : 1;
     if(retval)
     {
-        // Miscellaneous initialization after core is initialized
-        optionsModel->Upgrade(); // Must be done after AppInit2
-
 #ifdef ENABLE_WALLET
         PaymentServer::LoadRootCAs();
         paymentServer->setOptionsModel(optionsModel);
@@ -503,7 +497,7 @@ int main(int argc, char *argv[])
     // but before showing splash screen.
     if (mapArgs.count("-?") || mapArgs.count("--help"))
     {
-        GUIUtil::HelpMessageBox help;
+        HelpMessageDialog help(NULL);
         help.showOrPrint();
         return 1;
     }

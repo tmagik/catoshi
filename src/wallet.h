@@ -25,6 +25,7 @@
 
 // Settings
 extern int64_t nTransactionFee;
+extern bool bSpendZeroConfChange;
 
 class CAccountingEntry;
 class CCoinControl;
@@ -83,6 +84,9 @@ public:
     {
         purpose = "unknown";
     }
+
+    typedef std::map<std::string, std::string> StringMap;
+    StringMap destdata;
 };
 
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
@@ -103,6 +107,12 @@ private:
 
     int64_t nNextResend;
     int64_t nLastResend;
+
+    // Used to detect and report conflicted transactions:
+    typedef std::multimap<COutPoint, uint256> TxConflicts;
+    TxConflicts mapTxConflicts;
+    void AddToConflicts(const uint256& wtxhash);
+    void SyncMetaData(std::pair<TxConflicts::iterator, TxConflicts::iterator>);
 
 public:
     /// Main wallet lock.
@@ -147,6 +157,7 @@ public:
     }
 
     std::map<uint256, CWalletTx> mapWallet;
+
     int64_t nOrderPosNext;
     std::map<uint256, int> mapRequestCount;
 
@@ -189,6 +200,15 @@ public:
     bool AddCScript(const CScript& redeemScript);
     bool LoadCScript(const CScript& redeemScript) { return CCryptoKeyStore::AddCScript(redeemScript); }
 
+    /// Adds a destination data tuple to the store, and saves it to disk
+    bool AddDestData(const CTxDestination &dest, const std::string &key, const std::string &value);
+    /// Erases a destination data tuple in the store and on disk
+    bool EraseDestData(const CTxDestination &dest, const std::string &key);
+    /// Adds a destination data tuple to the store, without saving it to disk
+    bool LoadDestData(const CTxDestination &dest, const std::string &key, const std::string &value);
+    /// Look up a destination data tuple in the store, return true if found false otherwise
+    bool GetDestData(const CTxDestination &dest, const std::string &key, std::string *value) const;
+
     bool Unlock(const SecureString& strWalletPassphrase);
     bool ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase, const SecureString& strNewWalletPassphrase);
     bool EncryptWallet(const SecureString& strWalletPassphrase);
@@ -210,7 +230,7 @@ public:
     TxItems OrderedTxItems(std::list<CAccountingEntry>& acentries, std::string strAccount = "");
 
     void MarkDirty();
-    bool AddToWallet(const CWalletTx& wtxIn);
+    bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet=false);
     void SyncTransaction(const uint256 &hash, const CTransaction& tx, const CBlock* pblock);
     bool AddToWalletIfInvolvingMe(const uint256 &hash, const CTransaction& tx, const CBlock* pblock, bool fUpdate);
     void EraseFromWallet(const uint256 &hash);
@@ -310,6 +330,7 @@ public:
     void SetBestChain(const CBlockLocator& loc);
 
     DBErrors LoadWallet(bool& fFirstRunRet);
+    DBErrors ZapWalletTx();
 
     bool SetAddressBook(const CTxDestination& address, const std::string& strName, const std::string& purpose);
 
@@ -342,7 +363,10 @@ public:
     bool SetMaxVersion(int nVersion);
 
     // get the current wallet format (the oldest client version guaranteed to understand this wallet)
-    int GetVersion() { AssertLockHeld(cs_wallet); return nWalletVersion; }
+    int GetVersion() { LOCK(cs_wallet); return nWalletVersion; }
+
+    // Get wallet transactions that conflict with given transaction (spend same outputs)
+    std::set<uint256> GetConflicts(const uint256& txid) const;
 
     /** Address book entry changed.
      * @note called with lock cs_wallet held.
@@ -682,14 +706,17 @@ public:
         return (GetDebit() > 0);
     }
 
-    bool IsConfirmed() const
+    bool IsTrusted() const
     {
         // Quick answer in most cases
         if (!IsFinalTx(*this))
             return false;
-        if (GetDepthInMainChain() >= 1)
+        int nDepth = GetDepthInMainChain();
+        if (nDepth >= 1)
             return true;
-        if (!IsFromMe()) // using wtx's cached debit
+        if (nDepth < 0)
+            return false;
+        if (!bSpendZeroConfChange || !IsFromMe()) // using wtx's cached debit
             return false;
 
         // If no confirmations but it's from us, we can still
@@ -704,8 +731,11 @@ public:
 
             if (!IsFinalTx(*ptx))
                 return false;
-            if (ptx->GetDepthInMainChain() >= 1)
+            int nPDepth = ptx->GetDepthInMainChain();
+            if (nPDepth >= 1)
                 continue;
+            if (nPDepth < 0)
+                return false;
             if (!pwallet->IsFromMe(*ptx))
                 return false;
 
@@ -733,6 +763,8 @@ public:
     void AddSupportingTransactions();
     bool AcceptWalletTransaction();
     void RelayWalletTransaction();
+
+    std::set<uint256> GetConflicts() const;
 };
 
 

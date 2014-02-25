@@ -80,6 +80,7 @@ QT_FORMS_UI = \
   forms/askpassphrasedialog.ui \
   forms/coincontroldialog.ui \
   forms/editaddressdialog.ui \
+  forms/helpmessagedialog.ui \
   forms/intro.ui \
   forms/openuridialog.ui \
   forms/optionsdialog.ui \
@@ -93,7 +94,6 @@ QT_FORMS_UI = \
   forms/transactiondescdialog.ui
 
 QT_MOC_CPP = \
-  moc_aboutdialog.cpp \
   moc_addressbookpage.cpp \
   moc_addresstablemodel.cpp \
   moc_askpassphrasedialog.cpp \
@@ -133,6 +133,7 @@ QT_MOC_CPP = \
   moc_transactionfilterproxy.cpp \
   moc_transactiontablemodel.cpp \
   moc_transactionview.cpp \
+  moc_utilitydialog.cpp \
   moc_walletframe.cpp \
   moc_walletmodel.cpp \
   moc_walletview.cpp
@@ -155,7 +156,6 @@ PROTOBUF_H = paymentrequest.pb.h
 PROTOBUF_PROTO = paymentrequest.proto
 
 BITCOIN_QT_H = \
-  aboutdialog.h \
   addressbookpage.h \
   addresstablemodel.h \
   askpassphrasedialog.h \
@@ -198,6 +198,7 @@ BITCOIN_QT_H = \
   transactionrecord.h \
   transactiontablemodel.h \
   transactionview.h \
+  utilitydialog.h \
   walletframe.h \
   walletmodel.h \
   walletmodeltransaction.h \
@@ -242,13 +243,13 @@ RES_ICONS = \
   res/icons/toolbar_testnet.png \
   res/icons/transaction0.png \
   res/icons/transaction2.png \
+  res/icons/transaction_conflicted.png \
   res/icons/tx_inout.png \
   res/icons/tx_input.png \
   res/icons/tx_output.png \
   res/icons/tx_mined.png
 
 BITCOIN_QT_CPP = \
-  aboutdialog.cpp \
   bitcoin.cpp \
   bitcoinaddressvalidator.cpp \
   bitcoinamountfield.cpp \
@@ -267,7 +268,8 @@ BITCOIN_QT_CPP = \
   rpcconsole.cpp \
   signverifymessagedialog.cpp \
   splashscreen.cpp \
-  trafficgraphwidget.cpp
+  trafficgraphwidget.cpp \
+  utilitydialog.cpp
 
 if ENABLE_WALLET
 BITCOIN_QT_CPP += \
@@ -322,24 +324,23 @@ BUILT_SOURCES = $(nodist_libbitcoinqt_a_SOURCES)
 $(QT_MOC): $(PROTOBUF_H)
 $(QT_MOC_CPP): $(PROTOBUF_H)
 
-if TARGET_DARWIN
-  libbitcoinqt_a_SOURCES += $(BITCOIN_MM)
-endif
-if TARGET_WINDOWS
-  libbitcoinqt_a_SOURCES += $(BITCOIN_RC)
-endif
-#
-
 # bitcoin-qt binary #
 bitcoin_qt_CPPFLAGS = $(AM_CPPFLAGS) $(QT_INCLUDES) \
   -I$(top_srcdir)/src/qt/forms
 bitcoin_qt_SOURCES = bitcoin.cpp
+if TARGET_DARWIN
+  bitcoin_qt_SOURCES += $(BITCOIN_MM)
+endif
+if TARGET_WINDOWS
+  bitcoin_qt_SOURCES += $(BITCOIN_RC)
+endif
 bitcoin_qt_LDADD = libbitcoinqt.a $(LIBBITCOIN_SERVER)
 if ENABLE_WALLET
 bitcoin_qt_LDADD += $(LIBBITCOIN_WALLET)
 endif
 bitcoin_qt_LDADD += $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(QT_LIBS) $(QT_DBUS_LIBS) $(QR_LIBS) $(PROTOBUF_LIBS) $(BDB_LIBS)
+bitcoin_qt_LDFLAGS = $(QT_LDFLAGS)
 
 # forms/foo.h -> forms/ui_foo.h
 QT_FORMS_H=$(join $(dir $(QT_FORMS_UI)),$(addprefix ui_, $(notdir $(QT_FORMS_UI:.ui=.h))))
