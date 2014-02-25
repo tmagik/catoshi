@@ -1,12 +1,12 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
+// Copyright (c) 2011-2014 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "splashscreen.h"
 
 #include "clientversion.h"
-#include "util.h"
 #include "ui_interface.h"
+#include "util.h"
 
 #include <QApplication>
 #include <QPainter>

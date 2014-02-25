@@ -6,6 +6,7 @@
 
 #include "bitcoinaddressvalidator.h"
 #include "bitcoinunits.h"
+#include "qvalidatedlineedit.h"
 #include "walletmodel.h"
 
 #include "core.h"
@@ -72,11 +73,16 @@ QFont bitcoinAddressFont()
     return font;
 }
 
-void setupAddressWidget(QLineEdit *widget, QWidget *parent)
+void setupAddressWidget(QValidatedLineEdit *widget, QWidget *parent)
 {
-    widget->setMaxLength(BitcoinAddressValidator::MaxAddressLength);
-    widget->setValidator(new BitcoinAddressValidator(parent));
+    parent->setFocusProxy(widget);
+
     widget->setFont(bitcoinAddressFont());
+#if QT_VERSION >= 0x040700
+    widget->setPlaceholderText(QObject::tr("Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)"));
+#endif
+    widget->setValidator(new BitcoinAddressEntryValidator(parent));
+    widget->setCheckValidator(new BitcoinAddressCheckValidator(parent));
 }
 
 void setupAmountWidget(QLineEdit *widget, QWidget *parent)
@@ -90,7 +96,7 @@ void setupAmountWidget(QLineEdit *widget, QWidget *parent)
 
 bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
 {
-    // return if URI is not valid or is no bitcoin URI
+    // return if URI is not valid or is no bitcoin: URI
     if(!uri.isValid() || uri.scheme() != QString("bitcoin"))
         return false;
 
@@ -361,11 +367,11 @@ bool ToolTipToRichTextFilter::eventFilter(QObject *obj, QEvent *evt)
     {
         QWidget *widget = static_cast<QWidget*>(obj);
         QString tooltip = widget->toolTip();
-        if(tooltip.size() > size_threshold && !tooltip.startsWith("<qt/>") && !Qt::mightBeRichText(tooltip))
+        if(tooltip.size() > size_threshold && !tooltip.startsWith("<qt") && !Qt::mightBeRichText(tooltip))
         {
-            // Prefix <qt/> to make sure Qt detects this as rich text
+            // Envelop with <qt></qt> to make sure Qt detects this as rich text
             // Escape the current message as HTML and replace \n by <br>
-            tooltip = "<qt/>" + HtmlEscape(tooltip, true);
+            tooltip = "<qt>" + HtmlEscape(tooltip, true) + "</qt>";
             widget->setToolTip(tooltip);
             return true;
         }
@@ -589,47 +595,6 @@ void restoreWindowGeometry(const QString& strSetting, const QSize& defaultSize, 
 
     parent->resize(size);
     parent->move(pos);
-}
-
-HelpMessageBox::HelpMessageBox(QWidget *parent) :
-    QMessageBox(parent)
-{
-    header = tr("Bitcoin Core") + " " + tr("version") + " " +
-        QString::fromStdString(FormatFullVersion()) + "\n\n" +
-        tr("Usage:") + "\n" +
-        "  bitcoin-qt [" + tr("command-line options") + "]                     " + "\n";
-
-    coreOptions = QString::fromStdString(HelpMessage(HMM_BITCOIN_QT));
-
-    uiOptions = tr("UI options") + ":\n" +
-        "  -lang=<lang>           " + tr("Set language, for example \"de_DE\" (default: system locale)") + "\n" +
-        "  -min                   " + tr("Start minimized") + "\n" +
-        "  -splash                " + tr("Show splash screen on startup (default: 1)") + "\n" +
-        "  -choosedatadir         " + tr("Choose data directory on startup (default: 0)") + "\n";
-
-    setWindowTitle(tr("Bitcoin Core"));
-    setTextFormat(Qt::PlainText);
-    // setMinimumWidth is ignored for QMessageBox so put in non-breaking spaces to make it wider.
-    setText(header + QString(QChar(0x2003)).repeated(50));
-    setDetailedText(coreOptions + "\n" + uiOptions);
-}
-
-void HelpMessageBox::printToConsole()
-{
-    // On other operating systems, the expected action is to print the message to the console.
-    QString strUsage = header + "\n" + coreOptions + "\n" + uiOptions;
-    fprintf(stdout, "%s", strUsage.toStdString().c_str());
-}
-
-void HelpMessageBox::showOrPrint()
-{
-#if defined(WIN32)
-        // On Windows, show a message box, as there is no stderr/stdout in windowed applications
-        exec();
-#else
-        // On other operating systems, print help text to console
-        printToConsole();
-#endif
 }
 
 void setClipboard(const QString& str)

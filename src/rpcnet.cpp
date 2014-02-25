@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2013 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,8 +14,6 @@
 #include "init.h" // for getinfo
 #include "wallet.h" // for getinfo
 #endif
-
-#include <inttypes.h>
 
 #include <boost/foreach.hpp>
 #include "json/json_spirit_value.h"
@@ -47,7 +45,7 @@ Value ping(const Array& params, bool fHelp)
             "ping\n"
             "\nRequests that a ping be sent to all other nodes, to measure ping time.\n"
             "Results provided in getpeerinfo, pingtime and pingwait fields are decimal seconds.\n"
-            "Ping command is handled in queue with all other commands, so it measures processing backlog, not just network ping."
+            "Ping command is handled in queue with all other commands, so it measures processing backlog, not just network ping.\n"
             "\nExamples:\n"
             + HelpExampleCli("ping", "")
             + HelpExampleRpc("ping", "")
@@ -255,15 +253,17 @@ Value getaddednodeinfo(const Array& params, bool fHelp)
             throw JSONRPCError(RPC_CLIENT_NODE_NOT_ADDED, "Error: Node has not been added.");
     }
 
+    Array ret;
     if (!fDns)
     {
-        Object ret;
         BOOST_FOREACH(string& strAddNode, laddedNodes)
-            ret.push_back(Pair("addednode", strAddNode));
+        {
+            Object obj;
+            obj.push_back(Pair("addednode", strAddNode));
+            ret.push_back(obj);
+        }
         return ret;
     }
-
-    Array ret;
 
     list<pair<string, vector<CService> > > laddedAddreses(0);
     BOOST_FOREACH(string& strAddNode, laddedNodes)

@@ -7,6 +7,10 @@
 
 #include <QAbstractListModel>
 
+QT_BEGIN_NAMESPACE
+class QNetworkProxy;
+QT_END_NAMESPACE
+
 /** Interface from Qt to configuration data structure for Bitcoin client.
    To Qt, the options are presented as a list with the different options
    laid out vertically.
@@ -36,14 +40,12 @@ public:
         CoinControlFeatures,    // bool
         ThreadsScriptVerif,     // int
         DatabaseCache,          // int
+        SpendZeroConfChange,    // bool
         OptionIDRowCount,
     };
 
     void Init();
     void Reset();
-
-    /* Migrate settings from wallet.dat after app initialization */
-    void Upgrade();
 
     int rowCount(const QModelIndex & parent = QModelIndex()) const;
     QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
@@ -54,7 +56,7 @@ public:
     bool getMinimizeOnClose() { return fMinimizeOnClose; }
     int getDisplayUnit() { return nDisplayUnit; }
     bool getDisplayAddresses() { return bDisplayAddresses; }
-    bool getProxySettings(QString& proxyIP, quint16 &proxyPort) const;
+    bool getProxySettings(QNetworkProxy& proxy) const;
     bool getCoinControlFeatures() { return fCoinControlFeatures; }
     const QString& getOverriddenByCommandLine() { return strOverriddenByCommandLine; }
 

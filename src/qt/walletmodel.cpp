@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
+// Copyright (c) 2011-2014 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -269,6 +269,8 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(WalletModelTransaction &tran
                 rcp.paymentRequest.SerializeToString(&value);
                 newTx->vOrderForm.push_back(make_pair(key, value));
             }
+            else if (!rcp.message.isEmpty()) // Message from normal bitcoin:URI (bitcoin:123...?message=example)
+                newTx->vOrderForm.push_back(make_pair("Message", rcp.message.toStdString()));
         }
 
         CReserveKey *keyChange = transaction.getPossibleKeyChange();
@@ -492,7 +494,9 @@ void WalletModel::getOutputs(const std::vector<COutPoint>& vOutpoints, std::vect
     BOOST_FOREACH(const COutPoint& outpoint, vOutpoints)
     {
         if (!wallet->mapWallet.count(outpoint.hash)) continue;
-        COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, wallet->mapWallet[outpoint.hash].GetDepthInMainChain());
+        int nDepth = wallet->mapWallet[outpoint.hash].GetDepthInMainChain();
+        if (nDepth < 0) continue;
+        COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, nDepth);
         vOutputs.push_back(out);
     }
 }
@@ -511,7 +515,9 @@ void WalletModel::listCoins(std::map<QString, std::vector<COutput> >& mapCoins) 
     BOOST_FOREACH(const COutPoint& outpoint, vLockedCoins)
     {
         if (!wallet->mapWallet.count(outpoint.hash)) continue;
-        COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, wallet->mapWallet[outpoint.hash].GetDepthInMainChain());
+        int nDepth = wallet->mapWallet[outpoint.hash].GetDepthInMainChain();
+        if (nDepth < 0) continue;
+        COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, nDepth);
         vCoins.push_back(out);
     }
 
@@ -553,4 +559,28 @@ void WalletModel::listLockedCoins(std::vector<COutPoint>& vOutpts)
 {
     LOCK(wallet->cs_wallet);
     wallet->ListLockedCoins(vOutpts);
+}
+
+void WalletModel::loadReceiveRequests(std::vector<std::string>& vReceiveRequests)
+{
+    LOCK(wallet->cs_wallet);
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, CAddressBookData)& item, wallet->mapAddressBook)
+        BOOST_FOREACH(const PAIRTYPE(std::string, std::string)& item2, item.second.destdata)
+            if (item2.first.size() > 2 && item2.first.substr(0,2) == "rr") // receive request
+                vReceiveRequests.push_back(item2.second);
+}
+
+bool WalletModel::saveReceiveRequest(const std::string &sAddress, const int64_t nId, const std::string &sRequest)
+{
+    CTxDestination dest = CBitcoinAddress(sAddress).Get();
+
+    std::stringstream ss;
+    ss << nId;
+    std::string key = "rr" + ss.str(); // "rr" prefix = "receive request" in destdata
+
+    LOCK(wallet->cs_wallet);
+    if (sRequest.empty())
+        return wallet->EraseDestData(dest, key);
+    else
+        return wallet->AddDestData(dest, key, sRequest);
 }
