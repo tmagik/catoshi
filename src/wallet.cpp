@@ -192,7 +192,7 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
 
 bool CWallet::SetMinVersion(enum WalletFeature nVersion, CWalletDB* pwalletdbIn, bool fExplicit)
 {
-    AssertLockHeld(cs_wallet); // nWalletVersion
+    LOCK(cs_wallet); // nWalletVersion
     if (nWalletVersion >= nVersion)
         return true;
 
@@ -219,7 +219,7 @@ bool CWallet::SetMinVersion(enum WalletFeature nVersion, CWalletDB* pwalletdbIn,
 
 bool CWallet::SetMaxVersion(int nVersion)
 {
-    AssertLockHeld(cs_wallet); // nWalletVersion, nWalletMaxVersion
+    LOCK(cs_wallet); // nWalletVersion, nWalletMaxVersion
     // cannot downgrade below current version
     if (nWalletVersion > nVersion)
         return false;
@@ -1621,14 +1621,17 @@ DBErrors CWallet::ZapWalletTx()
 
 bool CWallet::SetAddressBook(const CTxDestination& address, const string& strName, const string& strPurpose)
 {
-    AssertLockHeld(cs_wallet); // mapAddressBook
-    std::map<CTxDestination, CAddressBookData>::iterator mi = mapAddressBook.find(address);
-    mapAddressBook[address].name = strName;
-    if (!strPurpose.empty()) /* update purpose only if requested */
-        mapAddressBook[address].purpose = strPurpose;
+    bool fUpdated = false;
+    {
+        LOCK(cs_wallet); // mapAddressBook
+        std::map<CTxDestination, CAddressBookData>::iterator mi = mapAddressBook.find(address);
+        fUpdated = mi != mapAddressBook.end();
+        mapAddressBook[address].name = strName;
+        if (!strPurpose.empty()) /* update purpose only if requested */
+            mapAddressBook[address].purpose = strPurpose;
+    }
     NotifyAddressBookChanged(this, address, strName, ::IsMine(*this, address),
-            mapAddressBook[address].purpose,
-            (mi == mapAddressBook.end()) ?  CT_NEW : CT_UPDATED);
+                             strPurpose, (fUpdated ? CT_UPDATED : CT_NEW) );
     if (!fFileBacked)
         return false;
     if (!strPurpose.empty() && !CWalletDB(strWalletFile).WritePurpose(CBitcoinAddress(address).ToString(), strPurpose))
@@ -1638,21 +1641,23 @@ bool CWallet::SetAddressBook(const CTxDestination& address, const string& strNam
 
 bool CWallet::DelAddressBook(const CTxDestination& address)
 {
-
-    AssertLockHeld(cs_wallet); // mapAddressBook
-
-    if(fFileBacked)
     {
-        // Delete destdata tuples associated with address
-        std::string strAddress = CBitcoinAddress(address).ToString();
-        BOOST_FOREACH(const PAIRTYPE(string, string) &item, mapAddressBook[address].destdata)
+        LOCK(cs_wallet); // mapAddressBook
+
+        if(fFileBacked)
         {
-            CWalletDB(strWalletFile).EraseDestData(strAddress, item.first);
+            // Delete destdata tuples associated with address
+            std::string strAddress = CBitcoinAddress(address).ToString();
+            BOOST_FOREACH(const PAIRTYPE(string, string) &item, mapAddressBook[address].destdata)
+            {
+                CWalletDB(strWalletFile).EraseDestData(strAddress, item.first);
+            }
         }
+        mapAddressBook.erase(address);
     }
 
-    mapAddressBook.erase(address);
     NotifyAddressBookChanged(this, address, "", ::IsMine(*this, address), "", CT_DELETED);
+
     if (!fFileBacked)
         return false;
     CWalletDB(strWalletFile).ErasePurpose(CBitcoinAddress(address).ToString());
@@ -1693,7 +1698,7 @@ bool CWallet::NewKeyPool()
             walletdb.WritePool(nIndex, CKeyPool(GenerateNewKey()));
             setKeyPool.insert(nIndex);
         }
-        LogPrintf("CWallet::NewKeyPool wrote %"PRId64" new keys\n", nKeys);
+        LogPrintf("CWallet::NewKeyPool wrote %d new keys\n", nKeys);
     }
     return true;
 }
@@ -1723,7 +1728,7 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
             if (!walletdb.WritePool(nEnd, CKeyPool(GenerateNewKey())))
                 throw runtime_error("TopUpKeyPool() : writing generated key failed");
             setKeyPool.insert(nEnd);
-            LogPrintf("keypool added key %"PRId64", size=%"PRIszu"\n", nEnd, setKeyPool.size());
+            LogPrintf("keypool added key %d, size=%"PRIszu"\n", nEnd, setKeyPool.size());
         }
     }
     return true;
@@ -1752,7 +1757,7 @@ void CWallet::ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool)
         if (!HaveKey(keypool.vchPubKey.GetID()))
             throw runtime_error("ReserveKeyFromKeyPool() : unknown key in key pool");
         assert(keypool.vchPubKey.IsValid());
-        LogPrintf("keypool reserve %"PRId64"\n", nIndex);
+        LogPrintf("keypool reserve %d\n", nIndex);
     }
 }
 
@@ -1779,7 +1784,7 @@ void CWallet::KeepKey(int64_t nIndex)
         CWalletDB walletdb(strWalletFile);
         walletdb.ErasePool(nIndex);
     }
-    LogPrintf("keypool keep %"PRId64"\n", nIndex);
+    LogPrintf("keypool keep %d\n", nIndex);
 }
 
 void CWallet::ReturnKey(int64_t nIndex)
@@ -1789,7 +1794,7 @@ void CWallet::ReturnKey(int64_t nIndex)
         LOCK(cs_wallet);
         setKeyPool.insert(nIndex);
     }
-    LogPrintf("keypool return %"PRId64"\n", nIndex);
+    LogPrintf("keypool return %d\n", nIndex);
 }
 
 bool CWallet::GetKeyFromPool(CPubKey& result)
