@@ -822,7 +822,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // Don't accept it if it can't get into a block
         int64_t txMinFee = GetMinFee(tx, nSize, true, GMF_RELAY);
         if (fLimitFree && nFees < txMinFee)
-            return state.DoS(0, error("AcceptToMemoryPool : not enough fees %s, %"PRId64" < %"PRId64,
+            return state.DoS(0, error("AcceptToMemoryPool : not enough fees %s, %d < %d",
                                       hash.ToString(), nFees, txMinFee),
                              REJECT_INSUFFICIENTFEE, "insufficient fee");
 
@@ -851,7 +851,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
 
         if (fRejectInsaneFee && nFees > CTransaction::nMinRelayTxFee * 10000)
-            return error("AcceptToMemoryPool: : insane fees %s, %"PRId64" > %"PRId64,
+            return error("AcceptToMemoryPool: : insane fees %s, %d > %d",
                          hash.ToString(),
                          nFees, CTransaction::nMinRelayTxFee * 10000);
 
@@ -1168,7 +1168,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Limit adjustment step
     int64_t nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
-    LogPrintf("  nActualTimespan = %"PRId64"  before bounds\n", nActualTimespan);
+    LogPrintf("  nActualTimespan = %d  before bounds\n", nActualTimespan);
     if (nActualTimespan < nTargetTimespan/4)
         nActualTimespan = nTargetTimespan/4;
     if (nActualTimespan > nTargetTimespan*4)
@@ -1185,7 +1185,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     /// debug print
     LogPrintf("GetNextWorkRequired RETARGET\n");
-    LogPrintf("nTargetTimespan = %"PRId64"    nActualTimespan = %"PRId64"\n", nTargetTimespan, nActualTimespan);
+    LogPrintf("nTargetTimespan = %d    nActualTimespan = %d\n", nTargetTimespan, nActualTimespan);
     LogPrintf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString());
     LogPrintf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString());
 
@@ -1737,7 +1737,7 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 
     if (block.vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
         return state.DoS(100,
-                         error("ConnectBlock() : coinbase pays too much (actual=%"PRId64" vs limit=%"PRId64")",
+                         error("ConnectBlock() : coinbase pays too much (actual=%d vs limit=%d)",
                                block.vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees)),
                          REJECT_INVALID, "bad-cb-amount");
 
@@ -1866,17 +1866,23 @@ bool static DisconnectTip(CValidationState &state) {
     // Write the chain state to disk, if necessary.
     if (!WriteChainState(state))
         return false;
-    // Ressurect mempool transactions from the disconnected block.
+    // Resurrect mempool transactions from the disconnected block.
     BOOST_FOREACH(const CTransaction &tx, block.vtx) {
         // ignore validation errors in resurrected transactions
+        list<CTransaction> removed;
         CValidationState stateDummy; 
         if (!tx.IsCoinBase())
             if (!AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
-                mempool.remove(tx, true);
+                mempool.remove(tx, removed, true);
     }
     mempool.check(pcoinsTip);
     // Update chainActive and related variables.
     UpdateTip(pindexDelete->pprev);
+    // Let wallets know transactions went from 1-confirmed to
+    // 0-confirmed or conflicted:
+    BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+        SyncWithWallets(tx.GetHash(), tx, NULL);
+    }
     return true;
 }
 
@@ -1907,13 +1913,24 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew) {
     if (!WriteChainState(state))
         return false;
     // Remove conflicting transactions from the mempool.
+    list<CTransaction> txConflicted;
     BOOST_FOREACH(const CTransaction &tx, block.vtx) {
-        mempool.remove(tx);
-        mempool.removeConflicts(tx);
+        list<CTransaction> unused;
+        mempool.remove(tx, unused);
+        mempool.removeConflicts(tx, txConflicted);
     }
     mempool.check(pcoinsTip);
     // Update chainActive & related variables.
     UpdateTip(pindexNew);
+    // Tell wallet about transactions that went from mempool
+    // to conflicted:
+    BOOST_FOREACH(const CTransaction &tx, txConflicted) {
+        SyncWithWallets(tx.GetHash(), tx, NULL);
+    }
+    // ... and about transactions that got confirmed:
+    BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+        SyncWithWallets(tx.GetHash(), tx, &block);
+    }
     return true;
 }
 
@@ -3014,7 +3031,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
         AbortNode(_("Error: system error: ") + e.what());
     }
     if (nLoaded > 0)
-        LogPrintf("Loaded %i blocks from external file in %"PRId64"ms\n", nLoaded, GetTimeMillis() - nStart);
+        LogPrintf("Loaded %i blocks from external file in %dms\n", nLoaded, GetTimeMillis() - nStart);
     return nLoaded > 0;
 }
 
@@ -3804,7 +3821,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         }
 
         if (!(sProblem.empty())) {
-            LogPrint("net", "pong %s %s: %s, %"PRIx64" expected, %"PRIx64" received, %"PRIszu" bytes\n",
+            LogPrint("net", "pong %s %s: %s, %x expected, %x received, %"PRIszu" bytes\n",
                 pfrom->addr.ToString(),
                 pfrom->cleanSubVer,
                 sProblem,
