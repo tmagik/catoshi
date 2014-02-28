@@ -65,12 +65,27 @@ for Ubuntu 12.04 and later:
 	sudo apt-get install libboost-all-dev
 
  db4.8 packages are available [here](https://launchpad.net/~bitcoin/+archive/bitcoin).
+ You can add the repository using the following command:
+
+        sudo add-apt-repository ppa:bitcoin/bitcoin
+        sudo apt-get update
 
  Ubuntu 12.04 and later have packages for libdb5.1-dev and libdb5.1++-dev,
  but using these will break binary wallet compatibility, and is not recommended.
  
 for Ubuntu 13.10: 
         libboost1.54-all-dev will not work. Remove libboost1.54-all-dev and install libboost1.53-all-dev
+
+for Debian 7 (Wheezy) and later:
+ The oldstable repository contains db4.8 packages.
+ Add the following line to /etc/apt/sources.list,
+ replacing [mirror] with any official debian mirror.
+
+	deb http://[mirror]/debian/ oldstable main
+        
+To enable the change run
+
+	sudo apt-get update
 
 for other Ubuntu & Debian:
 
@@ -125,8 +140,10 @@ Berkeley DB
 -----------
 You need Berkeley DB 4.8.  If you have to build Berkeley DB yourself:
 
+	cd build_unix/
 	../dist/configure --enable-cxx
 	make
+	sudo make install
 
 
 Boost
