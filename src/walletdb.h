@@ -104,22 +104,6 @@ public:
     bool WritePool(int64_t nPool, const CKeyPool& keypool);
     bool ErasePool(int64_t nPool);
 
-    // Settings are no longer stored in wallet.dat; these are
-    // used only for backwards compatibility:
-    template<typename T>
-    bool ReadSetting(const std::string& strKey, T& value)
-    {
-        return Read(std::make_pair(std::string("setting"), strKey), value);
-    }
-    template<typename T>
-    bool WriteSetting(const std::string& strKey, const T& value)
-    {
-        nWalletDBUpdated++;
-        return Write(std::make_pair(std::string("setting"), strKey), value);
-    }
- 
-    bool EraseSetting(const std::string& strKey);
-
     bool WriteMinVersion(int nVersion);
 
     bool ReadAccount(const std::string& strAccount, CAccount& account);
@@ -138,6 +122,8 @@ public:
 
     DBErrors ReorderTransactions(CWallet*);
     DBErrors LoadWallet(CWallet* pwallet);
+    DBErrors FindWalletTx(CWallet* pwallet, std::vector<uint256>& vTxHash);
+    DBErrors ZapWalletTx(CWallet* pwallet);
     static bool Recover(CDBEnv& dbenv, std::string filename, bool fOnlyKeys);
     static bool Recover(CDBEnv& dbenv, std::string filename);
 };

@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
+// Copyright (c) 2011-2014 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -376,9 +376,6 @@ void BitcoinApplication::initializeResult(int retval)
     returnValue = retval ? 0 : 1;
     if(retval)
     {
-        // Miscellaneous initialization after core is initialized
-        optionsModel->Upgrade(); // Must be done after AppInit2
-
 #ifdef ENABLE_WALLET
         PaymentServer::LoadRootCAs();
         paymentServer->setOptionsModel(optionsModel);
@@ -451,12 +448,12 @@ int main(int argc, char *argv[])
         fSelParFromCLFailed = true;
     }
 #ifdef ENABLE_WALLET
-    // Parse URIs on command line -- this can affect TestNet() / RegTest() mode
+    // Parse URIs on command line -- this can affect Params()
     if (!PaymentServer::ipcParseCommandLine(argc, argv))
         exit(0);
 #endif
 
-    bool isaTestNet = TestNet() || RegTest();
+    bool isaTestNet = Params().NetworkID() != CChainParams::MAIN;
 
     // Do not refer to data directory yet, this can be overridden by Intro::pickDataDirectory
 

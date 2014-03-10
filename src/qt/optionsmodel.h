@@ -40,14 +40,12 @@ public:
         CoinControlFeatures,    // bool
         ThreadsScriptVerif,     // int
         DatabaseCache,          // int
+        SpendZeroConfChange,    // bool
         OptionIDRowCount,
     };
 
     void Init();
     void Reset();
-
-    /* Migrate settings from wallet.dat after app initialization */
-    void Upgrade();
 
     int rowCount(const QModelIndex & parent = QModelIndex()) const;
     QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
