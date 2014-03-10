@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2013 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,8 +14,6 @@
 #include "init.h" // for getinfo
 #include "wallet.h" // for getinfo
 #endif
-
-#include <inttypes.h>
 
 #include <boost/foreach.hpp>
 #include "json/json_spirit_value.h"
@@ -47,7 +45,7 @@ Value ping(const Array& params, bool fHelp)
             "ping\n"
             "\nRequests that a ping be sent to all other nodes, to measure ping time.\n"
             "Results provided in getpeerinfo, pingtime and pingwait fields are decimal seconds.\n"
-            "Ping command is handled in queue with all other commands, so it measures processing backlog, not just network ping."
+            "Ping command is handled in queue with all other commands, so it measures processing backlog, not just network ping.\n"
             "\nExamples:\n"
             + HelpExampleCli("ping", "")
             + HelpExampleRpc("ping", "")
@@ -121,7 +119,7 @@ Value getpeerinfo(const Array& params, bool fHelp)
         obj.push_back(Pair("addr", stats.addrName));
         if (!(stats.addrLocal.empty()))
             obj.push_back(Pair("addrlocal", stats.addrLocal));
-        obj.push_back(Pair("services", strprintf("%08"PRIx64, stats.nServices)));
+        obj.push_back(Pair("services", strprintf("%08x", stats.nServices)));
         obj.push_back(Pair("lastsend", (boost::int64_t)stats.nLastSend));
         obj.push_back(Pair("lastrecv", (boost::int64_t)stats.nLastRecv));
         obj.push_back(Pair("bytessent", (boost::int64_t)stats.nSendBytes));
