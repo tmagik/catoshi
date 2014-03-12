@@ -14,21 +14,21 @@ This will build bitcoin-qt as well if the dependencies are met.
 Dependencies
 ---------------------
 
- Library     Purpose           Description
- -------     -------           -----------
- libssl      SSL Support       Secure communications
- libdb4.8    Berkeley DB       Wallet storage
- libboost    Boost             C++ Library
- miniupnpc   UPnP Support      Optional firewall-jumping support
- qt          GUI               GUI toolkit
- protobuf    Payments in GUI   Data interchange format used for payment protocol
- libqrencode QR codes in GUI   Optional for generating QR codes
+ Library     | Purpose          | Description
+ ------------|------------------|----------------------
+ libssl      | SSL Support      | Secure communications
+ libdb4.8    | Berkeley DB      | Wallet storage
+ libboost    | Boost            | C++ Library
+ miniupnpc   | UPnP Support     | Optional firewall-jumping support
+ qt          | GUI              | GUI toolkit
+ protobuf    | Payments in GUI  | Data interchange format used for payment protocol
+ libqrencode | QR codes in GUI  | Optional for generating QR codes
 
 [miniupnpc](http://miniupnp.free.fr/) may be used for UPnP port mapping.  It can be downloaded from [here](
 http://miniupnp.tuxfamily.org/files/).  UPnP support is compiled in and
 turned off by default.  See the configure options for upnp behavior desired:
 
-	--with-miniupnpc         No UPnP support miniupnp not required
+	--without-miniupnpc      No UPnP support miniupnp not required
 	--disable-upnp-default   (the default) UPnP support turned off by default at runtime
 	--enable-upnp-default    UPnP support turned on by default at runtime
 
