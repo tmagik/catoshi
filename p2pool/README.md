@@ -3,7 +3,7 @@ DANGER WILL ROBINSON: catbox cleaning in progress
 Requirements:
 -------------------------
 Generic:
-* catcoin >=0.8.7
+* catcoin >=0.9.0
 * Python >=2.6
 * Twisted >=10.0.0
 * python-argparse (for Python =2.6)
