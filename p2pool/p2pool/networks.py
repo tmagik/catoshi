@@ -136,11 +136,9 @@ nets = dict(
         MAX_TARGET=2**256//2**20 - 1,
         PERSIST=False,
         WORKER_PORT=9927,
-#        BOOTSTRAP_ADDRS=[],
         BOOTSTRAP_ADDRS='kittyco.in seed.catstat.info'.split(' '),
-#        ANNOUNCE_CHANNEL='#p2pool-alt',
         VERSION_CHECK=lambda v: True,
-        VERSION_WARNING=lambda v: 'Upgrade Catcoin to >= 0.8.0.8!' if v < 80909 else None,
+        VERSION_WARNING=lambda v: 'Upgrade Catcoin to >= 0.9.0.0!' if v < 90000 else None,
     ),
     catcoin_testnet=math.Object(
         PARENT=networks.nets['catcoin_testnet'],  
@@ -158,7 +156,7 @@ nets = dict(
         WORKER_PORT=19927,
         BOOTSTRAP_ADDRS='kittyco.in seed.catstat.info'.split(' '),
         VERSION_CHECK=lambda v: True,
-        VERSION_WARNING=lambda v: 'Upgrade Catcoin to >= 0.8.9.9!' if v < 80909 else None,
+        VERSION_WARNING=lambda v: 'Upgrade Catcoin to >= 0.9.0.0!' if v < 90000 else None,
     ),
 
 )

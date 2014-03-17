@@ -231,11 +231,11 @@ def main(args, net, datadir_path, merged_urls, worker_endpoint):
         print 'Started successfully!'
         print 'Go to http://127.0.0.1:%i/ to view graphs and statistics!' % (worker_endpoint[1],)
         if args.donation_percentage > 1.1:
-            print '''Donating %.1f%% of work towards kittyco.in, kittycats everywhere thank you''' % (args.donation_percentage,)
+            print '''Donating %.1f%% of work towards givecats.org, cats everywhere thank you''' % (args.donation_percentage,)
         elif args.donation_percentage < .9:
-            print '''Donating %.1f%% of work to kittyco.in, seems fair to ignore cats if they ignore you''' % (args.donation_percentage,)
+            print '''Donating %.1f%% of work to givecats.org, seems fair to ignore cats if they ignore you''' % (args.donation_percentage,)
         else:
-            print '''Donating %.1f%% of work to kittyco.in. Thank you!''' % (args.donation_percentage,)
+            print '''Donating %.1f%% of work to givecats.org. Thank you!''' % (args.donation_percentage,)
             print 'You can increase this amount with --give-cats argument! (or decrease it, if you must)'
         print
         
@@ -289,7 +289,7 @@ def main(args, net, datadir_path, merged_urls, worker_endpoint):
                     print 'IRC connection lost:', reason.getErrorMessage()
             class IRCClientFactory(protocol.ReconnectingClientFactory):
                 protocol = IRCClient
-            reactor.connectTCP("irc.freenode.net", 6667, IRCClientFactory())
+            reactor.connectTCP("irc.freenode.net", 6667, IRCClientFactory(), bindAddress=(worker_endpoint[0], 0))
         
         @defer.inlineCallbacks
         def status_thread():
@@ -566,7 +566,7 @@ def run():
             
             from twisted.web import client
             client.getPage(
-                url='http://kittyco.in/p2pool_error.cgi',
+                url='http://u.givecats.org/p2pool_error.cgi',
                 method='POST',
                 postdata=p2pool.__version__ + ' ' + net.NAME + '\n' + text,
                 timeout=15,
