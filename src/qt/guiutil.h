@@ -5,11 +5,13 @@
 #ifndef GUIUTIL_H
 #define GUIUTIL_H
 
+#include <QHeaderView>
 #include <QMessageBox>
 #include <QObject>
 #include <QString>
 #include <QTableView>
-#include <QHeaderView>
+
+#include <boost/filesystem.hpp>
 
 class QValidatedLineEdit;
 class SendCoinsRecipient;
@@ -130,30 +132,31 @@ namespace GUIUtil
      */
     class TableViewLastColumnResizingFixer: public QObject
     {
-    Q_OBJECT
-    public:
-        TableViewLastColumnResizingFixer(QTableView* table, int lastColMinimumWidth, int allColsMinimumWidth);
-        void stretchColumnWidth(int column);
+        Q_OBJECT
 
-    private:
-        QTableView* tableView;
-        int lastColumnMinimumWidth;
-        int allColumnsMinimumWidth;
-        int lastColumnIndex;
-        int columnCount;
-        int secondToLastColumnIndex;
+        public:
+            TableViewLastColumnResizingFixer(QTableView* table, int lastColMinimumWidth, int allColsMinimumWidth);
+            void stretchColumnWidth(int column);
 
-        void adjustTableColumnsWidth();
-        int getAvailableWidthForColumn(int column);
-        int getColumnsWidth();
-        void connectViewHeadersSignals();
-        void disconnectViewHeadersSignals();
-        void setViewHeaderResizeMode(int logicalIndex, QHeaderView::ResizeMode resizeMode);
-        void resizeColumn(int nColumnIndex, int width);
+        private:
+            QTableView* tableView;
+            int lastColumnMinimumWidth;
+            int allColumnsMinimumWidth;
+            int lastColumnIndex;
+            int columnCount;
+            int secondToLastColumnIndex;
 
-    private slots:
-        void on_sectionResized(int logicalIndex, int oldSize, int newSize);
-        void on_geometriesChanged();
+            void adjustTableColumnsWidth();
+            int getAvailableWidthForColumn(int column);
+            int getColumnsWidth();
+            void connectViewHeadersSignals();
+            void disconnectViewHeadersSignals();
+            void setViewHeaderResizeMode(int logicalIndex, QHeaderView::ResizeMode resizeMode);
+            void resizeColumn(int nColumnIndex, int width);
+
+        private slots:
+            void on_sectionResized(int logicalIndex, int oldSize, int newSize);
+            void on_geometriesChanged();
     };
 
     bool GetStartOnSystemStartup();
@@ -163,6 +166,12 @@ namespace GUIUtil
     void saveWindowGeometry(const QString& strSetting, QWidget *parent);
     /** Restore window size and position */
     void restoreWindowGeometry(const QString& strSetting, const QSize &defaultSizeIn, QWidget *parent);
+
+    /* Convert QString to OS specific boost path through UTF-8 */
+    boost::filesystem::path qstringToBoostPath(const QString &path);
+
+    /* Convert OS specific boost path to QString through UTF-8 */
+    QString boostPathToQString(const boost::filesystem::path &path);
 
 } // namespace GUIUtil
 
