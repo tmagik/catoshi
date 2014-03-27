@@ -14,7 +14,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/lexical_cast.hpp>
 #include "json/json_spirit_value.h"
 
 using namespace json_spirit;
@@ -23,13 +22,13 @@ using namespace std;
 void EnsureWalletIsUnlocked();
 
 std::string static EncodeDumpTime(int64_t nTime) {
-    return DateTimeStrFormat("%Y-%m-%"PRId64"T%H:%M:%SZ", nTime);
+    return DateTimeStrFormat("%Y-%m-%dT%H:%M:%SZ", nTime);
 }
 
 int64_t static DecodeDumpTime(const std::string &str) {
-    static boost::posix_time::time_input_facet facet("%Y-%m-%dT%H:%M:%SZ");
     static const boost::posix_time::ptime epoch = boost::posix_time::from_time_t(0);
-    const std::locale loc(std::locale::classic(), &facet);
+    static const std::locale loc(std::locale::classic(),
+        new boost::posix_time::time_input_facet("%Y-%m-%dT%H:%M:%SZ"));
     std::istringstream iss(str);
     iss.imbue(loc);
     boost::posix_time::ptime ptime(boost::date_time::not_a_date_time);
@@ -128,7 +127,6 @@ Value importprivkey(const Array& params, bool fHelp)
 
         if (fRescan) {
             pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
-            pwalletMain->ReacceptWalletTransactions();
         }
     }
 
@@ -216,7 +214,6 @@ Value importwallet(const Array& params, bool fHelp)
 
     LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->nHeight + 1);
     pwalletMain->ScanForWalletTransactions(pindex);
-    pwalletMain->ReacceptWalletTransactions();
     pwalletMain->MarkDirty();
 
     if (!fGood)
