@@ -42,15 +42,14 @@ Licenses of statically linked libraries:
  Boost         MIT-like license
  miniupnpc     New (3-clause) BSD license
 
-- Versions used in this release:
--  GCC           4.3.3
--  OpenSSL       1.0.1c
--  Berkeley DB   4.8.30.NC
--  Boost         1.55
--  miniupnpc     1.6
--  qt            4.8.3
--  protobuf      2.5.0
--  libqrencode   3.2.0
+- For the versions used in this release, see doc/release-process.md under *Fetch and build inputs*.
+
+System requirements
+--------------------
+
+C++ compilers are memory-hungry. It is recommended to have at least 1 GB of
+memory available when compiling Bitcoin Core. With 512MB of memory or less
+compilation will take much longer due to swap thrashing.
 
 Dependency Build Instructions: Ubuntu & Debian
 ----------------------------------------------
@@ -108,15 +107,15 @@ To build without GUI pass `--without-gui`.
 
 To build with Qt 4 you need the following:
 
-    apt-get install libqt4-dev libprotobuf-dev protobuf-compiler
+    sudo apt-get install libqt4-dev libprotobuf-dev protobuf-compiler
 
 For Qt 5 you need the following:
 
-    apt-get install libqt5gui5 libqt5core5 libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev
+    sudo apt-get install libqt5gui5 libqt5core5 libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev
 
 libqrencode (optional) can be installed with:
 
-    apt-get install libqrencode-dev
+    sudo apt-get install libqrencode-dev
 
 Once these are installed, they will be found by configure and a bitcoin-qt executable will be
 built by default.
