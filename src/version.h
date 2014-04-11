@@ -29,15 +29,21 @@ extern const std::string CLIENT_DATE;
 
 // ppcoin version - intended for display purpose ONLY
 #define PPCOIN_VERSION_MAJOR       0
-#define PPCOIN_VERSION_MINOR       3
+#define PPCOIN_VERSION_MINOR       4
 #define PPCOIN_VERSION_REVISION    0
 #define PPCOIN_VERSION_BUILD       0
+
+static const int PPCOIN_VERSION =
+                           1000000 * PPCOIN_VERSION_MAJOR
+                         +   10000 * PPCOIN_VERSION_MINOR
+                         +     100 * PPCOIN_VERSION_REVISION
+                         +       1 * PPCOIN_VERSION_BUILD;
 
 //
 // network protocol versioning
 //
 
-static const int PROTOCOL_VERSION = 60003;
+static const int PROTOCOL_VERSION = 60004;
 
 // earlier versions not supported as of Feb 2012, and are disconnected
 // NOTE: as of bitcoin v0.6 message serialization (vSend, vRecv) still
