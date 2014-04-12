@@ -85,7 +85,7 @@ private:
     QAction *toggleHideAction;
     QAction *exportAction;
     QAction *encryptWalletAction;
-    QAction *decryptForMintingAction;
+    QAction *unlockForMintingAction;
     QAction *backupWalletAction;
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
@@ -162,7 +162,7 @@ private slots:
     /** Encrypt the wallet */
     void encryptWallet(bool status);
     /** Decrypt wallet for minting only */
-    void decryptForMinting(bool status);
+    void unlockForMinting(bool status);
     /** Backup the wallet */
     void backupWallet();
     /** Change encrypted wallet passphrase */
