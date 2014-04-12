@@ -14,9 +14,10 @@ Douglas Huff <dhuff@jrbobdobbs.org>
 
 Modified for PPCoin by Jeff Larkin <jefflarkin@gmail.com>
 Modified for OS/X 10.9 (Mavericks) by Sami Laine <laine.j.sami@gmail.com>
+Modified for PeerUnity by Ben Rossi <ben@rossinet.com>
 
 
-See readme-qt.rst for instructions on building PPCoin QT, the
+See readme-qt.rst for instructions on building the PeerUnity community version of PPCoin QT, the
 graphical user interface.
 
 These recipes have been tested on 10.9 Intel only.
@@ -62,13 +63,13 @@ building PPCoin.
 
      brew install berkeley-db4 boost boost-build git miniupnpc
 
-3. Clone the Primecoin git repository
+3. Clone the Peerunity git repository
 
-     git clone git@github.com:ppcoin/ppcoin.git ppcoin
+     git clone git@github.com/Peerunity/Peerunity.git peerunity
 
 4. Build 64-bit PPCoin daemon
 
-     cd ppcoin/src && make -f makefile.osx-mavericks 64BIT=true
+     cd peerunity/src && make -f makefile.osx-mavericks 64BIT=true
 
    Leave 64BIT=true out, if you want a 32-bit binary (unless you're
    absolutely sure, you probably don't).
