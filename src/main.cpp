@@ -2609,7 +2609,7 @@ bool static AlreadyHave(CTxDB& txdb, const CInv& inv)
 
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 {
-    static map<CService, vector<unsigned char> > mapReuseKey;
+    static map<CService, CPubKey> mapReuseKey;
     RandAddSeedPerfmon();
     if (fDebug) {
         printf("%s ", DateTimeStrFormat(GetTime()).c_str());
