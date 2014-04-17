@@ -438,42 +438,50 @@ void SendCoinsDialog::coinControlChangeChecked(int state)
 }
 
 // Coin Control: custom change address changed
-void SendCoinsDialog::coinControlChangeEdited(const QString & text)
+void SendCoinsDialog::coinControlChangeEdited(const QString& text)
 {
-    if (model)
+    if (model && model->getAddressTableModel())
     {
-        CoinControlDialog::coinControl->destChange = CBitcoinAddress(text.toStdString()).Get();
-        
-        // label for the change address
-        ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:black;}");
-        if (text.isEmpty())
+        // Default to no change address until verified
+        CoinControlDialog::coinControl->destChange = CNoDestination();
+        ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:red;}");
+
+        CBitcoinAddress addr = CBitcoinAddress(text.toStdString());
+
+        if (text.isEmpty()) // Nothing entered
+        {
             ui->labelCoinControlChangeLabel->setText("");
-        else if (!CBitcoinAddress(text.toStdString()).IsValid())
-        {
-            ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:red;}");
-            ui->labelCoinControlChangeLabel->setText(tr("WARNING: Invalid Bitcoin address"));
         }
-        else
+        else if (!addr.IsValid()) // Invalid address
         {
-            QString associatedLabel = model->getAddressTableModel()->labelForAddress(text);
-            if (!associatedLabel.isEmpty())
-                ui->labelCoinControlChangeLabel->setText(associatedLabel);
-            else
+            ui->labelCoinControlChangeLabel->setText(tr("Warning: Invalid Bitcoin address"));
+        }
+        else // Valid address
+        {
+            CPubKey pubkey;
+            CKeyID keyid;
+            addr.GetKeyID(keyid);
+            if (!model->getPubKey(keyid, pubkey)) // Unknown change address
             {
-                CPubKey pubkey;
-                CKeyID keyid;
-                CBitcoinAddress(text.toStdString()).GetKeyID(keyid);   
-                if (model->getPubKey(keyid, pubkey))
-                    ui->labelCoinControlChangeLabel->setText(tr("(no label)"));
+                ui->labelCoinControlChangeLabel->setText(tr("Warning: Unknown change address"));
+            }
+            else // Known change address
+            {
+                ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:black;}");
+
+                // Query label
+                QString associatedLabel = model->getAddressTableModel()->labelForAddress(text);
+                if (!associatedLabel.isEmpty())
+                    ui->labelCoinControlChangeLabel->setText(associatedLabel);
                 else
-                {
-                    ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:red;}");
-                    ui->labelCoinControlChangeLabel->setText(tr("WARNING: unknown change address"));
-                }
+                    ui->labelCoinControlChangeLabel->setText(tr("(no label)"));
+
+                CoinControlDialog::coinControl->destChange = addr.Get();
             }
         }
     }
 }
+
 
 // Coin Control: update labels
 void SendCoinsDialog::coinControlUpdateLabels()
