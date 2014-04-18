@@ -140,22 +140,22 @@ Ce produit inclut des logiciels développés par OpenSSL Project pour utilisatio
         <translation>Effacer</translation>
     </message>
     <message>
-        <location filename="../addressbookpage.cpp" line="283"/>
+        <location filename="../addressbookpage.cpp" line="273"/>
         <source>Export Address Book Data</source>
         <translation>Exporter les données du carnet d&apos;adresses</translation>
     </message>
     <message>
-        <location filename="../addressbookpage.cpp" line="284"/>
+        <location filename="../addressbookpage.cpp" line="274"/>
         <source>Comma separated file (*.csv)</source>
         <translation>Valeurs séparées par des virgules (*.csv)</translation>
     </message>
     <message>
-        <location filename="../addressbookpage.cpp" line="297"/>
+        <location filename="../addressbookpage.cpp" line="287"/>
         <source>Error exporting</source>
         <translation>Erreur lors de l&apos;exportation</translation>
     </message>
     <message>
-        <location filename="../addressbookpage.cpp" line="297"/>
+        <location filename="../addressbookpage.cpp" line="287"/>
         <source>Could not write to file %1.</source>
         <translation>Impossible d&apos;écrire sur le fichier %1.</translation>
     </message>
@@ -389,9 +389,13 @@ Are you sure you wish to encrypt your wallet?</source>
         <translation>Envoyer des pièces à une adresse Peercoin</translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="213"/>
         <source>Sign &amp;message</source>
-        <translation>Signer un &amp;message</translation>
+        <translation type="obsolete">Signer un &amp;message</translation>
+    </message>
+    <message>
+        <location filename="../bitcoingui.cpp" line="213"/>
+        <source>Sign/Verify &amp;message</source>
+        <translation>Signer/Vérifier un &amp;message</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="214"/>
@@ -660,37 +664,37 @@ Adresse : %4
 </translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="801"/>
+        <location filename="../bitcoingui.cpp" line="795"/>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;unlocked for block minting only&lt;/b&gt;</source>
         <translation>Le porte-monnaie est &lt;b&gt;chiffré&lt;/b&gt; et est actuellement &lt;b&gt;déverrouillé uniquement pour la frappe de monnaie&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="801"/>
+        <location filename="../bitcoingui.cpp" line="795"/>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;unlocked&lt;/b&gt;</source>
         <translation>Le porte-monnaie est &lt;b&gt;chiffré&lt;/b&gt; et est actuellement &lt;b&gt;déverrouillé&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="811"/>
+        <location filename="../bitcoingui.cpp" line="805"/>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;locked&lt;/b&gt;</source>
         <translation>Le porte-monnaie est &lt;b&gt;chiffré&lt;/b&gt; et est actuellement &lt;b&gt;verrouillé&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="868"/>
+        <location filename="../bitcoingui.cpp" line="862"/>
         <source>Backup Wallet</source>
         <translation>Sauvegarder le porte-monnaie</translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="868"/>
+        <location filename="../bitcoingui.cpp" line="862"/>
         <source>Wallet Data (*.dat)</source>
         <translation>Données de porte-monnaie (*.dat)</translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="871"/>
+        <location filename="../bitcoingui.cpp" line="865"/>
         <source>Backup Failed</source>
         <translation>La sauvegarde a échoué</translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="871"/>
+        <location filename="../bitcoingui.cpp" line="865"/>
         <source>There was an error trying to save the wallet data to the new location.</source>
         <translation>Une erreur est survenue lors de l&apos;enregistrement des données du porte-monnaie à un autre emplacement.</translation>
     </message>
@@ -1182,105 +1186,84 @@ Cette étiquette devient rouge si la priorité est inférieure à &quot;moyenne&
 <context>
     <name>MessagePage</name>
     <message>
-        <location filename="../forms/messagepage.ui" line="14"/>
         <source>Message</source>
-        <translation>Message</translation>
+        <translation type="obsolete">Message</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="20"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation>Vous pouvez signer des messages avec vos adresses pour prouver que les détenez. Faites attention à ne pas signer quoi que ce soit de vague car des attaques d&apos;hameçonnage peuvent essayer d&apos;obtenir votre identité par votre signature. Ne signez que des déclarations entièrement détaillées et avec lesquelles vous serez d&apos;accord.</translation>
+        <translation type="obsolete">Vous pouvez signer des messages avec vos adresses pour prouver que les détenez. Faites attention à ne pas signer quoi que ce soit de vague car des attaques d&apos;hameçonnage peuvent essayer d&apos;obtenir votre identité par votre signature. Ne signez que des déclarations entièrement détaillées et avec lesquelles vous serez d&apos;accord.</translation>
     </message>
     <message>
         <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation type="obsolete">L&apos;adresse à laquelle le paiement sera envoyé  (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="38"/>
         <source>The address to sign the message with  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>L&apos;adresse avec laquelle signer le message (par ex..1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <translation type="obsolete">L&apos;adresse avec laquelle signer le message (par ex..1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="48"/>
         <source>Choose adress from address book</source>
-        <translation>Choisir une adresse depuis le carnet d&apos;adresses</translation>
+        <translation type="obsolete">Choisir une adresse depuis le carnet d&apos;adresses</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="58"/>
         <source>Alt+A</source>
-        <translation>Alt+A</translation>
+        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="71"/>
         <source>Paste address from clipboard</source>
-        <translation>Coller une adresse depuis le presse-papiers</translation>
+        <translation type="obsolete">Coller une adresse depuis le presse-papiers</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="81"/>
         <source>Alt+P</source>
-        <translation>Alt+P</translation>
+        <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="93"/>
         <source>Enter the message you want to sign here</source>
-        <translation>Entrez ici le message que vous désirez signer</translation>
+        <translation type="obsolete">Entrez ici le message que vous désirez signer</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="105"/>
         <source>Click &quot;Sign Message&quot; to get signature</source>
-        <translation>Cliquez sur « Signer le message » pour obtenir la signature</translation>
+        <translation type="obsolete">Cliquez sur « Signer le message » pour obtenir la signature</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="117"/>
         <source>Sign a message to prove you own this address</source>
-        <translation>Signer le message pour prouver que vous détenez cette adresse</translation>
+        <translation type="obsolete">Signer le message pour prouver que vous détenez cette adresse</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="120"/>
         <source>&amp;Sign Message</source>
-        <translation>&amp;Signer le message</translation>
+        <translation type="obsolete">&amp;Signer le message</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="131"/>
         <source>Copy the current signature to the system clipboard</source>
-        <translation>Copier la signature dans le presse-papiers</translation>
+        <translation type="obsolete">Copier la signature dans le presse-papiers</translation>
     </message>
     <message>
         <source>Copy the currently selected address to the system clipboard</source>
         <translation type="obsolete">Copier l&apos;adresse surlignée dans votre presse-papiers</translation>
     </message>
     <message>
-        <location filename="../forms/messagepage.ui" line="134"/>
         <source>&amp;Copy to Clipboard</source>
-        <translation>&amp;Copier dans le presse-papiers</translation>
+        <translation type="obsolete">&amp;Copier dans le presse-papiers</translation>
     </message>
     <message>
-        <location filename="../messagepage.cpp" line="74"/>
-        <location filename="../messagepage.cpp" line="81"/>
-        <location filename="../messagepage.cpp" line="96"/>
-        <location filename="../messagepage.cpp" line="108"/>
         <source>Error signing</source>
-        <translation>Une erreur est survenue lors de la signature</translation>
+        <translation type="obsolete">Une erreur est survenue lors de la signature</translation>
     </message>
     <message>
-        <location filename="../messagepage.cpp" line="74"/>
         <source>%1 is not a valid address.</source>
-        <translation>%1 n&apos;est pas une adresse valide.</translation>
+        <translation type="obsolete">%1 n&apos;est pas une adresse valide.</translation>
     </message>
     <message>
-        <location filename="../messagepage.cpp" line="81"/>
         <source>%1 does not refer to a key.</source>
-        <translation>%1 ne fait pas référence à une clé.</translation>
+        <translation type="obsolete">%1 ne fait pas référence à une clé.</translation>
     </message>
     <message>
-        <location filename="../messagepage.cpp" line="96"/>
         <source>Private key for %1 is not available.</source>
-        <translation>La clef privée pour %1 n&apos;est pas disponible.</translation>
+        <translation type="obsolete">La clef privée pour %1 n&apos;est pas disponible.</translation>
     </message>
     <message>
-        <location filename="../messagepage.cpp" line="108"/>
         <source>Sign failed</source>
-        <translation>Échec de la signature</translation>
+        <translation type="obsolete">Échec de la signature</translation>
     </message>
 </context>
 <context>
@@ -2431,6 +2414,199 @@ Adresse : %4
         <location filename="../sendcoinsentry.cpp" line="25"/>
         <source>Enter a PPCoin address</source>
         <translation>Entrez une adresse Peercoin</translation>
+    </message>
+</context>
+<context>
+    <name>SignVerifyMessageDialog</name>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="14"/>
+        <source>Signatures - Sign / Verify a Message</source>
+        <translation>Signatures - Signer / Vérifier un message</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="24"/>
+        <source>&amp;Sign Message</source>
+        <translation>&amp;Signer un message</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="30"/>
+        <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
+        <translation type="unfinished">Vous pouvez signer des messages avec vos adresses pour prouver que vous les détenez. Faites attention à ne pas signer quoi que ce soit de vague car des attaques d&apos;hameçonnage peuvent essayer d&apos;obtenir votre identité par votre signature. Ne signez que des déclarations entièrement détaillées et avec lesquelles vous serez d&apos;accord.</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="48"/>
+        <source>The address to sign the message with</source>
+        <translation>L&apos;adresse avec laquelle signer le message</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="55"/>
+        <location filename="../forms/signverifymessagedialog.ui" line="265"/>
+        <source>Choose previously used address</source>
+        <translation>Choisir une adresse utilisée précédemment</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="65"/>
+        <location filename="../forms/signverifymessagedialog.ui" line="275"/>
+        <source>Alt+A</source>
+        <translation>Alt+A</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="75"/>
+        <source>Paste address from clipboard</source>
+        <translation>Coller une adresse depuis le presse-papiers</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="85"/>
+        <source>Alt+P</source>
+        <translation>Alt+P</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="97"/>
+        <source>Enter the message you want to sign here</source>
+        <translation>Entrez ici le message que vous désirez signer</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="104"/>
+        <source>Signature</source>
+        <translation>Signature</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="131"/>
+        <source>Copy the current signature to the system clipboard</source>
+        <translation>Copier la signature dans le presse-papiers</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="152"/>
+        <source>Sign the message to prove you own this Peercoin address</source>
+        <translation>Signez le message pour prouver que vous possédez cette adresse Peercoin</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="155"/>
+        <source>Sign &amp;Message</source>
+        <translation>Signer le &amp;message</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="169"/>
+        <source>Reset all sign message fields</source>
+        <translation>Effacer tous les champs de la signature</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="172"/>
+        <location filename="../forms/signverifymessagedialog.ui" line="315"/>
+        <source>Clear &amp;All</source>
+        <translation>Tout &amp;effacer</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="231"/>
+        <source>&amp;Verify Message</source>
+        <translation>&amp;Vérifier un message</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="237"/>
+        <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
+        <translation>Entrez l&apos;adresse du signataire, le message (assurez-vous de copier les retours à la ligne, les espaces, etc à l&apos;identique) et la signature ci-dessous. Veillez à ne pas lire dans la signature plus que ce que contient le message signé lui-même, pour éviter de vous faire piéger par une attaque de l&apos;homme-du-milieu.</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="258"/>
+        <source>The address the message was signed with</source>
+        <translation>L&apos;adresse avec laquelle le message a été signé</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="295"/>
+        <source>Verify the message to ensure it was signed with the specified Peercoin address</source>
+        <translation>Vérifiez le message pour vous assurer qu&apos;il a été signé par l&apos;adresse Peercoin spécifiée</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="298"/>
+        <source>Verify &amp;Message</source>
+        <translation>Vérifier le &amp;message</translation>
+    </message>
+    <message>
+        <location filename="../forms/signverifymessagedialog.ui" line="312"/>
+        <source>Reset all verify message fields</source>
+        <translation>Effacer tous les champs de la vérification</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="29"/>
+        <source>Click &quot;Sign Message&quot; to generate signature</source>
+        <translation>Cliquez sur &quot;Signer le message&quot; pour générer une signature</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="30"/>
+        <source>Enter the signature of the message</source>
+        <translation>Entrez la signature du message</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="31"/>
+        <location filename="../signverifymessagedialog.cpp" line="32"/>
+        <source>Enter a Peercoin address</source>
+        <translation>Entrez une adresse Peercoin</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="115"/>
+        <location filename="../signverifymessagedialog.cpp" line="195"/>
+        <source>The entered address is invalid.</source>
+        <translation>L&apos;adresse entrée est invalide.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="115"/>
+        <location filename="../signverifymessagedialog.cpp" line="123"/>
+        <location filename="../signverifymessagedialog.cpp" line="195"/>
+        <location filename="../signverifymessagedialog.cpp" line="203"/>
+        <source>Please check the address and try again.</source>
+        <translation>Veuillez vérifier l&apos;adresse et réessayer.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="123"/>
+        <location filename="../signverifymessagedialog.cpp" line="203"/>
+        <source>The entered address does not refer to a key.</source>
+        <translation>L&apos;adresse entrée ne fait pas référence à une clé.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="131"/>
+        <source>Wallet unlock was cancelled.</source>
+        <translation>Déverrouillage du porte-monnaie annulé.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="139"/>
+        <source>Private key for the entered address is not available.</source>
+        <translation>La clé privée de l&apos;adresse entrée n&apos;est pas disponible.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="151"/>
+        <source>Message signing failed.</source>
+        <translation>La signature du message a échoué.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="156"/>
+        <source>Message signed.</source>
+        <translation>Message signé.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="214"/>
+        <source>The signature could not be decoded.</source>
+        <translation>La signature n&apos;a pas pu être décodée.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="214"/>
+        <location filename="../signverifymessagedialog.cpp" line="227"/>
+        <source>Please check the signature and try again.</source>
+        <translation>Veuillez vérifier la signature et réessayer.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="227"/>
+        <source>The signature did not match the message digest.</source>
+        <translation>La signature ne correspond pas au message.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="234"/>
+        <source>Message verification failed.</source>
+        <translation>La vérification du message a échoué.</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="239"/>
+        <source>Message verified.</source>
+        <translation>Message vérifié.</translation>
     </message>
 </context>
 <context>
