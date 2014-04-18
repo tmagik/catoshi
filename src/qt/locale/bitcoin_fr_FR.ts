@@ -163,17 +163,17 @@ Ce produit inclut des logiciels développés par OpenSSL Project pour utilisatio
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="78"/>
+        <location filename="../addresstablemodel.cpp" line="79"/>
         <source>Label</source>
         <translation>Étiquette</translation>
     </message>
     <message>
-        <location filename="../addresstablemodel.cpp" line="78"/>
+        <location filename="../addresstablemodel.cpp" line="79"/>
         <source>Address</source>
         <translation>Adresse</translation>
     </message>
     <message>
-        <location filename="../addresstablemodel.cpp" line="114"/>
+        <location filename="../addresstablemodel.cpp" line="115"/>
         <source>(no label)</source>
         <translation>(aucune étiquette)</translation>
     </message>
@@ -696,26 +696,314 @@ Adresse : %4
     </message>
 </context>
 <context>
+    <name>CoinControlDialog</name>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="14"/>
+        <source>Coin Control</source>
+        <translation>Contrôle des pièces</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="45"/>
+        <source>Quantity:</source>
+        <translation>Quantité :</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="64"/>
+        <location filename="../forms/coincontroldialog.ui" line="96"/>
+        <source>0</source>
+        <translation>0</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="77"/>
+        <source>Bytes:</source>
+        <translation>Octets :</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="125"/>
+        <source>Amount:</source>
+        <translation>Montant :</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="144"/>
+        <location filename="../forms/coincontroldialog.ui" line="224"/>
+        <location filename="../forms/coincontroldialog.ui" line="310"/>
+        <location filename="../forms/coincontroldialog.ui" line="348"/>
+        <source>0.00 BTC</source>
+        <translation>0.00 PPC</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="157"/>
+        <source>Priority:</source>
+        <translation>Priorité :</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="205"/>
+        <source>Fee:</source>
+        <translation>Frais :</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="240"/>
+        <source>Low Output:</source>
+        <translation>Sortie faible :</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="262"/>
+        <location filename="../coincontroldialog.cpp" line="551"/>
+        <source>no</source>
+        <translation>non</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="291"/>
+        <source>After Fee:</source>
+        <translation>Après les frais :</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="326"/>
+        <source>Change:</source>
+        <translation>Monnaie :</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="395"/>
+        <source>(un)select all</source>
+        <translation>Tout (dé)sélectionner</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="408"/>
+        <source>Tree mode</source>
+        <translation>Mode arborescence</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="424"/>
+        <source>List mode</source>
+        <translation>Mode liste</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="477"/>
+        <source>Amount</source>
+        <translation>Montant</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="487"/>
+        <source>Address</source>
+        <translation>Adresse</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="492"/>
+        <source>Date</source>
+        <translation>Date</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="497"/>
+        <source>Confirmations</source>
+        <translation>Confirmations</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="500"/>
+        <source>Confirmed</source>
+        <translation>Confirmée</translation>
+    </message>
+    <message>
+        <location filename="../forms/coincontroldialog.ui" line="505"/>
+        <source>Priority</source>
+        <translation>Priorité</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="36"/>
+        <source>Copy address</source>
+        <translation>Copier l&apos;adresse</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="37"/>
+        <source>Copy label</source>
+        <translation>Copier l&apos;étiquette</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="38"/>
+        <location filename="../coincontroldialog.cpp" line="64"/>
+        <source>Copy amount</source>
+        <translation>Copier le montant</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="39"/>
+        <source>Copy transaction ID</source>
+        <translation>Copier l&apos;ID de la transaction</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="63"/>
+        <source>Copy quantity</source>
+        <translation>Copier la quantité</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="65"/>
+        <source>Copy fee</source>
+        <translation>Copier les frais</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="66"/>
+        <source>Copy after fee</source>
+        <translation>Copier le montant après les frais</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="67"/>
+        <source>Copy bytes</source>
+        <translation>Copier les octets</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="68"/>
+        <source>Copy priority</source>
+        <translation>Copier la priorité</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="69"/>
+        <source>Copy low output</source>
+        <translation>Copier la sortie faible</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="70"/>
+        <source>Copy change</source>
+        <translation>Copier la monnaie</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="387"/>
+        <source>highest</source>
+        <translation>la plus haute</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="388"/>
+        <source>high</source>
+        <translation>haute</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="389"/>
+        <source>medium-high</source>
+        <translation>moyennement haute</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="390"/>
+        <source>medium</source>
+        <translation>moyenne</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="394"/>
+        <source>low-medium</source>
+        <translation>moyennement basse</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="395"/>
+        <source>low</source>
+        <translation>basse</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="396"/>
+        <source>lowest</source>
+        <translation>la plus basse</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="551"/>
+        <source>DUST</source>
+        <translation>POUSSIÈRE</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="551"/>
+        <source>yes</source>
+        <translation>oui</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="561"/>
+        <source>This label turns red, if the transaction size is bigger than 10000 bytes.
+
+ This means a fee of at least %1 per kb is required.
+
+ Can vary +/- 1 Byte per input.</source>
+        <translation>Cette étiquette devient rouge si la taille de la transaction dépasse 10000 octets.
+
+ Ceci signifie que des frais d&apos;au moins %1 par ko sont requis.
+
+ Peut varier de +/- 1 octet par entrée.</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="562"/>
+        <source>Transactions with higher priority get more likely into a block.
+
+This label turns red, if the priority is smaller than &quot;medium&quot;.
+
+ This means a fee of at least %1 per kb is required.</source>
+        <translation>Plus la priorité est haute, plus les transactions ont de chances d&apos;être incluses dans un bloc.
+
+Cette étiquette devient rouge si la priorité est inférieure à &quot;moyenne&quot;.
+
+ Ceci signifie que des frais d&apos;au moins %1 par ko sont requis.</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="563"/>
+        <source>This label turns red, if any recipient receives an amount smaller than %1.
+
+ This means a fee of at least %2 is required. 
+
+ Amounts below 0.546 times the minimum relay fee are shown as DUST.</source>
+        <translation>Cette étiquette devient rouge si l&apos;un des destinataires reçoit un montant inférieur à %1.
+
+ Ceci signifie que des frais d&apos;au moins %2 sont requis. 
+
+ Les montants inférieurs à 0.546 fois les frais minimums de relais sont affichée en tant que POUSSIÈRE.</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="564"/>
+        <source>This label turns red, if the change is smaller than %1.
+
+ This means a fee of at least %2 is required.</source>
+        <translation>Cette étiquette devient rouge si la monnaie rendue est inférieure à %1.
+
+ Ceci signifie que des frais d&apos;au moins %2 sont requis.</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="601"/>
+        <location filename="../coincontroldialog.cpp" line="667"/>
+        <source>(no label)</source>
+        <translation>(aucune étiquette)</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="658"/>
+        <source>change from %1 (%2)</source>
+        <translation>monnaie de %1 (%2)</translation>
+    </message>
+    <message>
+        <location filename="../coincontroldialog.cpp" line="659"/>
+        <source>(change)</source>
+        <translation>(monnaie)</translation>
+    </message>
+</context>
+<context>
     <name>DisplayOptionsPage</name>
     <message>
-        <location filename="../optionsdialog.cpp" line="273"/>
+        <location filename="../optionsdialog.cpp" line="274"/>
         <source>&amp;Unit to show amounts in: </source>
         <translation>&amp;Unité d&apos;affichage des montants : </translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="277"/>
+        <location filename="../optionsdialog.cpp" line="278"/>
         <source>Choose the default subdivision unit to show in the interface, and when sending coins</source>
         <translation>Choisissez la sous-unité par défaut pour l&apos;affichage dans l&apos;interface et lors de l&apos;envoi de pièces</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="284"/>
+        <location filename="../optionsdialog.cpp" line="285"/>
         <source>&amp;Display addresses in transaction list</source>
         <translation>&amp;Afficher les adresses dans la liste des transactions</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="285"/>
+        <location filename="../optionsdialog.cpp" line="286"/>
         <source>Whether to show PPCoin addresses in the transaction list</source>
         <translation>Affichage des adresses Peercoin dans la liste des transactions</translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="289"/>
+        <source>Display coin control features (experts only!)</source>
+        <translation>Afficher les fonctions de contrôle des pièces (experts uniquement !)</translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="290"/>
+        <source>Whether to show coin control features or not</source>
+        <translation>Afficher ou non les fonctions de contrôle des pièces</translation>
     </message>
     <message>
         <source>Display addresses in transaction list</source>
@@ -797,82 +1085,82 @@ Adresse : %4
 <context>
     <name>MainOptionsPage</name>
     <message>
-        <location filename="../optionsdialog.cpp" line="171"/>
+        <location filename="../optionsdialog.cpp" line="172"/>
         <source>&amp;Start PPCoin on window system startup</source>
         <translation>&amp;Démarrer PPCoin avec le système de fenêtres</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="172"/>
+        <location filename="../optionsdialog.cpp" line="173"/>
         <source>Automatically start PPCoin after the computer is turned on</source>
         <translation>Lancer automatiquement PPCoin lorsque l&apos;ordinateur est allumé</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="176"/>
+        <location filename="../optionsdialog.cpp" line="177"/>
         <source>&amp;Minimize to the tray instead of the taskbar</source>
         <translation>&amp;Minimiser dans la barre système au lieu de la barre des tâches</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="177"/>
+        <location filename="../optionsdialog.cpp" line="178"/>
         <source>Show only a tray icon after minimizing the window</source>
         <translation>Montrer uniquement une icône système après minimisation</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="185"/>
+        <location filename="../optionsdialog.cpp" line="186"/>
         <source>Map port using &amp;UPnP</source>
         <translation>Ouvrir le port avec l&apos;&amp;UPnP</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="186"/>
+        <location filename="../optionsdialog.cpp" line="187"/>
         <source>Automatically open the PPCoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
         <translation>Ouvrir le port du client PPCoin automatiquement sur le routeur. Cela ne fonctionne que si votre routeur supporte l&apos;UPnP et si la fonctionnalité est activée.</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="180"/>
+        <location filename="../optionsdialog.cpp" line="181"/>
         <source>M&amp;inimize on close</source>
         <translation>M&amp;inimiser lors de la fermeture</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="181"/>
+        <location filename="../optionsdialog.cpp" line="182"/>
         <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Quit in the menu.</source>
         <translation>Minimiser au lieu quitter l&apos;application lorsque la fenêtre est fermée. Lorsque cette option est activée, l&apos;application ne pourra être fermée qu&apos;en sélectionnant Quitter dans le menu déroulant.</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="189"/>
+        <location filename="../optionsdialog.cpp" line="190"/>
         <source>&amp;Connect through SOCKS4 proxy:</source>
         <translation>&amp;Connexion à travers un proxy SOCKS4 :</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="190"/>
+        <location filename="../optionsdialog.cpp" line="191"/>
         <source>Connect to the Bitcon network through a SOCKS4 proxy (e.g. when connecting through Tor)</source>
         <translation>Connexion au réseau PPCoin à travers un proxy SOCKS4 (par ex. lors d&apos;une connexion via Tor)</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="195"/>
+        <location filename="../optionsdialog.cpp" line="196"/>
         <source>Proxy &amp;IP: </source>
         <translation>&amp;IP du proxy : </translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="201"/>
+        <location filename="../optionsdialog.cpp" line="202"/>
         <source>IP address of the proxy (e.g. 127.0.0.1)</source>
         <translation>Adresse IP du proxy (par ex. 127.0.0.1)</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="204"/>
+        <location filename="../optionsdialog.cpp" line="205"/>
         <source>&amp;Port: </source>
         <translation>&amp;Port : </translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="210"/>
+        <location filename="../optionsdialog.cpp" line="211"/>
         <source>Port of the proxy (e.g. 1234)</source>
         <translation>Port du proxy (par ex. 1234)</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="232"/>
+        <location filename="../optionsdialog.cpp" line="233"/>
         <source>Detach databases at shutdown</source>
         <translation>Détacher les bases de données à la fermeture</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="233"/>
+        <location filename="../optionsdialog.cpp" line="234"/>
         <source>Detach block and address databases at shutdown. This means they can be moved to another data directory, but it slows down shutdown. The wallet is always detached.</source>
         <translation>Détacher les bases de données des blocs et des adresses à la fermeture. Ceci signifie qu&apos;elles pourront être déplacées vers un autre répertoire de données, mais cela ralentit la fermeture. Le porte-monnaie est toujours détaché.</translation>
     </message>
@@ -881,12 +1169,12 @@ Adresse : %4
         <translation type="obsolete">Frais de transaction optionnels par ko qui aident à garantir un traitement rapide des transactions.  La plupart des transactions occupent 1 ko.  Des frais de 0.01 sont recommandés.</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="222"/>
+        <location filename="../optionsdialog.cpp" line="223"/>
         <source>Pay transaction &amp;fee</source>
         <translation>Payer des &amp;frais de transaction</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="216"/>
+        <location filename="../optionsdialog.cpp" line="217"/>
         <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly. Most transactions are 1 kB. Fee 0.01 recommended.</source>
         <translation>Frais de transaction optionnels par ko qui aident à garantir un traitement rapide des transactions. La plupart des transactions occupent 1 ko. Des frais de 0.01 sont recommandés.</translation>
     </message>
@@ -968,8 +1256,9 @@ Adresse : %4
     </message>
     <message>
         <location filename="../messagepage.cpp" line="74"/>
-        <location filename="../messagepage.cpp" line="89"/>
-        <location filename="../messagepage.cpp" line="101"/>
+        <location filename="../messagepage.cpp" line="81"/>
+        <location filename="../messagepage.cpp" line="96"/>
+        <location filename="../messagepage.cpp" line="108"/>
         <source>Error signing</source>
         <translation>Une erreur est survenue lors de la signature</translation>
     </message>
@@ -979,12 +1268,17 @@ Adresse : %4
         <translation>%1 n&apos;est pas une adresse valide.</translation>
     </message>
     <message>
-        <location filename="../messagepage.cpp" line="89"/>
+        <location filename="../messagepage.cpp" line="81"/>
+        <source>%1 does not refer to a key.</source>
+        <translation>%1 ne fait pas référence à une clé.</translation>
+    </message>
+    <message>
+        <location filename="../messagepage.cpp" line="96"/>
         <source>Private key for %1 is not available.</source>
         <translation>La clef privée pour %1 n&apos;est pas disponible.</translation>
     </message>
     <message>
-        <location filename="../messagepage.cpp" line="101"/>
+        <location filename="../messagepage.cpp" line="108"/>
         <source>Sign failed</source>
         <translation>Échec de la signature</translation>
     </message>
@@ -992,17 +1286,17 @@ Adresse : %4
 <context>
     <name>OptionsDialog</name>
     <message>
-        <location filename="../optionsdialog.cpp" line="80"/>
+        <location filename="../optionsdialog.cpp" line="81"/>
         <source>Main</source>
         <translation>Principal</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="85"/>
+        <location filename="../optionsdialog.cpp" line="86"/>
         <source>Display</source>
         <translation>Affichage</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="105"/>
+        <location filename="../optionsdialog.cpp" line="106"/>
         <source>Options</source>
         <translation>Options</translation>
     </message>
@@ -1808,112 +2102,261 @@ Adresse : %4
     <name>SendCoinsDialog</name>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="14"/>
-        <location filename="../sendcoinsdialog.cpp" line="122"/>
-        <location filename="../sendcoinsdialog.cpp" line="127"/>
-        <location filename="../sendcoinsdialog.cpp" line="132"/>
-        <location filename="../sendcoinsdialog.cpp" line="137"/>
-        <location filename="../sendcoinsdialog.cpp" line="143"/>
-        <location filename="../sendcoinsdialog.cpp" line="148"/>
-        <location filename="../sendcoinsdialog.cpp" line="153"/>
+        <location filename="../sendcoinsdialog.cpp" line="176"/>
+        <location filename="../sendcoinsdialog.cpp" line="181"/>
+        <location filename="../sendcoinsdialog.cpp" line="186"/>
+        <location filename="../sendcoinsdialog.cpp" line="191"/>
+        <location filename="../sendcoinsdialog.cpp" line="197"/>
+        <location filename="../sendcoinsdialog.cpp" line="202"/>
+        <location filename="../sendcoinsdialog.cpp" line="207"/>
         <source>Send Coins</source>
         <translation>Envoyer des pièces</translation>
     </message>
     <message>
-        <location filename="../forms/sendcoinsdialog.ui" line="64"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="90"/>
+        <source>Coin Control Features</source>
+        <translation>Fonctions de contrôle des pièces</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="110"/>
+        <source>Inputs...</source>
+        <translation>Entrées...</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="117"/>
+        <source>automatically selected</source>
+        <translation>selection automatique</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="136"/>
+        <source>Insufficient funds!</source>
+        <translation>Fonds insuffisants !</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="213"/>
+        <source>Quantity:</source>
+        <translation>Quantité :</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="235"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="270"/>
+        <source>0</source>
+        <translation>0</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="251"/>
+        <source>Bytes:</source>
+        <translation>Octets :</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="302"/>
+        <source>Amount:</source>
+        <translation>Montant :</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="324"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="410"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="496"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="528"/>
+        <source>0.00 BTC</source>
+        <translation>0.00 PPC</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="337"/>
+        <source>Priority:</source>
+        <translation>Priorité :</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="356"/>
+        <source>medium</source>
+        <translation>moyenne</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="388"/>
+        <source>Fee:</source>
+        <translation>Frais :</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="423"/>
+        <source>Low Output:</source>
+        <translation>Sortie faible :</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="442"/>
+        <source>no</source>
+        <translation>non</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="474"/>
+        <source>After Fee:</source>
+        <translation>Après les frais :</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="509"/>
+        <source>Change</source>
+        <translation>Monnaie</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="559"/>
+        <source>custom change address</source>
+        <translation>Adresse personnalisée pour la monnaie rendue</translation>
+    </message>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="665"/>
         <source>Send to multiple recipients at once</source>
         <translation>Envoyer des pièces à plusieurs destinataires à la fois</translation>
     </message>
     <message>
-        <location filename="../forms/sendcoinsdialog.ui" line="67"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="668"/>
         <source>&amp;Add recipient...</source>
         <translation>&amp;Ajouter un destinataire...</translation>
     </message>
     <message>
-        <location filename="../forms/sendcoinsdialog.ui" line="84"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="685"/>
         <source>Remove all transaction fields</source>
         <translation>Enlever tous les champs de transaction</translation>
     </message>
     <message>
-        <location filename="../forms/sendcoinsdialog.ui" line="87"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="688"/>
         <source>Clear all</source>
         <translation>Tout effacer</translation>
     </message>
     <message>
-        <location filename="../forms/sendcoinsdialog.ui" line="106"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="707"/>
         <source>Balance:</source>
         <translation>Solde :</translation>
     </message>
     <message>
-        <location filename="../forms/sendcoinsdialog.ui" line="113"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="714"/>
         <source>123.456 BTC</source>
         <translation>123.456 BTC</translation>
     </message>
     <message>
-        <location filename="../forms/sendcoinsdialog.ui" line="144"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="745"/>
         <source>Confirm the send action</source>
         <translation>Confirmez l&apos;action d&apos;envoi</translation>
     </message>
     <message>
-        <location filename="../forms/sendcoinsdialog.ui" line="147"/>
+        <location filename="../forms/sendcoinsdialog.ui" line="748"/>
         <source>&amp;Send</source>
         <translation>&amp;Envoyer</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="94"/>
+        <location filename="../sendcoinsdialog.cpp" line="36"/>
+        <source>Enter a Peeroin address</source>
+        <translation>Entrez une adresse Peercoin</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="51"/>
+        <source>Copy quantity</source>
+        <translation>Copier la quantité</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="52"/>
+        <source>Copy amount</source>
+        <translation>Copier le montant</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="53"/>
+        <source>Copy fee</source>
+        <translation>Copier les frais</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="54"/>
+        <source>Copy after fee</source>
+        <translation>Copier le montant après les frais</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="55"/>
+        <source>Copy bytes</source>
+        <translation>Copier les octets</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="56"/>
+        <source>Copy priority</source>
+        <translation>Copier la priorité</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="57"/>
+        <source>Copy low output</source>
+        <translation>Copier la sortie faible</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="58"/>
+        <source>Copy change</source>
+        <translation>Copier la monnaie</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="144"/>
         <source>&lt;b&gt;%1&lt;/b&gt; to %2 (%3)</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; à %2 (%3)</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="99"/>
+        <location filename="../sendcoinsdialog.cpp" line="149"/>
         <source>Confirm send coins</source>
         <translation>Confirmez l&apos;envoi des pièces</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="100"/>
+        <location filename="../sendcoinsdialog.cpp" line="150"/>
         <source>Are you sure you want to send %1?</source>
         <translation>Êtes-vous sûr de vouloir envoyer %1 ?</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="100"/>
+        <location filename="../sendcoinsdialog.cpp" line="150"/>
         <source> and </source>
         <translation> et </translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="123"/>
+        <location filename="../sendcoinsdialog.cpp" line="177"/>
         <source>The recepient address is not valid, please recheck.</source>
         <translation>L&apos;adresse du destinataire n&apos;est pas valide, veuillez la vérifier.</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="128"/>
+        <location filename="../sendcoinsdialog.cpp" line="182"/>
         <source>The amount to pay must be at least one cent (0.01).</source>
         <translation>Le montant à payer doit être d&apos;au moins un centime (0.01).</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="457"/>
+        <source>Warning: Invalid Bitcoin address</source>
+        <translation>Attention : Adresse Peercoin invalide</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="466"/>
+        <source>Warning: Unknown change address</source>
+        <translation>Attention : Adresse de monnaie rendue inconnue</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="477"/>
+        <source>(no label)</source>
+        <translation>(aucune étiquette)</translation>
     </message>
     <message>
         <source>The amount to pay must be larger than 0.</source>
         <translation type="obsolete">Le montant à payer doit être supérieur à 0.</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="133"/>
+        <location filename="../sendcoinsdialog.cpp" line="187"/>
         <source>Amount exceeds your balance</source>
         <translation>Le montant dépasse votre solde</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="138"/>
+        <location filename="../sendcoinsdialog.cpp" line="192"/>
         <source>Total exceeds your balance when the %1 transaction fee is included</source>
         <translation>Le total dépasse votre solde lorsque les frais de transaction de %1 sont inclus</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="144"/>
+        <location filename="../sendcoinsdialog.cpp" line="198"/>
         <source>Duplicate address found, can only send to each address once in one send operation</source>
         <translation>Adresse dupliquée trouvée, un seul envoi par adresse est possible à chaque opération d&apos;envoi</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="149"/>
+        <location filename="../sendcoinsdialog.cpp" line="203"/>
         <source>Error: Transaction creation failed  </source>
         <translation>Erreur : échec de la création de la transaction  </translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="154"/>
+        <location filename="../sendcoinsdialog.cpp" line="208"/>
         <source>Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
         <translation>Erreur : la transaction a été rejetée.  Cela peut arriver si certaines pièces de votre porte-monnaie ont déjà été dépensées, par exemple si vous avez utilisé une copie de wallet.dat et si des pièces ont été dépensées avec cette copie sans être marquées comme telles ici.</translation>
     </message>
@@ -1993,145 +2436,145 @@ Adresse : %4
 <context>
     <name>TransactionDesc</name>
     <message>
-        <location filename="../transactiondesc.cpp" line="20"/>
+        <location filename="../transactiondesc.cpp" line="21"/>
         <source>Open for %1 blocks</source>
         <translation>Ouvert pour %1 blocs</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="22"/>
+        <location filename="../transactiondesc.cpp" line="23"/>
         <source>Open until %1</source>
         <translation>Ouvert jusqu&apos;à %1</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="28"/>
+        <location filename="../transactiondesc.cpp" line="29"/>
         <source>%1/offline?</source>
         <translation>%1/hors ligne ?</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="30"/>
+        <location filename="../transactiondesc.cpp" line="31"/>
         <source>%1/unconfirmed</source>
         <translation>%1/non confirmée</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="32"/>
+        <location filename="../transactiondesc.cpp" line="33"/>
         <source>%1 confirmations</source>
         <translation>%1 confirmations</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="50"/>
+        <location filename="../transactiondesc.cpp" line="51"/>
         <source>&lt;b&gt;Status:&lt;/b&gt; </source>
         <translation>&lt;b&gt;État :&lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="55"/>
+        <location filename="../transactiondesc.cpp" line="56"/>
         <source>, has not been successfully broadcast yet</source>
         <translation>, n&apos;a pas encore été diffusée avec succès</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="57"/>
+        <location filename="../transactiondesc.cpp" line="58"/>
         <source>, broadcast through %1 node</source>
         <translation>, diffusée à travers %1 nœud</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="59"/>
+        <location filename="../transactiondesc.cpp" line="60"/>
         <source>, broadcast through %1 nodes</source>
         <translation>, diffusée à travers %1 nœuds</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="63"/>
+        <location filename="../transactiondesc.cpp" line="64"/>
         <source>&lt;b&gt;Date:&lt;/b&gt; </source>
         <translation>&lt;b&gt;Date :&lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="70"/>
+        <location filename="../transactiondesc.cpp" line="71"/>
         <source>&lt;b&gt;Source:&lt;/b&gt; Generated&lt;br&gt;</source>
         <translation>&lt;b&gt;Source :&lt;/b&gt; Généré&lt;br&gt;</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="76"/>
-        <location filename="../transactiondesc.cpp" line="93"/>
+        <location filename="../transactiondesc.cpp" line="77"/>
+        <location filename="../transactiondesc.cpp" line="94"/>
         <source>&lt;b&gt;From:&lt;/b&gt; </source>
         <translation>&lt;b&gt;De :&lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="93"/>
+        <location filename="../transactiondesc.cpp" line="94"/>
         <source>unknown</source>
         <translation>inconnue</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="94"/>
-        <location filename="../transactiondesc.cpp" line="117"/>
-        <location filename="../transactiondesc.cpp" line="176"/>
+        <location filename="../transactiondesc.cpp" line="95"/>
+        <location filename="../transactiondesc.cpp" line="118"/>
+        <location filename="../transactiondesc.cpp" line="178"/>
         <source>&lt;b&gt;To:&lt;/b&gt; </source>
         <translation>&lt;b&gt;À :&lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="97"/>
+        <location filename="../transactiondesc.cpp" line="98"/>
         <source> (yours, label: </source>
         <translation> (votre propre adresse, étiquette : </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="99"/>
+        <location filename="../transactiondesc.cpp" line="100"/>
         <source> (yours)</source>
         <translation> (votre propre adresse)</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="134"/>
-        <location filename="../transactiondesc.cpp" line="148"/>
-        <location filename="../transactiondesc.cpp" line="193"/>
-        <location filename="../transactiondesc.cpp" line="210"/>
+        <location filename="../transactiondesc.cpp" line="136"/>
+        <location filename="../transactiondesc.cpp" line="150"/>
+        <location filename="../transactiondesc.cpp" line="195"/>
+        <location filename="../transactiondesc.cpp" line="212"/>
         <source>&lt;b&gt;Credit:&lt;/b&gt; </source>
         <translation>&lt;b&gt;Crédit : &lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="136"/>
+        <location filename="../transactiondesc.cpp" line="138"/>
         <source>(%1 matures in %2 more blocks)</source>
         <translation>(%1 sera considérée comme mûre suite à %2 blocs de plus)</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="140"/>
+        <location filename="../transactiondesc.cpp" line="142"/>
         <source>(not accepted)</source>
         <translation>(pas accepté)</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="184"/>
-        <location filename="../transactiondesc.cpp" line="192"/>
-        <location filename="../transactiondesc.cpp" line="207"/>
+        <location filename="../transactiondesc.cpp" line="186"/>
+        <location filename="../transactiondesc.cpp" line="194"/>
+        <location filename="../transactiondesc.cpp" line="209"/>
         <source>&lt;b&gt;Debit:&lt;/b&gt; </source>
         <translation>&lt;b&gt;Débit : &lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="198"/>
+        <location filename="../transactiondesc.cpp" line="200"/>
         <source>&lt;b&gt;Transaction fee:&lt;/b&gt; </source>
         <translation>&lt;b&gt;Frais de transaction :&lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="214"/>
+        <location filename="../transactiondesc.cpp" line="216"/>
         <source>&lt;b&gt;Net amount:&lt;/b&gt; </source>
         <translation>&lt;b&gt;Montant net :&lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="220"/>
+        <location filename="../transactiondesc.cpp" line="222"/>
         <source>Message:</source>
         <translation>Message :</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="222"/>
+        <location filename="../transactiondesc.cpp" line="224"/>
         <source>Comment:</source>
         <translation>Commentaire :</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="224"/>
+        <location filename="../transactiondesc.cpp" line="226"/>
         <source>Transaction ID:</source>
         <translation>ID de la transaction :</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="227"/>
+        <location filename="../transactiondesc.cpp" line="229"/>
         <source>Generated coins must wait 520 blocks before they can be spent.  When you generated this block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be spendable.  This may occasionally happen if another node generates a block within a few seconds of yours.</source>
         <translation>Les pièces générées doivent attendre 520 blocs avant de pouvoir être dépensées.  Lorsque vous avez généré ce bloc, il a été diffusé sur le réseau pour être ajouté à la chaîne des blocs.  S&apos;il échoue a intégrer la chaîne, il sera modifié en « pas accepté » et il ne sera pas possible de le dépenser.  Cela peut arriver occasionnellement si un autre nœud génère un bloc quelques secondes avant ou après vous.</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="229"/>
+        <location filename="../transactiondesc.cpp" line="231"/>
         <source>Staked coins must wait 520 blocks before they can return to balance and be spent.  When you generated this proof-of-stake block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be a valid stake.  This may occasionally happen if another node generates a proof-of-stake block within a few seconds of yours.</source>
         <translation>Les pièces générées par preuve-de-part doivent attendre 520 blocs avant de pouvoir être dépensées.  Lorsque vous avez généré ce bloc par preuve-de-part, il a été diffusé sur le réseau pour être ajouté à la chaîne des blocs.  S&apos;il échoue a intégrer la chaîne, il sera modifié en « pas accepté » et il ne sera pas possible de le dépenser.  Cela peut arriver occasionnellement si un autre nœud génère un bloc quelques secondes avant ou après vous.</translation>
     </message>
@@ -2454,7 +2897,7 @@ Adresse : %4
 <context>
     <name>WalletModel</name>
     <message>
-        <location filename="../walletmodel.cpp" line="147"/>
+        <location filename="../walletmodel.cpp" line="155"/>
         <source>Sending...</source>
         <translation>Envoi en cours...</translation>
     </message>
