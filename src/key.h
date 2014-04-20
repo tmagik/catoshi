@@ -98,6 +98,7 @@ public:
     }
 
     bool RecoverCompact(const uint256 &hash, const std::vector<unsigned char>& vchSig);
+    bool IsFullyValid() const;
 };
 
 
