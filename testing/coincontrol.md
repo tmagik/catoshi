@@ -54,7 +54,8 @@ daemon=1
 >    if none are selected -> coin control inactive (just as normal)
 
 * Send 5 PPC from test1 to test2 using test3 as the custom change address.  
-  Results test1 has 1 PPC test2 has 5.99 PPC test3 has 10 PPC, as expected. The custom change address function is verified.
+  Results: test1 has 1 PPC test2 has 5.99 PPC test3 has 10 PPC, as expected. The custom change address function is verified. txid eed4baecbcaedcf442647103fc8a18812dce2b4c852ee447b473f157c41cb837
+
 
 * Confirmed:
 
