@@ -5,7 +5,8 @@ This report covers test results of the coin control feature of Peerunity v0.4.0 
 
 There are three addresses with initial balance used in the test, 
 * test1  mkLh7wYGYQiKVm8tLwCs9LusKF2y1gffm9  8.01PPC 
-* test2  n2LzA1UH46QZPdCGvN2NorPeqg1BbTuw4g  2PPC 
+* test2  n2LzA1UH46QZPdCGvN2NorPeqg1BbTuw4g  2PPC
+* test3  mpRAV4VSsxmKh5nRpDuQPquhdHPKu4xUuS  7PPC
 
 ### start peerunity
 
@@ -32,7 +33,7 @@ daemon=1
 ### start coin control
 
 * In settings->options->display check "Display coin control features (expert only!)".
-* The following GUI functions are verified (I did not check if custom change address works)
+* The following GUI functions are verified (custom change address is tested below)
 
 > _Main_
 >   * Settings checkbox "Display coin control features (experts only!)" (default=no)
@@ -51,6 +52,9 @@ daemon=1
 
 >  * select outputs by checkbox -> only the checked outputs are used when sending a transaction  
 >    if none are selected -> coin control inactive (just as normal)
+
+* Send 5 PPC from test1 to test2 using test3 as the custom change address.  
+  Results test1 has 1 PPC test2 has 5.99 PPC test3 has 10 PPC, as expected. The custom change address function is verified.
 
 * Confirmed:
 
