@@ -11,7 +11,7 @@ class TransactionView;
 class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
-class MessagePage;
+class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
 
@@ -64,7 +64,7 @@ private:
     AddressBookPage *addressBookPage;
     AddressBookPage *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
-    MessagePage *messagePage;
+    SignVerifyMessageDialog *messagePage;
 
     QLabel *labelEncryptionIcon;
     QLabel *labelConnectionsIcon;
@@ -132,7 +132,6 @@ public slots:
     void handleURI(QString strURI);
 
     void gotoMessagePage();
-    void gotoMessagePage(QString);
 
 private slots:
     /** Switch to overview (home) page */
