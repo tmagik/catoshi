@@ -75,7 +75,7 @@ daemon=1
 
 Note for the last item: the tooltip not only shows in list mode but also in tree mode.
 
-* This is verified except [input locking is not supported](https://bitcointalk.org/index.php?topic=276606.msg2958814#msg2958814) as of v0.4.
+* This item is verified except that [coin locking is not supported](https://bitcointalk.org/index.php?topic=276606.msg2958814#msg2958814) as of v0.4.
 
 >  * Context menu  
 >    Copy to clipboard (amount,label,address,transaction id,lock,unlock)
