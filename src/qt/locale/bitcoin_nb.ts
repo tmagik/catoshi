@@ -2232,7 +2232,7 @@ Adresse: %4
     <message>
         <location filename="../transactiontablemodel.cpp" line="356"/>
         <source>Mined</source>
-        <translation>Mined/translation>
+        <translation>Mined</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="358"/>
