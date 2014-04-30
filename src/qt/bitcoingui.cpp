@@ -234,7 +234,7 @@ void BitcoinGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/ppcoin"), tr("&About PeerUnity"), this);
+    aboutAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("&About PeerUnity"), this);
     aboutAction->setToolTip(tr("Show information about PPCoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(tr("About &Qt"), this);
@@ -243,7 +243,7 @@ void BitcoinGUI::createActions()
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
     optionsAction->setToolTip(tr("Modify configuration options for PeerUnity"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    toggleHideAction = new QAction(QIcon(":/icons/ppcoin"), tr("Show/Hide &PPCoin"), this);
+    toggleHideAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("Show/Hide &PeerUnity"), this);
     toggleHideAction->setToolTip(tr("Show or hide the PeerUnity window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
@@ -340,7 +340,7 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
             if(trayIcon)
             {
                 trayIcon->setToolTip(title_testnet);
-                trayIcon->setIcon(QIcon(":/icons/toolbar_testnet"));
+                trayIcon->setIcon(QIcon(":/icons/peerunity_tooltip"));
             }
         }
 
@@ -395,7 +395,7 @@ void BitcoinGUI::createTrayIcon()
     trayIconMenu = new QMenu(this);
     trayIcon->setContextMenu(trayIconMenu);
     trayIcon->setToolTip(tr("PeerUnity client"));
-    trayIcon->setIcon(QIcon(":/icons/toolbar"));
+    trayIcon->setIcon(QIcon(":/icons/peerunity_tooltip"));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
             this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
     trayIcon->show();
