@@ -6,7 +6,7 @@
 #define UNUSED
 #endif
 static const char UNUSED *bitcoin_strings[] = {QT_TRANSLATE_NOOP("bitcoin-core", ""
-"Unable to bind to port %d on this computer.  PPCoin is probably already "
+"Unable to bind to port %d on this computer.  PeerUnity is probably already "
 "running."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Warning: Disk space is low  "),
 QT_TRANSLATE_NOOP("bitcoin-core", "PeerUnity version"),
@@ -118,7 +118,7 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "permissions."),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Warning: Please check that your computer's date and time are correct.  If "
-"your clock is wrong PPCoin will not work properly."),
+"your clock is wrong PeerUnity will not work properly."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Error: Wallet locked, unable to create transaction  "),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Error: This transaction requires a transaction fee of at least %s because of "
