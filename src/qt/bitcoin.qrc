@@ -42,6 +42,7 @@
         <file alias="filesave">res/icons/filesave.png</file>
         <file>res/icons/horizontal_trans-no-shadow.png</file>
         <file alias="peerunity_icon">res/icons/icononly_trans-resized.png</file>
+        <file alias="peerunity_tooltip">res/icons/icononly_trans-resized-small.png</file>
     </qresource>
     <qresource prefix="/images">
         <file alias="about">res/images/about.png</file>
