@@ -72,7 +72,7 @@
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;PeerUnity&lt;/span&gt; version&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;PeerUnity&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="textInteractionFlags">
           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
@@ -82,7 +82,7 @@
        <item>
         <widget class="QLabel" name="versionLabel">
          <property name="text">
-          <string notr="true">ALPHA</string>
+          <string notr="true">v0.1.0</string>
          </property>
          <property name="textFormat">
           <enum>Qt::RichText</enum>
