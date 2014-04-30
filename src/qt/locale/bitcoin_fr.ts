@@ -36,22 +36,6 @@ Distribué sous licence MIT/X11, voir le fichier license.txt ou http://www.opens
 
 Ce produit inclut des logiciels développés par le projet OpenSSL pour utilisation dans la boite à outils OpenSSL (http://www.openssl.org/), un logiciel cryptographique écrit par Eric Young (eay@cryptsoft.com) et un logiciel UPnP écrit par Thomas Bernard.</translation>
     </message>
-    <message>
-        <source>Copyright © 2011-2013 PPCoin Developers
-
-This is experimental software.
-
-Distributed under the MIT/X11 software license, see the accompanying file license.txt or http://www.opensource.org/licenses/mit-license.php.
-
-This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.</source>
-        <translation type="obsolete">Copyright © 2011-2013 Développeurs de PPCoin
-
-Ce logiciel est en phase expérimentale.
-
-Distribué sous licence MIT/X11, voir le fichier license.txt ou http://www.opensource.org/licenses/mit-license.php.
-
-Ce produit inclut des logiciels développés par OpenSSL Project pour utilisation dans le OpenSSL Toolkit (http://www.openssl.org/), un logiciel cryptographique écrit par Eric Young (eay@cryptsoft.com) et un logiciel UPnP écrit par Thomas Bernard.</translation>
-    </message>
 </context>
 <context>
     <name>AddressBookPage</name>
@@ -59,10 +43,6 @@ Ce produit inclut des logiciels développés par OpenSSL Project pour utilisatio
         <location filename="../forms/addressbookpage.ui" line="14"/>
         <source>Address Book</source>
         <translation>Carnet d&apos;adresses</translation>
-    </message>
-    <message>
-        <source>These are your PPCoin addresses for receiving payments.  You may want to give a different one to each sender so you can keep track of who is paying you.</source>
-        <translation type="obsolete">Voici vos adresses PPCoin qui vous permettent de recevoir des paiements.  Vous pouvez donner une adresse différente à chaque expéditeur afin de savoir qui vous paye.</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="20"/>
@@ -251,20 +231,10 @@ Ce produit inclut des logiciels développés par OpenSSL Project pour utilisatio
         <translation>Confirmer le chiffrement du porte-monnaie</translation>
     </message>
     <message>
-        <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR PPCoinS&lt;/b&gt;!
-Are you sure you wish to encrypt your wallet?</source>
-        <translation type="obsolete">ATTENTION : Si vous chiffrez votre porte-monnaie et perdez votre phrase de passe, vous &lt;b&gt;PERDREZ TOUS VOS PPCoinS&lt;/b&gt; !
-Êtes-vous sûr de vouloir chiffrer votre porte-monnaie ?</translation>
-    </message>
-    <message>
         <location filename="../askpassphrasedialog.cpp" line="111"/>
         <location filename="../askpassphrasedialog.cpp" line="160"/>
         <source>Wallet encrypted</source>
         <translation>Porte-monnaie chiffré</translation>
-    </message>
-    <message>
-        <source>PPCoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your PPCoins from being stolen by malware infecting your computer.</source>
-        <translation type="obsolete">PPCoin va à présent se fermer pour terminer la procédure de cryptage. N&apos;oubliez pas que le chiffrement de votre porte-monnaie ne peut pas fournir une protection totale contre le vol par des logiciels malveillants qui infecteraient votre ordinateur.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="208"/>
@@ -387,10 +357,6 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="208"/>
         <source>Send coins to a ppcoin address</source>
         <translation>Envoyer des pièces à une adresse Peercoin</translation>
-    </message>
-    <message>
-        <source>Sign &amp;message</source>
-        <translation type="obsolete">Signer un &amp;message</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="213"/>
@@ -1009,10 +975,6 @@ Cette étiquette devient rouge si la priorité est inférieure à &quot;moyenne&
         <source>Whether to show coin control features or not</source>
         <translation>Afficher ou non les fonctions de contrôle des pièces</translation>
     </message>
-    <message>
-        <source>Display addresses in transaction list</source>
-        <translation type="obsolete">Afficher les adresses dans la liste des transactions</translation>
-    </message>
 </context>
 <context>
     <name>EditAddressDialog</name>
@@ -1070,10 +1032,6 @@ Cette étiquette devient rouge si la priorité est inférieure à &quot;moyenne&
         <location filename="../editaddressdialog.cpp" line="96"/>
         <source>The entered address &quot;%1&quot; is not a valid bitcoin address.</source>
         <translation>L&apos;adresse fournie « %1 » n&apos;est pas une adresse Peercoin valide.</translation>
-    </message>
-    <message>
-        <source>The entered address &quot;%1&quot; is not a valid PPCoin address.</source>
-        <translation type="obsolete">L&apos;adresse fournie « %1 » n&apos;est pas une adresse PPCoin valide.</translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="101"/>
@@ -1169,10 +1127,6 @@ Cette étiquette devient rouge si la priorité est inférieure à &quot;moyenne&
         <translation>Détacher les bases de données des blocs et des adresses à la fermeture. Ceci signifie qu&apos;elles pourront être déplacées vers un autre répertoire de données, mais cela ralentit la fermeture. Le porte-monnaie est toujours détaché.</translation>
     </message>
     <message>
-        <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly.  Most transactions are 1 kB.  Fee 0.01 recommended.</source>
-        <translation type="obsolete">Frais de transaction optionnels par ko qui aident à garantir un traitement rapide des transactions.  La plupart des transactions occupent 1 ko.  Des frais de 0.01 sont recommandés.</translation>
-    </message>
-    <message>
         <location filename="../optionsdialog.cpp" line="223"/>
         <source>Pay transaction &amp;fee</source>
         <translation>Payer des &amp;frais de transaction</translation>
@@ -1181,89 +1135,6 @@ Cette étiquette devient rouge si la priorité est inférieure à &quot;moyenne&
         <location filename="../optionsdialog.cpp" line="217"/>
         <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly. Most transactions are 1 kB. Fee 0.01 recommended.</source>
         <translation>Frais de transaction optionnels par ko qui aident à garantir un traitement rapide des transactions. La plupart des transactions occupent 1 ko. Des frais de 0.01 sont recommandés.</translation>
-    </message>
-</context>
-<context>
-    <name>MessagePage</name>
-    <message>
-        <source>Message</source>
-        <translation type="obsolete">Message</translation>
-    </message>
-    <message>
-        <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation type="obsolete">Vous pouvez signer des messages avec vos adresses pour prouver que les détenez. Faites attention à ne pas signer quoi que ce soit de vague car des attaques d&apos;hameçonnage peuvent essayer d&apos;obtenir votre identité par votre signature. Ne signez que des déclarations entièrement détaillées et avec lesquelles vous serez d&apos;accord.</translation>
-    </message>
-    <message>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation type="obsolete">L&apos;adresse à laquelle le paiement sera envoyé  (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
-    </message>
-    <message>
-        <source>The address to sign the message with  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation type="obsolete">L&apos;adresse avec laquelle signer le message (par ex..1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
-    </message>
-    <message>
-        <source>Choose adress from address book</source>
-        <translation type="obsolete">Choisir une adresse depuis le carnet d&apos;adresses</translation>
-    </message>
-    <message>
-        <source>Alt+A</source>
-        <translation type="obsolete">Alt+A</translation>
-    </message>
-    <message>
-        <source>Paste address from clipboard</source>
-        <translation type="obsolete">Coller une adresse depuis le presse-papiers</translation>
-    </message>
-    <message>
-        <source>Alt+P</source>
-        <translation type="obsolete">Alt+P</translation>
-    </message>
-    <message>
-        <source>Enter the message you want to sign here</source>
-        <translation type="obsolete">Entrez ici le message que vous désirez signer</translation>
-    </message>
-    <message>
-        <source>Click &quot;Sign Message&quot; to get signature</source>
-        <translation type="obsolete">Cliquez sur « Signer le message » pour obtenir la signature</translation>
-    </message>
-    <message>
-        <source>Sign a message to prove you own this address</source>
-        <translation type="obsolete">Signer le message pour prouver que vous détenez cette adresse</translation>
-    </message>
-    <message>
-        <source>&amp;Sign Message</source>
-        <translation type="obsolete">&amp;Signer le message</translation>
-    </message>
-    <message>
-        <source>Copy the current signature to the system clipboard</source>
-        <translation type="obsolete">Copier la signature dans le presse-papiers</translation>
-    </message>
-    <message>
-        <source>Copy the currently selected address to the system clipboard</source>
-        <translation type="obsolete">Copier l&apos;adresse surlignée dans votre presse-papiers</translation>
-    </message>
-    <message>
-        <source>&amp;Copy to Clipboard</source>
-        <translation type="obsolete">&amp;Copier dans le presse-papiers</translation>
-    </message>
-    <message>
-        <source>Error signing</source>
-        <translation type="obsolete">Une erreur est survenue lors de la signature</translation>
-    </message>
-    <message>
-        <source>%1 is not a valid address.</source>
-        <translation type="obsolete">%1 n&apos;est pas une adresse valide.</translation>
-    </message>
-    <message>
-        <source>%1 does not refer to a key.</source>
-        <translation type="obsolete">%1 ne fait pas référence à une clé.</translation>
-    </message>
-    <message>
-        <source>Private key for %1 is not available.</source>
-        <translation type="obsolete">La clef privée pour %1 n&apos;est pas disponible.</translation>
-    </message>
-    <message>
-        <source>Sign failed</source>
-        <translation type="obsolete">Échec de la signature</translation>
     </message>
 </context>
 <context>
@@ -1297,10 +1168,6 @@ Cette étiquette devient rouge si la priorité est inférieure à &quot;moyenne&
         <translation>Solde :</translation>
     </message>
     <message>
-        <source>123.456 BTC</source>
-        <translation type="obsolete">123.456 BTC</translation>
-    </message>
-    <message>
         <location filename="../forms/overviewpage.ui" line="54"/>
         <source>Number of transactions:</source>
         <translation>Nombre de transactions :</translation>
@@ -1324,22 +1191,6 @@ Cette étiquette devient rouge si la priorité est inférieure à &quot;moyenne&
         <location filename="../forms/overviewpage.ui" line="102"/>
         <source>Wallet</source>
         <translation>Porte-monnaie</translation>
-    </message>
-    <message>
-        <source>0 BTC</source>
-        <translation type="obsolete">0 BTC</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Wallet&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Porte-monnaie&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../forms/overviewpage.ui" line="138"/>
@@ -1368,553 +1219,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>PPCoin-core</name>
-    <message>
-        <source>PPCoin version</source>
-        <translation type="obsolete">Version de PPCoin</translation>
-    </message>
-    <message>
-        <source>Usage:</source>
-        <translation type="obsolete">Utilisation :</translation>
-    </message>
-    <message>
-        <source>Send command to -server or ppcoind</source>
-        <translation type="obsolete">Envoyer une commande à -server ou à ppcoind</translation>
-    </message>
-    <message>
-        <source>List commands</source>
-        <translation type="obsolete">Lister les commandes</translation>
-    </message>
-    <message>
-        <source>Get help for a command</source>
-        <translation type="obsolete">Obtenir de l&apos;aide pour une commande</translation>
-    </message>
-    <message>
-        <source>Options:</source>
-        <translation type="obsolete">Options :</translation>
-    </message>
-    <message>
-        <source>Specify configuration file (default: PPCoin.conf)</source>
-        <translation type="obsolete">Spécifier le fichier de configuration (par défaut : PPCoin.conf)</translation>
-    </message>
-    <message>
-        <source>Specify pid file (default: ppcoind.pid)</source>
-        <translation type="obsolete">Spécifier le fichier pid (par défaut : ppcoind.pid)</translation>
-    </message>
-    <message>
-        <source>Generate coins</source>
-        <translation type="obsolete">Générer des pièces</translation>
-    </message>
-    <message>
-        <source>Don&apos;t generate coins</source>
-        <translation type="obsolete">Ne pas générer de pièces</translation>
-    </message>
-    <message>
-        <source>Start minimized</source>
-        <translation type="obsolete">Démarrer sous forme minimisée</translation>
-    </message>
-    <message>
-        <source>Specify data directory</source>
-        <translation type="obsolete">Spécifier le répertoire de données</translation>
-    </message>
-    <message>
-        <source>Specify connection timeout (in milliseconds)</source>
-        <translation type="obsolete">Spécifier le délai d&apos;expiration de la connexion (en millisecondes)</translation>
-    </message>
-    <message>
-        <source>Connect through socks4 proxy</source>
-        <translation type="obsolete">Connexion via un proxy socks4</translation>
-    </message>
-    <message>
-        <source>Allow DNS lookups for addnode and connect</source>
-        <translation type="obsolete">Autoriser les recherches DNS pour l&apos;ajout de nœuds et la connexion</translation>
-    </message>
-    <message>
-        <source>Listen for connections on &lt;port&gt; (default: 8333 or testnet: 18333)</source>
-        <translation type="obsolete">Écouter les connexions sur le &lt;port&gt; (par défaut : 8333 ou testnet : 18333)</translation>
-    </message>
-    <message>
-        <source>Maintain at most &lt;n&gt; connections to peers (default: 125)</source>
-        <translation type="obsolete">Garder au plus &lt;n&gt; connexions avec les pairs (par défaut : 125)</translation>
-    </message>
-    <message>
-        <source>Add a node to connect to</source>
-        <translation type="obsolete">Ajouter un nœud auquel se connecter</translation>
-    </message>
-    <message>
-        <source>Connect only to the specified node</source>
-        <translation type="obsolete">Ne se connecter qu&apos;au nœud spécifié</translation>
-    </message>
-    <message>
-        <source>Don&apos;t accept connections from outside</source>
-        <translation type="obsolete">Ne pas accepter les connexion depuis l&apos;extérieur</translation>
-    </message>
-    <message>
-        <source>Don&apos;t bootstrap list of peers using DNS</source>
-        <translation type="obsolete">Ne pas amorcer la liste des pairs en utilisant le DNS</translation>
-    </message>
-    <message>
-        <source>Threshold for disconnecting misbehaving peers (default: 100)</source>
-        <translation type="obsolete">Seuil de déconnexion des pairs de mauvaise qualité (par défaut : 100)</translation>
-    </message>
-    <message>
-        <source>Number of seconds to keep misbehaving peers from reconnecting (default: 86400)</source>
-        <translation type="obsolete">Délai en secondes de refus de reconnexion aux pairs de mauvaise qualité (par défaut : 86400)</translation>
-    </message>
-    <message>
-        <source>Maximum per-connection receive buffer, &lt;n&gt;*1000 bytes (default: 10000)</source>
-        <translation type="obsolete">Tampon maximal de réception par connexion, &lt;n&gt;*1000 octets (par défaut : 10000)</translation>
-    </message>
-    <message>
-        <source>Maximum per-connection send buffer, &lt;n&gt;*1000 bytes (default: 10000)</source>
-        <translation type="obsolete">Tampon maximal d&apos;envoi par connexion, &lt;n&gt;*1000 octets (par défaut : 10000)</translation>
-    </message>
-    <message>
-        <source>Don&apos;t attempt to use UPnP to map the listening port</source>
-        <translation type="obsolete">Ne pas tenter d&apos;utiliser l&apos;UPnP pour ouvrir le port d&apos;écoute</translation>
-    </message>
-    <message>
-        <source>Attempt to use UPnP to map the listening port</source>
-        <translation type="obsolete">Essayer d&apos;utiliser l&apos;UPnP pour ouvrir le port d&apos;écoute</translation>
-    </message>
-    <message>
-        <source>Fee per kB to add to transactions you send</source>
-        <translation type="obsolete">Frais par ko à ajouter aux transactions que vous enverrez</translation>
-    </message>
-    <message>
-        <source>Accept command line and JSON-RPC commands</source>
-        <translation type="obsolete">Accepter les commandes de JSON-RPC et de la ligne de commande</translation>
-    </message>
-    <message>
-        <source>Run in the background as a daemon and accept commands</source>
-        <translation type="obsolete">Fonctionner en arrière-plan en tant que démon et accepter les commandes</translation>
-    </message>
-    <message>
-        <source>Use the test network</source>
-        <translation type="obsolete">Utiliser le réseau de test</translation>
-    </message>
-    <message>
-        <source>Output extra debugging information</source>
-        <translation type="obsolete">Informations de débogage supplémentaires</translation>
-    </message>
-    <message>
-        <source>Prepend debug output with timestamp</source>
-        <translation type="obsolete">Faire précéder les données de débogage par un horodatage</translation>
-    </message>
-    <message>
-        <source>Send trace/debug info to console instead of debug.log file</source>
-        <translation type="obsolete">Envoyer les informations de débogage/trace à la console au lieu du fichier debug.log</translation>
-    </message>
-    <message>
-        <source>Send trace/debug info to debugger</source>
-        <translation type="obsolete">Envoyer les informations de débogage/trace au débogueur</translation>
-    </message>
-    <message>
-        <source>Username for JSON-RPC connections</source>
-        <translation type="obsolete">Nom d&apos;utilisateur pour les connexions JSON-RPC</translation>
-    </message>
-    <message>
-        <source>Password for JSON-RPC connections</source>
-        <translation type="obsolete">Mot de passe pour les connexions JSON-RPC</translation>
-    </message>
-    <message>
-        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 8332)</source>
-        <translation type="obsolete">Écouter les connexions JSON-RPC sur le &lt;port&gt; (par défaut : 8332)</translation>
-    </message>
-    <message>
-        <source>Allow JSON-RPC connections from specified IP address</source>
-        <translation type="obsolete">Autoriser les connexions JSON-RPC depuis l&apos;adresse IP spécifiée</translation>
-    </message>
-    <message>
-        <source>Send commands to node running on &lt;ip&gt; (default: 127.0.0.1)</source>
-        <translation type="obsolete">Envoyer des commandes au nœud fonctionnant à &lt;ip&gt; (par défaut : 127.0.0.1)</translation>
-    </message>
-    <message>
-        <source>Set key pool size to &lt;n&gt; (default: 100)</source>
-        <translation type="obsolete">Régler la taille de la plage de clefs sur &lt;n&gt; (par défaut : 100)</translation>
-    </message>
-    <message>
-        <source>Rescan the block chain for missing wallet transactions</source>
-        <translation type="obsolete">Réanalyser la chaîne de blocs pour les transactions de porte-monnaie manquantes</translation>
-    </message>
-    <message>
-        <source>
-SSL options: (see the PPCoin Wiki for SSL setup instructions)</source>
-        <translation type="obsolete">
-Options SSL : (cf. le wiki PPCoin pour les réglages SSL)</translation>
-    </message>
-    <message>
-        <source>Use OpenSSL (https) for JSON-RPC connections</source>
-        <translation type="obsolete">Utiliser OpenSSL (https) pour les connexions JSON-RPC</translation>
-    </message>
-    <message>
-        <source>Server certificate file (default: server.cert)</source>
-        <translation type="obsolete">Fichier de certificat serveur (par défaut : server.cert)</translation>
-    </message>
-    <message>
-        <source>Server private key (default: server.pem)</source>
-        <translation type="obsolete">Clef privée du serveur (par défaut : server.pem)</translation>
-    </message>
-    <message>
-        <source>Acceptable ciphers (default: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)</source>
-        <translation type="obsolete">Clefs de chiffrement acceptables (par défaut : TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)</translation>
-    </message>
-    <message>
-        <source>This help message</source>
-        <translation type="obsolete">Ce message d&apos;aide</translation>
-    </message>
-    <message>
-        <source>Cannot obtain a lock on data directory %s.  PPCoin is probably already running.</source>
-        <translation type="obsolete">Impossible d&apos;obtenir un verrou sur le répertoire de données %s.  PPCoin fonctionne probablement déjà.</translation>
-    </message>
-    <message>
-        <source>Loading addresses...</source>
-        <translation type="obsolete">Chargement des adresses...</translation>
-    </message>
-    <message>
-        <source>Error loading addr.dat</source>
-        <translation type="obsolete">Erreur lors du chargement de addr.dat</translation>
-    </message>
-    <message>
-        <source>Error loading blkindex.dat</source>
-        <translation type="obsolete">Erreur lors du chargement de blkindex.dat</translation>
-    </message>
-    <message>
-        <source>Error loading wallet.dat: Wallet corrupted</source>
-        <translation type="obsolete">Erreur lors du chargement de wallet.dat : porte-monnaie corrompu</translation>
-    </message>
-    <message>
-        <source>Error loading wallet.dat: Wallet requires newer version of PPCoin</source>
-        <translation type="obsolete">Erreur lors du chargement de wallet.dat : le porte-monnaie nécessite une version plus récente de PPCoin</translation>
-    </message>
-    <message>
-        <source>Wallet needed to be rewritten: restart PPCoin to complete</source>
-        <translation type="obsolete">Le porte-monnaie nécessitait une réécriture. Veuillez redémarrer PPCoin pour terminer l&apos;opération</translation>
-    </message>
-    <message>
-        <source>Error loading wallet.dat</source>
-        <translation type="obsolete">Erreur lors du chargement de wallet.dat</translation>
-    </message>
-    <message>
-        <source>Loading block index...</source>
-        <translation type="obsolete">Chargement de l&apos;index des blocs...</translation>
-    </message>
-    <message>
-        <source>Loading wallet...</source>
-        <translation type="obsolete">Chargement du porte-monnaie...</translation>
-    </message>
-    <message>
-        <source>Rescanning...</source>
-        <translation type="obsolete">Nouvelle analyse...</translation>
-    </message>
-    <message>
-        <source>Done loading</source>
-        <translation type="obsolete">Chargement terminé</translation>
-    </message>
-    <message>
-        <source>Invalid -proxy address</source>
-        <translation type="obsolete">Adresse -proxy invalide</translation>
-    </message>
-    <message>
-        <source>Invalid amount for -paytxfee=&lt;amount&gt;</source>
-        <translation type="obsolete">Montant invalide pour -paytxfee=&lt;montant&gt;</translation>
-    </message>
-    <message>
-        <source>Warning: -paytxfee is set very high.  This is the transaction fee you will pay if you send a transaction.</source>
-        <translation type="obsolete">Attention : -paytxfee est réglée sur un montant très élevé.  Il s&apos;agit des frais de transaction que vous payerez si vous envoyez une transaction.</translation>
-    </message>
-    <message>
-        <source>Error: CreateThread(StartNode) failed</source>
-        <translation type="obsolete">Erreur : CreateThread(StartNode) a échoué</translation>
-    </message>
-    <message>
-        <source>Warning: Disk space is low  </source>
-        <translation type="obsolete">Attention : l&apos;espace disque est faible</translation>
-    </message>
-    <message>
-        <source>Unable to bind to port %d on this computer.  PPCoin is probably already running.</source>
-        <translation type="obsolete">Impossible de s&apos;attacher au port %d sur cet ordinateur.  PPCoin fonctionne probablement déjà.</translation>
-    </message>
-    <message>
-        <source>Warning: Please check that your computer&apos;s date and time are correct.  If your clock is wrong PPCoin will not work properly.</source>
-        <translation type="obsolete">Attention : veuillez vérifier que l&apos;heure et la date de votre ordinateur sont corrects.  Si votre horloge n&apos;est pas à l&apos;heure, PPCoin ne fonctionnera pas correctement.</translation>
-    </message>
-    <message>
-        <source>beta</source>
-        <translation type="obsolete">bêta</translation>
-    </message>
-</context>
-<context>
-    <name>PPCoinGUI</name>
-    <message>
-        <source>PPCoin Wallet</source>
-        <translation type="obsolete">Porte-monnaie PPCoin</translation>
-    </message>
-    <message>
-        <source>Synchronizing with network...</source>
-        <translation type="obsolete">Synchronisation avec le réseau...</translation>
-    </message>
-    <message>
-        <source>Block chain synchronization in progress</source>
-        <translation type="obsolete">Synchronisation de la chaîne de blocs en cours</translation>
-    </message>
-    <message>
-        <source>&amp;Overview</source>
-        <translation type="obsolete">&amp;Vue d&apos;ensemble</translation>
-    </message>
-    <message>
-        <source>Show general overview of wallet</source>
-        <translation type="obsolete">Affiche une vue d&apos;ensemble du porte-monnaie</translation>
-    </message>
-    <message>
-        <source>&amp;Transactions</source>
-        <translation type="obsolete">&amp;Transactions</translation>
-    </message>
-    <message>
-        <source>Browse transaction history</source>
-        <translation type="obsolete">Permet de parcourir l&apos;historique des transactions</translation>
-    </message>
-    <message>
-        <source>&amp;Address Book</source>
-        <translation type="obsolete">Carnet d&apos;&amp;adresses</translation>
-    </message>
-    <message>
-        <source>Edit the list of stored addresses and labels</source>
-        <translation type="obsolete">Éditer la liste des adresses et des étiquettes stockées</translation>
-    </message>
-    <message>
-        <source>&amp;Receive coins</source>
-        <translation type="obsolete">&amp;Recevoir des pièces</translation>
-    </message>
-    <message>
-        <source>Show the list of addresses for receiving payments</source>
-        <translation type="obsolete">Affiche la liste des adresses pour recevoir des paiements</translation>
-    </message>
-    <message>
-        <source>&amp;Send coins</source>
-        <translation type="obsolete">&amp;Envoyer des pièces</translation>
-    </message>
-    <message>
-        <source>Send coins to a PPCoin address</source>
-        <translation type="obsolete">Envoyer des pièces à une adresse PPCoin</translation>
-    </message>
-    <message>
-        <source>Sign &amp;message</source>
-        <translation type="obsolete">Signer un &amp;message</translation>
-    </message>
-    <message>
-        <source>Prove you control an address</source>
-        <translation type="obsolete">Prouver que vous contrôlez une adresse</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation type="obsolete">Q&amp;uitter</translation>
-    </message>
-    <message>
-        <source>Quit application</source>
-        <translation type="obsolete">Quitter l&apos;application</translation>
-    </message>
-    <message>
-        <source>&amp;About %1</source>
-        <translation type="obsolete">&amp;À propos de %1</translation>
-    </message>
-    <message>
-        <source>Show information about PPCoin</source>
-        <translation type="obsolete">Afficher des informations à propos de PPCoin</translation>
-    </message>
-    <message>
-        <source>About &amp;Qt</source>
-        <translation type="obsolete">À propos de &amp;Qt</translation>
-    </message>
-    <message>
-        <source>Show information about Qt</source>
-        <translation type="obsolete">Afficher des informations sur Qt</translation>
-    </message>
-    <message>
-        <source>&amp;Options...</source>
-        <translation type="obsolete">&amp;Options...</translation>
-    </message>
-    <message>
-        <source>Modify configuration options for PPCoin</source>
-        <translation type="obsolete">Modifier les options de configuration pour PPCoin</translation>
-    </message>
-    <message>
-        <source>Open &amp;PPCoin</source>
-        <translation type="obsolete">Ouvrir &amp;PPCoin</translation>
-    </message>
-    <message>
-        <source>Show the PPCoin window</source>
-        <translation type="obsolete">Afficher la fenêtre de PPCoin</translation>
-    </message>
-    <message>
-        <source>&amp;Export...</source>
-        <translation type="obsolete">&amp;Exporter...</translation>
-    </message>
-    <message>
-        <source>Export the data in the current tab to a file</source>
-        <translation type="obsolete">Exporter les données de l&apos;onglet courant vers un fichier</translation>
-    </message>
-    <message>
-        <source>&amp;Encrypt Wallet</source>
-        <translation type="obsolete">&amp;Chiffrer le porte-monnaie</translation>
-    </message>
-    <message>
-        <source>Encrypt or decrypt wallet</source>
-        <translation type="obsolete">Chiffrer ou décrypter le porte-monnaie</translation>
-    </message>
-    <message>
-        <source>&amp;Backup Wallet</source>
-        <translation type="obsolete">&amp;Sauvegarder le porte-monnaie</translation>
-    </message>
-    <message>
-        <source>Backup wallet to another location</source>
-        <translation type="obsolete">Sauvegarder le porte-monnaie à un autre emplacement</translation>
-    </message>
-    <message>
-        <source>&amp;Change Passphrase</source>
-        <translation type="obsolete">&amp;Modifier la phrase de passe</translation>
-    </message>
-    <message>
-        <source>Change the passphrase used for wallet encryption</source>
-        <translation type="obsolete">Modifier la phrase de passe utilisée pour le cryptage du porte-monnaie</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <translation type="obsolete">&amp;Fichier</translation>
-    </message>
-    <message>
-        <source>&amp;Settings</source>
-        <translation type="obsolete">&amp;Réglages</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="obsolete">&amp;Aide</translation>
-    </message>
-    <message>
-        <source>Tabs toolbar</source>
-        <translation type="obsolete">Barre d&apos;outils des onglets</translation>
-    </message>
-    <message>
-        <source>Actions toolbar</source>
-        <translation type="obsolete">Barre d&apos;outils des actions</translation>
-    </message>
-    <message>
-        <source>[testnet]</source>
-        <translation type="obsolete">[testnet]</translation>
-    </message>
-    <message>
-        <source>PPCoin-qt</source>
-        <translation type="obsolete">PPCoin-qt</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n active connection(s) to PPCoin network</source>
-        <translation type="obsolete">
-            <numerusform>%n connexion active avec le réseau PPCoin</numerusform>
-            <numerusform>%n connexions actives avec le réseau PPCoin</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Downloaded %1 of %2 blocks of transaction history.</source>
-        <translation type="obsolete">%1 blocs de l&apos;historique des transactions téléchargés sur un total de %2.</translation>
-    </message>
-    <message>
-        <source>Downloaded %1 blocks of transaction history.</source>
-        <translation type="obsolete">%1 blocs de l&apos;historique de transaction téléchargé.</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n second(s) ago</source>
-        <translation type="obsolete">
-            <numerusform>il y a %n seconde</numerusform>
-            <numerusform>il y a %n secondes</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n minute(s) ago</source>
-        <translation type="obsolete">
-            <numerusform>il y a %n minute</numerusform>
-            <numerusform>il y a %n minutes</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n hour(s) ago</source>
-        <translation type="obsolete">
-            <numerusform>il y a %n heure</numerusform>
-            <numerusform>il y a %n heures</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n day(s) ago</source>
-        <translation type="obsolete">
-            <numerusform>il y a %n jour</numerusform>
-            <numerusform>il y a %n jours</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Up to date</source>
-        <translation type="obsolete">À jour</translation>
-    </message>
-    <message>
-        <source>Catching up...</source>
-        <translation type="obsolete">Rattrapage...</translation>
-    </message>
-    <message>
-        <source>Last received block was generated %1.</source>
-        <translation type="obsolete">Le dernier bloc reçu a été généré %1.</translation>
-    </message>
-    <message>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation type="obsolete">Cette transaction dépasse la limite de taille.  Vous pouvez quand-même l&apos;envoyer en vous acquittant de frais d&apos;un montant de %1, qui iront aux nœuds qui traitent la transaction et aideront à soutenir le réseau.  Voulez-vous payer les frais ?</translation>
-    </message>
-    <message>
-        <source>Sending...</source>
-        <translation type="obsolete">Envoi en cours...</translation>
-    </message>
-    <message>
-        <source>Sent transaction</source>
-        <translation type="obsolete">Transaction envoyée</translation>
-    </message>
-    <message>
-        <source>Incoming transaction</source>
-        <translation type="obsolete">Transaction entrante</translation>
-    </message>
-    <message>
-        <source>Date: %1
-Amount: %2
-Type: %3
-Address: %4
-</source>
-        <translation type="obsolete">Date : %1
-Montant : %2
-Type : %3
-Adresse : %4
-</translation>
-    </message>
-    <message>
-        <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;unlocked&lt;/b&gt;</source>
-        <translation type="obsolete">Le porte-monnaie est &lt;b&gt;chiffré&lt;/b&gt; et est actuellement &lt;b&gt;déverrouillé&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;locked&lt;/b&gt;</source>
-        <translation type="obsolete">Le porte-monnaie est &lt;b&gt;chiffré&lt;/b&gt; et est actuellement &lt;b&gt;verrouillé&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>Backup Wallet</source>
-        <translation type="obsolete">Sauvegarder le porte-monnaie</translation>
-    </message>
-    <message>
-        <source>Wallet Data (*.dat)</source>
-        <translation type="obsolete">Données de porte-monnaie (*.dat)</translation>
-    </message>
-    <message>
-        <source>Backup Failed</source>
-        <translation type="obsolete">La sauvegarde a échoué</translation>
-    </message>
-    <message>
-        <source>There was an error trying to save the wallet data to the new location.</source>
-        <translation type="obsolete">Une erreur est survenue lors de l&apos;enregistrement des données de porte-monnaie à un autre emplacement.</translation>
-    </message>
-</context>
-<context>
     <name>QRCodeDialog</name>
     <message>
         <location filename="../forms/qrcodedialog.ui" line="14"/>
@@ -1940,10 +1244,6 @@ Adresse : %4
         <location filename="../forms/qrcodedialog.ui" line="105"/>
         <source>PPC</source>
         <translation>PPC</translation>
-    </message>
-    <message>
-        <source>BTC</source>
-        <translation type="obsolete">BTC</translation>
     </message>
     <message>
         <location filename="../forms/qrcodedialog.ui" line="121"/>
@@ -2315,10 +1615,6 @@ Adresse : %4
         <translation>(aucune étiquette)</translation>
     </message>
     <message>
-        <source>The amount to pay must be larger than 0.</source>
-        <translation type="obsolete">Le montant à payer doit être supérieur à 0.</translation>
-    </message>
-    <message>
         <location filename="../sendcoinsdialog.cpp" line="187"/>
         <source>Amount exceeds your balance</source>
         <translation>Le montant dépasse votre solde</translation>
@@ -2378,10 +1674,6 @@ Adresse : %4
         <translation>L&apos;adresse à laquelle le paiement sera envoyé</translation>
     </message>
     <message>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation type="obsolete">L&apos;adresse à laquelle le paiement sera envoyé   (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
-    </message>
-    <message>
         <location filename="../forms/sendcoinsentry.ui" line="103"/>
         <source>Choose address from address book</source>
         <translation>Choisir une adresse dans le carnet d&apos;adresses </translation>
@@ -2407,10 +1699,6 @@ Adresse : %4
         <translation>Enlever ce destinataire</translation>
     </message>
     <message>
-        <source>Enter a PPCoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation type="obsolete">Entez une adresse PPCoin (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
-    </message>
-    <message>
         <location filename="../sendcoinsentry.cpp" line="25"/>
         <source>Enter a PPCoin address</source>
         <translation>Entrez une adresse Peercoin</translation>
@@ -2431,7 +1719,7 @@ Adresse : %4
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="30"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation type="unfinished">Vous pouvez signer des messages avec vos adresses pour prouver que vous les détenez. Faites attention à ne pas signer quoi que ce soit de vague car des attaques d&apos;hameçonnage peuvent essayer d&apos;obtenir votre identité par votre signature. Ne signez que des déclarations entièrement détaillées et avec lesquelles vous serez d&apos;accord.</translation>
+        <translation>Vous pouvez signer des messages avec vos adresses pour prouver que vous les détenez. Faites attention à ne pas signer quoi que ce soit de vague car des attaques d&apos;hameçonnage peuvent essayer d&apos;obtenir votre identité par votre signature. Ne signez que des déclarations entièrement détaillées et avec lesquelles vous serez d&apos;accord.</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="48"/>
@@ -2753,10 +2041,6 @@ Adresse : %4
         <location filename="../transactiondesc.cpp" line="231"/>
         <source>Staked coins must wait 520 blocks before they can return to balance and be spent.  When you generated this proof-of-stake block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be a valid stake.  This may occasionally happen if another node generates a proof-of-stake block within a few seconds of yours.</source>
         <translation>Les pièces générées par preuve-de-part doivent attendre 520 blocs avant de pouvoir être dépensées.  Lorsque vous avez généré ce bloc par preuve-de-part, il a été diffusé sur le réseau pour être ajouté à la chaîne des blocs.  S&apos;il échoue a intégrer la chaîne, il sera modifié en « pas accepté » et il ne sera pas possible de le dépenser.  Cela peut arriver occasionnellement si un autre nœud génère un bloc quelques secondes avant ou après vous.</translation>
-    </message>
-    <message>
-        <source>Generated coins must wait 120 blocks before they can be spent.  When you generated this block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be spendable.  This may occasionally happen if another node generates a block within a few seconds of yours.</source>
-        <translation type="obsolete">Les pièces générées doivent attendre 120 blocs avant de pouvoir être dépensées.  Lorsque vous avez généré ce bloc, il a été diffusé sur le réseau pour être ajouté à la chaîne des blocs.  S&apos;il échoue a intégrer la chaîne, il sera modifié en « pas accepté » et il ne sera pas possible de le dépenser.  Cela peut arriver occasionnellement si un autre nœud génère un bloc quelques secondes avant ou après vous.</translation>
     </message>
 </context>
 <context>
