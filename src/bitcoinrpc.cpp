@@ -324,10 +324,10 @@ Value stop(const Array& params, bool fHelp)
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "stop\n"
-            "Stop PeerUnity server.");
+            "Stop Peerunity server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    return "PeerUnity server stopping";
+    return "Peerunity server stopping";
 }
 
 
@@ -1912,7 +1912,7 @@ Value encryptwallet(const Array& params, bool fHelp)
     // slack space in .dat files; that is bad if the old data is
     // unencrypted private keys.  So:
     StartShutdown();
-    return "wallet encrypted; PeerUnity server stopping, restart to run with encrypted wallet";
+    return "wallet encrypted; Peerunity server stopping, restart to run with encrypted wallet";
 }
 
 
@@ -1983,10 +1983,10 @@ Value getwork(const Array& params, bool fHelp)
             "If [data] is specified, tries to solve the block and returns true if it was successful.");
 
     if (vNodes.empty())
-        throw JSONRPCError(-9, "PeerUnity is not connected!");
+        throw JSONRPCError(-9, "Peerunity is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(-10, "PeerUnity is downloading blocks...");
+        throw JSONRPCError(-10, "Peerunity is downloading blocks...");
 
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;
@@ -2116,10 +2116,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     {
         if (vNodes.empty())
-            throw JSONRPCError(-9, "PeerUnity is not connected!");
+            throw JSONRPCError(-9, "Peerunity is not connected!");
 
         if (IsInitialBlockDownload())
-            throw JSONRPCError(-10, "PeerUnity is downloading blocks...");
+            throw JSONRPCError(-10, "Peerunity is downloading blocks...");
 
         // Update block
         static unsigned int nTransactionsUpdatedLast;
@@ -2889,7 +2889,7 @@ void ThreadRPCServer2(void* parg)
     {
         unsigned char rand_pwd[32];
         RAND_bytes(rand_pwd, 32);
-        string strWhatAmI = "To use peerunityd";
+        string strWhatAmI = "To use peerunity(ppcoind)";
         if (mapArgs.count("-server"))
             strWhatAmI = strprintf(_("To use the %s option"), "\"-server\"");
         else if (mapArgs.count("-daemon"))
