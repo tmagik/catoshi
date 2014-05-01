@@ -72,9 +72,9 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     rpcConsole(0)
 {
     resize(850, 550);
-    setWindowTitle(tr("Peercoin (PPCoin) Wallet"));
+    setWindowTitle(tr("Peerunity Wallet"));
 #ifndef Q_WS_MAC
-    setWindowIcon(QIcon(":icons/ppcoin"));
+    setWindowIcon(QIcon(":icons/peerunity_icon"));
 #else
     setUnifiedTitleAndToolBarOnMac(true);
     QApplication::setAttribute(Qt::AA_DontShowIconsInMenus);
@@ -205,7 +205,7 @@ void BitcoinGUI::createActions()
     tabGroup->addAction(receiveCoinsAction);
 
     sendCoinsAction = new QAction(QIcon(":/icons/send"), tr("&Send coins"), this);
-    sendCoinsAction->setToolTip(tr("Send coins to a ppcoin address"));
+    sendCoinsAction->setToolTip(tr("Send coins to a Peercoin address"));
     sendCoinsAction->setCheckable(true);
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
     tabGroup->addAction(sendCoinsAction);
@@ -234,17 +234,17 @@ void BitcoinGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/ppcoin"), tr("&About %1").arg(qApp->applicationName()), this);
-    aboutAction->setToolTip(tr("Show information about PPCoin"));
+    aboutAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("&About Peerunity"), this);
+    aboutAction->setToolTip(tr("Show information about PeerCoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(tr("About &Qt"), this);
     aboutQtAction->setToolTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
-    optionsAction->setToolTip(tr("Modify configuration options for ppcoin"));
+    optionsAction->setToolTip(tr("Modify configuration options for Peerunity"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    toggleHideAction = new QAction(QIcon(":/icons/ppcoin"), tr("Show/Hide &PPCoin"), this);
-    toggleHideAction->setToolTip(tr("Show or hide the PPCoin window"));
+    toggleHideAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("Show/Hide &Peerunity"), this);
+    toggleHideAction->setToolTip(tr("Show or hide the Peerunity window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet"), this);
@@ -333,14 +333,14 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
             QString title_testnet = windowTitle() + QString(" ") + tr("[testnet]");
             setWindowTitle(title_testnet);
 #ifndef Q_WS_MAC
-            setWindowIcon(QIcon(":icons/ppcoin_testnet"));
+            setWindowIcon(QIcon(":icons/peerunity_icon"));
 #else
-            MacDockIconHandler::instance()->setIcon(QIcon(":icons/ppcoin_testnet"));
+            MacDockIconHandler::instance()->setIcon(QIcon(":icons/peerunity_icon"));
 #endif
             if(trayIcon)
             {
                 trayIcon->setToolTip(title_testnet);
-                trayIcon->setIcon(QIcon(":/icons/toolbar_testnet"));
+                trayIcon->setIcon(QIcon(":/icons/peerunity_tooltip"));
             }
         }
 
@@ -394,8 +394,8 @@ void BitcoinGUI::createTrayIcon()
     trayIcon = new QSystemTrayIcon(this);
     trayIconMenu = new QMenu(this);
     trayIcon->setContextMenu(trayIconMenu);
-    trayIcon->setToolTip(tr("PPCoin client"));
-    trayIcon->setIcon(QIcon(":/icons/toolbar"));
+    trayIcon->setToolTip(tr("Peerunity client"));
+    trayIcon->setIcon(QIcon(":/icons/peerunity_tooltip"));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
             this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
     trayIcon->show();
@@ -422,7 +422,7 @@ void BitcoinGUI::createTrayIcon()
     trayIconMenu->addAction(quitAction);
 #endif
 
-    notificator = new Notificator(tr("ppcoin-qt"), trayIcon);
+    notificator = new Notificator(tr("p-qt"), trayIcon);
 }
 
 #ifndef Q_WS_MAC
@@ -486,7 +486,7 @@ void BitcoinGUI::setNumConnections(int count)
     default: icon = ":/icons/connect_4"; break;
     }
     labelConnectionsIcon->setPixmap(QIcon(icon).pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to PPCoin network", "", count));
+    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to Peercoin network", "", count));
 }
 
 void BitcoinGUI::setNumBlocks(int count)
