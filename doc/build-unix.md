@@ -42,15 +42,7 @@ Licenses of statically linked libraries:
  Boost         MIT-like license
  miniupnpc     New (3-clause) BSD license
 
-- Versions used in this release:
--  GCC           4.3.3
--  OpenSSL       1.0.1c
--  Berkeley DB   4.8.30.NC
--  Boost         1.55
--  miniupnpc     1.6
--  qt            4.8.3
--  protobuf      2.5.0
--  libqrencode   3.2.0
+- For the versions used in this release, see doc/release-process.md under *Fetch and build inputs*.
 
 System requirements
 --------------------
@@ -145,8 +137,12 @@ miniupnpc
 
 Berkeley DB
 -----------
-You need Berkeley DB 4.8.  If you have to build Berkeley DB yourself:
+You need Berkeley DB 4.8.  If you have to build it yourself:
 
+	wget 'http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz'
+	echo '12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db-4.8.30.NC.tar.gz' | sha256sum -c
+	# -> db-4.8.30.NC.tar.gz: OK
+	tar -xzvf db-4.8.30.NC.tar.gz
 	cd build_unix/
 	../dist/configure --enable-cxx
 	make

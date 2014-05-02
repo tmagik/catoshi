@@ -227,7 +227,6 @@ In this section we will be setting up the Debian installation for Gitian buildin
 First we need to log in as `root` to set up dependencies and make sure that our
 user can use the sudo command. Type/paste the following in the terminal:
 
-
 ```bash
 apt-get install git ruby sudo apt-cacher-ng qemu-utils debootstrap lxc python-cheetah parted kpartx bridge-utils
 adduser debian sudo
@@ -249,15 +248,16 @@ echo '#!/bin/sh -e' > /etc/rc.local
 echo 'brctl addbr br0' >> /etc/rc.local
 echo 'ifconfig br0 10.0.3.2/24 up' >> /etc/rc.local
 echo 'exit 0' >> /etc/rc.local
-# make sure that USE_LXC is always set when logging in as debian
+# make sure that USE_LXC is always set when logging in as debian,
+# and configure LXC IP addresses
 echo 'export USE_LXC=1' >> /home/debian/.profile
+echo 'export GITIAN_HOST_IP=10.0.3.2' >> /home/debian/.profile
+echo 'export LXC_GUEST_IP=10.0.3.5' >> /home/debian/.profile
 reboot
 ```
 
-At the end the VM is rebooted to make sure that the changes take effect.
-
-**Note**: If you're following this guide on a physical system instead of a VirtualBox VM you could use `10.0.2.2` instead
-of `10.0.3.2` in the above `ifconfig` line. This avoids having to patch gitian-builder in next section.
+At the end the VM is rebooted to make sure that the changes take effect. The steps in this
+section need only to be performed once.
 
 Installing gitian
 ------------------
@@ -285,20 +285,6 @@ Clone the git repositories for bitcoin and gitian,
 git clone https://github.com/devrandom/gitian-builder.git
 git clone https://github.com/bitcoin/bitcoin
 ```
-
-We need to change the guest IP range for the gitian builder because otherwise it will
-collide with VirtualBox its NAT IP range. Gitian does not have a way yet to configure
-this, so we need to patch the IPs using `sed`. This is not nice but it will
-have to do for now... (a [pull request
-(#52)](https://github.com/devrandom/gitian-builder/pull/52) to make this
-configurable without patching has been submitted):
-
-```bash
-sed -i 's/10.0.2.2/10.0.3.2/g' gitian-builder/target-bin/bootstrap-fixup
-sed -i 's/10.0.2.5/10.0.3.5/g' gitian-builder/etc/lxc.config.in
-```
-
-*note* After you update the gitian-builder repository, you may need to repeat these manual changes.
 
 Setting up gitian images
 -------------------------
@@ -345,25 +331,6 @@ At any time you can check the package installation and build progress with
 tail -f var/install.log
 tail -f var/build.log
 ```
-
-To make sure that the output is exactly the same, and that the time, date, locale and
-even the ordering of files in the file system doesn't influence the result,
-some special precautions are taken. This means that the result is expected to
-be the same every time. The expected SHA256 hashes of the intermediate
-inputs (at the time of release 0.9.0) are:
-
-    05fe8e9aef00d295f24a94deef7d3a918af5aeef371ba57fdd5a6acd8c51f6cb  bitcoin-deps-linux32-gitian-r3.zip
-    4227aa9d9fedbb4265b8d10a4f78b7435f34b00a54eb4d662bf78f59c6e70c27  bitcoin-deps-linux64-gitian-r3.zip
-    f29b7d9577417333fb56e023c2977f5726a7c297f320b175a4108cf7cd4c2d29  boost-linux32-1.55.0-gitian-r1.zip
-    88232451c4104f7eb16e469ac6474fd1231bd485687253f7b2bdf46c0781d535  boost-linux64-1.55.0-gitian-r1.zip
-    60dc2d3b61e9c7d5dbe2f90d5955772ad748a47918ff2d8b74e8db9b1b91c909  boost-win32-1.55.0-gitian-r6.zip
-    f65fcaf346bc7b73bc8db3a8614f4f6bee2f61fcbe495e9881133a7c2612a167  boost-win64-1.55.0-gitian-r6.zip
-    0ba0855e1084132d05fd8687c19d8430b91f6c410a9ab7938e4fea650c2b22c8  bitcoin-deps-win32-gitian-r10.zip
-    5f9ffba0c13ddefc1d339f66ab973ea64623c9cc1f9078cb2b145bce86bd28e2  bitcoin-deps-win64-gitian-r10.zip
-    963e3e5e85879010a91143c90a711a5d1d5aba992e38672cdf7b54e42c56b2f1  qt-win32-5.2.0-gitian-r2.zip
-    751c579830d173ef3e6f194e83d18b92ebef6df03289db13ab77a52b6bc86ef0  qt-win64-5.2.0-gitian-r2.zip
-    e2e403e1a08869c7eed4d4293bce13d51ec6a63592918b90ae215a0eceb44cb4  protobuf-win32-2.5.0-gitian-r4.zip
-    a0999037e8b0ef9ade13efd88fee261ba401f5ca910068b7e0cd3262ba667db0  protobuf-win64-2.5.0-gitian-r4.zip
 
 Building Bitcoin
 ----------------
