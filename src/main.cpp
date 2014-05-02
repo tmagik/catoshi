@@ -74,53 +74,54 @@ const string strMessageMagic = "Bitcoin Signed Message:\n";
 
 // Internal stuff
 namespace {
-struct CBlockIndexWorkComparator
-{
-    bool operator()(CBlockIndex *pa, CBlockIndex *pb) {
-        // First sort by most total work, ...
-        if (pa->nChainWork > pb->nChainWork) return false;
-        if (pa->nChainWork < pb->nChainWork) return true;
+    struct CBlockIndexWorkComparator
+    {
+        bool operator()(CBlockIndex *pa, CBlockIndex *pb) {
+            // First sort by most total work, ...
+            if (pa->nChainWork > pb->nChainWork) return false;
+            if (pa->nChainWork < pb->nChainWork) return true;
 
-        // ... then by earliest time received, ...
-        if (pa->nSequenceId < pb->nSequenceId) return false;
-        if (pa->nSequenceId > pb->nSequenceId) return true;
+            // ... then by earliest time received, ...
+            if (pa->nSequenceId < pb->nSequenceId) return false;
+            if (pa->nSequenceId > pb->nSequenceId) return true;
 
-        // Use pointer address as tie breaker (should only happen with blocks
-        // loaded from disk, as those all have id 0).
-        if (pa < pb) return false;
-        if (pa > pb) return true;
+            // Use pointer address as tie breaker (should only happen with blocks
+            // loaded from disk, as those all have id 0).
+            if (pa < pb) return false;
+            if (pa > pb) return true;
 
-        // Identical blocks.
-        return false;
-    }
-};
+            // Identical blocks.
+            return false;
+        }
+    };
 
-CBlockIndex *pindexBestInvalid;
-set<CBlockIndex*, CBlockIndexWorkComparator> setBlockIndexValid; // may contain all CBlockIndex*'s that have validness >=BLOCK_VALID_TRANSACTIONS, and must contain those who aren't failed
+    CBlockIndex *pindexBestInvalid;
+    // may contain all CBlockIndex*'s that have validness >=BLOCK_VALID_TRANSACTIONS, and must contain those who aren't failed
+    set<CBlockIndex*, CBlockIndexWorkComparator> setBlockIndexValid;
 
-CCriticalSection cs_LastBlockFile;
-CBlockFileInfo infoLastBlockFile;
-int nLastBlockFile = 0;
+    CCriticalSection cs_LastBlockFile;
+    CBlockFileInfo infoLastBlockFile;
+    int nLastBlockFile = 0;
 
-// Every received block is assigned a unique and increasing identifier, so we
-// know which one to give priority in case of a fork.
-CCriticalSection cs_nBlockSequenceId;
-// Blocks loaded from disk are assigned id 0, so start the counter at 1.
-uint32_t nBlockSequenceId = 1;
+    // Every received block is assigned a unique and increasing identifier, so we
+    // know which one to give priority in case of a fork.
+    CCriticalSection cs_nBlockSequenceId;
+    // Blocks loaded from disk are assigned id 0, so start the counter at 1.
+    uint32_t nBlockSequenceId = 1;
 
-// Sources of received blocks, to be able to send them reject messages or ban
-// them, if processing happens afterwards. Protected by cs_main.
-map<uint256, NodeId> mapBlockSource;
+    // Sources of received blocks, to be able to send them reject messages or ban
+    // them, if processing happens afterwards. Protected by cs_main.
+    map<uint256, NodeId> mapBlockSource;
 
-// Blocks that are in flight, and that are in the queue to be downloaded.
-// Protected by cs_main.
-struct QueuedBlock {
-    uint256 hash;
-    int64_t nTime;  // Time of "getdata" request in microseconds.
-    int nQueuedBefore;  // Number of blocks in flight at the time of request.
-};
-map<uint256, pair<NodeId, list<QueuedBlock>::iterator> > mapBlocksInFlight;
-map<uint256, pair<NodeId, list<uint256>::iterator> > mapBlocksToDownload;
+    // Blocks that are in flight, and that are in the queue to be downloaded.
+    // Protected by cs_main.
+    struct QueuedBlock {
+        uint256 hash;
+        int64_t nTime;  // Time of "getdata" request in microseconds.
+        int nQueuedBefore;  // Number of blocks in flight at the time of request.
+    };
+    map<uint256, pair<NodeId, list<QueuedBlock>::iterator> > mapBlocksInFlight;
+    map<uint256, pair<NodeId, list<uint256>::iterator> > mapBlocksToDownload;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -474,6 +475,7 @@ unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans)
 
 bool IsStandardTx(const CTransaction& tx, string& reason)
 {
+    AssertLockHeld(cs_main);
     if (tx.nVersion > CTransaction::CURRENT_VERSION || tx.nVersion < 1) {
         reason = "version";
         return false;
@@ -556,6 +558,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 {
+    AssertLockHeld(cs_main);
     // Time based nLockTime implemented in 0.1.6
     if (tx.nLockTime == 0)
         return true;
@@ -667,6 +670,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, CCoinsViewCache& inputs)
 
 int CMerkleTx::SetMerkleBranch(const CBlock* pblock)
 {
+    AssertLockHeld(cs_main);
     CBlock blockTmp;
 
     if (pblock == NULL) {
@@ -813,6 +817,7 @@ int64_t GetMinFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree, 
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
                         bool* pfMissingInputs, bool fRejectInsaneFee)
 {
+    AssertLockHeld(cs_main);
     if (pfMissingInputs)
         *pfMissingInputs = false;
 
@@ -958,6 +963,7 @@ int CMerkleTx::GetDepthInMainChainINTERNAL(CBlockIndex* &pindexRet) const
 {
     if (hashBlock == 0 || nIndex == -1)
         return 0;
+    AssertLockHeld(cs_main);
 
     // Find the block it claims to be in
     map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashBlock);
@@ -981,6 +987,7 @@ int CMerkleTx::GetDepthInMainChainINTERNAL(CBlockIndex* &pindexRet) const
 
 int CMerkleTx::GetDepthInMainChain(CBlockIndex* &pindexRet) const
 {
+    AssertLockHeld(cs_main);
     int nResult = GetDepthInMainChainINTERNAL(pindexRet);
     if (nResult == 0 && !mempool.exists(GetHash()))
         return -1; // Not in chain, not in mempool
@@ -1026,11 +1033,11 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
                     fseek(file, postx.nTxOffset, SEEK_CUR);
                     file >> txOut;
                 } catch (std::exception &e) {
-                    return error("%s : Deserialize or I/O error - %s", __PRETTY_FUNCTION__, e.what());
+                    return error("%s : Deserialize or I/O error - %s", __func__, e.what());
                 }
                 hashBlock = header.GetHash();
                 if (txOut.GetHash() != hash)
-                    return error("%s : txid mismatch", __PRETTY_FUNCTION__);
+                    return error("%s : txid mismatch", __func__);
                 return true;
             }
         }
@@ -1114,7 +1121,7 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
         filein >> block;
     }
     catch (std::exception &e) {
-        return error("%s : Deserialize or I/O error - %s", __PRETTY_FUNCTION__, e.what());
+        return error("%s : Deserialize or I/O error - %s", __func__, e.what());
     }
 
     // Check the header
@@ -1304,6 +1311,7 @@ int GetNumBlocksOfPeers()
 
 bool IsInitialBlockDownload()
 {
+    LOCK(cs_main);
     if (fImporting || fReindex || chainActive.Height() < Checkpoints::GetTotalBlocksEstimate())
         return true;
     static int64_t nLastUpdate;
@@ -1323,6 +1331,7 @@ CBlockIndex *pindexBestForkTip = NULL, *pindexBestForkBase = NULL;
 
 void CheckForkWarningConditions()
 {
+    AssertLockHeld(cs_main);
     // Before we get past initial download, we cannot reliably alert about forks
     // (we assume we don't get stuck on a fork before the last checkpoint)
     if (IsInitialBlockDownload())
@@ -1368,6 +1377,7 @@ void CheckForkWarningConditions()
 
 void CheckForkWarningConditionsOnNewFork(CBlockIndex* pindexNewForkTip)
 {
+    AssertLockHeld(cs_main);
     // If we are on a fork that is sufficiently large, set a warning flag
     CBlockIndex* pfork = pindexNewForkTip;
     CBlockIndex* plonger = chainActive.Tip();
@@ -1718,6 +1728,7 @@ void ThreadScriptCheck() {
 
 bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck)
 {
+    AssertLockHeld(cs_main);
     // Check it again in case a previous version let a bad block in
     if (!CheckBlock(block, state, !fJustCheck, !fJustCheck))
         return false;
@@ -2078,6 +2089,7 @@ void static FindMostWorkChain() {
 
 // Try to activate to the most-work chain (thereby connecting it).
 bool ActivateBestChain(CValidationState &state) {
+    LOCK(cs_main);
     CBlockIndex *pindexOldTip = chainActive.Tip();
     bool fComplete = false;
     while (!fComplete) {
@@ -2162,6 +2174,7 @@ bool AddToBlockIndex(CBlock& block, CValidationState& state, const CDiskBlockPos
     if (!ActivateBestChain(state))
         return false;
 
+    LOCK(cs_main);
     if (pindexNew == chainActive.Tip())
     {
         // Clear fork warning if its no longer applicable
@@ -2344,6 +2357,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
 
 bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp)
 {
+    AssertLockHeld(cs_main);
     // Check for duplicate
     uint256 hash = block.GetHash();
     if (mapBlockIndex.count(hash))
@@ -2455,6 +2469,7 @@ bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, uns
 
 int64_t CBlockIndex::GetMedianTime() const
 {
+    AssertLockHeld(cs_main);
     const CBlockIndex* pindex = this;
     for (int i = 0; i < nMedianTimeSpan/2; i++)
     {
@@ -2467,6 +2482,7 @@ int64_t CBlockIndex::GetMedianTime() const
 
 void PushGetBlocks(CNode* pnode, CBlockIndex* pindexBegin, uint256 hashEnd)
 {
+    AssertLockHeld(cs_main);
     // Filter out duplicate requests
     if (pindexBegin == pnode->pindexLastGetBlocksBegin && hashEnd == pnode->hashLastGetBlocksEnd)
         return;
@@ -2948,6 +2964,7 @@ bool LoadBlockIndex()
 
 
 bool InitBlockIndex() {
+    LOCK(cs_main);
     // Check whether we're already initialized
     if (chainActive.Genesis() != NULL)
         return true;
@@ -2983,6 +3000,7 @@ bool InitBlockIndex() {
 
 void PrintBlockTree()
 {
+    AssertLockHeld(cs_main);
     // pre-compute tree structure
     map<CBlockIndex*, vector<CBlockIndex*> > mapNext;
     for (map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.begin(); mi != mapBlockIndex.end(); ++mi)
@@ -3075,11 +3093,11 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
             unsigned int nSize = 0;
             try {
                 // locate a header
-                unsigned char buf[4];
+                unsigned char buf[MESSAGE_START_SIZE];
                 blkdat.FindByte(Params().MessageStart()[0]);
                 nRewind = blkdat.GetPos()+1;
                 blkdat >> FLATDATA(buf);
-                if (memcmp(buf, Params().MessageStart(), 4))
+                if (memcmp(buf, Params().MessageStart(), MESSAGE_START_SIZE))
                     continue;
                 // read size
                 blkdat >> nSize;
@@ -3109,7 +3127,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                         break;
                 }
             } catch (std::exception &e) {
-                LogPrintf("%s : Deserialize or I/O error - %s", __PRETTY_FUNCTION__, e.what());
+                LogPrintf("%s : Deserialize or I/O error - %s", __func__, e.what());
             }
         }
         fclose(fileIn);
@@ -4186,6 +4204,10 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             }
         }
 
+        TRY_LOCK(cs_main, lockMain); // Acquire cs_main for IsInitialBlockDownload() and CNodeState()
+        if (!lockMain)
+            return true;
+
         // Address refresh broadcast
         static int64_t nLastRebroadcast;
         if (!IsInitialBlockDownload() && (GetTime() - nLastRebroadcast > 24 * 60 * 60))
@@ -4235,10 +4257,6 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             if (!vAddr.empty())
                 pto->PushMessage("addr", vAddr);
         }
-
-        TRY_LOCK(cs_main, lockMain);
-        if (!lockMain)
-            return true;
 
         CNodeState &state = *State(pto->GetId());
         if (state.fShouldBan) {
