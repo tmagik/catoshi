@@ -6,21 +6,26 @@
     <name>AboutDialog</name>
     <message>
         <location filename="../forms/aboutdialog.ui" line="14"/>
-        <source>About PPCoin</source>
-        <translation>关于比特币</translation>
+        <source>About Peerunity</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../forms/aboutdialog.ui" line="53"/>
-        <source>&lt;b&gt;PPCoin&lt;/b&gt; version</source>
-        <translation>&lt;b&gt;比特币&lt;/b&gt;版本</translation>
+        <location filename="../forms/aboutdialog.ui" line="75"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Peerunity&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../forms/aboutdialog.ui" line="91"/>
+        <location filename="../forms/aboutdialog.ui" line="113"/>
+        <source>Copyright © 2014 Peerunity Developers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../forms/aboutdialog.ui" line="120"/>
         <source>Copyright © 2011-2014 PPCoin Developers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../forms/aboutdialog.ui" line="104"/>
+        <location filename="../forms/aboutdialog.ui" line="133"/>
         <source>Copyright © 2009-2012 Bitcoin Developers
 
 This is experimental software.
@@ -225,10 +230,21 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>确认加密钱包</translation>
     </message>
     <message>
+        <location filename="../askpassphrasedialog.cpp" line="102"/>
+        <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR PPCOINS AND SHARES&lt;/b&gt;!
+Are you sure you wish to encrypt your wallet?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../askpassphrasedialog.cpp" line="111"/>
         <location filename="../askpassphrasedialog.cpp" line="160"/>
         <source>Wallet encrypted</source>
         <translation>钱包已加密</translation>
+    </message>
+    <message>
+        <location filename="../askpassphrasedialog.cpp" line="112"/>
+        <source>Peerunity will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your ppcoins or shares from being stolen by malware infecting your computer.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="208"/>
@@ -243,17 +259,6 @@ This product includes software developed by the OpenSSL Project for use in the O
         <location filename="../askpassphrasedialog.cpp" line="172"/>
         <source>Wallet encryption failed</source>
         <translation>钱包加密失败</translation>
-    </message>
-    <message>
-        <location filename="../askpassphrasedialog.cpp" line="102"/>
-        <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR PPCOINS&lt;/b&gt;!
-Are you sure you wish to encrypt your wallet?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../askpassphrasedialog.cpp" line="112"/>
-        <source>PPCoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your ppcoins from being stolen by malware infecting your computer.</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="118"/>
@@ -291,16 +296,6 @@ Are you sure you wish to encrypt your wallet?</source>
 </context>
 <context>
     <name>BitcoinGUI</name>
-    <message>
-        <location filename="../bitcoin.cpp" line="128"/>
-        <source>A fatal error occured. PPCoin can no longer continue safely and will quit.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../bitcoingui.cpp" line="75"/>
-        <source>Peercoin (PPCoin) Wallet</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <location filename="../bitcoingui.cpp" line="183"/>
         <source>&amp;Overview</source>
@@ -347,11 +342,6 @@ Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished">&amp;发送货币</translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="208"/>
-        <source>Send coins to a ppcoin address</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../bitcoingui.cpp" line="213"/>
         <source>Sign/Verify &amp;message</source>
         <translation type="unfinished"></translation>
@@ -372,16 +362,6 @@ Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished">退出程序</translation>
     </message>
     <message>
-        <location filename="../bitcoingui.cpp" line="237"/>
-        <source>&amp;About %1</source>
-        <translation type="unfinished">&amp;关于 %1</translation>
-    </message>
-    <message>
-        <location filename="../bitcoingui.cpp" line="238"/>
-        <source>Show information about PPCoin</source>
-        <translation type="unfinished">显示比特币的相关信息</translation>
-    </message>
-    <message>
         <location filename="../bitcoingui.cpp" line="240"/>
         <source>About &amp;Qt</source>
         <translation type="unfinished">关于 &amp;Qt</translation>
@@ -395,21 +375,6 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="243"/>
         <source>&amp;Options...</source>
         <translation type="unfinished">&amp;选项...</translation>
-    </message>
-    <message>
-        <location filename="../bitcoingui.cpp" line="244"/>
-        <source>Modify configuration options for ppcoin</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../bitcoingui.cpp" line="246"/>
-        <source>Show/Hide &amp;PPCoin</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../bitcoingui.cpp" line="247"/>
-        <source>Show or hide the PPCoin window</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="248"/>
@@ -502,20 +467,55 @@ Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished">[testnet]</translation>
     </message>
     <message>
+        <location filename="../bitcoingui.cpp" line="75"/>
+        <source>Peerunity Wallet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoingui.cpp" line="208"/>
+        <source>Send coins to a Peercoin address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoingui.cpp" line="237"/>
+        <source>&amp;About Peerunity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoingui.cpp" line="238"/>
+        <source>Show information about PeerCoin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoingui.cpp" line="244"/>
+        <source>Modify configuration options for Peerunity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoingui.cpp" line="246"/>
+        <source>Show/Hide &amp;Peerunity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoingui.cpp" line="247"/>
+        <source>Show or hide the Peerunity window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../bitcoingui.cpp" line="397"/>
-        <source>PPCoin client</source>
+        <source>Peerunity client</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="425"/>
-        <source>ppcoin-qt</source>
+        <source>p-qt</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
         <location filename="../bitcoingui.cpp" line="489"/>
-        <source>%n active connection(s) to PPCoin network</source>
+        <source>%n active connection(s) to Peercoin network</source>
         <translation type="unfinished">
-            <numerusform>%n 个到比特币网络的活动连接</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -650,6 +650,11 @@ Address: %4
         <location filename="../bitcoingui.cpp" line="865"/>
         <source>There was an error trying to save the wallet data to the new location.</source>
         <translation type="unfinished">备份钱包到其它文件夹失败.</translation>
+    </message>
+    <message>
+        <location filename="../bitcoin.cpp" line="128"/>
+        <source>A fatal error occured. Peerunity can no longer continue safely and will quit.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -935,7 +940,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="286"/>
-        <source>Whether to show PPCoin addresses in the transaction list</source>
+        <source>Whether to show Peerunity addresses in the transaction list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1020,16 +1025,6 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
 <context>
     <name>MainOptionsPage</name>
     <message>
-        <location filename="../optionsdialog.cpp" line="172"/>
-        <source>&amp;Start PPCoin on window system startup</source>
-        <translation>&amp;开机启动比特币</translation>
-    </message>
-    <message>
-        <location filename="../optionsdialog.cpp" line="173"/>
-        <source>Automatically start PPCoin after the computer is turned on</source>
-        <translation>在计算机启动后自动运行比特币</translation>
-    </message>
-    <message>
         <location filename="../optionsdialog.cpp" line="177"/>
         <source>&amp;Minimize to the tray instead of the taskbar</source>
         <translation>&amp;最小化到托盘</translation>
@@ -1045,11 +1040,6 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <translation>使用 &amp;UPnP 映射端口</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="187"/>
-        <source>Automatically open the PPCoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>自动在路由器中打开比特币端口。只有当您的路由器开启 UPnP 选项时此功能才有效。</translation>
-    </message>
-    <message>
         <location filename="../optionsdialog.cpp" line="181"/>
         <source>M&amp;inimize on close</source>
         <translation>关闭时最小化</translation>
@@ -1058,6 +1048,11 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../optionsdialog.cpp" line="182"/>
         <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Quit in the menu.</source>
         <translation>当窗口关闭时程序最小化而不是退出。当使用该选项时，程序只能通过在菜单中选择退出来关闭</translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="187"/>
+        <source>Automatically open the Peerunity client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="190"/>
@@ -1103,6 +1098,16 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../optionsdialog.cpp" line="223"/>
         <source>Pay transaction &amp;fee</source>
         <translation>支付交易 &amp;费用</translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="172"/>
+        <source>&amp;Start Peerunity on window system startup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="173"/>
+        <source>Automatically start Peerunity after the computer is turned on</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="217"/>
@@ -1350,7 +1355,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location filename="../rpcconsole.cpp" line="306"/>
-        <source>Welcome to the PPCoin RPC console.&lt;br&gt;Use up and down arrows to navigate history, and &lt;b&gt;Ctrl-L&lt;/b&gt; to clear screen.&lt;br&gt;Type &lt;b&gt;help&lt;/b&gt; for an overview of available commands.</source>
+        <source>Welcome to the Peerunity RPC console.&lt;br&gt;Use up and down arrows to navigate history, and &lt;b&gt;Ctrl-L&lt;/b&gt; to clear screen.&lt;br&gt;Type &lt;b&gt;help&lt;/b&gt; for an overview of available commands.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1673,7 +1678,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location filename="../sendcoinsentry.cpp" line="25"/>
-        <source>Enter a PPCoin address</source>
+        <source>Enter a Peercoin address</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2336,19 +2341,9 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
 <context>
     <name>bitcoin-core</name>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="8"/>
-        <source>Unable to bind to port %d on this computer.  PPCoin is probably already running.</source>
-        <translation type="unfinished">无法绑定端口 %d 到这台计算机。比特币进程可能已在运行。</translation>
-    </message>
-    <message>
         <location filename="../bitcoinstrings.cpp" line="11"/>
         <source>Warning: Disk space is low  </source>
         <translation type="unfinished">警告：磁盘空间不足</translation>
-    </message>
-    <message>
-        <location filename="../bitcoinstrings.cpp" line="12"/>
-        <source>PPCoin version</source>
-        <translation type="unfinished">比特币版本</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="13"/>
@@ -2356,10 +2351,19 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <translation type="unfinished">使用：</translation>
     </message>
     <message>
+        <location filename="../bitcoinstrings.cpp" line="8"/>
+        <source>Unable to bind to port %d on this computer.  Peerunity is probably already running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="12"/>
+        <source>Peerunity version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../bitcoinstrings.cpp" line="14"/>
-        <source>Send command to -server or ppcoind</source>
-        <translation type="unfinished">发送命令到服务器或者 ppcoind
-</translation>
+        <source>Send command to -server or peerunityd</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="15"/>
@@ -2666,12 +2670,27 @@ SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="78"/>
-        <source>Cannot obtain a lock on data directory %s.  PPCoin is probably already running.</source>
-        <translation type="unfinished">无法给数据目录 %s 加锁。比特币进程可能已在运行。</translation>
+        <source>Cannot obtain a lock on data directory %s.  Peerunity is probably already running.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="81"/>
-        <source>PPCoin</source>
+        <source>Peerunity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="88"/>
+        <source>Error loading wallet.dat: Wallet requires newer version of Peerunity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="89"/>
+        <source>Wallet needed to be rewritten: restart Peerunity to complete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="119"/>
+        <source>Warning: Please check that your computer&apos;s date and time are correct.  If your clock is wrong Peerunity will not work properly.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2703,16 +2722,6 @@ SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
         <location filename="../bitcoinstrings.cpp" line="87"/>
         <source>Error loading wallet.dat: Wallet corrupted</source>
         <translation type="unfinished">wallet.dat钱包文件加载错误：钱包损坏</translation>
-    </message>
-    <message>
-        <location filename="../bitcoinstrings.cpp" line="88"/>
-        <source>Error loading wallet.dat: Wallet requires newer version of PPCoin</source>
-        <translation type="unfinished">wallet.dat钱包文件加载错误：请升级到最新PPCoin客户端</translation>
-    </message>
-    <message>
-        <location filename="../bitcoinstrings.cpp" line="89"/>
-        <source>Wallet needed to be rewritten: restart PPCoin to complete</source>
-        <translation type="unfinished">钱包文件需要重写：请退出并重新启动PPCoin客户端</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="90"/>
@@ -2797,11 +2806,6 @@ If the file does not exist, create it with owner-readable-only file permissions.
 %s
 If the file does not exist, create it with owner-readable-only file permissions.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../bitcoinstrings.cpp" line="119"/>
-        <source>Warning: Please check that your computer&apos;s date and time are correct.  If your clock is wrong PPCoin will not work properly.</source>
-        <translation type="unfinished">警告：请确定您当前计算机的日期和时间是正确的。比特币将无法在错误的时间下正常工作。</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="122"/>
