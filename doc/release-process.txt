@@ -33,6 +33,10 @@
    wget 'https://svn.boost.org/trac/boost/raw-attachment/ticket/7262/boost-mingw.patch' -O boost-mingw-gas-cross-compile-2013-03-03.patch
    wget 'https://download.qt-project.org/archive/qt/4.8/4.8.5/qt-everywhere-opensource-src-4.8.5.tar.gz'
    cd ..
+   ./bin/gbuild ../peerunity/contrib/gitian-descriptors/boost-linux.yml
+   cp build/out/boost-linux*-1.55.0-gitian-r1.zip inputs/
+   ./bin/gbuild ../peerunity/contrib/gitian-descriptors/deps-linux.yml
+   cp build/out/peerunity-deps-linux*-gitian-r6.zip inputs/
    ./bin/gbuild ../peerunity/contrib/gitian-descriptors/boost-win.yml
    cp build/out/boost-win*-1.55.0-gitian-r6.zip inputs/
    ./bin/gbuild ../peerunity/contrib/gitian-descriptors/qt-win.yml
@@ -41,8 +45,8 @@
    cp build/out/peerunity-deps-win*-gitian-r12.zip inputs/
 
   * Build for Linux32 and Linux64:
-   ./bin/gbuild --commit peerunity=v${VERSION} ../peerunity/contrib/gitian-descriptors/gitian.yml
-   ./bin/gsign --signer $SIGNER --release ${VERSION} --destination ../gitian.sigs/ ../peerunity/contrib/gitian-descriptors/gitian.yml
+   ./bin/gbuild --commit peerunity=v${VERSION} ../peerunity/contrib/gitian-descriptors/gitian-linux.yml
+   ./bin/gsign --signer $SIGNER --release ${VERSION} --destination ../gitian.sigs/ ../peerunity/contrib/gitian-descriptors/gitian-linux.yml
    pushd build/out
    zip -r peerunity-${VERSION}-linux-gitian.zip *
    mv peerunity-${VERSION}-linux-gitian.zip ../../
