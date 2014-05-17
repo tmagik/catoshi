@@ -1,0 +1,57 @@
+syntax: glob
+
+src/*.exe
+src/codecoin
+src/codecoind
+src/test_codecoin
+src/obj/*
+src/obj-test/*
+.*.swp
+*.*~*
+*.bak
+*.rej
+*.orig
+*.o
+*.patch
+.codecoin
+
+# Compilation and Qt preprocessor part
+*.qm
+Makefile
+codecoin-qt
+Codecoin-Qt.app
+
+# Unit-tests
+Makefile.test
+codecoin-qt_test
+
+# Resources cpp
+qrc_*.cpp
+
+# Qt creator
+*.pro.user
+
+# Mac specific
+.DS_Store
+build
+
+!src/leveldb-*/Makefile
+build_config.mk
+*.a
+leveldb/*.dylib*
+leveldb/*.so
+leveldb/*.so.*
+leveldb/*_test
+leveldb/db_bench
+leveldb/leveldbutil
+
+# p2pool stuff
+*.pyc
+*.pyo
+p2pool/data/
+p2pool/litecoin_scrypt/build/
+p2pool/Makefile.local
+p2pool/.cache/
+p2pool/.pkg/
+p2pool/build/
+
