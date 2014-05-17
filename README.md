@@ -22,7 +22,7 @@ as Bitcoin:
  - 10 minutes block targets
  - Subsidy halves in 210k blocks
  - 21 million total coins
- - 36 blocks to retarget difficulty
+ - 1 block difficulty adjustment, based on average time of last 36 blocks
 
 For more information, as well as an immediately useable, binary version of
 the Catcoin client sofware, see http://www.catcoins.org

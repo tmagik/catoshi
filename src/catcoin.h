@@ -26,10 +26,5 @@ inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONE
 static const int RETARGET_INTERVAL = 36;
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 100;
-/** Orphan work threshold, in percent.. should probably be max adjustment for 3-4 blocks **/
-// https://bitbucket.org/dahozer/catcoin/issue/14/add-a-threshold-for-orphans-with-slightly
-// FIXME go back to 2-3 once we have a working network again
-//static const int ORPHAN_WORK_THRESHOLD = 63; // (100/112)^4
-extern const int ORPHAN_WORK_THRESHOLD;
 
 #endif
