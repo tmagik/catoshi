@@ -2143,17 +2143,12 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 		CBigNum bnNewBlock;
 		bnNewBlock.SetCompact(pblock->nBits);
 		CBigNum bnRequired;
-		bnRequired.SetCompact(ComputeMinWork(pcheckpoint->nBits, deltaTime, pcheckpoint->nHeight));
-		CBigNum bnThreshold = bnRequired * 100 / ORPHAN_WORK_THRESHOLD;
+		bnRequired.SetCompact(ComputeMinWork(pcheckpoint->nBits, deltaTime));
 		
-		if (bnNewBlock > bnRequired ){
-			printf("WARN: low proof of work: bnNewBlock: %08x deltaTime: %d nHeight: %d bnRequired: %08x bnThreshold %08x\n", 
-					pblock->nBits, deltaTime, pcheckpoint->nHeight, bnRequired.GetCompact(), bnThreshold.GetCompact());
-		}
-		if (bnNewBlock > bnThreshold )
+        if (bnNewBlock > bnRequired)
 		{
 			return state.DoS(100, error(
-				"ProcessBlock() : proof of work below threshold %d%%", ORPHAN_WORK_THRESHOLD));
+				"ProcessBlock() : block with too little proof-of-work"));
 		}
 	}
 
