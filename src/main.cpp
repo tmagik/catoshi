@@ -2145,7 +2145,7 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 		CBigNum bnRequired;
 		bnRequired.SetCompact(ComputeMinWork(pcheckpoint->nBits, deltaTime));
 		
-        if (bnNewBlock > bnRequired)
+		if (bnNewBlock > bnRequired)
 		{
 			return state.DoS(100, error(
 				"ProcessBlock() : block with too little proof-of-work"));
