@@ -3,81 +3,108 @@
 """Create and parse 'send'-type messages."""
 
 import struct
-import logging
 
 from . import (util, config, exceptions, bitcoin, util)
 
-FORMAT = '>QQ'
 ID = 0
-LENGTH = 8 + 8
 
-def create (db, source, destination, amount, asset, test=False):
-    if asset == 'BTC': raise exceptions.BalanceError('Cannot send bitcoins.')
-    if not amount: raise exceptions.UselessError('Zero quantity.')
 
-    balances = util.get_balances(db, address=source, asset=asset)
-    if not balances or balances[0]['amount'] < amount:
-        raise exceptions.BalanceError('Insufficient funds. (Check that the database is up-to-date.)')
+def validate (db, source, asset, quantity):
+    problems = []
+    if asset == 'BTC': problems.append('cannot send bitcoins')  # Only for parsing.
+    if quantity < 0: problems.append('negative quantity')
+    return problems
 
-    asset_id = util.get_asset_id(asset)
+def compose (db, source, destinations, asset, quantity):
+    cursor = db.cursor()
+
+    if not isinstance(quantity, int):
+        problems.append('quantity must be in satoshis')
+        return problems
+
+    # Just send BTC?
+    if asset == 'BTC':
+        # TODO
+        return (source, [(destination, quantity)], None)
+    
+    #quantity must be in int satoshi (not float, string, etc)
+    if not isinstance(quantity, int):
+        raise exceptions.SendError('quantity must be an int (in satoshi)')
+
+    # Only for outgoing (incoming will overburn).
+    balances = list(cursor.execute('''SELECT * FROM balances WHERE (address = ? AND asset = ?)''', (source, asset)))
+    if not balances or balances[0]['quantity'] < quantity:
+        raise exceptions.SendError('insufficient funds')
+
+    problems = validate(db, source, asset, quantity)
+    if problems: raise exceptions.SendError(problems)
+
+    asset_id = util.asset_id(asset)
     data = config.PREFIX + struct.pack(config.TXTYPE_FORMAT, ID)
-    data += struct.pack(FORMAT, asset_id, amount)
-    return bitcoin.transaction(source, destination, config.DUST_SIZE, config.MIN_FEE, data, test)
+    data += struct.pack(FORMAT, asset_id, quantity)
+
+    cursor.close()
+    return (source, [(destinations, None)], data)
 
 def parse (db, tx, message):
-    send_parse_cursor = db.cursor()
-
-    # Ask for forgiveness…
-    validity = 'Valid'
+    cursor = db.cursor()
 
     # Unpack message.
+    number_of_outputs = int(len(message) / 16)
+    destinations = tx['destination'].split(' ')
+    assert number_of_outputs == len(destinations) 
     try:
-        asset_id, amount = struct.unpack(FORMAT, message)
-        asset = util.get_asset_name(asset_id)
-    except Exception:
-        asset, amount = None, None
-        validity = 'Invalid: could not unpack'
+        array = struct.unpack('>' + 'QQ' * number_of_outputs, message)
+        status = 'valid'
+    except (AssertionError, struct.error):
+        array = []
+        status = 'invalid: could not unpack'
+    outputs = []
+    for i in range(int(len(array) / 2)):
+        asset_id = array[2 * i]
+        quantity = array[(2 * i) + 1]
+        outputs.append((destinations[i], util.asset_name(asset_id), quantity))
 
-    # Check that it is not BTC that someone was trying to send.
-    if validity == 'Valid':
-        if asset == 'BTC':
-            validity = 'Invalid: cannot send bitcoins'
-        elif not util.valid_asset_name(asset):
-            validity = 'Invalid: bad Asset ID'
+    if status == 'valid':
+        # Oversend
+        new_outputs = []
+        for (destination, asset, quantity) in outputs:
+            cursor.execute('''SELECT * FROM balances \
+                              WHERE (address = ? AND asset = ?)''', (tx['source'], asset))
+            balances = cursor.fetchall()
 
-    # Debit.
-    if validity == 'Valid':
-        if not amount:
-            validity = 'Invalid: zero quantity.'
-        validity = util.debit(db, tx['source'], asset, amount)
+            if not balances:  quantity = 0
+            elif balances[0]['quantity'] < quantity:
+                quantity = min(balances[0]['quantity'], quantity)
+            # For SQLite3
+            quantity = min(quantity, config.MAX_INT)
 
-    # Credit.
-    if validity == 'Valid':
-        util.credit(db, tx['destination'], asset, amount)
+            problems = validate(db, tx['source'], asset, quantity)
+            if problems:
+                status = 'invalid: ' + '; '.join(problems)
+                break
+            new_outputs.append((destination, asset, quantity))
+        outputs = new_outputs
+
+    if status == 'valid':
+        for (destination, asset, quantity) in outputs:
+            util.debit(db, tx['block_index'], tx['source'], asset, quantity, event=tx['tx_hash'])
+            util.credit(db, tx['block_index'], destination, asset, quantity, event=tx['tx_hash'])
 
     # Add parsed transaction to message-type–specific table.
-    send_parse_cursor.execute('''INSERT INTO sends(
-                        tx_index,
-                        tx_hash,
-                        block_index,
-                        source,
-                        destination,
-                        asset,
-                        amount,
-                        validity) VALUES(?,?,?,?,?,?,?,?)''',
-                        (tx['tx_index'],
-                        tx['tx_hash'],
-                        tx['block_index'],
-                        tx['source'],
-                        tx['destination'],
-                        asset,
-                        amount,
-                        validity)
-                  )
-    if validity == 'Valid':
-        amount = util.devise(db, amount, asset, 'output')
-        logging.info('Send: {} of asset {} from {} to {} ({})'.format(amount, asset, tx['source'], tx['destination'], util.short(tx['tx_hash'])))
+    bindings = {
+        'tx_index': tx['tx_index'],
+        'tx_hash': tx['tx_hash'],
+        'block_index': tx['block_index'],
+        'source': tx['source'],
+        'destinations': tx['destination'],
+        'assets': ' '.join([str(element[1]) for element in outputs]),
+        'quantities': ' '.join([str(element[2]) for element in outputs]),
+        'status': status,
+    }
+    sql='insert into sends values(:tx_index, :tx_hash, :block_index, :source, :destinations, :assets, :quantities, :status)'
+    cursor.execute(sql, bindings)
 
-    send_parse_cursor.close()
+    cursor.close()
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

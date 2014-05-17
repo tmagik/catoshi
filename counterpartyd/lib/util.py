@@ -1,431 +1,646 @@
-import sqlite3
 import time
+import decimal
+import sys
+import json
+import logging
+import apsw
+import collections
+import inspect
+import requests
 from datetime import datetime
 from dateutil.tz import tzlocal
-import decimal
+from operator import itemgetter
+import fractions
+
+from . import (config, exceptions)
+
 D = decimal.Decimal
-import sys
-
-from . import (config, exceptions, bitcoin)
-
 b26_digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 # Obsolete in Python 3.4, with enum module.
 BET_TYPE_NAME = {0: 'BullCFD', 1: 'BearCFD', 2: 'Equal', 3: 'NotEqual'}
 BET_TYPE_ID = {'BullCFD': 0, 'BearCFD': 1, 'Equal': 2, 'NotEqual': 3}
 
-def bitcoind_check (db):
-    # Check blocktime of last block to see if Bitcoind is running behind.
-    block_count = bitcoin.rpc('getblockcount', [])
-    block_hash = bitcoin.rpc('getblockhash', [block_count])
-    block = bitcoin.rpc('getblock', [block_hash])
-    time_behind = time.time() - block['time']   # How reliable is the block time?!
-    if time_behind > 60 * 60 * 2:   # Two hours.
-        raise exceptions.BitcoindError('Bitcoind is running about {} seconds behind.'.format(round(time_behind)))
 
-def database_check (db):
-    # Check Counterparty database to see if the counterpartyd server has caught up with Bitcoind.
-    cursor = db.cursor()
-    TRIES = 7
-    for i in range(TRIES):
+# TODO: This doesn’t timeout properly. (If server hangs, then unhangs, no result.)
+def api (method, params):
+    headers = {'content-type': 'application/json'}
+    payload = {
+        "method": method,
+        "params": params,
+        "jsonrpc": "2.0",
+        "id": 0,
+    }
+    response = requests.post(config.RPC, data=json.dumps(payload), headers=headers)
+    if response == None:
+        raise exceptions.RPCError('Cannot communicate with counterpartyd server.')
+    elif response.status_code != 200:
+        if response.status_code == 500:
+            raise exceptions.RPCError('Malformed API call.')
+        else:
+            raise exceptions.RPCError(str(response.status_code) + ' ' + response.reason)
+
+    response_json = response.json()
+    if 'error' not in response_json.keys() or response_json['error'] == None:
         try:
-            cursor.execute('''SELECT * FROM blocks ORDER BY block_index ASC''')
-        except sqlite3.OperationalError:
-            raise exceptions.DatabaseError('Counterparty database does not exist. Run the server command to create it.')
-        last_block = cursor.fetchall()[-1]
-        if last_block['block_index'] == bitcoin.rpc('getblockcount', []):
+            return response_json['result']
+        except KeyError:
+            raise Exception(response_json)
+    else:
+        raise exceptions.RPCError('{}'.format(response_json['error']))
+
+def price (numerator, denominator, block_index):
+    if block_index >= 294500 or config.TESTNET: # Protocol change.
+        return fractions.Fraction(numerator, denominator)
+    else:
+        numerator = D(numerator)
+        denominator = D(denominator)
+        return D(numerator / denominator)
+
+def log (db, command, category, bindings):
+    cursor = db.cursor()
+
+    # Slow?!
+    def output (quantity, asset):
+        try:
+            if asset not in ('fraction', 'leverage'):
+                return str(devise(db, quantity, asset, 'output')) + ' ' + asset
+            else:
+                return str(devise(db, quantity, asset, 'output'))
+        except exceptions.AssetError:
+            return '<AssetError>'
+        except decimal.DivisionByZero:
+            return '<DivisionByZero>'
+
+    if command == 'update':
+        if category == 'order':
+            logging.debug('Database: set status of order {} to {}.'.format(bindings['tx_hash'], bindings['status']))
+        elif category == 'bet':
+            logging.debug('Database: set status of bet {} to {}.'.format(bindings['tx_hash'], bindings['status']))
+        elif category == 'order_matches':
+            logging.debug('Database: set status of order_match {} to {}.'.format(bindings['order_match_id'], bindings['status']))
+        elif category == 'bet_matches':
+            logging.debug('Database: set status of bet_match {} to {}.'.format(bindings['bet_match_id'], bindings['status']))
+        # TODO: elif category == 'balances':
+            # logging.debug('Database: set balance of {} in {} to {}.'.format(bindings['address'], bindings['asset'], output(bindings['quantity'], bindings['asset']).split(' ')[0]))
+
+    elif command == 'insert':
+
+        if category == 'credits':
+            logging.debug('Credit: {} to {} #{}# <{}>'.format(output(bindings['quantity'], bindings['asset']), bindings['address'], bindings['action'], bindings['event']))
+
+        elif category == 'debits':
+            logging.debug('Debit: {} from {} #{}# <{}>'.format(output(bindings['quantity'], bindings['asset']), bindings['address'], bindings['action'], bindings['event']))
+
+        elif category == 'sends':
+            destinations, quantities, assets = bindings['destinations'].split(' '), bindings['quantities'].split(' '), bindings['assets'].split(' ')
+            assert len(destinations) == len(quantities) == len(assets)
+            outputs = []
+            for i in range(len(destinations)):
+                outputs.append((destinations[i], quantities[i], assets[i]))
+            text = 'and'.join(['{} from {} to {}'.format(output(quantities[i], assets[i]), bindings['source'], destinations[i]) for i in range(len(destinations))])
+            logging.info('Send: {} ({}) [{}]'.format(text, bindings['tx_hash'], bindings['status']))
+
+        elif category == 'orders':
+            logging.info('Order: {} ordered {} for {} in {} blocks, with a provided fee of {} BTC and a required fee of {} BTC ({}) [{}]'.format(bindings['source'], output(bindings['give_quantity'], bindings['give_asset']), output(bindings['get_quantity'], bindings['get_asset']), bindings['expiration'], bindings['fee_provided'] / config.UNIT, bindings['fee_required'] / config.UNIT, bindings['tx_hash'], bindings['status']))
+
+        elif category == 'order_matches':
+            logging.info('Order Match: {} for {} ({}) [{}]'.format(output(bindings['forward_quantity'], bindings['forward_asset']), output(bindings['backward_quantity'], bindings['backward_asset']), bindings['id'], bindings['status']))
+
+        elif category == 'btcpays':
+            logging.info('BTC Payment: {} paid {} to {} for order match {} ({}) [{}]'.format(bindings['source'], output(bindings['btc_amount'], 'BTC'), bindings['destination'], bindings['order_match_id'], bindings['tx_hash'], bindings['status']))
+
+        elif category == 'issuances':
+            if bindings['transfer']:
+                logging.info('Issuance: {} transfered asset {} to {} ({}) [{}]'.format(bindings['source'], bindings['asset'], bindings['issuer'], bindings['tx_hash'], bindings['status']))
+            elif bindings['locked']:
+                logging.info('Issuance: {} locked asset {} ({}) [{}]'.format(bindings['issuer'], bindings['asset'], bindings['tx_hash'], bindings['status']))
+            else:
+                if bindings['divisible']:
+                    divisibility = 'divisible'
+                    unit = config.UNIT
+                else:
+                    divisibility = 'indivisible'
+                    unit = 1
+                if bindings['callable'] and (bindings['block_index'] > 283271 or config.TESTNET):   # Protocol change.
+                    callability = 'callable from {} for {} XCP/{}'.format(isodt(bindings['call_date']), bindings['call_price'], bindings['asset'])
+                else:
+                    callability = 'uncallable'
+                try:
+                    quantity = devise(db, bindings['quantity'], None, dest='output', divisible=bindings['divisible'])
+                except:
+                    quantity = '?'
+                logging.info('Issuance: {} created {} of asset {}, which is {} and {}, with description ‘{}’ ({}) [{}]'.format(bindings['issuer'], quantity, bindings['asset'], divisibility, callability, bindings['description'], bindings['tx_hash'], bindings['status']))
+
+        elif category == 'broadcasts':
+            if bindings['locked']:
+                logging.info('Broadcast: {} locked his feed ({}) [{}]'.format(bindings['source'], bindings['tx_hash'], bindings['status']))
+            else:
+                if not bindings['value']: infix = '‘{}’'.format(bindings['text'])
+                else: infix = '‘{}’ = {}'.format(bindings['text'], bindings['value'])
+                suffix = ' from ' + bindings['source'] + ' at ' + isodt(bindings['timestamp']) + ' with a fee of {}%'.format(output(D(bindings['fee_fraction_int'] / 1e8) * D(100), 'fraction')) + ' (' + bindings['tx_hash'] + ')' + ' [{}]'.format(bindings['status'])
+                logging.info('Broadcast: {}'.format(infix + suffix))
+
+        elif category == 'bets':
+            # Last text
+            broadcasts = list(cursor.execute('''SELECT * FROM broadcasts WHERE (status = ? AND source = ?) ORDER BY tx_index ASC''', ('valid', bindings['feed_address'])))
+            try:
+                last_broadcast = broadcasts[-1]
+                text = last_broadcast['text']
+            except IndexError:
+                text = '<Text>'
+
+            # Suffix
+            end = 'in {} blocks ({}) [{}]'.format(bindings['expiration'], bindings['tx_hash'], bindings['status'])
+
+            if 'CFD' not in BET_TYPE_NAME[bindings['bet_type']]:
+                log_message = 'Bet: {} against {}, by {}, on {} that ‘{}’ will {} {} at {}, {}'.format(output(bindings['wager_quantity'], 'XCP'), output(bindings['counterwager_quantity'], 'XCP'), bindings['source'], bindings['feed_address'], text, BET_TYPE_NAME[bindings['bet_type']], str(output(bindings['target_value'], 'value').split(' ')[0]), isodt(bindings['deadline']), end)
+            else:
+                log_message = 'Bet: {}, by {}, on {} for {} against {}, leveraged {}x, {}'.format(BET_TYPE_NAME[bindings['bet_type']], bindings['source'], bindings['feed_address'],output(bindings['wager_quantity'], 'XCP'), output(bindings['counterwager_quantity'], 'XCP'), output(bindings['leverage']/ 5040, 'leverage'), end)
+
+            logging.info(log_message)
+
+        elif category == 'bet_matches':
+            placeholder = ''
+            if bindings['target_value'] >= 0:    # Only non‐negative values are valid.
+                placeholder = ' that ' + str(output(bindings['target_value'], 'value'))
+            if bindings['leverage']:
+                placeholder += ', leveraged {}x'.format(output(bindings['leverage'] / 5040, 'leverage'))
+            logging.info('Bet Match: {} for {} against {} for {} on {} at {}{} ({}) [{}]'.format(BET_TYPE_NAME[bindings['tx0_bet_type']], output(bindings['forward_quantity'], 'XCP'), BET_TYPE_NAME[bindings['tx1_bet_type']], output(bindings['backward_quantity'], 'XCP'), bindings['feed_address'], isodt(bindings['deadline']), placeholder, bindings['id'], bindings['status']))
+
+        elif category == 'dividends':
+            logging.info('Dividend: {} paid {} per unit of {} ({}) [{}]'.format(bindings['source'], output(bindings['quantity_per_unit'], bindings['dividend_asset']), bindings['asset'], bindings['tx_hash'], bindings['status']))
+
+        elif category == 'burns':
+            logging.info('Burn: {} burned {} for {} ({}) [{}]'.format(bindings['source'], output(bindings['burned'], 'BTC'), output(bindings['earned'], 'XCP'), bindings['tx_hash'], bindings['status']))
+
+        elif category == 'cancels':
+            logging.info('Cancel: {} ({}) [{}]'.format(bindings['offer_hash'], bindings['tx_hash'], bindings['status']))
+
+        elif category == 'callbacks':
+            logging.info('Callback: {} called back {}% of {} ({}) [{}]'.format(bindings['source'], float(D(bindings['fraction']) * D(100)), bindings['asset'], bindings['tx_hash'], bindings['status']))
+
+        elif category == 'order_expirations':
+            logging.info('Expired order: {}'.format(bindings['order_hash']))
+
+        elif category == 'order_match_expirations':
+            logging.info('Expired Order Match awaiting payment: {}'.format(bindings['order_match_id']))
+
+        elif category == 'bet_expirations':
+            logging.info('Expired bet: {}'.format(bindings['bet_hash']))
+
+        elif category == 'bet_match_expirations':
+            logging.info('Expired Bet Match: {}'.format(bindings['bet_match_id']))
+    cursor.close()
+
+def message (db, block_index, command, category, bindings):
+    cursor = db.cursor()
+
+    # Get last message index.
+    messages = list(cursor.execute('''SELECT * FROM messages
+                                      WHERE message_index = (SELECT MAX(message_index) from messages)'''))
+    if messages:
+        assert len(messages) == 1
+        message_index = messages[0]['message_index'] + 1
+    else:
+        message_index = 0
+
+    bindings_string = json.dumps(collections.OrderedDict(sorted(bindings.items())))
+    cursor.execute('insert into messages values(:message_index, :block_index, :command, :category, :bindings)',
+                   (message_index, block_index, command, category, bindings_string))
+
+    cursor.close()
+
+       
+def rowtracer(cursor, sql):
+    """Converts fetched SQL data into dict-style"""
+    dictionary = {}
+    for index, (name, type_) in enumerate(cursor.getdescription()):
+        dictionary[name] = sql[index]
+    return dictionary
+
+def exectracer(cursor, sql, bindings):
+    # This means that all changes to database must use a very simple syntax.
+        # TODO: Need sanity checks here.
+    sql = sql.lower()
+
+    # Parse SQL.
+    array = sql.split('(')[0].split(' ')
+    if 'insert' in sql:
+        command, category = array[0], array[2]
+    elif 'update' in sql:
+        command, category = array[0], array[1]
+    else:
+        return True
+
+    db = cursor.getconnection()
+    dictionary = {'command': command, 'category': category, 'bindings': bindings}
+
+    # Skip blocks, transactions.
+    if 'blocks' in sql or 'transactions' in sql: return True
+
+    # Record alteration in database.
+    if category not in ('balances', 'messages'):
+        if not (command in ('update') and category in ('orders', 'bets', 'order_matches', 'bet_matches')):    # List message manually.
+            try:
+                block_index = bindings['block_index']
+            except KeyError:
+                block_index = bindings['tx1_block_index']
+            message(db, block_index, command, category, bindings)
+
+    # Log.
+    log(db, command, category, bindings)
+
+    return True
+
+def connect_to_db(flags=None):
+    """Connects to the SQLite database, returning a db Connection object"""
+
+    if flags == None:
+        db = apsw.Connection(config.DATABASE)
+    elif flags == 'SQLITE_OPEN_READONLY':
+        db = apsw.Connection(config.DATABASE, flags=0x00000001)
+    else:
+        raise Exception # TODO
+
+    cursor = db.cursor()
+
+    # For speed.
+    cursor.execute('''PRAGMA count_changes = OFF''')
+
+    # For integrity, security.
+    cursor.execute('''PRAGMA foreign_keys = ON''')
+    cursor.execute('''PRAGMA defer_foreign_keys = ON''')
+
+    # So that writers don’t block readers.
+    cursor.execute('''PRAGMA journal_mode = WAL''')
+
+    rows = list(cursor.execute('''PRAGMA foreign_key_check'''))
+    if rows: raise exceptions.DatabaseError('Foreign key check failed.')
+
+    # Integrity check
+    integral = False
+    for i in range(10): # DUPE
+        try:
+            cursor.execute('''PRAGMA integrity_check''')
+            rows = cursor.fetchall()
+            if not (len(rows) == 1 and rows[0][0] == 'ok'):
+                raise exceptions.DatabaseError('Integrity check failed.')
+            integral = True
+            break
+        except Exception:
+            time.sleep(1)
+            continue
+    if not integral:
+        raise exceptions.DatabaseError('Could not perform integrity check.')
+
+    cursor.close()
+
+    db.setrowtrace(rowtracer)
+    db.setexectrace(exectracer)
+
+    return db
+
+def version_check (db):
+    try:
+        host = 'https://raw2.github.com/CounterpartyXCP/counterpartyd/master/version.json'
+        response = requests.get(host, headers={'cache-control': 'no-cache'})
+        versions = json.loads(response.text)
+    except Exception as e:
+        raise exceptions.VersionError('Unable to check version. How’s your Internet access?')
+ 
+    # Check client version.
+    if config.VERSION_MAJOR < versions['minimum_version_major']:
+        if config.VERSION_MINOR < versions['minimum_version_minor']:
+            if config.VERSION_REVISION < versions['minimum_version_revision']:
+                raise exceptions.VersionError('Please upgrade counterpartyd to the latest version and restart the server.')
+
+    logging.debug('Status: Version check passed.')
+    return
+
+def database_check (db, blockcount):
+    """Checks Counterparty database to see if the counterpartyd server has caught up with Bitcoind."""
+    cursor = db.cursor()
+    TRIES = 14
+    for i in range(TRIES):
+        block_index = last_block(db)['block_index']
+        if block_index == blockcount:
             cursor.close()
             return
+        print('Database not up‐to‐date. Sleeping for one second. (Try {}/{})'.format(i+1, TRIES), file=sys.stderr)
         time.sleep(1)
     raise exceptions.DatabaseError('Counterparty database is behind Bitcoind. Is the counterpartyd server running?')
 
-def short (string):
-    if len(string) == 64: length = 8
-    elif len(string) == 128: length = 16
-    short = string[:length] + '…' + string[-length:]
-    return short
 
 def isodt (epoch_time):
     return datetime.fromtimestamp(epoch_time, tzlocal()).isoformat()
 
-def get_time_left (unmatched, block_index=None):
-    """order or bet"""
-    """zero time left means it expires *this* block; that is, expire when strictly less than 0"""
-    if not block_index: block_index = bitcoin.rpc('getblockcount', [])
-    return unmatched['block_index'] + unmatched['expiration'] - block_index
-def get_order_match_time_left (matched, block_index=None):
-    """order_match or bet_match"""
-    if not block_index: block_index = bitcoin.rpc('getblockcount', [])
-    tx0_time_left = matched['tx0_block_index'] + matched['tx0_expiration'] - block_index
-    tx1_time_left = matched['tx1_block_index'] + matched['tx1_expiration'] - block_index
-    return min(tx0_time_left, tx1_time_left)
+def sortkeypicker(keynames):
+    """http://stackoverflow.com/a/1143719"""
+    negate = set()
+    for i, k in enumerate(keynames):
+        if k[:1] == '-':
+            keynames[i] = k[1:]
+            negate.add(k[1:])
+    def getit(adict):
+       composite = [adict[k] for k in keynames]
+       for i, (k, v) in enumerate(zip(keynames, composite)):
+           if k in negate:
+               composite[i] = -v
+       return composite
+    return getit
 
-def valid_asset_name (asset_name):
-    if asset_name in ('BTC', 'XCP'): return True
-    if len(asset_name) < 4: return False
-    for c in asset_name:
-        if c not in b26_digits:
-            return False
-    return True
+def last_block (db):
+    cursor = db.cursor()
+    blocks = list(cursor.execute('''SELECT * FROM blocks WHERE block_index = (SELECT MAX(block_index) from blocks)'''))
+    if blocks:
+        assert len(blocks) == 1
+        last_block = blocks[0]
+    else:
+        raise exceptions.DatabaseError('No blocks found.')
+    cursor.close()
+    return last_block
 
-def get_asset_id (asset):
-    if not valid_asset_name(asset): raise exceptions.AssetError('Invalid asset name.')
+def last_message (db):
+    cursor = db.cursor()
+    messages = list(cursor.execute('''SELECT * FROM messages WHERE message_index = (SELECT MAX(message_index) from messages)'''))
+    if messages:
+        assert len(messages) == 1
+        last_message = messages[0]
+    else:
+        raise exceptions.DatabaseError('No messages found.')
+    cursor.close()
+    return last_message
+
+def asset_id (asset):
+    # Special cases.
     if asset == 'BTC': return 0
     elif asset == 'XCP': return 1
 
+    if asset[0] == 'A': raise exceptions.AssetNameError('starts with ‘A’')
+
+    # Checksum
+    """
+    if not checksum.verify(asset):
+        raise exceptions.AssetNameError('invalid checksum')
+    else:
+        asset = asset[:-1]  # Strip checksum character.
+    """
+
     # Convert the Base 26 string to an integer.
     n = 0
-    s = asset
-    for c in s:
+    for c in asset:
         n *= 26
         if c not in b26_digits:
-            raise exceptions.InvalidBase26Error('Not an uppercase ASCII character:', c)
+            raise exceptions.AssetNameError('invalid character:', c)
         digit = b26_digits.index(c)
         n += digit
 
-    # Minimum of four letters long.
-    if not n > 26**3:
-        raise exceptions.AssetError('Invalid asset name.')
+    if n < 26**3:
+        raise exceptions.AssetNameError('too short')
+
     return n
 
-def get_asset_name (asset_id):
+def asset_name (asset_id):
     if asset_id == 0: return 'BTC'
     elif asset_id == 1: return 'XCP'
 
-    # Minimum of four letters long.
-    if not asset_id > 26**3:
-        raise exceptions.AssetError('Invalid asset name.')
+    if asset_id < 26**3:
+        raise exceptions.AssetIDError('too low')
+
     # Divide that integer into Base 26 string.
     res = []
     n = asset_id
     while n > 0:
         n, r = divmod (n, 26)
         res.append(b26_digits[r])
-    asset = ''.join(res[::-1])
-    if not valid_asset_name(asset): raise exceptions.AssetError('Invalid asset name.')
-    return asset
+    asset_name = ''.join(res[::-1])
+
+    """
+    return asset_name + checksum.compute(asset_name)
+    """
+    return asset_name
 
 
-def debit (db, address, asset, amount):
+def debit (db, block_index, address, asset, quantity, action=None, event=None):
     debit_cursor = db.cursor()
     assert asset != 'BTC' # Never BTC.
-    assert type(amount) == int
+    assert type(quantity) == int
+    assert quantity >= 0
+
     if asset == 'BTC':
         raise exceptions.BalanceError('Cannot debit bitcoins from a Counterparty address!')
 
-    balances = get_balances(db, address=address, asset=asset)
-    if not len(balances) == 1:
-        old_balance = 0
-    else:
-        old_balance = balances[0]['amount']
-        assert type(old_balance) == int
+    debit_cursor.execute('''SELECT * FROM balances \
+                            WHERE (address = ? AND asset = ?)''', (address, asset))
+    balances = debit_cursor.fetchall()
+    if not len(balances) == 1: old_balance = 0
+    else: old_balance = balances[0]['quantity']
 
-    if old_balance >= amount:
-        debit_cursor.execute('''UPDATE balances \
-                          SET amount=? \
-                          WHERE (address=? and asset=?)''',
-                       (round(old_balance - amount), address, asset)) 
-        validity = 'Valid'
-    else:
-        validity = 'Invalid: insufficient funds'
+    if old_balance < quantity:
+        raise exceptions.BalanceError('Insufficient funds.')
+
+    balance = round(old_balance - quantity)
+    balance = min(balance, config.MAX_INT)
+    assert balance >= 0
+
+    bindings = {
+        'quantity': balance,
+        'address': address,
+        'asset': asset
+    }
+    sql='update balances set quantity = :quantity where (address = :address and asset = :asset)'
+    debit_cursor.execute(sql, bindings)
 
     # Record debit.
-    debit_cursor.execute('''INSERT INTO debits(
-                        address,
-                        asset,
-                        amount) VALUES(?,?,?)''',
-                        (address,
-                        asset,
-                        amount)
-                  )
-    debit_cursor.close()
-    return validity
+    bindings = {
+        'block_index': block_index,
+        'address': address,
+        'asset': asset,
+        'quantity': quantity,
+        'action': action,
+        'event': event
+    }
+    sql='insert into debits values(:block_index, :address, :asset, :quantity, :action, :event)'
+    debit_cursor.execute(sql, bindings)
 
-def credit (db, address, asset, amount):
+    debit_cursor.close()
+
+def credit (db, block_index, address, asset, quantity, action=None, event=None):
     credit_cursor = db.cursor()
     assert asset != 'BTC' # Never BTC.
-    assert type(amount) == int
+    assert type(quantity) == int
+    assert quantity >= 0
 
-    balances = get_balances(db, address=address, asset=asset)
-    if len(balances) != 1:
+    credit_cursor.execute('''SELECT * FROM balances \
+                             WHERE (address = ? AND asset = ?)''', (address, asset))
+    balances = credit_cursor.fetchall()
+    if len(balances) == 0:
         assert balances == []
-        credit_cursor.execute('''INSERT INTO balances(
-                            address,
-                            asset,
-                            amount) VALUES(?,?,?)''',
-                            (address,
-                            asset,
-                            amount)
-                      )
+
+        #update balances table with new balance
+        bindings = {
+            'address': address,
+            'asset': asset,
+            'quantity': quantity,
+        }
+        sql='insert into balances values(:address, :asset, :quantity)'
+        credit_cursor.execute(sql, bindings)
+    elif len(balances) > 1:
+        raise Exception
     else:
-        old_balance = balances[0]['amount']
+        old_balance = balances[0]['quantity']
         assert type(old_balance) == int
-        credit_cursor.execute('''UPDATE balances SET amount=? \
-                          WHERE (address=? and asset=?)''',
-                       (old_balance + amount, address, asset)) 
+        balance = round(old_balance + quantity)
+        balance = min(balance, config.MAX_INT)
+
+        bindings = {
+            'quantity': balance,
+            'address': address,
+            'asset': asset
+        }
+        sql='update balances set quantity = :quantity where (address = :address and asset = :asset)'
+        credit_cursor.execute(sql, bindings)
 
     # Record credit.
-    credit_cursor.execute('''INSERT INTO credits(
-                        address,
-                        asset,
-                        amount) VALUES(?,?,?)''',
-                        (address,
-                        asset,
-                        amount)
-                  )
+    bindings = {
+        'block_index': block_index,
+        'address': address,
+        'asset': asset,
+        'quantity': quantity,
+        'action': action,
+        'event': event
+    }
+    sql='insert into credits values(:block_index, :address, :asset, :quantity, :action, :event)'
+    credit_cursor.execute(sql, bindings)
     credit_cursor.close()
 
 def devise (db, quantity, asset, dest, divisible=None):
-    FOUR = D(10) ** -4
-    EIGHT = D(10) ** -8
 
-    quantity = D(quantity)
+    # For output only.
+    def norm(num, places):
+        # Round only if necessary.
+        num = round(num, places)
 
-    if asset in ('leverage', 'price', 'odds', 'value'):
+        fmt = '{:.' + str(places) + 'f}'
+        num = fmt.format(num)
+        return num.rstrip('0')+'0' if num.rstrip('0')[-1] == '.' else num.rstrip('0')
+
+    # TODO: remove price, odds
+    if asset in ('leverage', 'value', 'fraction', 'price', 'odds'):
         if dest == 'output':
-            return quantity.quantize(FOUR)
+            return norm(quantity, 6)
         elif dest == 'input':
             # Hackish
             if asset == 'leverage':
                 return round(quantity)
             else:
-                return float(quantity)
+                return float(quantity)  # TODO: Float?!
 
-    if asset in ('fee_multiplier',):
-        return D(quantity / D(1e8)).quantize(FOUR)
+    if asset in ('fraction',):
+        return norm(fraction(quantity, 1e8), 6)
 
     if divisible == None:
         if asset in ('BTC', 'XCP'):
             divisible = True
         else:
-            issuances = get_issuances(db, validity='Valid', asset=asset)
+            cursor = db.cursor()
+            cursor.execute('''SELECT * FROM issuances \
+                              WHERE (status = ? AND asset = ?)''', ('valid', asset))
+            issuances = cursor.fetchall()
+            cursor.close()
             if not issuances: raise exceptions.AssetError('No such asset: {}'.format(asset))
             divisible = issuances[0]['divisible']
 
     if divisible:
         if dest == 'output':
-            quantity = D(quantity / config.UNIT).quantize(EIGHT)
+            quantity = D(quantity) / D(config.UNIT)
             if quantity == quantity.to_integral():
-                return str(float(quantity))  # For divisible assets, display the decimal point.
+                return str(quantity) + '.0'  # For divisible assets, display the decimal point.
             else:
-                return str(quantity.quantize(EIGHT).normalize())
+                return norm(quantity, 8)
         elif dest == 'input':
-            quantity = D(quantity * config.UNIT).quantize(EIGHT)
+            quantity = D(quantity) * config.UNIT
             if quantity == quantity.to_integral():
                 return int(quantity)
             else:
                 raise exceptions.QuantityError('Divisible assets have only eight decimal places of precision.')
         else:
-            return quantity.quantize(EIGHT)
+            return quantity
     else:
+        quantity = D(quantity)
         if quantity != round(quantity):
             raise exceptions.QuantityError('Fractional quantities of indivisible assets.')
         return round(quantity)
 
-def get_debits (db, address=None, asset=None):
-    """This does not include BTC."""
+def holders(db, asset):
+    holders = []
     cursor = db.cursor()
-    cursor.execute('''SELECT * FROM debits''')
-    debits = []
-    for debit in cursor.fetchall():
-        if address and debit['address'] != address: continue
-        if asset != None and debit['asset'] != asset: continue
-        debits.append(dict(debit))
+    # Balances
+    cursor.execute('''SELECT * FROM balances \
+                      WHERE asset = ?''', (asset,))
+    for balance in list(cursor):
+        holders.append({'address': balance['address'], 'address_quantity': balance['quantity'], 'escrow': None})
+    # Funds escrowed in orders. (Protocol change.)
+    cursor.execute('''SELECT * FROM orders \
+                      WHERE give_asset = ? AND status = ?''', (asset, 'open'))
+    for order in list(cursor):
+        holders.append({'address': order['source'], 'address_quantity': order['give_remaining'], 'escrow': order['tx_hash']})
+    # Funds escrowed in pending order matches. (Protocol change.)
+    cursor.execute('''SELECT * FROM order_matches \
+                      WHERE (forward_asset = ? AND status = ?)''', (asset, 'pending'))
+    for order_match in list(cursor):
+        holders.append({'address': order_match['tx0_address'], 'address_quantity': order_match['forward_quantity'], 'escrow': order_match['id']})
+    cursor.execute('''SELECT * FROM order_matches \
+                      WHERE (backward_asset = ? AND status = ?)''', (asset, 'pending'))
+    for order_match in list(cursor):
+        holders.append({'address': order_match['tx1_address'], 'address_quantity': order_match['backward_quantity'], 'escrow': order_match['id']})
+
+    # Bets (and bet matches) only escrow XCP.
+    if asset == 'XCP':
+        cursor.execute('''SELECT * FROM bets \
+                          WHERE status = ?''', ('open',))
+        for bet in list(cursor):
+            holders.append({'address': bet['source'], 'address_quantity': bet['wager_remaining'], 'escrow': bet['tx_hash']})
+        cursor.execute('''SELECT * FROM bet_matches \
+                          WHERE status = ?''', ('pending',))
+        for bet_match in list(cursor):
+            holders.append({'address': bet_match['tx0_address'], 'address_quantity': bet_match['forward_quantity'], 'escrow': bet_match['id']})
+            holders.append({'address': bet_match['tx1_address'], 'address_quantity': bet_match['backward_quantity'], 'escrow': bet_match['id']})
+
     cursor.close()
-    return debits
+    return holders
 
-def get_credits (db, address=None, asset=None):
-    """This does not include BTC."""
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM credits''')
-    credits = []
-    for credit in cursor.fetchall():
-        if address and credit['address'] != address: continue
-        if asset != None and credit['asset'] != asset: continue
-        credits.append(dict(credit))
-    cursor.close()
-    return credits
-
-def get_balances (db, address=None, asset=None):
-    """This should never be used to check Bitcoin balances."""
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM balances''')
-    balances = []
-    for balance in cursor.fetchall():
-        if address and balance['address'] != address: continue
-        if asset != None and balance['asset'] != asset: continue
-        if asset == 'BTC': raise Exception
-        balances.append(dict(balance))
-    cursor.close()
-    return balances
-
-def get_sends (db, validity=None, source=None, destination=None):
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM sends ORDER BY tx_index''')
-    sends = []
-    for send in cursor.fetchall():
-        if validity and send['Validity'] != validity: continue
-        if source and send['source'] != source: continue
-        if destination and send['destination'] != destination: continue
-        sends.append(dict(send))
-    cursor.close()
-    return sends
-
-def get_orders (db, validity=None, address=None, show_empty=True, show_expired=True):
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM orders ORDER BY price ASC, tx_index''')
-    block_count = bitcoin.rpc('getblockcount', [])
-    orders = []
-    for order in cursor.fetchall():
-        if validity and order['Validity'] != validity: continue
-        if not show_empty and not order['give_remaining']: continue
-        if address and order['source'] != address: continue
-
-        # Ignore BTC orders one block early. (This is why we need show_expired.)
-        time_left = get_time_left(order)
-        if order['give_asset'] == 'BTC': time_left -= 1
-        if not show_expired and time_left < 0:
-            continue
-
-        orders.append(dict(order))
-    cursor.close()
-    return orders
-
-def get_order_matches (db, validity=None, is_mine=True, address=None, tx0_hash=None, tx1_hash=None):
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM order_matches ORDER BY tx1_index''')
-    order_matches = []
-    for order_match in cursor.fetchall():
-        if validity and order_match['validity'] != validity: continue
-
-        if is_mine and ((not bitcoin.rpc('validateaddress', [order_match['tx0_address']])['ismine'] or 
-                           order_match['forward_asset'] != 'BTC') and 
-                          (not bitcoin.rpc('validateaddress', [order_match['tx1_address']])['ismine'] or
-                           order_match['backward_asset'] != 'BTC')):
-            continue
-
-        if address and not (order_match['tx0_address'] == address or
-                            order_match['tx1_address'] == address):
-            continue
-
-        if tx0_hash and tx0_hash != order_match['tx0_hash']: continue
-        if tx1_hash and tx1_hash != order_match['tx1_hash']: continue
-        order_matches.append(dict(order_match))
-    cursor.close()
-    return order_matches
-
-def get_btcpays (db, validity=None):
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM btcpays ORDER BY tx_index''')
-    btcpays = []
-    for btcpay in cursor.fetchall():
-        if validity and btcpay['Validity'] != validity: continue
-        btcpays.append(dict(btcpay))
-    cursor.close()
-    return btcpays
-
-def get_issuances (db, validity=None, asset=None, issuer=None):
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM issuances \
-                      ORDER BY tx_index ASC''')
-    issuances = []
-    for issuance in cursor.fetchall():
-        if validity and issuance['Validity'] != validity: continue
-        if asset != None and issuance['asset'] != asset:
-            if not valid_asset_name(asset): raise exceptions.AssetError('Invalid asset name.')
-            continue
-        if issuer and issuance['issuer'] != issuer: continue
-        issuances.append(dict(issuance))
-    cursor.close()
-    return issuances
-
-def get_broadcasts (db, validity=None, source=None, order_by='tx_index ASC'):
+def xcp_supply (db):
     cursor = db.cursor()
 
-    if order_by == 'tx_index ASC':
-        cursor.execute('''SELECT * FROM broadcasts \
-                          ORDER BY tx_index ASC''')
-    elif order_by == 'timestamp DESC':
-        cursor.execute('''SELECT * FROM broadcasts \
-                          ORDER BY timestamp DESC''')
-    else:
-        raise Exception('Unknown scheme for ordering broadcasts.')
+    # Add burns.
+    cursor.execute('''SELECT * FROM burns \
+                      WHERE status = ?''', ('valid',))
+    burn_total = sum([burn['earned'] for burn in cursor.fetchall()])
 
-    broadcasts = []
-    for broadcast in cursor.fetchall():
-        if validity and broadcast['Validity'] != validity: continue
-        if source and broadcast['source'] != source: continue
-        broadcasts.append(dict(broadcast))
+    # Subtract issuance fees.
+    cursor.execute('''SELECT * FROM issuances\
+                      WHERE status = ?''', ('valid',))
+    fee_total = sum([issuance['fee_paid'] for issuance in cursor.fetchall()])
+
     cursor.close()
-    return broadcasts
+    return burn_total - fee_total
 
-def get_bets (db, validity=None, address=None, show_empty=True):
+def supplies (db):
     cursor = db.cursor()
-    cursor.execute('''SELECT * FROM bets ORDER BY odds DESC, tx_index''')
-    block_count = bitcoin.rpc('getblockcount', [])
-    bets = []
-    for bet in cursor.fetchall():
-        if validity and bet['Validity'] != validity: continue
-        if not show_empty and not bet['wager_remaining']: continue
-        if address and bet['source'] != address: continue
-        bets.append(dict(bet))
-    cursor.close()
-    return bets
+    supplies = {'XCP': xcp_supply(db)}
+    cursor.execute('''SELECT * from issuances \
+                      WHERE status = ?''', ('valid',))
+    for issuance in list(cursor):
+        asset = issuance['asset']
+        quantity = issuance['quantity']
+        if asset in supplies.keys():
+            supplies[asset] += quantity
+        else:
+            supplies[asset] = quantity
 
-def get_bet_matches (db, validity=None, address=None, tx0_hash=None, tx1_hash=None):
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM bet_matches ORDER BY tx1_index''')
-    bet_matches = []
-    for bet_match in cursor.fetchall():
-        if validity and bet_match['validity'] != validity: continue
-        if address and not (bet_match['tx0_address'] == address or
-                            bet_match['tx1_address'] == address):
-            continue
-        if tx0_hash and tx0_hash != bet_match['tx0_hash']: continue
-        if tx1_hash and tx1_hash != bet_match['tx1_hash']: continue
-        bet_matches.append(dict(bet_match))
     cursor.close()
-    return bet_matches
-
-def get_dividends (db, validity=None, address=None, asset=None):
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM dividends ORDER BY tx_index''')
-    dividends = []
-    for dividend in cursor.fetchall():
-        if validity and dividend['Validity'] != validity: continue
-        if address and dividend['source'] != address: continue
-        if asset != None and dividend['asset'] != asset: continue
-        dividends.append(dict(dividend))
-    cursor.close()
-    return dividends
-
-def get_burns (db, validity=True, address=None):
-    cursor = db.cursor()
-    cursor.execute('''SELECT * FROM burns ORDER BY tx_index''')
-    burns = []
-    for burn in cursor.fetchall():
-        if validity and burn['Validity'] != validity: continue
-        if address and burn['address'] != address: continue
-        burns.append(dict(burn))
-    cursor.close()
-    return burns
-
-def get_address (db, address):
-    if not bitcoin.base58_decode(address, config.ADDRESSVERSION):
-        raise exceptions.InvalidAddressError('Not a valid Bitcoin address:',
-                                             address)
-    address_dict = {}
-    address_dict['balances'] = get_balances(db, address=address)
-    address_dict['burns'] = get_burns(db, validity='Valid', address=address)
-    address_dict['sends'] = get_sends(db, validity='Valid', source=address)
-    address_dict['orders'] = get_orders(db, validity='Valid', address=address)
-    address_dict['order_matches'] = get_order_matches(db, validity='Valid', address=address)
-    address_dict['btcpays'] = get_btcpays(db, validity='Valid')
-    address_dict['issuances'] = get_issuances(db, validity='Valid', issuer=address)
-    address_dict['broadcasts'] = get_broadcasts(db, validity='Valid', source=address)
-    address_dict['bets'] = get_bets(db, validity='Valid', address=address)
-    address_dict['bet_matches'] = get_bet_matches(db, validity='Valid', address=address)
-    address_dict['dividends'] = get_dividends(db, validity='Valid', address=address)
-    return address_dict
+    return supplies 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

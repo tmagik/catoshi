@@ -5,88 +5,98 @@
 import struct
 import decimal
 D = decimal.Decimal
-import logging
+from fractions import Fraction
 
 from . import (util, config, exceptions, bitcoin, util)
 
-FORMAT = '>11s'
 ID = 60
-LENGTH = 11
 
-def create (db, source, quantity, test=False, overburn=False):
+
+def validate (db, source, destination, quantity, block_index, overburn=False):
+    problems = []
+
+    # Check destination address.
+    if destination != config.UNSPENDABLE:
+        problems.append('wrong destination address')
+
+    if not isinstance(quantity, int):
+        problems.append('quantity must be in satoshis')
+        return problems
+
+    if quantity < 0: problems.append('negative quantity')
+
     # Try to make sure that the burned funds won't go to waste.
-    block_count = bitcoin.rpc('getblockcount', [])
-    if block_count < config.BURN_START:
-        raise exceptions.UselessError('The proof-of-burn period has not yet begun.')
-    elif block_count > config.BURN_END:
-        raise exceptions.UselessError('The proof-of-burn period has already ended.')
+    if block_index < config.BURN_START - 1:
+        problems.append('too early')
+    elif block_index > config.BURN_END:
+        problems.append('too late')
+
+    return problems
+
+def compose (db, source, quantity, overburn=False):
+    cursor = db.cursor()
+    destination = config.UNSPENDABLE
+    problems = validate(db, source, destination, quantity, util.last_block(db)['block_index'], overburn=overburn)
+    if problems: raise exceptions.BurnError(problems)
 
     # Check that a maximum of 1 BTC total is burned per address.
-    burns = util.get_burns(db, address=source, validity='Valid')
+    burns = list(cursor.execute('''SELECT * FROM burns WHERE (status = ? AND source = ?)''', ('valid', source)))
     already_burned = sum([burn['burned'] for burn in burns])
     if quantity > (1 * config.UNIT - already_burned) and not overburn:
-        raise exceptions.UselessError('A maximum of 1 BTC may be burned per address.')
-        
-    return bitcoin.transaction(source, config.UNSPENDABLE, quantity, config.MIN_FEE, None, test)
+        raise exceptions.BurnError('1 BTC may be burned per address')
+
+    cursor.close()
+    return (source, [(destination, quantity)], None)
 
 def parse (db, tx, message=None):
     burn_parse_cursor = db.cursor()
-    validity = 'Valid'
+    status = 'valid'
 
-    # Check destination address.
-    if validity == 'Valid' and tx['destination'] != config.UNSPENDABLE:
-        validity = 'Invalid: wrong destination address'
+    if status == 'valid':
+        problems = validate(db, tx['source'], tx['destination'], tx['btc_amount'], tx['block_index'], overburn=False)
+        if problems: status = 'invalid: ' + '; '.join(problems)
 
-    if validity == 'Valid' and tx['btc_amount'] != None:
-        sent = tx['btc_amount']
-    else:
-        sent = 0
+        if tx['btc_amount'] != None:
+            sent = tx['btc_amount']
+        else:
+            sent = 0
 
-    # Check that the burn was done at the right time.
-    if tx['block_index'] < config.BURN_START: 
-        validity = 'Invalid: too early'
-    elif tx['block_index'] > config.BURN_END:
-        validity = 'Invalid: too late'
-
-    # Calculate quantity of XPC earned. (Maximum 1 BTC in total, ever.)
-    if validity == 'Valid':
-        burns = util.get_burns(db, validity='Valid', address=tx['source'])
+    if status == 'valid':
+        # Calculate quantity of XCP earned. (Maximum 1 BTC in total, ever.)
+        cursor = db.cursor()
+        cursor.execute('''SELECT * FROM burns WHERE (status = ? AND source = ?)''', ('valid', tx['source']))
+        burns = cursor.fetchall()
         already_burned = sum([burn['burned'] for burn in burns])
         ONE_BTC = 1 * config.UNIT
         max_burn = ONE_BTC - already_burned
-        if sent > max_burn: burned = max_burn   # TODO: exceeded maximum burn; earn what you can.
+        if sent > max_burn: burned = max_burn   # Exceeded maximum burn; earn what you can.
         else: burned = sent
 
-        total_time = D(config.BURN_END - config.BURN_START)
-        partial_time = D(config.BURN_END - tx['block_index'])
-        multiplier = 1000 * (1 + D(.5) * (partial_time / total_time))
+        total_time = config.BURN_END - config.BURN_START
+        partial_time = config.BURN_END - tx['block_index']
+        multiplier = 1000 * (1 + (.5 * Fraction(partial_time, total_time)))
         earned = round(burned * multiplier)
 
-    # Credit source address with earned XCP.
-    if validity == 'Valid':
-        util.credit(db, tx['source'], 'XCP', earned)
+        # Credit source address with earned XCP.
+        util.credit(db, tx['block_index'], tx['source'], 'XCP', earned, event=tx['tx_hash'])
+    else:
+        burned = 0
+        earned = 0
 
     # Add parsed transaction to message-type–specific table.
     # TODO: store sent in table
-    burn_parse_cursor.execute('''INSERT INTO burns(
-                        tx_index,
-                        tx_hash,
-                        block_index,
-                        address,
-                        burned,
-                        earned,
-                        validity) VALUES(?,?,?,?,?,?,?)''',
-                        (tx['tx_index'],
-                        tx['tx_hash'],
-                        tx['block_index'],
-                        tx['source'],
-                        burned,
-                        earned,
-                        validity)
-                  )
-    
-    if validity == 'Valid':
-        logging.info('Burn: {} burned {} BTC for {} XCP ({})'.format(tx['source'], util.devise(db, burned, 'BTC', 'output'), util.devise(db, earned, 'XCP', 'output'), util.short(tx['tx_hash'])))
+    bindings = {
+        'tx_index': tx['tx_index'],
+        'tx_hash': tx['tx_hash'],
+        'block_index': tx['block_index'],
+        'source': tx['source'],
+        'burned': burned,
+        'earned': earned,
+        'status': status,
+    }
+    sql='insert into burns values(:tx_index, :tx_hash, :block_index, :source, :burned, :earned, :status)'
+    burn_parse_cursor.execute(sql, bindings)
+
 
     burn_parse_cursor.close()
 
