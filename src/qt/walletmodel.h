@@ -59,6 +59,7 @@ public:
 
     qint64 getBalance() const;
     qint64 getStake() const;
+    qint64 getNewMint() const;
     qint64 getUnconfirmedBalance() const;
     int getNumTransactions() const;
     EncryptionStatus getEncryptionStatus() const;
@@ -132,6 +133,7 @@ private:
 
     // Cache some values to be able to detect changes
     qint64 cachedBalance;
+    qint64 cachedStake;
     qint64 cachedUnconfirmedBalance;
     qint64 cachedNumTransactions;
     EncryptionStatus cachedEncryptionStatus;
