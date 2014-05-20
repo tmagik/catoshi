@@ -1,0 +1,5 @@
+Compile, test, package and release Windows Peerunity build - 1.5
+Compile, test, package and release Linux Peerunity builds - 2
+Coordinate w/ SirCoinGame regarding dependency issues with new linux builds (keeping them from running on some systems) - 0.75
+
+Total hours - 4.25
