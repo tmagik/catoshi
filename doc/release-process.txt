@@ -36,7 +36,7 @@
    ./bin/gbuild ../peerunity/contrib/gitian-descriptors/boost-linux.yml
    cp build/out/boost-linux*-1.55.0-gitian-r1.zip inputs/
    ./bin/gbuild ../peerunity/contrib/gitian-descriptors/deps-linux.yml
-   cp build/out/peerunity-deps-linux*-gitian-r6.zip inputs/
+   cp build/out/peerunity-deps-linux*-gitian-r5.zip inputs/
    ./bin/gbuild ../peerunity/contrib/gitian-descriptors/boost-win.yml
    cp build/out/boost-win*-1.55.0-gitian-r6.zip inputs/
    ./bin/gbuild ../peerunity/contrib/gitian-descriptors/qt-win.yml
