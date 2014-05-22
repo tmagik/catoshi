@@ -12,22 +12,25 @@
 //
 
 // These need to be macro's, as version.cpp's voodoo requires it
-#define CLIENT_VERSION_MAJOR       0
-#define CLIENT_VERSION_MINOR       6
-#define CLIENT_VERSION_REVISION    3
-#define CLIENT_VERSION_BUILD       0
+
+// peerunity version - intended for display purpose only
+#define PEERUNITY_VERSION_MAJOR       0
+#define PEERUNITY_VERSION_MINOR       1
+#define PEERUNITY_VERSION_REVISION    0
+#define PEERUNITY_VERSION_BUILD       0
 
 static const int CLIENT_VERSION =
-                           1000000 * CLIENT_VERSION_MAJOR
-                         +   10000 * CLIENT_VERSION_MINOR 
-                         +     100 * CLIENT_VERSION_REVISION
-                         +       1 * CLIENT_VERSION_BUILD;
+                           1000000 * PEERUNITY_VERSION_MAJOR
+                         +   10000 * PEERUNITY_VERSION_MINOR 
+                         +     100 * PEERUNITY_VERSION_REVISION
+                         +       1 * PEERUNITY_VERSION_BUILD;
 
 extern const std::string CLIENT_NAME;
 extern const std::string CLIENT_BUILD;
 extern const std::string CLIENT_DATE;
 
-// ppcoin version - intended for display purpose ONLY
+
+// ppcoin version - reference for code tracking
 #define PPCOIN_VERSION_MAJOR       0
 #define PPCOIN_VERSION_MINOR       4
 #define PPCOIN_VERSION_REVISION    0
@@ -38,6 +41,18 @@ static const int PPCOIN_VERSION =
                          +   10000 * PPCOIN_VERSION_MINOR
                          +     100 * PPCOIN_VERSION_REVISION
                          +       1 * PPCOIN_VERSION_BUILD;
+
+// bitcoin version - reference for code tracking
+#define BITCOIN_VERSION_MAJOR       0
+#define BITCOIN_VERSION_MINOR       6
+#define BITCOIN_VERSION_REVISION    3
+#define BITCOIN_VERSION_BUILD       0
+
+static const int CLIENT_VERSION =
+                           1000000 * BITCOIN_VERSION_MAJOR
+                         +   10000 * BITCOIN_VERSION_MINOR 
+                         +     100 * BITCOIN_VERSION_REVISION
+                         +       1 * BITCOIN_VERSION_BUILD;
 
 //
 // network protocol versioning
