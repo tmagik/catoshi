@@ -5,12 +5,12 @@ SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.0.99
+!define VERSION 0.4.0
 !define COMPANY "Peerunity project"
 !define URL http://github.com/peerunity/peerunity/
 
 # MUI Symbol Definitions
-!define MUI_ICON "../share/pixmaps/ppcoin.ico"
+!define MUI_ICON "../share/pixmaps/peerunity.ico"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "../share/pixmaps/nsis-wizard.bmp"
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
