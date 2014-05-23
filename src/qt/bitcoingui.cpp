@@ -235,7 +235,7 @@ void BitcoinGUI::createActions()
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
     aboutAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("&About Peerunity"), this);
-    aboutAction->setToolTip(tr("Show information about PeerCoin"));
+    aboutAction->setToolTip(tr("Show information about Peercoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(tr("About &Qt"), this);
     aboutQtAction->setToolTip(tr("Show information about Qt"));
