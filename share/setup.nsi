@@ -5,7 +5,7 @@ SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.0.99
+!define VERSION 0.1.0.0
 !define COMPANY "Peerunity project"
 !define URL http://github.com/peerunity/peerunity/
 
