@@ -48,7 +48,7 @@ static const int PPCOIN_VERSION =
 #define BITCOIN_VERSION_REVISION    3
 #define BITCOIN_VERSION_BUILD       0
 
-static const int CLIENT_VERSION =
+static const int BITCOIN_VERSION =
                            1000000 * BITCOIN_VERSION_MAJOR
                          +   10000 * BITCOIN_VERSION_MINOR 
                          +     100 * BITCOIN_VERSION_REVISION
