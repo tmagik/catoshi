@@ -1,21 +1,25 @@
-Community Peercoin and Peershares Client
-==================================
+# Peerunity Official Developent Repository
 
-### What is Peercoin (PPCoin)?
+## What is Peerunity?
+
+Peerunity is a Peercoin network-compatible, community-developed wallet client.
+
+The project has been designed to provide people with a stable, secure, and feature-rich alternative to the Peercoin reference wallet (http://github.com/ppcoin/ppcoin). 
+
+To help faciliate broad community cooperation, a number of trusted Peercoin/Peershares community leaders have write permissions to the project's codebase, allowing for decentralization and continuity. Community members, old and new, are encouraged to find ways to contribute to the success of the project. If you have experience with programming, product design, QA engineering, translation, or have a different set of skills that you want to bring to the project, your involvement is appreciated!
+
+
+### Peerunity Resources
+* Source: [Source Code](https://github.com/Peerunity/Peerunity)
+* Documentation: [Build Instructions](https://github.com/Peerunity/Peerunity/tree/master/doc)
+* Support: [Peerunity Forum](http://www.peercointalk.org/index.php?board=64.0), [Issue Tracker](https://github.com/Peerunity/Peerunity/issues?state=open)
+
+
+### About Peercoin
 [Peercoin](http://peercoin.net/) (abbreviated PPC), also known as PPCoin and Peer-to-Peer Coin is the first [cryptocurrency](https://en.wikipedia.org/wiki/Cryptocurrency) design introducing [proof-of-stake consensus](http://peercoin.net/bin/peercoin-paper.pdf) as a security model, with a combined [proof-of-stake](http://peercoin.net/bin/peercoin-paper.pdf)/[proof-of-work](https://en.wikipedia.org/wiki/Proof-of-work_system) minting system. Peercoin is based on [Bitcoin](http://bitcoin.org/en/), while introducing many important innovations to cryptocurrency field including new security model, energy efficiency, better minting model and more adaptive response to rapid change in network computation power.
 
-### Peercoin Resources
-* Client and Source:
-[Client Binaries](http://sourceforge.net/projects/ppcoin/files/),
-[Source Code](https://github.com/ppcoin/ppcoin)
-* Documentation: [Peercoin Whitepaper](http://peercoin.net/bin/peercoin-paper.pdf),
-[Peercoin Wiki](https://github.com/ppcoin/ppcoin/wiki)
-* Help: 
-[Forum](http://www.peercointalk.org/),
-[Other Sites and Links...](http://www.peercointalk.org/index.php?topic=4.0;topicseen)
 
-Repo Guidelines
-================================
+# Repo Guidelines
 
 * Developers work in their own forks, then submit pull requests when they think their feature or bug fix is ready.
 * If it is a simple/trivial/non-controversial change, then one of the development team members simply pulls it.
