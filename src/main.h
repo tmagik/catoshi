@@ -102,7 +102,6 @@ extern unsigned int nCoinCacheSize;
 static const uint64_t nMinDiskSpace = 52428800;
 
 
-class CCoinsDB;
 class CBlockTreeDB;
 struct CDiskBlockPos;
 class CTxUndo;
@@ -848,8 +847,6 @@ public:
         std::sort(pbegin, pend);
         return pbegin[(pend - pbegin)/2];
     }
-
-    int64_t GetMedianTime() const;
 
     /**
      * Returns true if there are nRequired or more blocks of minVersion or above
