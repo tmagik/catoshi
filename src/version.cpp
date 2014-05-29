@@ -14,9 +14,7 @@
 // the list of ancient coinage, from oldest known to more recent. 
 // You can find ideas for future client names, here: http://en.wikipedia.org/wiki/List_of_historical_currencies
 
-// Version 0.1.0 is named for the Lydian stater, an electrum coin
-// Reference: http://www.fleur-de-coin.com/articles/oldest-coin
-const std::string CLIENT_NAME("Stater");
+const std::string CLIENT_NAME("Satoshi");
 
 // Client version number
 #define CLIENT_VERSION_SUFFIX   ""

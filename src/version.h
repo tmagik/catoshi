@@ -19,6 +19,12 @@
 #define PEERUNITY_VERSION_REVISION    0
 #define PEERUNITY_VERSION_BUILD       0
 
+static const int PEERUNITY_VERSION =
+                           1000000 * PEERUNITY_VERSION_MAJOR
+                         +   10000 * PEERUNITY_VERSION_MINOR
+                         +     100 * PEERUNITY_VERSION_REVISION
+                         +       1 * PEERUNITY_VERSION_BUILD;
+
 // ppcoin version - reference for code tracking
 #define PPCOIN_VERSION_MAJOR       0
 #define PPCOIN_VERSION_MINOR       4
