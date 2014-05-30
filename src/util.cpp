@@ -14,6 +14,8 @@
 
 #include <stdarg.h>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 #ifndef WIN32
 // for posix_fallocate
 #ifdef __linux_
@@ -885,12 +887,6 @@ static std::string FormatException(std::exception* pex, const char* pszThread)
             "UNKNOWN EXCEPTION       \n%s in %s       \n", pszModule, pszThread);
 }
 
-void LogException(std::exception* pex, const char* pszThread)
-{
-    std::string message = FormatException(pex, pszThread);
-    LogPrintf("\n%s", message);
-}
-
 void PrintExceptionContinue(std::exception* pex, const char* pszThread)
 {
     std::string message = FormatException(pex, pszThread);
@@ -1384,3 +1380,29 @@ bool ParseInt32(const std::string& str, int32_t *out)
         n <= std::numeric_limits<int32_t>::max();
 }
 
+void SetupEnvironment()
+{
+    #ifndef WIN32
+    try
+    {
+	#if BOOST_FILESYSTEM_VERSION == 3
+            boost::filesystem::path::codecvt(); // Raises runtime error if current locale is invalid
+	#else				          // boost filesystem v2
+            std::locale();                      // Raises runtime error if current locale is invalid
+	#endif
+    } catch(std::runtime_error &e)
+    {
+        setenv("LC_ALL", "C", 1); // Force C locale
+    }
+    #endif
+}
+
+std::string DateTimeStrFormat(const char* pszFormat, int64_t nTime)
+{
+    // std::locale takes ownership of the pointer
+    std::locale loc(std::locale::classic(), new boost::posix_time::time_facet(pszFormat));
+    std::stringstream ss;
+    ss.imbue(loc);
+    ss << boost::posix_time::from_time_t(nTime);
+    return ss.str();
+}
