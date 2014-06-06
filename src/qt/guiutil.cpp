@@ -77,7 +77,11 @@ QString dateTimeStr(qint64 nTime)
 QFont bitcoinAddressFont()
 {
     QFont font("Monospace");
+#if QT_VERSION >= 0x040800
+    font.setStyleHint(QFont::Monospace);
+#else
     font.setStyleHint(QFont::TypeWriter);
+#endif
     return font;
 }
 
@@ -571,7 +575,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
     return true;
 }
 
-#elif defined(LINUX)
+#elif defined(Q_OS_LINUX)
 
 // Follow the Desktop Application Autostart Spec:
 //  http://standards.freedesktop.org/autostart-spec/autostart-spec-latest.html
@@ -776,7 +780,7 @@ QString formatServicesStr(uint64_t mask)
     QStringList strList;
 
     // Just scan the last 8 bits for now.
-    for (int i=0; i < 8; i++) {
+    for (int i = 0; i < 8; i++) {
         uint64_t check = 1 << i;
         if (mask & check)
         {
@@ -795,7 +799,6 @@ QString formatServicesStr(uint64_t mask)
         return strList.join(" & ");
     else
         return QObject::tr("None");
-
 }
 
 } // namespace GUIUtil
