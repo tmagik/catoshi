@@ -217,7 +217,7 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
         {
             strHTML += tr("<b>Net amount:</b> ") + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC,nNet, true) + "<br>";
         }else{
-            strHTML += tr("<b>Retained amount:</b> %1 until %2 more blocks<br>").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC,nNet)).arg(wtx.GetBlocksToMaturity());
+            strHTML += tr("<b>Retained amount:</b> %1 until %2 more blocks<br>").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC,-nNet)).arg(wtx.GetBlocksToMaturity());
         }
 
         //
