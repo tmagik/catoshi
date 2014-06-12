@@ -3,10 +3,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "rpcserver.h"
-#include "main.h"
-#include "sync.h"
 #include "checkpoints.h"
+#include "main.h"
+#include "rpcserver.h"
+#include "sync.h"
 
 #include <stdint.h>
 
@@ -427,7 +427,7 @@ Value verifychain(const Array& params, bool fHelp)
     if (params.size() > 1)
         nCheckDepth = params[1].get_int();
 
-    return VerifyDB(nCheckLevel, nCheckDepth);
+    return CVerifyDB().VerifyDB(nCheckLevel, nCheckDepth);
 }
 
 Value getblockchaininfo(const Array& params, bool fHelp)
@@ -449,9 +449,6 @@ Value getblockchaininfo(const Array& params, bool fHelp)
             + HelpExampleCli("getblockchaininfo", "")
             + HelpExampleRpc("getblockchaininfo", "")
         );
-
-    proxyType proxy;
-    GetProxy(NET_IPV4, proxy);
 
     Object obj;
     std::string chain = Params().DataDir();

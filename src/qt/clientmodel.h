@@ -9,6 +9,7 @@
 
 class AddressTableModel;
 class OptionsModel;
+class PeerTableModel;
 class TransactionTableModel;
 
 class CWallet;
@@ -42,6 +43,7 @@ public:
     ~ClientModel();
 
     OptionsModel *getOptionsModel();
+    PeerTableModel *getPeerTableModel();
 
     //! Return number of connections, default is in- and outbound (total)
     int getNumConnections(unsigned int flags = CONNECTIONS_ALL) const;
@@ -71,6 +73,7 @@ public:
 
 private:
     OptionsModel *optionsModel;
+    PeerTableModel *peerTableModel;
 
     int cachedNumBlocks;
     bool cachedReindexing;
@@ -91,6 +94,9 @@ signals:
 
     //! Fired when a message should be reported to the user
     void message(const QString &title, const QString &message, unsigned int style);
+
+    // Show progress dialog e.g. for verifychain
+    void showProgress(const QString &title, int nProgress);
 
 public slots:
     void updateTimer();
