@@ -50,8 +50,7 @@ Release Process
 	wget 'ftp://ftp.simplesystems.org/pub/png/src/history/libpng16/libpng-1.6.8.tar.gz'
 	wget 'https://fukuchi.org/works/qrencode/qrencode-3.4.3.tar.bz2'
 	wget 'https://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.bz2'
-	wget 'https://svn.boost.org/trac/boost/raw-attachment/ticket/7262/boost-mingw.patch' -O \ 
-	     boost-mingw-gas-cross-compile-2013-03-03.patch
+	wget 'https://svn.boost.org/trac/boost/raw-attachment/ticket/7262/boost-mingw.patch' -O boost-mingw-gas-cross-compile-2013-03-03.patch
 	wget 'https://download.qt-project.org/official_releases/qt/5.2/5.2.0/single/qt-everywhere-opensource-src-5.2.0.tar.gz'
 	wget 'https://download.qt-project.org/archive/qt/4.6/qt-everywhere-opensource-src-4.6.4.tar.gz'
 	wget 'https://protobuf.googlecode.com/files/protobuf-2.5.0.tar.bz2'
@@ -61,10 +60,8 @@ Release Process
 	wget 'http://www.opensource.apple.com/tarballs/ld64/ld64-127.2.tar.gz'
 	wget 'http://cdrkit.org/releases/cdrkit-1.1.11.tar.gz'
 	wget 'https://github.com/theuni/libdmg-hfsplus/archive/libdmg-hfsplus-v0.1.tar.gz'
-	wget 'http://llvm.org/releases/3.2/clang+llvm-3.2-x86-linux-ubuntu-12.04.tar.gz' -O \
-	     clang-llvm-3.2-x86-linux-ubuntu-12.04.tar.gz
-        wget 'https://raw.githubusercontent.com/theuni/osx-cross-depends/master/patches/cdrtools/genisoimage.diff' -O \
-	     cdrkit-deterministic.patch
+	wget 'http://llvm.org/releases/3.2/clang+llvm-3.2-x86-linux-ubuntu-12.04.tar.gz' -O clang-llvm-3.2-x86-linux-ubuntu-12.04.tar.gz
+	wget 'https://raw.githubusercontent.com/theuni/osx-cross-depends/master/patches/cdrtools/genisoimage.diff' -O cdrkit-deterministic.patch
 	cd ..
 	./bin/gbuild ../bitcoin/contrib/gitian-descriptors/boost-linux.yml
 	mv build/out/boost-*.zip inputs/
@@ -179,34 +176,6 @@ Commit your signature to gitian.sigs:
 -------------------------------------------------------------------------
 
 ### After 3 or more people have gitian-built, repackage gitian-signed zips:
-
-From a directory containing bitcoin source, gitian.sigs and gitian zips
-
-	export VERSION=(new version, e.g. 0.8.0)
-	mkdir bitcoin-${VERSION}-linux-gitian
-	pushd bitcoin-${VERSION}-linux-gitian
-	unzip ../bitcoin-${VERSION}-linux-gitian.zip
-	mkdir gitian
-	cp ../bitcoin/contrib/gitian-downloader/*.pgp ./gitian/
-	for signer in $(ls ../gitian.sigs/${VERSION}/); do
-	 cp ../gitian.sigs/${VERSION}/${signer}/bitcoin-build.assert ./gitian/${signer}-build.assert
-	 cp ../gitian.sigs/${VERSION}/${signer}/bitcoin-build.assert.sig ./gitian/${signer}-build.assert.sig
-	done
-	zip -r bitcoin-${VERSION}-linux-gitian.zip *
-	cp bitcoin-${VERSION}-linux-gitian.zip ../
-	popd
-	mkdir bitcoin-${VERSION}-win-gitian
-	pushd bitcoin-${VERSION}-win-gitian
-	unzip ../bitcoin-${VERSION}-win-gitian.zip
-	mkdir gitian
-	cp ../bitcoin/contrib/gitian-downloader/*.pgp ./gitian/
-	for signer in $(ls ../gitian.sigs/${VERSION}-win/); do
-	 cp ../gitian.sigs/${VERSION}-win/${signer}/bitcoin-build.assert ./gitian/${signer}-build.assert
-	 cp ../gitian.sigs/${VERSION}-win/${signer}/bitcoin-build.assert.sig ./gitian/${signer}-build.assert.sig
-	done
-	zip -r bitcoin-${VERSION}-win-gitian.zip *
-	cp bitcoin-${VERSION}-win-gitian.zip ../
-	popd
 
 - Upload gitian zips to SourceForge
 
