@@ -315,7 +315,6 @@ static const CRPCCommand vRPCCommands[] =
     /* Wallet-enabled mining */
     { "getgenerate",            &getgenerate,            true,      false,      false },
     { "gethashespersec",        &gethashespersec,        true,      false,      false },
-    { "getwork",                &getwork,                true,      false,      true  },
     { "setgenerate",            &setgenerate,            true,      true,       false },
 #endif // ENABLE_WALLET
 };
@@ -642,7 +641,6 @@ void StartRPCThreads()
         LogPrintf("Binding RPC on address %s port %i (IPv4+IPv6 bind any: %i)\n", bindAddress.to_string(), endpoint.port(), bBindAny);
         boost::system::error_code v6_only_error;
         boost::shared_ptr<ip::tcp::acceptor> acceptor(new ip::tcp::acceptor(*rpc_io_service));
-        rpc_acceptors.push_back(acceptor);
 
         try {
             acceptor->open(endpoint.protocol());
@@ -658,6 +656,7 @@ void StartRPCThreads()
             RPCListen(acceptor, *rpc_ssl_context, fUseSSL);
 
             fListening = true;
+            rpc_acceptors.push_back(acceptor);
             // If dual IPv6/IPv4 bind succesful, skip binding to IPv4 separately
             if(bBindAny && bindAddress == asio::ip::address_v6::any() && !v6_only_error)
                 break;
@@ -700,11 +699,20 @@ void StopRPCThreads()
     // First, cancel all timers and acceptors
     // This is not done automatically by ->stop(), and in some cases the destructor of
     // asio::io_service can hang if this is skipped.
+    boost::system::error_code ec;
     BOOST_FOREACH(const boost::shared_ptr<ip::tcp::acceptor> &acceptor, rpc_acceptors)
-        acceptor->cancel();
+    {
+        acceptor->cancel(ec);
+        if (ec)
+            LogPrintf("%s: Warning: %s when cancelling acceptor", __func__, ec.message());
+    }
     rpc_acceptors.clear();
     BOOST_FOREACH(const PAIRTYPE(std::string, boost::shared_ptr<deadline_timer>) &timer, deadlineTimers)
-        timer.second->cancel();
+    {
+        timer.second->cancel(ec);
+        if (ec)
+            LogPrintf("%s: Warning: %s when cancelling timer", __func__, ec.message());
+    }
     deadlineTimers.clear();
 
     rpc_io_service->stop();
@@ -763,7 +771,7 @@ void JSONRequest::parse(const Value& valRequest)
     if (valMethod.type() != str_type)
         throw JSONRPCError(RPC_INVALID_REQUEST, "Method must be a string");
     strMethod = valMethod.get_str();
-    if (strMethod != "getwork" && strMethod != "getblocktemplate")
+    if (strMethod != "getblocktemplate")
         LogPrint("rpc", "ThreadRPCServer method=%s\n", strMethod);
 
     // Parse params

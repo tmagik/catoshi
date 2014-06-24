@@ -4,7 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include "bitcoin-config.h"
+#include "config/bitcoin-config.h"
 #endif
 
 #include "init.h"
@@ -31,6 +31,7 @@
 #ifndef WIN32
 #include <signal.h>
 #endif
+#include "compat/sanity.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
@@ -115,7 +116,6 @@ void Shutdown()
     RenameThread("bitcoin-shutoff");
     mempool.AddTransactionsUpdated(1);
     StopRPCThreads();
-    ShutdownRPCMining();
 #ifdef ENABLE_WALLET
     if (pwalletMain)
         bitdb.Flush(false);
@@ -195,8 +195,9 @@ bool static Bind(const CService &addr, unsigned int flags) {
     return true;
 }
 
-std::string HelpMessage(HelpMessageMode hmm)
+std::string HelpMessage(HelpMessageMode mode)
 {
+    // When adding new options to the categories, please keep and ensure alphabetical ordering.
     string strUsage = _("Options:") + "\n";
     strUsage += "  -?                     " + _("This help message") + "\n";
     strUsage += "  -alertnotify=<cmd>     " + _("Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)") + "\n";
@@ -204,7 +205,7 @@ std::string HelpMessage(HelpMessageMode hmm)
     strUsage += "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 288, 0 = all)") + "\n";
     strUsage += "  -checklevel=<n>        " + _("How thorough the block verification of -checkblocks is (0-4, default: 3)") + "\n";
     strUsage += "  -conf=<file>           " + _("Specify configuration file (default: bitcoin.conf)") + "\n";
-    if (hmm == HMM_BITCOIND)
+    if (mode == HMM_BITCOIND)
     {
 #if !defined(WIN32)
         strUsage += "  -daemon                " + _("Run in the background as a daemon and accept commands") + "\n";
@@ -274,12 +275,13 @@ std::string HelpMessage(HelpMessageMode hmm)
         strUsage += "  -dropmessagestest=<n>  " + _("Randomly drop 1 of every <n> network messages") + "\n";
         strUsage += "  -fuzzmessagestest=<n>  " + _("Randomly fuzz 1 of every <n> network messages") + "\n";
         strUsage += "  -flushwallet           " + _("Run a thread to flush wallet periodically (default: 1)") + "\n";
+        strUsage += "  -stopafterblockimport  " + _("Stop running after importing blocks from disk (default: 0)") + "\n";
     }
     strUsage += "  -debug=<category>      " + _("Output debugging information (default: 0, supplying <category> is optional)") + "\n";
     strUsage += "                         " + _("If <category> is not supplied, output all debugging information.") + "\n";
     strUsage += "                         " + _("<category> can be:");
     strUsage +=                                 " addrman, alert, coindb, db, lock, rand, rpc, selectcoins, mempool, net"; // Don't translate these and qt below
-    if (hmm == HMM_BITCOIN_QT)
+    if (mode == HMM_BITCOIN_QT)
         strUsage += ", qt";
     strUsage += ".\n";
     strUsage += "  -gen                   " + _("Generate coins (default: 0)") + "\n";
@@ -405,6 +407,11 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
             LogPrintf("Warning: Could not open blocks file %s\n", path.string());
         }
     }
+
+    if (GetBoolArg("-stopafterblockimport", false)) {
+        LogPrintf("Stopping after block import\n");
+        StartShutdown();
+    }
 }
 
 /** Sanity checks
@@ -418,8 +425,8 @@ bool InitSanityCheck(void)
                   "information, visit https://en.bitcoin.it/wiki/OpenSSL_and_EC_Libraries");
         return false;
     }
-
-    // TODO: remaining sanity checks, see #4081
+    if (!glibc_sanity_test() || !glibcxx_sanity_test())
+        return false;
 
     return true;
 }
@@ -1168,8 +1175,6 @@ bool AppInit2(boost::thread_group& threadGroup)
 #endif
 
     StartNode(threadGroup);
-    // InitRPCMining is needed here so getwork/getblocktemplate in the GUI debug console works properly.
-    InitRPCMining();
     if (fServer)
         StartRPCThreads();
 
