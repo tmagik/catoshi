@@ -72,6 +72,7 @@ const string strMessageMagic = "Bitcoin Signed Message:\n";
 
 // Internal stuff
 namespace {
+
     struct CBlockIndexWorkComparator
     {
         bool operator()(CBlockIndex *pa, CBlockIndex *pb) {
@@ -120,7 +121,8 @@ namespace {
     };
     map<uint256, pair<NodeId, list<QueuedBlock>::iterator> > mapBlocksInFlight;
     map<uint256, pair<NodeId, list<uint256>::iterator> > mapBlocksToDownload;
-}
+
+} // anon namespace
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -130,6 +132,7 @@ namespace {
 // These functions dispatch to one or all registered wallets
 
 namespace {
+
 struct CMainSignals {
     // Notifies listeners of updated transaction data (transaction, and optionally the block it is found in.
     boost::signals2::signal<void (const CTransaction &, const CBlock *)> SyncTransaction;
@@ -144,7 +147,8 @@ struct CMainSignals {
     // Tells listeners to broadcast their data.
     boost::signals2::signal<void ()> Broadcast;
 } g_signals;
-}
+
+} // anon namespace
 
 void RegisterWallet(CWalletInterface* pwalletIn) {
     g_signals.SyncTransaction.connect(boost::bind(&CWalletInterface::SyncTransaction, pwalletIn, _1, _2));
@@ -274,7 +278,6 @@ void MarkBlockAsReceived(const uint256 &hash, NodeId nodeFrom = -1) {
             state->nLastBlockReceive = GetTimeMicros();
         mapBlocksInFlight.erase(itInFlight);
     }
-
 }
 
 // Requires cs_main.
@@ -310,7 +313,7 @@ void MarkBlockAsInFlight(NodeId nodeid, const uint256 &hash) {
     mapBlocksInFlight[hash] = std::make_pair(nodeid, it);
 }
 
-}
+} // anon namespace
 
 bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats) {
     LOCK(cs_main);
@@ -3652,7 +3655,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         if (pindex)
             pindex = chainActive.Next(pindex);
         int nLimit = 500;
-        LogPrint("net", "getblocks %d to %s limit %d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString(), nLimit);
+        LogPrint("net", "getblocks %d to %s limit %d\n", (pindex ? pindex->nHeight : -1), hashStop==uint256(0) ? "end" : hashStop.ToString(), nLimit);
         for (; pindex; pindex = chainActive.Next(pindex))
         {
             if (pindex->GetBlockHash() == hashStop)
