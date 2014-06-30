@@ -21,6 +21,16 @@
 class CBlockIndex;
 class CNetAddr;
 
+class AcceptedConnection
+{
+public:
+    virtual ~AcceptedConnection() {}
+
+    virtual std::iostream& stream() = 0;
+    virtual std::string peer_address_to_string() const = 0;
+    virtual void close() = 0;
+};
+
 /* Start RPC threads */
 void StartRPCThreads();
 /* Alternative to StartRPCThreads for the GUI, when no server is
@@ -106,7 +116,6 @@ extern int64_t nWalletUnlockTime;
 extern int64_t AmountFromValue(const json_spirit::Value& value);
 extern json_spirit::Value ValueFromAmount(int64_t amount);
 extern double GetDifficulty(const CBlockIndex* blockindex = NULL);
-extern std::string HexBits(unsigned int nBits);
 extern std::string HelpRequiringPassphrase();
 extern std::string HelpExampleCli(std::string methodname, std::string args);
 extern std::string HelpExampleRpc(std::string methodname, std::string args);
