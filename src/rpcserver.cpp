@@ -97,16 +97,6 @@ Value ValueFromAmount(int64_t amount)
     return (double)amount / (double)COIN;
 }
 
-std::string HexBits(unsigned int nBits)
-{
-    union {
-        int32_t nBits;
-        char cBits[4];
-    } uBits;
-    uBits.nBits = htonl((int32_t)nBits);
-    return HexStr(BEGIN(uBits.cBits), END(uBits.cBits));
-}
-
 uint256 ParseHashV(const Value& v, string strName)
 {
     string strHex;
@@ -491,7 +481,7 @@ static void RPCAcceptHandler(boost::shared_ptr< basic_socket_acceptor<Protocol, 
     {
         // Only send a 403 if we're not using SSL to prevent a DoS during the SSL handshake.
         if (!fUseSSL)
-            conn->stream() << HTTPReply(HTTP_FORBIDDEN, "", false) << std::flush;
+            conn->stream() << HTTPError(HTTP_FORBIDDEN, false) << std::flush;
         conn->close();
     }
     else {
@@ -817,7 +807,7 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
     // Check authorization
     if (mapHeaders.count("authorization") == 0)
     {
-        conn->stream() << HTTPReply(HTTP_UNAUTHORIZED, "", false) << std::flush;
+        conn->stream() << HTTPError(HTTP_UNAUTHORIZED, false) << std::flush;
         return false;
     }
 
@@ -830,7 +820,7 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
         if (mapArgs["-rpcpassword"].size() < 20)
             MilliSleep(250);
 
-        conn->stream() << HTTPReply(HTTP_UNAUTHORIZED, "", false) << std::flush;
+        conn->stream() << HTTPError(HTTP_UNAUTHORIZED, false) << std::flush;
         return false;
     }
 
@@ -898,7 +888,7 @@ void ServiceConnection(AcceptedConnection *conn)
             if (!HTTPReq_JSONRPC(conn, strRequest, mapHeaders, fRun))
                 break;
         } else {
-            conn->stream() << HTTPReply(HTTP_NOT_FOUND, "", false) << std::flush;
+            conn->stream() << HTTPError(HTTP_NOT_FOUND, false) << std::flush;
             break;
         }
     }
