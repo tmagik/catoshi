@@ -188,6 +188,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
 struct CNodeStateStats {
     int nMisbehavior;
+    int nSyncHeight;
 };
 
 struct CDiskBlockPos
@@ -679,6 +680,9 @@ public:
     // pointer to the index of the predecessor of this block
     CBlockIndex* pprev;
 
+    // pointer to the index of some further predecessor of this block
+    CBlockIndex* pskip;
+
     // height of the entry in the chain. The genesis block has height 0
     int nHeight;
 
@@ -718,6 +722,7 @@ public:
     {
         phashBlock = NULL;
         pprev = NULL;
+        pskip = NULL;
         nHeight = 0;
         nFile = 0;
         nDataPos = 0;
@@ -739,6 +744,7 @@ public:
     {
         phashBlock = NULL;
         pprev = NULL;
+        pskip = NULL;
         nHeight = 0;
         nFile = 0;
         nDataPos = 0;
@@ -871,9 +877,14 @@ public:
         }
         return false;
     }
+
+    // Build the skiplist pointer for this entry.
+    void BuildSkip();
+
+    // Efficiently find an ancestor of this block.
+    CBlockIndex* GetAncestor(int height);
+    const CBlockIndex* GetAncestor(int height) const;
 };
-
-
 
 /** Used to marshal pointers into hashes for db storage. */
 class CDiskBlockIndex : public CBlockIndex

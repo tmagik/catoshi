@@ -73,6 +73,7 @@ const string strMessageMagic = "Bitcoin Signed Message:\n";
 
 // Internal stuff
 namespace {
+
     struct CBlockIndexWorkComparator
     {
         bool operator()(CBlockIndex *pa, CBlockIndex *pb) {
@@ -121,7 +122,8 @@ namespace {
     };
     map<uint256, pair<NodeId, list<QueuedBlock>::iterator> > mapBlocksInFlight;
     map<uint256, pair<NodeId, list<uint256>::iterator> > mapBlocksToDownload;
-}
+
+} // anon namespace
 
 // Forward reference functions defined here:
 static const unsigned int MAX_DOUBLESPEND_BLOOM = 1000;
@@ -135,6 +137,7 @@ static void RelayDoubleSpend(const COutPoint& outPoint, const CTransaction& doub
 // These functions dispatch to one or all registered wallets
 
 namespace {
+
 struct CMainSignals {
     // Notifies listeners of updated transaction data (transaction, and optionally the block it is found in.
     boost::signals2::signal<void (const CTransaction &, const CBlock *)> SyncTransaction;
@@ -155,7 +158,8 @@ struct CMainSignals {
     // then the double-spend simply fails when we try to lookup the inputs in the current UTXO set.
     boost::signals2::signal<void (const COutPoint&, const CTransaction&, bool)> DetectedDoubleSpend;
 } g_signals;
-}
+
+} // anon namespace
 
 void RegisterInternalSignals() {
     static CBloomFilter doubleSpendFilter;
@@ -223,6 +227,10 @@ struct CNodeState {
     std::string name;
     // List of asynchronously-determined block rejections to notify this peer about.
     std::vector<CBlockReject> rejects;
+    // The best known block we know this peer has announced.
+    CBlockIndex *pindexBestKnownBlock;
+    // The hash of the last unknown block this peer has announced.
+    uint256 hashLastUnknownBlock;
     list<QueuedBlock> vBlocksInFlight;
     int nBlocksInFlight;
     list<uint256> vBlocksToDownload;
@@ -233,6 +241,8 @@ struct CNodeState {
     CNodeState() {
         nMisbehavior = 0;
         fShouldBan = false;
+        pindexBestKnownBlock = NULL;
+        hashLastUnknownBlock = uint256(0);
         nBlocksToDownload = 0;
         nBlocksInFlight = 0;
         nLastBlockReceive = 0;
@@ -294,7 +304,6 @@ void MarkBlockAsReceived(const uint256 &hash, NodeId nodeFrom = -1) {
             state->nLastBlockReceive = GetTimeMicros();
         mapBlocksInFlight.erase(itInFlight);
     }
-
 }
 
 // Requires cs_main.
@@ -330,7 +339,40 @@ void MarkBlockAsInFlight(NodeId nodeid, const uint256 &hash) {
     mapBlocksInFlight[hash] = std::make_pair(nodeid, it);
 }
 
+/** Check whether the last unknown block a peer advertized is not yet known. */
+void ProcessBlockAvailability(NodeId nodeid) {
+    CNodeState *state = State(nodeid);
+    assert(state != NULL);
+
+    if (state->hashLastUnknownBlock != 0) {
+        map<uint256, CBlockIndex*>::iterator itOld = mapBlockIndex.find(state->hashLastUnknownBlock);
+        if (itOld != mapBlockIndex.end() && itOld->second->nChainWork > 0) {
+            if (state->pindexBestKnownBlock == NULL || itOld->second->nChainWork >= state->pindexBestKnownBlock->nChainWork)
+                state->pindexBestKnownBlock = itOld->second;
+            state->hashLastUnknownBlock = uint256(0);
+        }
+    }
 }
+
+/** Update tracking information about which blocks a peer is assumed to have. */
+void UpdateBlockAvailability(NodeId nodeid, const uint256 &hash) {
+    CNodeState *state = State(nodeid);
+    assert(state != NULL);
+
+    ProcessBlockAvailability(nodeid);
+
+    map<uint256, CBlockIndex*>::iterator it = mapBlockIndex.find(hash);
+    if (it != mapBlockIndex.end() && it->second->nChainWork > 0) {
+        // An actually better block was announced.
+        if (state->pindexBestKnownBlock == NULL || it->second->nChainWork >= state->pindexBestKnownBlock->nChainWork)
+            state->pindexBestKnownBlock = it->second;
+    } else {
+        // An unknown block was announced; just assume that the latest one is the best one.
+        state->hashLastUnknownBlock = hash;
+    }
+}
+
+} // anon namespace
 
 bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats) {
     LOCK(cs_main);
@@ -338,6 +380,7 @@ bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats) {
     if (state == NULL)
         return false;
     stats.nMisbehavior = state->nMisbehavior;
+    stats.nSyncHeight = state->pindexBestKnownBlock ? state->pindexBestKnownBlock->nHeight : -1;
     return true;
 }
 
@@ -391,8 +434,11 @@ CBlockLocator CChain::GetLocator(const CBlockIndex *pindex) const {
             break;
         // Exponentially larger steps back, plus the genesis block.
         int nHeight = std::max(pindex->nHeight - nStep, 0);
+        // Jump back quickly to the same height as the chain.
+        if (pindex->nHeight > nHeight)
+            pindex = pindex->GetAncestor(nHeight);
         // In case pindex is not in this chain, iterate pindex->pprev to find blocks.
-        while (pindex->nHeight > nHeight && !Contains(pindex))
+        while (!Contains(pindex))
             pindex = pindex->pprev;
         // If pindex is in this chain, use direct height-based access.
         if (pindex->nHeight > nHeight)
@@ -419,6 +465,8 @@ CBlockIndex *CChain::FindFork(const CBlockLocator &locator) const {
 }
 
 CBlockIndex *CChain::FindFork(CBlockIndex *pindex) const {
+    if (pindex->nHeight > Height())
+        pindex = pindex->GetAncestor(Height());
     while (pindex && !Contains(pindex))
         pindex = pindex->pprev;
     return pindex;
@@ -508,7 +556,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     // Treat non-final transactions as non-standard to prevent a specific type
     // of double-spend attack, as well as DoS attacks. (if the transaction
     // can't be mined, the attacker isn't expending resources broadcasting it)
-    // Basically we don't want to propagate transactions that can't included in
+    // Basically we don't want to propagate transactions that can't be included in
     // the next block.
     //
     // However, IsFinalTx() is confusing... Without arguments, it uses
@@ -541,7 +589,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     {
         // Biggest 'standard' txin is a 15-of-15 P2SH multisig with compressed
         // keys. (remember the 520 byte limit on redeemScript size) That works
-        // out to a (15*(33+1))+3=513 byte redeemScript, 513+1+15*(73+1)=1624
+        // out to a (15*(33+1))+3=513 byte redeemScript, 513+1+15*(73+1)+3=1627
         // bytes of scriptSig, which we round off to 1650 bytes for some minor
         // future-proofing. That's also enough to spend a 20-of-20
         // CHECKMULTISIG scriptPubKey, though such a scriptPubKey is not
@@ -2178,6 +2226,7 @@ CBlockIndex* AddToBlockIndex(CBlockHeader& block)
     {
         pindexNew->pprev = (*miPrev).second;
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
+        pindexNew->BuildSkip();
     }
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + pindexNew->GetBlockWork();
     pindexNew->RaiseValidity(BLOCK_VALID_TREE);
@@ -2535,6 +2584,55 @@ bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, uns
     return (nFound >= nRequired);
 }
 
+/** Turn the lowest '1' bit in the binary representation of a number into a '0'. */
+int static inline InvertLowestOne(int n) { return n & (n - 1); }
+
+/** Compute what height to jump back to with the CBlockIndex::pskip pointer. */
+int static inline GetSkipHeight(int height) {
+    if (height < 2)
+        return 0;
+
+    // Determine which height to jump back to. Any number strictly lower than height is acceptable,
+    // but the following expression seems to perform well in simulations (max 110 steps to go back
+    // up to 2**18 blocks).
+    return (height & 1) ? InvertLowestOne(InvertLowestOne(height - 1)) + 1 : InvertLowestOne(height);
+}
+
+CBlockIndex* CBlockIndex::GetAncestor(int height)
+{
+    if (height > nHeight || height < 0)
+        return NULL;
+
+    CBlockIndex* pindexWalk = this;
+    int heightWalk = nHeight;
+    while (heightWalk > height) {
+        int heightSkip = GetSkipHeight(heightWalk);
+        int heightSkipPrev = GetSkipHeight(heightWalk - 1);
+        if (heightSkip == height ||
+            (heightSkip > height && !(heightSkipPrev < heightSkip - 2 &&
+                                      heightSkipPrev >= height))) {
+            // Only follow pskip if pprev->pskip isn't better than pskip->pprev.
+            pindexWalk = pindexWalk->pskip;
+            heightWalk = heightSkip;
+        } else {
+            pindexWalk = pindexWalk->pprev;
+            heightWalk--;
+        }
+    }
+    return pindexWalk;
+}
+
+const CBlockIndex* CBlockIndex::GetAncestor(int height) const
+{
+    return const_cast<CBlockIndex*>(this)->GetAncestor(height);
+}
+
+void CBlockIndex::BuildSkip()
+{
+    if (pprev)
+        pskip = pprev->GetAncestor(GetSkipHeight(nHeight));
+}
+
 void PushGetBlocks(CNode* pnode, CBlockIndex* pindexBegin, uint256 hashEnd)
 {
     AssertLockHeld(cs_main);
@@ -2885,6 +2983,8 @@ bool static LoadBlockIndexDB()
             setBlockIndexValid.insert(pindex);
         if (pindex->nStatus & BLOCK_FAILED_MASK && (!pindexBestInvalid || pindex->nChainWork > pindexBestInvalid->nChainWork))
             pindexBestInvalid = pindex;
+        if (pindex->pprev)
+            pindex->BuildSkip();
     }
 
     // Load block file info
@@ -3680,6 +3780,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                 PushGetBlocks(pfrom, chainActive.Tip(), GetOrphanRoot(inv.hash));
             }
 
+            if (inv.type == MSG_BLOCK)
+                UpdateBlockAvailability(pfrom->GetId(), inv.hash);
+
             // Track requests for our stuff
             g_signals.Inventory(inv.hash);
         }
@@ -3722,7 +3825,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         if (pindex)
             pindex = chainActive.Next(pindex);
         int nLimit = 500;
-        LogPrint("net", "getblocks %d to %s limit %d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString(), nLimit);
+        LogPrint("net", "getblocks %d to %s limit %d\n", (pindex ? pindex->nHeight : -1), hashStop==uint256(0) ? "end" : hashStop.ToString(), nLimit);
         for (; pindex; pindex = chainActive.Next(pindex))
         {
             if (pindex->GetBlockHash() == hashStop)
@@ -4111,6 +4214,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
     else
     {
         // Ignore unknown commands for extensibility
+        LogPrint("net", "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand), pfrom->id);
     }
 
 
@@ -4424,6 +4528,9 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             LogPrintf("Peer %s is stalling block download, disconnecting\n", state.name.c_str());
             pto->fDisconnect = true;
         }
+
+        // Update knowledge of peer's block availability.
+        ProcessBlockAvailability(pto->GetId());
 
         //
         // Message: getdata (blocks)
