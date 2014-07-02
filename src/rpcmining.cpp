@@ -247,6 +247,20 @@ Value getmininginfo(const Array& params, bool fHelp)
 }
 
 
+Value prioritisetransaction(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 3)
+        throw runtime_error(
+            "prioritisetransaction <txid> <priority delta> <fee delta>\n"
+            "Accepts the transaction into mined blocks at a higher (or lower) priority");
+
+    uint256 hash;
+    hash.SetHex(params[0].get_str());
+    mempool.PrioritiseTransaction(hash, params[0].get_str(), params[1].get_real(), params[2].get_int64());
+    return true;
+}
+
+
 Value getblocktemplate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -429,7 +443,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
     result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE));
     result.push_back(Pair("curtime", (int64_t)pblock->nTime));
-    result.push_back(Pair("bits", HexBits(pblock->nBits)));
+    result.push_back(Pair("bits", strprintf("%08x", pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
 
     return result;
