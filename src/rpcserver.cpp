@@ -25,10 +25,10 @@
 #include <boost/shared_ptr.hpp>
 #include "json/json_spirit_writer_template.h"
 
-using namespace std;
 using namespace boost;
 using namespace boost::asio;
 using namespace json_spirit;
+using namespace std;
 
 static std::string strRPCUserColonPass;
 
@@ -95,16 +95,6 @@ int64_t AmountFromValue(const Value& value)
 Value ValueFromAmount(int64_t amount)
 {
     return (double)amount / (double)COIN;
-}
-
-std::string HexBits(unsigned int nBits)
-{
-    union {
-        int32_t nBits;
-        char cBits[4];
-    } uBits;
-    uBits.nBits = htonl((int32_t)nBits);
-    return HexStr(BEGIN(uBits.cBits), END(uBits.cBits));
 }
 
 uint256 ParseHashV(const Value& v, string strName)
@@ -254,6 +244,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getblocktemplate",       &getblocktemplate,       true,      false,      false },
     { "getmininginfo",          &getmininginfo,          true,      false,      false },
     { "getnetworkhashps",       &getnetworkhashps,       true,      false,      false },
+    { "prioritisetransaction",  &prioritisetransaction,  true,      false,      false },
     { "submitblock",            &submitblock,            false,     true,       false },
 
     /* Raw transactions */
@@ -392,16 +383,6 @@ bool ClientAllowed(const boost::asio::ip::address& address)
     return false;
 }
 
-class AcceptedConnection
-{
-public:
-    virtual ~AcceptedConnection() {}
-
-    virtual std::iostream& stream() = 0;
-    virtual std::string peer_address_to_string() const = 0;
-    virtual void close() = 0;
-};
-
 template <typename Protocol>
 class AcceptedConnectionImpl : public AcceptedConnection
 {
@@ -500,7 +481,7 @@ static void RPCAcceptHandler(boost::shared_ptr< basic_socket_acceptor<Protocol, 
     {
         // Only send a 403 if we're not using SSL to prevent a DoS during the SSL handshake.
         if (!fUseSSL)
-            conn->stream() << HTTPReply(HTTP_FORBIDDEN, "", false) << std::flush;
+            conn->stream() << HTTPError(HTTP_FORBIDDEN, false) << std::flush;
         conn->close();
     }
     else {
@@ -531,7 +512,7 @@ void StartRPCThreads()
             if(!subnet.IsValid())
             {
                 uiInterface.ThreadSafeMessageBox(
-                    strprintf("Invalid -rpcallowip subnet specification: %s", strAllow),
+                    strprintf("Invalid -rpcallowip subnet specification: %s. Valid are a single IP (e.g. 1.2.3.4), a network/netmask (e.g. 1.2.3.4/255.255.255.0) or a network/CIDR (e.g. 1.2.3.4/24).", strAllow),
                     "", CClientUIInterface::MSG_ERROR);
                 StartShutdown();
                 return;
@@ -818,6 +799,71 @@ static string JSONRPCExecBatch(const Array& vReq)
     return write_string(Value(ret), false) + "\n";
 }
 
+static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
+                            string& strRequest,
+                            map<string, string>& mapHeaders,
+                            bool fRun)
+{
+    // Check authorization
+    if (mapHeaders.count("authorization") == 0)
+    {
+        conn->stream() << HTTPError(HTTP_UNAUTHORIZED, false) << std::flush;
+        return false;
+    }
+
+    if (!HTTPAuthorized(mapHeaders))
+    {
+        LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", conn->peer_address_to_string());
+        /* Deter brute-forcing short passwords.
+           If this results in a DoS the user really
+           shouldn't have their RPC port exposed. */
+        if (mapArgs["-rpcpassword"].size() < 20)
+            MilliSleep(250);
+
+        conn->stream() << HTTPError(HTTP_UNAUTHORIZED, false) << std::flush;
+        return false;
+    }
+
+    JSONRequest jreq;
+    try
+    {
+        // Parse request
+        Value valRequest;
+        if (!read_string(strRequest, valRequest))
+            throw JSONRPCError(RPC_PARSE_ERROR, "Parse error");
+
+        string strReply;
+
+        // singleton request
+        if (valRequest.type() == obj_type) {
+            jreq.parse(valRequest);
+
+            Value result = tableRPC.execute(jreq.strMethod, jreq.params);
+
+            // Send reply
+            strReply = JSONRPCReply(result, Value::null, jreq.id);
+
+        // array of requests
+        } else if (valRequest.type() == array_type)
+            strReply = JSONRPCExecBatch(valRequest.get_array());
+        else
+            throw JSONRPCError(RPC_PARSE_ERROR, "Top-level object parse error");
+
+        conn->stream() << HTTPReply(HTTP_OK, strReply, fRun) << std::flush;
+    }
+    catch (Object& objError)
+    {
+        ErrorReply(conn->stream(), objError, jreq.id);
+        return false;
+    }
+    catch (std::exception& e)
+    {
+        ErrorReply(conn->stream(), JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
+        return false;
+    }
+    return true;
+}
+
 void ServiceConnection(AcceptedConnection *conn)
 {
     bool fRun = true;
@@ -834,67 +880,15 @@ void ServiceConnection(AcceptedConnection *conn)
         // Read HTTP message headers and body
         ReadHTTPMessage(conn->stream(), mapHeaders, strRequest, nProto);
 
-        if (strURI != "/") {
-            conn->stream() << HTTPReply(HTTP_NOT_FOUND, "", false) << std::flush;
-            break;
-        }
-
-        // Check authorization
-        if (mapHeaders.count("authorization") == 0)
-        {
-            conn->stream() << HTTPReply(HTTP_UNAUTHORIZED, "", false) << std::flush;
-            break;
-        }
-        if (!HTTPAuthorized(mapHeaders))
-        {
-            LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", conn->peer_address_to_string());
-            /* Deter brute-forcing short passwords.
-               If this results in a DoS the user really
-               shouldn't have their RPC port exposed. */
-            if (mapArgs["-rpcpassword"].size() < 20)
-                MilliSleep(250);
-
-            conn->stream() << HTTPReply(HTTP_UNAUTHORIZED, "", false) << std::flush;
-            break;
-        }
+        // HTTP Keep-Alive is false; close connection immediately
         if (mapHeaders["connection"] == "close")
             fRun = false;
 
-        JSONRequest jreq;
-        try
-        {
-            // Parse request
-            Value valRequest;
-            if (!read_string(strRequest, valRequest))
-                throw JSONRPCError(RPC_PARSE_ERROR, "Parse error");
-
-            string strReply;
-
-            // singleton request
-            if (valRequest.type() == obj_type) {
-                jreq.parse(valRequest);
-
-                Value result = tableRPC.execute(jreq.strMethod, jreq.params);
-
-                // Send reply
-                strReply = JSONRPCReply(result, Value::null, jreq.id);
-
-            // array of requests
-            } else if (valRequest.type() == array_type)
-                strReply = JSONRPCExecBatch(valRequest.get_array());
-            else
-                throw JSONRPCError(RPC_PARSE_ERROR, "Top-level object parse error");
-
-            conn->stream() << HTTPReply(HTTP_OK, strReply, fRun) << std::flush;
-        }
-        catch (Object& objError)
-        {
-            ErrorReply(conn->stream(), objError, jreq.id);
-            break;
-        }
-        catch (std::exception& e)
-        {
-            ErrorReply(conn->stream(), JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
+        if (strURI == "/") {
+            if (!HTTPReq_JSONRPC(conn, strRequest, mapHeaders, fRun))
+                break;
+        } else {
+            conn->stream() << HTTPError(HTTP_NOT_FOUND, false) << std::flush;
             break;
         }
     }
