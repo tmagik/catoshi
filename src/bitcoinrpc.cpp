@@ -907,13 +907,15 @@ Value listminting(const Array& params, bool fHelp)
                 "listminting [count=-1] [from=0]\n"
                 "Return all mintable outputs and provide details for each of them.");
 
-    int64 count = -1;
-    if(params.size() > 0)
-        count = params[0].get_int();
+    int count = -1;
 
-    int64 from = 0;
+    // Cannot get the ConvertTo method work without getting a "value is type str, expected int" error
+    if(params.size() > 0)
+        count = boost::lexical_cast<int>(params[0].get_str());
+
+    int from = 0;
     if(params.size() > 1)
-        from = params[1].get_int();
+        from = boost::lexical_cast<int>(params[1].get_str());;
 
     Array ret;
 
@@ -928,7 +930,8 @@ Value listminting(const Array& params, bool fHelp)
         for(QList<KernelRecord>::iterator i = txList.begin(); i != txList.end(); ++i) {
             if(!(*i).spent) {
 
-                if(count > 0 && ret.size() >= count) {
+                if((count > 0 && ret.size() >= count) || from > 0) {
+                    from--;
                     break;
                 }
 
@@ -3372,8 +3375,6 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
             throw runtime_error("type mismatch "+s);
         params[1] = v.get_array();
     }
-    if (strMethod == "listminting"             && n > 0) ConvertTo<boost::int64_t>(params[0]);
-    if (strMethod == "listminting"             && n > 1) ConvertTo<boost::int64_t>(params[1]);
     return params;
 }
 
