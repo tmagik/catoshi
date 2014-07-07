@@ -28,14 +28,13 @@
 #include <boost/signals2/signal.hpp>
 #include <openssl/rand.h>
 
-
 class CAddrMan;
 class CBlockIndex;
 class CNode;
 
 namespace boost {
     class thread_group;
-}
+} // namespace boost
 
 /** Time between pings automatically sent out for latency probing and keepalive (in seconds). */
 static const int PING_INTERVAL = 2 * 60;
@@ -174,11 +173,14 @@ public:
     CDataStream vRecv;              // received message data
     unsigned int nDataPos;
 
+    int64_t nTime;                  // time (in microseconds) of message receipt.
+
     CNetMessage(int nTypeIn, int nVersionIn) : hdrbuf(nTypeIn, nVersionIn), vRecv(nTypeIn, nVersionIn) {
         hdrbuf.resize(24);
         in_data = false;
         nHdrPos = 0;
         nDataPos = 0;
+        nTime = 0;
     }
 
     bool complete() const
@@ -331,6 +333,11 @@ public:
             id = nLastNodeId++;
         }
 
+        if (fLogIPs)
+            LogPrint("net", "Added connection to %s peer=%d\n", addrName, id);
+        else
+            LogPrint("net", "Added connection peer=%d\n", id);
+
         // Be shy and don't send version until we hear
         if (hSocket != INVALID_SOCKET && !fInbound)
             PushVersion();
@@ -447,7 +454,7 @@ public:
             nRequestTime = it->second;
         else
             nRequestTime = 0;
-        LogPrint("net", "askfor %s   %d (%s)\n", inv.ToString(), nRequestTime, DateTimeStrFormat("%H:%M:%S", nRequestTime/1000000).c_str());
+        LogPrint("net", "askfor %s  %d (%s) peer=%d\n", inv.ToString(), nRequestTime, DateTimeStrFormat("%H:%M:%S", nRequestTime/1000000).c_str(), id);
 
         // Make sure not to reuse time indexes to keep things in the same order
         int64_t nNow = GetTimeMicros() - 1000000;
@@ -515,7 +522,7 @@ public:
         assert(ssSend.size () >= CMessageHeader::CHECKSUM_OFFSET + sizeof(nChecksum));
         memcpy((char*)&ssSend[CMessageHeader::CHECKSUM_OFFSET], &nChecksum, sizeof(nChecksum));
 
-        LogPrint("net", "(%d bytes)\n", nSize);
+        LogPrint("net", "(%d bytes) peer=%d\n", nSize, id);
 
         std::deque<CSerializeData>::iterator it = vSendMsg.insert(vSendMsg.end(), CSerializeData());
         ssSend.GetAndClear(*it);

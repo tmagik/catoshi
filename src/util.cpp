@@ -7,7 +7,6 @@
 
 #include "chainparamsbase.h"
 #include "sync.h"
-#include "ui_interface.h"
 #include "uint256.h"
 #include "version.h"
 
@@ -77,11 +76,12 @@
 // See also: http://stackoverflow.com/questions/10020179/compilation-fail-in-boost-librairies-program-options
 //           http://clang.debian.net/status.php?version=3.0&key=CANNOT_FIND_FUNCTION
 namespace boost {
+
     namespace program_options {
         std::string to_internal(const std::string&);
     }
-}
 
+} // namespace boost
 
 using namespace std;
 
@@ -94,8 +94,8 @@ bool fDaemon = false;
 bool fServer = false;
 string strMiscWarning;
 bool fLogTimestamps = false;
+bool fLogIPs = false;
 volatile bool fReopenDebugLog = false;
-CClientUIInterface uiInterface;
 
 // Init OpenSSL library multithreading support
 static CCriticalSection** ppmutexOpenSSL;
@@ -169,16 +169,31 @@ void RandAddSeedPerfmon()
 #ifdef WIN32
     // Don't need this on Linux, OpenSSL automatically uses /dev/urandom
     // Seed with the entire set of perfmon data
-    unsigned char pdata[250000];
-    memset(pdata, 0, sizeof(pdata));
-    unsigned long nSize = sizeof(pdata);
-    long ret = RegQueryValueExA(HKEY_PERFORMANCE_DATA, "Global", NULL, NULL, pdata, &nSize);
+    std::vector <unsigned char> vData(250000,0);
+    long ret = 0;
+    unsigned long nSize = 0;
+    const size_t nMaxSize = 10000000; // Bail out at more than 10MB of performance data
+    while (true)
+    {
+        nSize = vData.size();
+        ret = RegQueryValueExA(HKEY_PERFORMANCE_DATA, "Global", NULL, NULL, begin_ptr(vData), &nSize);
+        if (ret != ERROR_MORE_DATA || vData.size() >= nMaxSize)
+            break;
+        vData.resize(std::max((vData.size()*3)/2, nMaxSize)); // Grow size of buffer exponentially
+    }
     RegCloseKey(HKEY_PERFORMANCE_DATA);
     if (ret == ERROR_SUCCESS)
     {
-        RAND_add(pdata, nSize, nSize/100.0);
-        OPENSSL_cleanse(pdata, nSize);
-        LogPrint("rand", "RandAddSeed() %lu bytes\n", nSize);
+        RAND_add(begin_ptr(vData), nSize, nSize/100.0);
+        OPENSSL_cleanse(begin_ptr(vData), nSize);
+        LogPrint("rand", "%s: %lu bytes\n", __func__, nSize);
+    } else {
+        static bool warned = false; // Warn only once
+        if (!warned)
+        {
+            LogPrintf("%s: Warning: RegQueryValueExA(HKEY_PERFORMANCE_DATA) failed with code %i\n", __func__, ret);
+            warned = true;
+        }
     }
 #endif
 }
@@ -405,6 +420,11 @@ const signed char p_util_hexdigit[256] =
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, };
+
+signed char HexDigit(char c)
+{
+    return p_util_hexdigit[(unsigned char)c];
+}
 
 bool IsHex(const string& str)
 {
@@ -1142,15 +1162,15 @@ void ShrinkDebugFile()
     if (file && boost::filesystem::file_size(pathLog) > 10 * 1000000)
     {
         // Restart the file with some of the end
-        char pch[200000];
-        fseek(file, -sizeof(pch), SEEK_END);
-        int nBytes = fread(pch, 1, sizeof(pch), file);
+        std::vector <char> vch(200000,0);
+        fseek(file, -vch.size(), SEEK_END);
+        int nBytes = fread(begin_ptr(vch), 1, vch.size(), file);
         fclose(file);
 
         file = fopen(pathLog.string().c_str(), "w");
         if (file)
         {
-            fwrite(pch, 1, nBytes, file);
+            fwrite(begin_ptr(vch), 1, nBytes, file);
             fclose(file);
         }
     }
