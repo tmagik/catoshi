@@ -231,6 +231,7 @@ RPCConsole::RPCConsole(QWidget *parent) :
 
     startExecutor();
     setTrafficGraphRange(INITIAL_TRAFFIC_GRAPH_MINS);
+
     ui->detailWidget->hide();
 
     clear();
@@ -316,7 +317,7 @@ void RPCConsole::setClientModel(ClientModel *model)
         ui->buildDate->setText(model->formatBuildDate());
         ui->startupTime->setText(model->formatClientStartupTime());
 
-        ui->networkName->setText(model->getNetworkName());
+        ui->networkName->setText(QString::fromStdString(Params().NetworkIDString()));
     }
 }
 
@@ -581,7 +582,7 @@ void RPCConsole::peerLayoutChanged()
     if (fUnselect && selectedRow >= 0)
     {
         ui->peerWidget->selectionModel()->select(QItemSelection(selectedModelIndex.first(), selectedModelIndex.last()),
-                                                 QItemSelectionModel::Deselect);
+            QItemSelectionModel::Deselect);
     }
 
     if (fReselect)
