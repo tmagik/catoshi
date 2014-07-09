@@ -7,7 +7,7 @@
 #define BITCOIN_UTIL_H
 
 #if defined(HAVE_CONFIG_H)
-#include "bitcoin-config.h"
+#include "config/bitcoin-config.h"
 #endif
 
 #include "compat.h"
@@ -32,7 +32,6 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/thread.hpp>
 
-class CNetAddr;
 class uint256;
 
 static const int64_t COIN = 100000000;
@@ -101,6 +100,7 @@ extern bool fPrintToDebugLog;
 extern bool fServer;
 extern std::string strMiscWarning;
 extern bool fLogTimestamps;
+extern bool fLogIPs;
 extern volatile bool fReopenDebugLog;
 
 void RandAddSeed();
@@ -157,6 +157,7 @@ bool ParseMoney(const char* pszIn, int64_t& nRet);
 std::string SanitizeString(const std::string& str);
 std::vector<unsigned char> ParseHex(const char* psz);
 std::vector<unsigned char> ParseHex(const std::string& str);
+signed char HexDigit(char c);
 bool IsHex(const std::string& str);
 std::vector<unsigned char> DecodeBase64(const char* p, bool* pfInvalid = NULL);
 std::string DecodeBase64(const std::string& str);
@@ -191,11 +192,8 @@ uint64_t GetRand(uint64_t nMax);
 uint256 GetRandHash();
 int64_t GetTime();
 void SetMockTime(int64_t nMockTimeIn);
-int64_t GetAdjustedTime();
-int64_t GetTimeOffset();
 std::string FormatFullVersion();
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments);
-void AddTimeData(const CNetAddr& ip, int64_t nTime);
 void runCommand(std::string strCommand);
 
 

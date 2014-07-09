@@ -4,7 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include "bitcoin-config.h"
+#include "config/bitcoin-config.h"
 #endif
 
 #include "net.h"
@@ -34,6 +34,17 @@
 
 #if !defined(HAVE_MSG_NOSIGNAL) && !defined(MSG_NOSIGNAL)
 #define MSG_NOSIGNAL 0
+#endif
+
+// Fix for ancient MinGW versions, that don't have defined these in ws2tcpip.h.
+// Todo: Can be removed when our pull-tester is upgraded to a modern MinGW version.
+#ifdef WIN32
+#ifndef PROTECTION_LEVEL_UNRESTRICTED
+#define PROTECTION_LEVEL_UNRESTRICTED 10
+#endif
+#ifndef IPV6_PROTECTION_LEVEL
+#define IPV6_PROTECTION_LEVEL 23
+#endif
 #endif
 
 using namespace std;
@@ -480,8 +491,6 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
     {
         addrman.Attempt(addrConnect);
 
-        LogPrint("net", "connected %s\n", pszDest ? pszDest : addrConnect.ToString());
-
         // Set to non-blocking
 #ifdef WIN32
         u_long nOne = 1;
@@ -502,6 +511,7 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
         }
 
         pnode->nTimeConnected = GetTime();
+
         return pnode;
     }
 
@@ -513,7 +523,7 @@ void CNode::CloseSocketDisconnect()
     fDisconnect = true;
     if (hSocket != INVALID_SOCKET)
     {
-        LogPrint("net", "disconnecting node %s\n", addrName);
+        LogPrint("net", "disconnecting peer=%d\n", id);
         closesocket(hSocket);
         hSocket = INVALID_SOCKET;
     }
@@ -528,10 +538,6 @@ void CNode::CloseSocketDisconnect()
         pnodeSync = NULL;
 }
 
-void CNode::Cleanup()
-{
-}
-
 void CNode::PushVersion()
 {
     int nBestHeight = g_signals.GetHeight().get_value_or(0);
@@ -541,7 +547,10 @@ void CNode::PushVersion()
     CAddress addrYou = (addr.IsRoutable() && !IsProxy(addr) ? addr : CAddress(CService("0.0.0.0",0)));
     CAddress addrMe = GetLocalAddress(&addr);
     RAND_bytes((unsigned char*)&nLocalHostNonce, sizeof(nLocalHostNonce));
-    LogPrint("net", "send version message: version %d, blocks=%d, us=%s, them=%s, peer=%s\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), addrYou.ToString(), addr.ToString());
+    if (fLogIPs)
+        LogPrint("net", "send version message: version %d, blocks=%d, us=%s, them=%s, peer=%d\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), addrYou.ToString(), id);
+    else
+        LogPrint("net", "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), id);
     PushMessage("version", PROTOCOL_VERSION, nLocalServices, nTime, addrYou, addrMe,
                 nLocalHostNonce, FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>()), nBestHeight, true);
 }
@@ -646,6 +655,9 @@ bool CNode::ReceiveMsgBytes(const char *pch, unsigned int nBytes)
 
         pch += handled;
         nBytes -= handled;
+
+        if (msg.complete())
+            msg.nTime = GetTimeMicros();
     }
 
     return true;
@@ -678,7 +690,6 @@ int CNetMessage::readHeader(const char *pch, unsigned int nBytes)
 
     // switch state to reading message data
     in_data = true;
-    vRecv.resize(hdr.nMessageSize);
 
     return nCopy;
 }
@@ -687,6 +698,11 @@ int CNetMessage::readData(const char *pch, unsigned int nBytes)
 {
     unsigned int nRemaining = hdr.nMessageSize - nDataPos;
     unsigned int nCopy = std::min(nRemaining, nBytes);
+
+    if (vRecv.size() < nDataPos + nCopy) {
+        // Allocate up to 256 KiB ahead, but never more than the total message size.
+        vRecv.resize(std::min(hdr.nMessageSize, nDataPos + nCopy + 256 * 1024));
+    }
 
     memcpy(&vRecv[nDataPos], pch, nCopy);
     nDataPos += nCopy;
@@ -773,7 +789,6 @@ void ThreadSocketHandler()
 
                     // close socket and cleanup
                     pnode->CloseSocketDisconnect();
-                    pnode->Cleanup();
 
                     // hold in disconnected pool until all refs are released
                     if (pnode->fNetworkNode || pnode->fInbound)
@@ -817,7 +832,6 @@ void ThreadSocketHandler()
             uiInterface.NotifyNumConnectionsChanged(nPrevNodeCount);
         }
 
-
         //
         // Find which sockets have data to receive
         //
@@ -839,6 +853,7 @@ void ThreadSocketHandler()
             hSocketMax = max(hSocketMax, hListenSocket);
             have_fds = true;
         }
+
         {
             LOCK(cs_vNodes);
             BOOST_FOREACH(CNode* pnode, vNodes)
@@ -899,57 +914,57 @@ void ThreadSocketHandler()
             MilliSleep(timeout.tv_usec/1000);
         }
 
-
         //
         // Accept new connections
         //
         BOOST_FOREACH(SOCKET hListenSocket, vhListenSocket)
-        if (hListenSocket != INVALID_SOCKET && FD_ISSET(hListenSocket, &fdsetRecv))
         {
-            struct sockaddr_storage sockaddr;
-            socklen_t len = sizeof(sockaddr);
-            SOCKET hSocket = accept(hListenSocket, (struct sockaddr*)&sockaddr, &len);
-            CAddress addr;
-            int nInbound = 0;
+            if (hListenSocket != INVALID_SOCKET && FD_ISSET(hListenSocket, &fdsetRecv))
+            {
+                struct sockaddr_storage sockaddr;
+                socklen_t len = sizeof(sockaddr);
+                SOCKET hSocket = accept(hListenSocket, (struct sockaddr*)&sockaddr, &len);
+                CAddress addr;
+                int nInbound = 0;
 
-            if (hSocket != INVALID_SOCKET)
-                if (!addr.SetSockAddr((const struct sockaddr*)&sockaddr))
-                    LogPrintf("Warning: Unknown socket family\n");
+                if (hSocket != INVALID_SOCKET)
+                    if (!addr.SetSockAddr((const struct sockaddr*)&sockaddr))
+                        LogPrintf("Warning: Unknown socket family\n");
 
-            {
-                LOCK(cs_vNodes);
-                BOOST_FOREACH(CNode* pnode, vNodes)
-                    if (pnode->fInbound)
-                        nInbound++;
-            }
-
-            if (hSocket == INVALID_SOCKET)
-            {
-                int nErr = WSAGetLastError();
-                if (nErr != WSAEWOULDBLOCK)
-                    LogPrintf("socket error accept failed: %s\n", NetworkErrorString(nErr));
-            }
-            else if (nInbound >= nMaxConnections - MAX_OUTBOUND_CONNECTIONS)
-            {
-                closesocket(hSocket);
-            }
-            else if (CNode::IsBanned(addr))
-            {
-                LogPrintf("connection from %s dropped (banned)\n", addr.ToString());
-                closesocket(hSocket);
-            }
-            else
-            {
-                LogPrint("net", "accepted connection %s\n", addr.ToString());
-                CNode* pnode = new CNode(hSocket, addr, "", true);
-                pnode->AddRef();
                 {
                     LOCK(cs_vNodes);
-                    vNodes.push_back(pnode);
+                    BOOST_FOREACH(CNode* pnode, vNodes)
+                        if (pnode->fInbound)
+                            nInbound++;
+                }
+
+                if (hSocket == INVALID_SOCKET)
+                {
+                    int nErr = WSAGetLastError();
+                    if (nErr != WSAEWOULDBLOCK)
+                        LogPrintf("socket error accept failed: %s\n", NetworkErrorString(nErr));
+                }
+                else if (nInbound >= nMaxConnections - MAX_OUTBOUND_CONNECTIONS)
+                {
+                    closesocket(hSocket);
+                }
+                else if (CNode::IsBanned(addr))
+                {
+                    LogPrintf("connection from %s dropped (banned)\n", addr.ToString());
+                    closesocket(hSocket);
+                }
+                else
+                {
+                    CNode* pnode = new CNode(hSocket, addr, "", true);
+                    pnode->AddRef();
+
+                    {
+                        LOCK(cs_vNodes);
+                        vNodes.push_back(pnode);
+                    }
                 }
             }
         }
-
 
         //
         // Service each socket
@@ -1029,7 +1044,7 @@ void ThreadSocketHandler()
             {
                 if (pnode->nLastRecv == 0 || pnode->nLastSend == 0)
                 {
-                    LogPrint("net", "socket no message in first 60 seconds, %d %d\n", pnode->nLastRecv != 0, pnode->nLastSend != 0);
+                    LogPrint("net", "socket no message in first 60 seconds, %d %d from %d\n", pnode->nLastRecv != 0, pnode->nLastSend != 0, pnode->id);
                     pnode->fDisconnect = true;
                 }
                 else if (nTime - pnode->nLastSend > TIMEOUT_INTERVAL)
@@ -1588,17 +1603,15 @@ bool BindListenPort(const CService &addrBind, string& strError)
         return false;
     }
 
+#ifndef WIN32
 #ifdef SO_NOSIGPIPE
     // Different way of disabling SIGPIPE on BSD
     setsockopt(hListenSocket, SOL_SOCKET, SO_NOSIGPIPE, (void*)&nOne, sizeof(int));
 #endif
-
-#ifndef WIN32
     // Allow binding if the port is still in TIME_WAIT state after
-    // the program was closed and restarted.  Not an issue on windows.
+    // the program was closed and restarted. Not an issue on windows!
     setsockopt(hListenSocket, SOL_SOCKET, SO_REUSEADDR, (void*)&nOne, sizeof(int));
 #endif
-
 
 #ifdef WIN32
     // Set to non-blocking, incoming connections will also inherit this
@@ -1623,10 +1636,8 @@ bool BindListenPort(const CService &addrBind, string& strError)
 #endif
 #endif
 #ifdef WIN32
-        int nProtLevel = 10 /* PROTECTION_LEVEL_UNRESTRICTED */;
-        int nParameterId = 23 /* IPV6_PROTECTION_LEVEl */;
-        // this call is allowed to fail
-        setsockopt(hListenSocket, IPPROTO_IPV6, nParameterId, (const char*)&nProtLevel, sizeof(int));
+        int nProtLevel = PROTECTION_LEVEL_UNRESTRICTED;
+        setsockopt(hListenSocket, IPPROTO_IPV6, IPV6_PROTECTION_LEVEL, (const char*)&nProtLevel, sizeof(int));
 #endif
     }
 
@@ -1789,6 +1800,7 @@ public:
             delete pnode;
         vNodes.clear();
         vNodesDisconnected.clear();
+        vhListenSocket.clear();
         delete semOutbound;
         semOutbound = NULL;
         delete pnodeLocalHost;
@@ -1808,17 +1820,17 @@ instance_of_cnetcleanup;
 
 
 
-void RelayTransaction(const CTransaction& tx, const uint256& hash)
+void RelayTransaction(const CTransaction& tx)
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss.reserve(10000);
     ss << tx;
-    RelayTransaction(tx, hash, ss);
+    RelayTransaction(tx, ss);
 }
 
-void RelayTransaction(const CTransaction& tx, const uint256& hash, const CDataStream& ss)
+void RelayTransaction(const CTransaction& tx, const CDataStream& ss)
 {
-    CInv inv(MSG_TX, hash);
+    CInv inv(MSG_TX, tx.GetHash());
     {
         LOCK(cs_mapRelay);
         // Expire old relay messages
@@ -1840,7 +1852,7 @@ void RelayTransaction(const CTransaction& tx, const uint256& hash, const CDataSt
         LOCK(pnode->cs_filter);
         if (pnode->pfilter)
         {
-            if (pnode->pfilter->IsRelevantAndUpdate(tx, hash))
+            if (pnode->pfilter->IsRelevantAndUpdate(tx))
                 pnode->PushInventory(inv);
         } else
             pnode->PushInventory(inv);
