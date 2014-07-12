@@ -108,13 +108,11 @@ BOOST_AUTO_TEST_CASE(util_HexStr)
 
 BOOST_AUTO_TEST_CASE(util_DateTimeStrFormat)
 {
-/*These are platform-dependant and thus removed to avoid useless test failures
     BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", 0), "1970-01-01 00:00:00");
     BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", 0x7FFFFFFF), "2038-01-19 03:14:07");
-    // Formats used within Bitcoin
     BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", 1317425777), "2011-09-30 23:36:17");
     BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M", 1317425777), "2011-09-30 23:36");
-*/
+    BOOST_CHECK_EQUAL(DateTimeStrFormat("%a, %d %b %Y %H:%M:%S +0000", 1317425777), "Fri, 30 Sep 2011 23:36:17 +0000");
 }
 
 BOOST_AUTO_TEST_CASE(util_ParseParameters)
@@ -310,15 +308,15 @@ BOOST_AUTO_TEST_CASE(strprintf_numbers)
 
     size_t st = 12345678; /* unsigned size_t test value */
     ssize_t sst = -12345678; /* signed size_t test value */
-    BOOST_CHECK(strprintf("%s %"PRIszd" %s", B, sst, E) == B" -12345678 "E);
-    BOOST_CHECK(strprintf("%s %"PRIszu" %s", B, st, E) == B" 12345678 "E);
-    BOOST_CHECK(strprintf("%s %"PRIszx" %s", B, st, E) == B" bc614e "E);
+    BOOST_CHECK(strprintf("%s %d %s", B, sst, E) == B" -12345678 "E);
+    BOOST_CHECK(strprintf("%s %u %s", B, st, E) == B" 12345678 "E);
+    BOOST_CHECK(strprintf("%s %x %s", B, st, E) == B" bc614e "E);
 
     ptrdiff_t pt = 87654321; /* positive ptrdiff_t test value */
     ptrdiff_t spt = -87654321; /* negative ptrdiff_t test value */
-    BOOST_CHECK(strprintf("%s %"PRIpdd" %s", B, spt, E) == B" -87654321 "E);
-    BOOST_CHECK(strprintf("%s %"PRIpdu" %s", B, pt, E) == B" 87654321 "E);
-    BOOST_CHECK(strprintf("%s %"PRIpdx" %s", B, pt, E) == B" 5397fb1 "E);
+    BOOST_CHECK(strprintf("%s %d %s", B, spt, E) == B" -87654321 "E);
+    BOOST_CHECK(strprintf("%s %u %s", B, pt, E) == B" 87654321 "E);
+    BOOST_CHECK(strprintf("%s %x %s", B, pt, E) == B" 5397fb1 "E);
 }
 #undef B
 #undef E
@@ -351,6 +349,17 @@ BOOST_AUTO_TEST_CASE(test_ParseInt32)
     BOOST_CHECK(!ParseInt32("2147483648", NULL));
     BOOST_CHECK(!ParseInt32("-32482348723847471234", NULL));
     BOOST_CHECK(!ParseInt32("32482348723847471234", NULL));
+}
+
+BOOST_AUTO_TEST_CASE(test_FormatParagraph)
+{
+    BOOST_CHECK_EQUAL(FormatParagraph("", 79, 0), "");
+    BOOST_CHECK_EQUAL(FormatParagraph("test", 79, 0), "test");
+    BOOST_CHECK_EQUAL(FormatParagraph(" test", 79, 0), "test");
+    BOOST_CHECK_EQUAL(FormatParagraph("test test", 79, 0), "test test");
+    BOOST_CHECK_EQUAL(FormatParagraph("test test", 4, 0), "test\ntest");
+    BOOST_CHECK_EQUAL(FormatParagraph("testerde test ", 4, 0), "testerde\ntest");
+    BOOST_CHECK_EQUAL(FormatParagraph("test test", 4, 4), "test\n    test");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

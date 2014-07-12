@@ -36,6 +36,8 @@ public:
     static QList<Unit> availableUnits();
     //! Is unit ID valid?
     static bool valid(int unit);
+    //! Identifier, e.g. for image names
+    static QString id(int unit);
     //! Short name
     static QString name(int unit);
     //! Longer description
@@ -54,6 +56,8 @@ public:
     static QString formatWithUnit(int unit, qint64 amount, bool plussign=false);
     //! Parse string to coin amount
     static bool parse(int unit, const QString &value, qint64 *val_out);
+    //! Gets title for amount column including current display unit if optionsModel reference available */
+    static QString getAmountColumnTitle(int unit);
     ///@}
 
     //! @name AbstractListModel implementation
