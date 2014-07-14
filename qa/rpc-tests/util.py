@@ -59,7 +59,7 @@ def sync_mempools(rpc_connections):
         time.sleep(1)
         
 
-bitcoind_processes = []
+bitcoind_processes = {}
 
 def initialize_datadir(dir, n):
     datadir = os.path.join(dir, "node"+str(n))
@@ -88,7 +88,7 @@ def initialize_chain(test_dir):
             args = [ "bitcoind", "-keypool=1", "-datadir="+datadir ]
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
-            bitcoind_processes.append(subprocess.Popen(args))
+            bitcoind_processes[i] = subprocess.Popen(args)
             subprocess.check_call([ "bitcoin-cli", "-datadir="+datadir,
                                     "-rpcwait", "getblockcount"], stdout=devnull)
         devnull.close()
@@ -149,14 +149,16 @@ def start_node(i, dir, extra_args=None, rpchost=None):
     datadir = os.path.join(dir, "node"+str(i))
     args = [ "bitcoind", "-datadir="+datadir, "-keypool=1" ]
     if extra_args is not None: args.extend(extra_args)
-    bitcoind_processes.append(subprocess.Popen(args))
+    bitcoind_processes[i] = subprocess.Popen(args)
     devnull = open("/dev/null", "w+")
     subprocess.check_call([ "bitcoin-cli", "-datadir="+datadir] +
                           _rpchost_to_args(rpchost)  +
                           ["-rpcwait", "getblockcount"], stdout=devnull)
     devnull.close()
     url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
-    return AuthServiceProxy(url)
+    proxy = AuthServiceProxy(url)
+    proxy.url = url # store URL on proxy for info
+    return proxy
 
 def start_nodes(num_nodes, dir, extra_args=None, rpchost=None):
     """
@@ -168,6 +170,11 @@ def start_nodes(num_nodes, dir, extra_args=None, rpchost=None):
 def debug_log(dir, n_node):
     return os.path.join(dir, "node"+str(n_node), "regtest", "debug.log")
 
+def stop_node(node, i):
+    node.stop()
+    bitcoind_processes[i].wait()
+    del bitcoind_processes[i]
+
 def stop_nodes(nodes):
     for i in range(len(nodes)):
         nodes[i].stop()
@@ -175,9 +182,9 @@ def stop_nodes(nodes):
 
 def wait_bitcoinds():
     # Wait for all bitcoinds to cleanly exit
-    for bitcoind in bitcoind_processes:
+    for bitcoind in bitcoind_processes.values():
         bitcoind.wait()
-    del bitcoind_processes[:]
+    bitcoind_processes.clear()
 
 def connect_nodes(from_connection, node_num):
     ip_port = "127.0.0.1:"+str(p2p_port(node_num))
