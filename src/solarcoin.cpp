@@ -43,9 +43,9 @@ const char *strTestNetDNSSeed[][2] = {
 	{NULL, NULL}
 };
 
-int64 GetBlockValue(CBlockIndex *block, int64 nFees)
+int64_t GetBlockValue(CBlockIndex *block, int64_t nFees)
 {
-    int64 nSubsidy = 100 * COIN; 
+    int64_t nSubsidy = 100 * COIN; 
 	if(block->nHeight < 99) {nSubsidy = 1000000000 * COIN;}
 	nSubsidy >>= (block->nHeight / 525600);
     return nSubsidy + nFees;
@@ -67,7 +67,7 @@ static const int64_t DiffChangeBlock = 200000;
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
 //
-unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
+unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
 {
     // Testnet has min-difficulty blocks
     // after nTargetSpacing*2 time between blocks:
@@ -148,8 +148,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     assert(pindexFirst);
 
     // Limit adjustment step
-    int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
-    printf("  nActualTimespan = %"PRI64d"  before bounds\n", nActualTimespan);
+    int64_t nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
+    printf("  nActualTimespan = %" PRId64"  before bounds\n", nActualTimespan);
     if (nActualTimespan < nTargetTimespan/4)
         nActualTimespan = nTargetTimespan/4;
     if (nActualTimespan > nTargetTimespan*4)
@@ -174,7 +174,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     /// debug print
     printf("GetNextWorkRequired RETARGET\n");
-    printf("nTargetTimespan = %"PRI64d"    nActualTimespan = %"PRI64d"\n", nTargetTimespan, nActualTimespan);
+    printf("nTargetTimespan = %" PRId64"    nActualTimespan = %" PRId64"\n", nTargetTimespan, nActualTimespan);
     printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
     printf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
 
@@ -194,13 +194,13 @@ bool LoadBlockIndex()
 		pchMessageStart[1] = pchSLRTest[1];
 		pchMessageStart[2] = pchSLRTest[2];
 		pchMessageStart[3] = pchSLRTest[3];
-		hashGenesisBlock = uint256("0x");
+		hashGenesisBlock = uint256("0xec7987a2ab5225246c5cf9b8d93b4b75bcef383a4a65d5a265bc09ed54006188");
 	} else {
 		pchMessageStart[0] = pchSLRMain[0];
 		pchMessageStart[1] = pchSLRMain[1];
 		pchMessageStart[2] = pchSLRMain[2];
 		pchMessageStart[3] = pchSLRMain[3];
-		hashGenesisBlock = uint256("0xedcf32dbfd327fe7f546d3a175d91b05e955ec1224e087961acc9a2aa8f592ee");
+		hashGenesisBlock = uint256("0xbc3b4ec43c4ebb2fef49e6240812549e61ffa623d9418608aa90eaad26c96296");
 	}
 
 	//
@@ -225,29 +225,36 @@ bool InitBlockIndex() {
 
 	// Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
 	if (!fReindex) {
+		// Genesis Block:
+		// CBlock(hash=12a765e31ffd4059bada, PoW=0000050c34a64b415b6b, ver=1, hashPrevBlock=00000000000000000000, hashMerkleRoot=97ddfbbae6, nTime=1317972665, nBits=1e0ffff0, nNonce=2084524493, vtx=1)
+		//	 CTransaction(hash=97ddfbbae6, ver=1, vin.size=1, vout.size=1, nLockTime=0)
+		//	   CTxIn(COutPoint(0000000000, -1), coinbase 04ffff001d0104404e592054696d65732030352f4f63742f32303131205374657665204a6f62732c204170706c65e280997320566973696f6e6172792c2044696573206174203536)
+		//	   CTxOut(nValue=50.00000000, scriptPubKey=040184710fa689ad5023690c80f3a4)
+		//	 vMerkleTree: 97ddfbbae6
+
 		// Genesis block
-		const char* pszTimestamp = "One Megawatt Hour";
+		const char* pszTimestamp = "NY Times - December 23, 2013 - For Today's Babes, Toyland Is Digital";
 		CTransaction txNew;
 		txNew.vin.resize(1);
 		txNew.vout.resize(1);
 		txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
-		txNew.vout[0].nValue = 100 * COIN;
+		txNew.vout[0].nValue = 50 * COIN;
 		txNew.vout[0].scriptPubKey = CScript() << ParseHex("040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9") << OP_CHECKSIG;
-		txNew.strTxComment = "text:SolarCoin genesis block";
 		CBlock block;
 		block.vtx.push_back(txNew);
 		block.hashPrevBlock = 0;
 		block.hashMerkleRoot = block.BuildMerkleTree();
 		block.nVersion = 1;
-		block.nTime    = 1384473600;
+		block.nTime    = 1387838302;
 		block.nBits    = 0x1e0ffff0;
-		block.nNonce   = 1397766;
+		block.nNonce   = 588050;
 
 		if (fTestNet)
 		{
-			block.nTime    = 1371387277;
-			block.nNonce   = 0;
+			block.nTime    = 1387838303; //FIXME testnet0.1
+			block.nNonce   = 608937;
 		}
+
 		//// debug print
 		uint256 hash = block.GetHash();
 		printf("%s\n", hash.ToString().c_str());

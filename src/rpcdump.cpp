@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2012 Bitcoin Developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "init.h" // for pwalletMain
 #include "codecoinrpc.h"
@@ -18,7 +19,7 @@ class CTxDump
 {
 public:
     CBlockIndex *pindex;
-    int64 nValue;
+    int64_t nValue;
     bool fSpent;
     CWalletTx* ptx;
     int nOut;
@@ -36,7 +37,7 @@ Value importprivkey(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "importprivkey <"BRAND_lower"privkey> [label] [rescan=true]\n"
+            "importprivkey <" BRAND_lower"privkey> [label] [rescan=true]\n"
             "Adds a private key (as returned by dumpprivkey) to your wallet.");
 
     string strSecret = params[0].get_str();
@@ -79,8 +80,8 @@ Value dumpprivkey(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "dumpprivkey <"BRAND_lower"address>\n"
-            "Reveals the private key corresponding to <"BRAND_lower"address>.");
+            "dumpprivkey <" BRAND_lower"address>\n"
+            "Reveals the private key corresponding to <" BRAND_lower"address>.");
 
     string strAddress = params[0].get_str();
     CBitcoinAddress address;

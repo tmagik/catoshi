@@ -24,8 +24,8 @@ namespace Checkpoints
 
 	struct CCheckpointData {
 		const MapCheckpoints *mapCheckpoints;
-		int64 nTimeLastCheckpoint;
-		int64 nTransactionsLastCheckpoint;
+		int64_t nTimeLastCheckpoint;
+		int64_t nTransactionsLastCheckpoint;
 		double fTransactionsPerDay;
 	};
 
@@ -101,7 +101,7 @@ namespace Checkpoints
 	if (pindex==NULL)
 		return 0.0;
 
-		int64 nNow = time(NULL);
+		int64_t nNow = time(NULL);
 
 		double fWorkBefore = 0.0; // Amount of work done before pindex
 		double fWorkAfter = 0.0;  // Amount of work left after pindex (estimated)

@@ -1,3 +1,7 @@
+// Copyright (c) (Bitcoin developers)
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 //
 // Alert system
 //
@@ -51,8 +55,8 @@ std::string CUnsignedAlert::ToString() const
     return strprintf(
         "CAlert(\n"
         "    nVersion     = %d\n"
-        "    nRelayUntil  = %"PRI64d"\n"
-        "    nExpiration  = %"PRI64d"\n"
+        "    nRelayUntil  = %" PRId64"\n"
+        "    nExpiration  = %" PRId64"\n"
         "    nID          = %d\n"
         "    nCancel      = %d\n"
         "    setCancel    = %s\n"

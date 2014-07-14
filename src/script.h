@@ -1,9 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef H_BITCOIN_SCRIPT
-#define H_BITCOIN_SCRIPT
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html// Copyright (c) 2009-2012 The Bitcoin developers
+#ifndef H_CODECOIN_SCRIPT
+#define H_CODECOIN_SCRIPT
 
 #include <string>
 #include <vector>
@@ -244,7 +244,7 @@ inline std::string StackString(const std::vector<std::vector<unsigned char> >& v
 class CScript : public std::vector<unsigned char>
 {
 protected:
-    CScript& push_int64(int64 n)
+    CScript& push_int64(int64_t n)
     {
         if (n == -1 || (n >= 1 && n <= 16))
         {
@@ -258,7 +258,7 @@ protected:
         return *this;
     }
 
-    CScript& push_uint64(uint64 n)
+    CScript& push_uint64(uint64_t n)
     {
         if (n >= 1 && n <= 16)
         {
@@ -299,12 +299,14 @@ public:
     explicit CScript(short b)          { operator<<(b); }
     explicit CScript(int b)            { operator<<(b); }
     explicit CScript(long b)           { operator<<(b); }
-    explicit CScript(int64 b)          { operator<<(b); }
     explicit CScript(unsigned char b)  { operator<<(b); }
     explicit CScript(unsigned int b)   { operator<<(b); }
     explicit CScript(unsigned short b) { operator<<(b); }
     explicit CScript(unsigned long b)  { operator<<(b); }
-    explicit CScript(uint64 b)         { operator<<(b); }
+#if __WORDSIZE == 32
+    explicit CScript(int64_t b)          { operator<<(b); }
+    explicit CScript(uint64_t b)         { operator<<(b); }
+#endif /* ugly */
 
     explicit CScript(opcodetype b)     { operator<<(b); }
     explicit CScript(const uint256& b) { operator<<(b); }
@@ -317,12 +319,14 @@ public:
     CScript& operator<<(short b)          { return push_int64(b); }
     CScript& operator<<(int b)            { return push_int64(b); }
     CScript& operator<<(long b)           { return push_int64(b); }
-    CScript& operator<<(int64 b)          { return push_int64(b); }
     CScript& operator<<(unsigned char b)  { return push_uint64(b); }
     CScript& operator<<(unsigned int b)   { return push_uint64(b); }
     CScript& operator<<(unsigned short b) { return push_uint64(b); }
     CScript& operator<<(unsigned long b)  { return push_uint64(b); }
-    CScript& operator<<(uint64 b)         { return push_uint64(b); }
+#if __WORDSIZE == 32
+    CScript& operator<<(int64_t b)          { return push_int64(b); }
+    CScript& operator<<(uint64_t b)         { return push_uint64(b); }
+#endif /* ugly */
 
     CScript& operator<<(opcodetype opcode)
     {

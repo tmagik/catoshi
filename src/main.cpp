@@ -42,7 +42,7 @@ uint256 nBestInvalidWork = 0;
 uint256 hashBestChain = 0;
 CBlockIndex* pindexBest = NULL;
 set<CBlockIndex*, CBlockIndexWorkComparator> setBlockIndexValid; // may contain all CBlockIndex*'s that have validness >=BLOCK_VALID_TRANSACTIONS, and must contain those who aren't failed
-int64 nTimeBestReceived = 0;
+int64_t nTimeBestReceived = 0;
 int nScriptCheckThreads = 0;
 bool fImporting = false;
 bool fReindex = false;
@@ -51,9 +51,9 @@ bool fTxIndex = false;
 unsigned int nCoinCacheSize = 5000;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
-int64 CTransaction::nMinTxFee = 100000;
+int64_t CTransaction::nMinTxFee = 100000;
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
-int64 CTransaction::nMinRelayTxFee = 100000;
+int64_t CTransaction::nMinRelayTxFee = 100000;
 
 CMedianFilter<int> cPeerBlockCounts(8, 0); // Amount of blocks that other nodes claim to have
 
@@ -67,11 +67,11 @@ map<uint256, set<uint256> > mapOrphanTransactionsByPrev;
 CScript COINBASE_FLAGS;
 
 double dHashesPerSec = 0.0;
-int64 nHPSTimerStart = 0;
+int64_t nHPSTimerStart = 0;
 
 // Settings
-int64 nTransactionFee = 0;
-int64 nMinimumInputValue = DUST_HARD_LIMIT;
+int64_t nTransactionFee = 0;
+int64_t nMinimumInputValue = DUST_HARD_LIMIT;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -307,7 +307,7 @@ bool AddOrphanTx(const CTransaction& tx)
 	BOOST_FOREACH(const CTxIn& txin, tx.vin)
 		mapOrphanTransactionsByPrev[txin.prevout.hash].insert(hash);
 
-	printf("stored orphan tx %s (mapsz %"PRIszu")\n", hash.ToString().c_str(),
+	printf("stored orphan tx %s (mapsz %" PRIszu")\n", hash.ToString().c_str(),
 		mapOrphanTransactions.size());
 	return true;
 }
@@ -554,7 +554,7 @@ bool CTransaction::CheckTransaction(CValidationState &state) const
 		return state.DoS(100, error("CTransaction::CheckTransaction() : size limits failed"));
 
 	// Check for negative or overflow output values
-	int64 nValueOut = 0;
+	int64_t nValueOut = 0;
 	BOOST_FOREACH(const CTxOut& txout, vout)
 	{
 		if (txout.nValue < 0)
@@ -562,7 +562,7 @@ bool CTransaction::CheckTransaction(CValidationState &state) const
 		if (txout.nValue > MAX_MONEY)
 			return state.DoS(100, error("CTransaction::CheckTransaction() : txout.nValue too high"));
 		if (!MoneyRange(txout.nValue))
-			return state.DoS(100, error("CTransaction::CheckTransaction() : MoneyRange(0x%"PRI64x") check failed", txout.nValue));
+			return state.DoS(100, error("CTransaction::CheckTransaction() : MoneyRange(0x%" PRIx64") check failed", txout.nValue));
 
 		nValueOut += txout.nValue;
 		if (!MoneyRange(nValueOut))
@@ -593,15 +593,15 @@ bool CTransaction::CheckTransaction(CValidationState &state) const
 	return true;
 }
 
-int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
+int64_t CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
 							  enum GetMinFee_mode mode) const
 {
 	// Base fee is either nMinTxFee or nMinRelayTxFee
-	int64 nBaseFee = (mode == GMF_RELAY) ? nMinRelayTxFee : nMinTxFee;
+	int64_t nBaseFee = (mode == GMF_RELAY) ? nMinRelayTxFee : nMinTxFee;
 
 	unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
 	unsigned int nNewBlockSize = nBlockSize + nBytes;
-	int64 nMinFee = (1 + (int64)nBytes / 1000) * nBaseFee;
+	int64_t nMinFee = (1 + (int64_t)nBytes / 1000) * nBaseFee;
 
 	if (fAllowFree)
 	{
@@ -661,7 +661,7 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
 		return state.DoS(100, error("CTxMemPool::accept() : coinbase as individual tx"));
 
 	// To help v0.1.5 clients who would see it as a negative number
-	if ((int64)tx.nLockTime > std::numeric_limits<int>::max())
+	if ((int64_t)tx.nLockTime > std::numeric_limits<int32_t>::max())
 		return error("CTxMemPool::accept() : not accepting nLockTime beyond 2038 yet");
 
 	// Rather not work on nonstandard transactions (unless -testnet)
@@ -750,13 +750,13 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
 		// you should add code here to check that the transaction does a
 		// reasonable number of ECDSA signature verifications.
 
-		int64 nFees = tx.GetValueIn(view)-tx.GetValueOut();
+		int64_t nFees = tx.GetValueIn(view)-tx.GetValueOut();
 		unsigned int nSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
 
 		// Don't accept it if it can't get into a block
-		int64 txMinFee = tx.GetMinFee(1000, true, GMF_RELAY);
+		int64_t txMinFee = tx.GetMinFee(1000, true, GMF_RELAY);
 		if (fLimitFree && nFees < txMinFee)
-			return error("CTxMemPool::accept() : not enough fees %s, %"PRI64d" < %"PRI64d,
+			return error("CTxMemPool::accept() : not enough fees %s, %" PRId64" < %" PRId64,
 						 hash.ToString().c_str(),
 						 nFees, txMinFee);
 
@@ -766,8 +766,8 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
 		if (fLimitFree && nFees < CTransaction::nMinRelayTxFee)
 		{
 			static double dFreeCount;
-			static int64 nLastTime;
-			int64 nNow = GetTime();
+			static int64_t nLastTime;
+			int64_t nNow = GetTime();
 
 			LOCK(cs);
 
@@ -1090,7 +1090,7 @@ bool IsInitialBlockDownload()
 {
 	if (pindexBest == NULL || fImporting || fReindex || nBestHeight < Checkpoints::GetTotalBlocksEstimate())
 		return true;
-	static int64 nLastUpdate;
+	static int64_t nLastUpdate;
 	static CBlockIndex* pindexLastBest;
 	if (pindexBest != pindexLastBest)
 	{
@@ -1199,12 +1199,12 @@ const CTxOut &CTransaction::GetOutputFor(const CTxIn& input, CCoinsViewCache& vi
 	return coins.vout[input.prevout.n];
 }
 
-int64 CTransaction::GetValueIn(CCoinsViewCache& inputs) const
+int64_t CTransaction::GetValueIn(CCoinsViewCache& inputs) const
 {
 	if (IsCoinBase())
 		return 0;
 
-	int64 nResult = 0;
+	int64_t nResult = 0;
 	for (unsigned int i = 0; i < vin.size(); i++)
 		nResult += GetOutputFor(vin[i], inputs).nValue;
 
@@ -1290,8 +1290,8 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 		// While checking, GetBestBlock() refers to the parent block.
 		// This is also true for mempool checks.
 		int nSpendHeight = inputs.GetBestBlock()->nHeight + 1;
-		int64 nValueIn = 0;
-		int64 nFees = 0;
+		int64_t nValueIn = 0;
+		int64_t nFees = 0;
 		for (unsigned int i = 0; i < vin.size(); i++)
 		{
 			const COutPoint &prevout = vin[i].prevout;
@@ -1314,7 +1314,7 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 			return state.DoS(100, error("CheckInputs() : %s value in < value out", GetHash().ToString().c_str()));
 
 		// Tally transaction fees
-		int64 nTxFee = nValueIn - GetValueOut();
+		int64_t nTxFee = nValueIn - GetValueOut();
 		if (nTxFee < 0)
 			return state.DoS(100, error("CheckInputs() : %s nTxFee < 0", GetHash().ToString().c_str()));
 		nFees += nTxFee;
@@ -1518,7 +1518,7 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 	}
 
 	// BIP16 didn't become active until Oct 1 2012	 FIXME: 0xdeadc0de
-	int64 nBIP16SwitchTime = 1349049600;
+	int64_t nBIP16SwitchTime = 1349049600;
 	bool fStrictPayToScriptHash = (pindex->nTime >= nBIP16SwitchTime);
 
 	unsigned int flags = SCRIPT_VERIFY_NOCACHE |
@@ -1528,8 +1528,8 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 
 	CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
 
-	int64 nStart = GetTimeMicros();
-	int64 nFees = 0;
+	int64_t nStart = GetTimeMicros();
+	int64_t nFees = 0;
 	int nInputs = 0;
 	unsigned int nSigOps = 0;
 	CDiskTxPos pos(pindex->GetBlockPos(), GetSizeOfCompactSize(vtx.size()));
@@ -1575,16 +1575,16 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 		vPos.push_back(std::make_pair(GetTxHash(i), pos));
 		pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
 	}
-	int64 nTime = GetTimeMicros() - nStart;
+	int64_t nTime = GetTimeMicros() - nStart;
 	if (fBenchmark)
 		printf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)vtx.size(), 0.001 * nTime, 0.001 * nTime / vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
 
 	if (vtx[0].GetValueOut() > GetBlockValue(pindex, nFees))
-		return state.DoS(100, error("ConnectBlock() : coinbase pays too much (actual=%"PRI64d" vs limit=%"PRI64d")", vtx[0].GetValueOut(), GetBlockValue(pindex, nFees)));
+		return state.DoS(100, error("ConnectBlock() : coinbase pays too much (actual=%" PRId64" vs limit=%" PRId64")", vtx[0].GetValueOut(), GetBlockValue(pindex, nFees)));
 
 	if (!control.Wait())
 		return state.DoS(100, false);
-	int64 nTime2 = GetTimeMicros() - nStart;
+	int64_t nTime2 = GetTimeMicros() - nStart;
 	if (fBenchmark)
 		printf("- Verify %u txins: %.2fms (%.3fms/txin)\n", nInputs - 1, 0.001 * nTime2, nInputs <= 1 ? 0 : 0.001 * nTime2 / (nInputs-1));
 
@@ -1660,8 +1660,8 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
 	reverse(vConnect.begin(), vConnect.end());
 
 	if (vDisconnect.size() > 0) {
-		printf("REORGANIZE: Disconnect %"PRIszu" blocks; %s..\n", vDisconnect.size(), pfork->GetBlockHash().ToString().c_str());
-		printf("REORGANIZE: Connect %"PRIszu" blocks; ..%s\n", vConnect.size(), pindexNew->GetBlockHash().ToString().c_str());
+		printf("REORGANIZE: Disconnect %" PRIszu" blocks; %s..\n", vDisconnect.size(), pfork->GetBlockHash().ToString().c_str());
+		printf("REORGANIZE: Connect %" PRIszu" blocks; ..%s\n", vConnect.size(), pindexNew->GetBlockHash().ToString().c_str());
 	}
 
 	// Disconnect shorter branch
@@ -1670,7 +1670,7 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
 		CBlock block;
 		if (!block.ReadFromDisk(pindex))
 			return state.Abort(_("Failed to read block"));
-		int64 nStart = GetTimeMicros();
+		int64_t nStart = GetTimeMicros();
 		if (!block.DisconnectBlock(state, pindex, view))
 			return error("SetBestBlock() : DisconnectBlock %s failed", pindex->GetBlockHash().ToString().c_str());
 		if (fBenchmark)
@@ -1690,7 +1690,7 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
 		CBlock block;
 		if (!block.ReadFromDisk(pindex))
 			return state.Abort(_("Failed to read block"));
-		int64 nStart = GetTimeMicros();
+		int64_t nStart = GetTimeMicros();
 		if (!block.ConnectBlock(state, pindex, view)) {
 			if (state.IsInvalid()) {
 				InvalidChainFound(pindexNew);
@@ -1707,10 +1707,10 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
 	}
 
 	// Flush changes to global coin state
-	int64 nStart = GetTimeMicros();
+	int64_t nStart = GetTimeMicros();
 	int nModified = view.GetCacheSize();
 	assert(view.Flush());
-	int64 nTime = GetTimeMicros() - nStart;
+	int64_t nTime = GetTimeMicros() - nStart;
 	if (fBenchmark)
 		printf("- Flush %i transactions: %.2fms (%.4fms/tx)\n", nModified, 0.001 * nTime, 0.001 * nTime / nModified);
 
@@ -1857,7 +1857,7 @@ bool CBlock::AddToBlockIndex(CValidationState &state, const CDiskBlockPos &pos)
 }
 
 
-bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64 nTime, bool fKnown)
+bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown)
 {
 	bool fUpdatedLast = false;
 
@@ -2134,7 +2134,7 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 	if (pcheckpoint && pblock->hashPrevBlock != hashBestChain)
 	{
 		// Extra checks to prevent "fill up memory by spamming with bogus blocks"
-		int64 deltaTime = pblock->GetBlockTime() - pcheckpoint->nTime;
+		int64_t deltaTime = pblock->GetBlockTime() - pcheckpoint->nTime;
 		if (deltaTime < 0)
 		{
 			return state.DoS(100, error("ProcessBlock() : block with timestamp before last checkpoint"));
@@ -2366,9 +2366,9 @@ bool AbortNode(const std::string &strMessage) {
 	return false;
 }
 
-bool CheckDiskSpace(uint64 nAdditionalBytes)
+bool CheckDiskSpace(uint64_t nAdditionalBytes)
 {
-	uint64 nFreeBytesAvailable = filesystem::space(GetDataDir()).available;
+	uint64_t nFreeBytesAvailable = filesystem::space(GetDataDir()).available;
 
 	// Check for nMinDiskSpace bytes (currently 50MB)
 	if (nFreeBytesAvailable < nMinDiskSpace + nAdditionalBytes)
@@ -2629,7 +2629,7 @@ void PrintBlockTree()
 		// print item
 		CBlock block;
 		block.ReadFromDisk(pindex);
-		printf("%d (blk%05u.dat:0x%x)  %s  tx %"PRIszu"",
+		printf("%d (blk%05u.dat:0x%x)  %s  tx %" PRIszu"",
 			pindex->nHeight,
 			pindex->GetBlockPos().nFile, pindex->GetBlockPos().nPos,
 			DateTimeStrFormat("%Y-%m-%d %H:%M:%S", block.GetBlockTime()).c_str(),
@@ -2656,12 +2656,12 @@ void PrintBlockTree()
 
 bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
 {
-	int64 nStart = GetTimeMillis();
+	int64_t nStart = GetTimeMillis();
 
 	int nLoaded = 0;
 	try {
 		CBufferedFile blkdat(fileIn, 2*MAX_BLOCK_SIZE, MAX_BLOCK_SIZE+8, SER_DISK, CLIENT_VERSION);
-		uint64 nStartByte = 0;
+		uint64_t nStartByte = 0;
 		if (dbp) {
 			// (try to) skip already indexed part
 			CBlockFileInfo info;
@@ -2670,7 +2670,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
 				blkdat.Seek(info.nSize);
 			}
 		}
-		uint64 nRewind = blkdat.GetPos();
+		uint64_t nRewind = blkdat.GetPos();
 		while (blkdat.good() && !blkdat.eof()) {
 			boost::this_thread::interruption_point();
 
@@ -2696,7 +2696,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
 			}
 			try {
 				// read block
-				uint64 nBlockPos = blkdat.GetPos();
+				uint64_t nBlockPos = blkdat.GetPos();
 				blkdat.SetLimit(nBlockPos + nSize);
 				CBlock block;
 				blkdat >> block;
@@ -2722,7 +2722,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
 		AbortNode(_("Error: system error: ") + e.what());
 	}
 	if (nLoaded > 0)
-		printf("Loaded %i blocks from external file in %"PRI64d"ms\n", nLoaded, GetTimeMillis() - nStart);
+		printf("Loaded %i blocks from external file in %" PRId64"ms\n", nLoaded, GetTimeMillis() - nStart);
 	return nLoaded > 0;
 }
 
@@ -2966,7 +2966,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 {
 	RandAddSeedPerfmon();
 	if (fDebug)
-		printf("received: %s (%"PRIszu" bytes)\n", strCommand.c_str(), vRecv.size());
+		printf("received: %s (%" PRIszu" bytes)\n", strCommand.c_str(), vRecv.size());
 	if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
 	{
 		printf("dropmessagestest DROPPING RECV MESSAGE\n");
@@ -2986,10 +2986,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 			return false;
 		}
 
-		int64 nTime;
+		int64_t nTime;
 		CAddress addrMe;
 		CAddress addrFrom;
-		uint64 nNonce = 1;
+		uint64_t nNonce = 1;
 		vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrMe;
 		if (pfrom->nVersion < MIN_PEER_PROTO_VERSION)
 		{
@@ -3105,13 +3105,13 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 		if (vAddr.size() > 1000)
 		{
 			pfrom->Misbehaving(20);
-			return error("message addr size() = %"PRIszu"", vAddr.size());
+			return error("message addr size() = %" PRIszu"", vAddr.size());
 		}
 
 		// Store the new addresses
 		vector<CAddress> vAddrOk;
-		int64 nNow = GetAdjustedTime();
-		int64 nSince = nNow - 10 * 60;
+		int64_t nNow = GetAdjustedTime();
+		int64_t nSince = nNow - 10 * 60;
 		BOOST_FOREACH(CAddress& addr, vAddr)
 		{
 			boost::this_thread::interruption_point();
@@ -3130,7 +3130,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 					static uint256 hashSalt;
 					if (hashSalt == 0)
 						hashSalt = GetRandHash();
-					uint64 hashAddr = addr.GetHash();
+					uint64_t hashAddr = addr.GetHash();
 					uint256 hashRand = hashSalt ^ (hashAddr<<32) ^ ((GetTime()+hashAddr)/(24*60*60));
 					hashRand = Hash(BEGIN(hashRand), END(hashRand));
 					multimap<uint256, CNode*> mapMix;
@@ -3168,7 +3168,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 		if (vInv.size() > MAX_INV_SZ)
 		{
 			pfrom->Misbehaving(20);
-			return error("message inv size() = %"PRIszu"", vInv.size());
+			return error("message inv size() = %" PRIszu"", vInv.size());
 		}
 
 		// find last block in inv vector
@@ -3217,11 +3217,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 		if (vInv.size() > MAX_INV_SZ)
 		{
 			pfrom->Misbehaving(20);
-			return error("message getdata size() = %"PRIszu"", vInv.size());
+			return error("message getdata size() = %" PRIszu"", vInv.size());
 		}
 
 		if (fDebugNet || (vInv.size() != 1))
-			printf("received getdata (%"PRIszu" invsz)\n", vInv.size());
+			printf("received getdata (%" PRIszu" invsz)\n", vInv.size());
 
 		if ((fDebugNet && vInv.size() > 0) || (vInv.size() == 1))
 			printf("received getdata for: %s\n", vInv[0].ToString().c_str());
@@ -3322,7 +3322,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 			vWorkQueue.push_back(inv.hash);
 			vEraseQueue.push_back(inv.hash);
 
-			printf("AcceptToMemoryPool: %s %s : accepted %s (poolsz %"PRIszu")\n",
+			printf("AcceptToMemoryPool: %s %s : accepted %s (poolsz %" PRIszu")\n",
 				pfrom->addr.ToString().c_str(), pfrom->cleanSubVer.c_str(),
 				tx.GetHash().ToString().c_str(),
 				mempool.mapTx.size());
@@ -3436,7 +3436,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 	{
 		if (pfrom->nVersion > BIP0031_VERSION)
 		{
-			uint64 nonce = 0;
+			uint64_t nonce = 0;
 			vRecv >> nonce;
 			// Echo the message back with the nonce. This allows for two useful features:
 			//
@@ -3693,7 +3693,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 		// Keep-alive ping. We send a nonce of zero because we don't use it anywhere
 		// right now.
 		if (pto->nLastSend && GetTime() - pto->nLastSend > 30 * 60 && pto->vSendMsg.empty()) {
-			uint64 nonce = 0;
+			uint64_t nonce = 0;
 			if (pto->nVersion > BIP0031_VERSION)
 				pto->PushMessage("ping", nonce);
 			else
@@ -3715,7 +3715,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 		}
 
 		// Address refresh broadcast
-		static int64 nLastRebroadcast;
+		static int64_t nLastRebroadcast;
 		if (!IsInitialBlockDownload() && (GetTime() - nLastRebroadcast > 24 * 60 * 60))
 		{
 			{
@@ -3827,7 +3827,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 		// Message: getdata
 		//
 		vector<CInv> vGetData;
-		int64 nNow = GetTime() * 1000000;
+		int64_t nNow = GetTime() * 1000000;
 		while (!pto->mapAskFor.empty() && (*pto->mapAskFor.begin()).first <= nNow)
 		{
 			const CInv& inv = (*pto->mapAskFor.begin()).second;
@@ -3930,8 +3930,8 @@ public:
 };
 
 
-uint64 nLastBlockTx = 0;
-uint64 nLastBlockSize = 0;
+uint64_t nLastBlockTx = 0;
+uint64_t nLastBlockSize = 0;
 
 // We want to sort transactions by priority and fee, so:
 typedef boost::tuple<double, double, CTransaction*> TxPriority;
@@ -3993,7 +3993,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 	nBlockMinSize = std::min(nBlockMaxSize, nBlockMinSize);
 
 	// Collect memory pool transactions into the block
-	int64 nFees = 0;
+	int64_t nFees = 0;
 	{
 		LOCK2(cs_main, mempool.cs);
 		CBlockIndex* pindexPrev = pindexBest;
@@ -4015,7 +4015,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
 			COrphan* porphan = NULL;
 			double dPriority = 0;
-			int64 nTotalIn = 0;
+			int64_t nTotalIn = 0;
 			bool fMissingInputs = false;
 			BOOST_FOREACH(const CTxIn& txin, tx.vin)
 			{
@@ -4049,7 +4049,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 				}
 				const CCoins &coins = view.GetCoins(txin.prevout.hash);
 
-				int64 nValueIn = coins.vout[txin.prevout.n].nValue;
+				int64_t nValueIn = coins.vout[txin.prevout.n].nValue;
 				nTotalIn += nValueIn;
 
 				int nConf = pindexPrev->nHeight - coins.nHeight + 1;
@@ -4077,8 +4077,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 		}
 
 		// Collect transactions into block
-		uint64 nBlockSize = 1000;
-		uint64 nBlockTx = 0;
+		uint64_t nBlockSize = 1000;
+		uint64_t nBlockTx = 0;
 		int nBlockSigOps = 100;
 		bool fSortedByFee = (nBlockPrioritySize <= 0);
 
@@ -4122,7 +4122,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 			if (!tx.HaveInputs(view))
 				continue;
 
-			int64 nTxFees = tx.GetValueIn(view)-tx.GetValueOut();
+			int64_t nTxFees = tx.GetValueIn(view)-tx.GetValueOut();
 
 			nTxSigOps += tx.GetP2SHSigOpCount(view);
 			if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
@@ -4171,7 +4171,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
 		nLastBlockTx = nBlockTx;
 		nLastBlockSize = nBlockSize;
-		printf("CreateNewBlock(): total size %"PRI64u"\n", nBlockSize);
+		printf("CreateNewBlock(): total size %" PRIu64"\n", nBlockSize);
 
 		pblocktemplate->vTxFees[0] = -nFees;
 
@@ -4335,7 +4335,7 @@ void static CodecoinMiner(CWallet *pwallet)
 		CBlock *pblock = &pblocktemplate->block;
 		IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-		printf("Running CodecoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
+		printf("Running CodecoinMiner with %" PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
 			   ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
 		//
@@ -4355,7 +4355,7 @@ void static CodecoinMiner(CWallet *pwallet)
 		//
 		// Search
 		//
-		int64 nStart = GetTime();
+		int64_t nStart = GetTime();
 		uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
 		while (true)
 		{
@@ -4395,7 +4395,7 @@ void static CodecoinMiner(CWallet *pwallet)
 			}
 
 			// Meter hashes/sec
-			static int64 nHashCounter;
+			static int64_t nHashCounter;
 			if (nHPSTimerStart == 0)
 			{
 				nHPSTimerStart = GetTimeMillis();
@@ -4413,7 +4413,7 @@ void static CodecoinMiner(CWallet *pwallet)
 						dHashesPerSec = 1000.0 * nHashCounter / (GetTimeMillis() - nHPSTimerStart);
 						nHPSTimerStart = GetTimeMillis();
 						nHashCounter = 0;
-						static int64 nLogTime;
+						static int64_t nLogTime;
 						if (GetTime() - nLogTime > 30 * 60)
 						{
 							nLogTime = GetTime();
@@ -4484,7 +4484,7 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 // * if e==9, we only know the resulting number is not zero, so output 1 + 10*(n - 1) + 9
 // (this is decodable, as d is in [1-9] and e is in [0-9])
 
-uint64 CTxOutCompressor::CompressAmount(uint64 n)
+uint64_t CTxOutCompressor::CompressAmount(uint64_t n)
 {
 	if (n == 0)
 		return 0;
@@ -4503,7 +4503,7 @@ uint64 CTxOutCompressor::CompressAmount(uint64 n)
 	}
 }
 
-uint64 CTxOutCompressor::DecompressAmount(uint64 x)
+uint64_t CTxOutCompressor::DecompressAmount(uint64_t x)
 {
 	// x = 0  OR  x = 1+10*(9*n + d - 1) + e  OR  x = 1+10*(n - 1) + 9
 	if (x == 0)
@@ -4512,7 +4512,7 @@ uint64 CTxOutCompressor::DecompressAmount(uint64 x)
 	// x = 10*(9*n + d - 1) + e
 	int e = x % 10;
 	x /= 10;
-	uint64 n = 0;
+	uint64_t n = 0;
 	if (e < 9) {
 		// x = 9*n + d - 1
 		int d = (x % 9) + 1;

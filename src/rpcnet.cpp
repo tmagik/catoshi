@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2012 Bitcoin Developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "net.h"
 #include "codecoinrpc.h"
@@ -48,7 +49,7 @@ Value getpeerinfo(const Array& params, bool fHelp)
         Object obj;
 
         obj.push_back(Pair("addr", stats.addrName));
-        obj.push_back(Pair("services", strprintf("%08"PRI64x, stats.nServices)));
+        obj.push_back(Pair("services", strprintf("%08" PRIx64, stats.nServices)));
         obj.push_back(Pair("lastsend", (boost::int64_t)stats.nLastSend));
         obj.push_back(Pair("lastrecv", (boost::int64_t)stats.nLastRecv));
         obj.push_back(Pair("bytessent", (boost::int64_t)stats.nSendBytes));
