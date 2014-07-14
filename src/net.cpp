@@ -1,4 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
+
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Copyright (c) 2013-2014 The Catcoin developers
 // Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
@@ -404,7 +405,7 @@ bool GetMyExternalIP(CNetAddr& ipRet)
 void ThreadGetMyExternalIP(void* parg)
 {
     // Make this thread recognisable as the external IP detection thread
-    RenameThread("bitcoin-ext-ip");
+    RenameThread("codecoin-ext-ip");
 
     CNetAddr addrLocalHost;
     if (GetMyExternalIP(addrLocalHost))
@@ -1221,21 +1222,6 @@ void ThreadDNSAddressSeed()
 }
 
 
-
-
-
-
-
-
-
-
-
-
-unsigned int pnSeed[] =
-{
-    0x75F35F40, 0xCE70C7C6
-};
-
 void DumpAddresses()
 {
     int64 nStart = GetTimeMillis();
@@ -1287,7 +1273,6 @@ void ThreadOpenConnections()
     }
 
     // Initiate network connections
-    int64 nStart = GetTime();
     while (true)
     {
         ProcessOneShot();
@@ -1296,26 +1281,6 @@ void ThreadOpenConnections()
 
         CSemaphoreGrant grant(*semOutbound);
         boost::this_thread::interruption_point();
-
-        // Add seed nodes if no other seed source is working well
-        if (addrman.size() < 5 && (GetTime() - nStart > 5) && !fTestNet)
-        {
-            std::vector<CAddress> vAdd;
-            for (unsigned int i = 0; i < ARRAYLEN(pnSeed); i++)
-            {
-                // It'll only connect to one or two seed nodes because once it connects,
-                // it'll get a pile of addresses with newer timestamps.
-                // Seed nodes are given a random 'last seen time' of between one and two
-                // weeks ago.
-                const int64 nOneWeek = 7*24*60*60;
-                struct in_addr ip;
-                memcpy(&ip, &pnSeed[i], sizeof(ip));
-                CAddress addr(CService(ip, GetDefaultPort()));
-                addr.nTime = GetTime()-GetRand(nOneWeek)-nOneWeek;
-                vAdd.push_back(addr);
-            }
-            addrman.Add(vAdd, CNetAddr("127.0.0.1"));
-        }
 
         //
         // Choose an address to connect to based on most recently seen

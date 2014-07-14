@@ -4,6 +4,12 @@
 #ifndef CODECOIN_codecoin_H
 #define CODECOIN_codecoin_H
 
+#ifdef BRAND_solarcoin
+#include "solarcoin.h"
+#elif BRAND_catcoin
 #include "catcoin.h"
+#else
+#error "No BRAND_*COIN defined!!"
+#endif
 
 #endif

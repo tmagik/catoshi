@@ -996,7 +996,7 @@ static std::string FormatException(std::exception* pex, const char* pszThread)
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(NULL, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = "catcoin";
+    const char* pszModule = BRAND_lower;
 #endif
     if (pex)
         return strprintf(
@@ -1038,7 +1038,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Unix: ~/.bitcoin
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Catcoin";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / BRAND;
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -1050,10 +1050,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     fs::create_directory(pathRet);
-    return pathRet / "Catcoin";
+    return pathRet / BRAND;
 #else
     // Unix
-    return pathRet / ".catcoin";
+    return pathRet / "." BRAND_lower;
 #endif
 #endif
 }
@@ -1094,7 +1094,7 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "catcoin.conf"));
+    boost::filesystem::path pathConfigFile(GetArg("-conf", BRAND_lower  ".conf"));
     if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir(false) / pathConfigFile;
     return pathConfigFile;
 }
@@ -1104,7 +1104,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-        return; // No bitcoin.conf file is OK
+        return; // No codecoin.conf file is OK
 
     // clear path cache after loading config file
     fCachedPath[0] = fCachedPath[1] = false;
@@ -1128,7 +1128,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 
 boost::filesystem::path GetPidFile()
 {
-    boost::filesystem::path pathPidFile(GetArg("-pid", "catcoind.pid"));
+    boost::filesystem::path pathPidFile(GetArg("-pid", BRAND_lower "d.pid"));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }
