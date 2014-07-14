@@ -71,6 +71,9 @@ int64 GetBlockValue(CBlockIndex *block, int64 nFees)
 	// Bitcoin/Litecoin used to have this
 	// Subsidy is cut in half every 210000 blocks, which will occur approximately every 4 years
 	// nSubsidy >>= (block->nHeight / 210000);
+	//
+	// further microeconomic analysis supporting this at:
+	// http://cryptonomics.org/2014/01/15/the-marginal-cost-of-cryptocurrency/
 
 	return nSubsidy + nFees;
 }
