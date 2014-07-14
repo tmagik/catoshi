@@ -21,10 +21,13 @@ COIN_BRAND:=catcoin
 
 DEFS=-DBOOST_SPIRIT_THREADSAFE -D_FILE_OFFSET_BITS=64 -DBRAND_$(COIN_BRAND)
 
-DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/obj $(BOOST_INCLUDE_PATH) $(BDB_INCLUDE_PATH) $(OPENSSL_INCLUDE_PATH))
+OBJDIR = obj/$(COIN_BRAND)
+
+DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/$(OBJDIR) $(BOOST_INCLUDE_PATH) $(BDB_INCLUDE_PATH) $(OPENSSL_INCLUDE_PATH))
 LIBS = $(addprefix -L,$(BOOST_LIB_PATH) $(BDB_LIB_PATH) $(OPENSSL_LIB_PATH))
 
 TESTDEFS = -DTEST_DATA_DIR=$(abspath test/data)
+
 
 LMODE = dynamic
 LMODE2 = dynamic
@@ -116,44 +119,44 @@ xCXXFLAGS=-O2 -pthread -Wall -Wextra -Wformat -Wformat-security -Wno-unused-para
 # adds some defaults in front. Unfortunately, LDFLAGS=... $(LDFLAGS) does not work.
 xLDFLAGS=$(LDHARDENING) $(LDFLAGS)
 
-OBJS= obj/$(COIN_BRAND).o \
+OBJS= $(OBJDIR)/$(COIN_BRAND).o \
     leveldb/libleveldb.a \
-    obj/alert.o \
-    obj/version.o \
-    obj/checkpoints.o \
-    obj/netbase.o \
-    obj/addrman.o \
-    obj/crypter.o \
-    obj/key.o \
-    obj/db.o \
-    obj/init.o \
-    obj/keystore.o \
-    obj/main.o \
-    obj/net.o \
-    obj/protocol.o \
-    obj/codecoinrpc.o \
-    obj/rpcdump.o \
-    obj/rpcnet.o \
-    obj/rpcmining.o \
-    obj/rpcwallet.o \
-    obj/rpcblockchain.o \
-    obj/rpcrawtransaction.o \
-    obj/script.o \
-    obj/scrypt.o \
-    obj/sync.o \
-    obj/util.o \
-    obj/wallet.o \
-    obj/walletdb.o \
-    obj/hash.o \
-    obj/bloom.o \
-    obj/noui.o \
-    obj/leveldb.o \
-    obj/txdb.o
+    $(OBJDIR)/alert.o \
+    $(OBJDIR)/version.o \
+    $(OBJDIR)/checkpoints.o \
+    $(OBJDIR)/netbase.o \
+    $(OBJDIR)/addrman.o \
+    $(OBJDIR)/crypter.o \
+    $(OBJDIR)/key.o \
+    $(OBJDIR)/db.o \
+    $(OBJDIR)/init.o \
+    $(OBJDIR)/keystore.o \
+    $(OBJDIR)/main.o \
+    $(OBJDIR)/net.o \
+    $(OBJDIR)/protocol.o \
+    $(OBJDIR)/codecoinrpc.o \
+    $(OBJDIR)/rpcdump.o \
+    $(OBJDIR)/rpcnet.o \
+    $(OBJDIR)/rpcmining.o \
+    $(OBJDIR)/rpcwallet.o \
+    $(OBJDIR)/rpcblockchain.o \
+    $(OBJDIR)/rpcrawtransaction.o \
+    $(OBJDIR)/script.o \
+    $(OBJDIR)/scrypt.o \
+    $(OBJDIR)/sync.o \
+    $(OBJDIR)/util.o \
+    $(OBJDIR)/wallet.o \
+    $(OBJDIR)/walletdb.o \
+    $(OBJDIR)/hash.o \
+    $(OBJDIR)/bloom.o \
+    $(OBJDIR)/noui.o \
+    $(OBJDIR)/leveldb.o \
+    $(OBJDIR)/txdb.o
 
 
 ifdef USE_SSE2
 DEFS += -DUSE_SSE2
-OBJS_SSE2= obj/scrypt-sse2.o
+OBJS_SSE2= $(OBJDIR)/scrypt-sse2.o
 OBJS += $(OBJS_SSE2)
 endif
 
@@ -173,50 +176,54 @@ leveldb/libleveldb.a:
 	@echo "Building LevelDB ..." && cd leveldb && $(MAKE) CC=$(CC) CXX=$(CXX) OPT="$(xCXXFLAGS)" libleveldb.a libmemenv.a && cd ..
 
 # auto-generated dependencies:
--include obj/*.P
--include obj-test/*.P
+-include $(OBJDIR)/*.P
+-include $(OBJDIR)/test/*.P
 
-obj/build.h: FORCE
-	/bin/sh ../share/genbuild.sh obj/build.h
-version.cpp: obj/build.h
+$(OBJDIR)/build.h: FORCE
+	/bin/sh ../share/genbuild.sh $(OBJDIR)/build.h
+version.cpp: $(OBJDIR)/build.h
 DEFS += -DHAVE_BUILD_INFO
 
-obj/%-sse2.o: %-sse2.cpp
+$(OBJDIR)/%-sse2.o: %-sse2.cpp
 	$(CXX) -c $(xCXXFLAGS) -msse2 -MMD -MF $(@:%.o=%.d) -o $@ $<
 	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-obj/%.o: %.cpp
+$(OBJDIR)/%.o: %.cpp
 	$(CXX) -c $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
 	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-$(COIN_BRAND)d: $(OBJS:obj/%=obj/%)
+$(COIN_BRAND)d: $(OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
 	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
 
-TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
+#solarcoind: $(OBJDIR)/solarcoin.o $(OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
+#	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
 
-obj-test/%.o: test/%.cpp
+
+TESTOBJS := $(patsubst test/%.cpp,$(OBJDIR)/test/%.o,$(wildcard test/*.cpp))
+
+$(OBJDIR)/test/%.o: test/%.cpp
 	$(CXX) -c $(TESTDEFS) $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
 	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-test_$(COIN_BRAND): $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
+test_$(COIN_BRAND): $(TESTOBJS) $(filter-out $(OBJDIR)/init.o,$(OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
 	$(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS)
 
 clean:
 	-rm -f $(COIN_BRAND)d test_$(COIN_BRAND)
-	-rm -f obj/*.o
-	-rm -f obj-test/*.o
-	-rm -f obj/*.P
-	-rm -f obj-test/*.P
-	-rm -f obj/build.h
+	-rm -f $(OBJDIR)/*.o
+	-rm -f $(OBJDIR)/test/*.o
+	-rm -f $(OBJDIR)/*.P
+	-rm -f $(OBJDIR)/test/*.P
+	-rm -f $(OBJDIR)/build.h
 	-cd leveldb && $(MAKE) clean || true
 
 FORCE:

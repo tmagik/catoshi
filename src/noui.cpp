@@ -32,7 +32,7 @@ static bool noui_ThreadSafeMessageBox(const std::string& message, const std::str
     return false;
 }
 
-static bool noui_ThreadSafeAskFee(int64 /*nFeeRequired*/)
+static bool noui_ThreadSafeAskFee(int64_t /*nFeeRequired*/)
 {
     return true;
 }

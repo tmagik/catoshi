@@ -11,16 +11,16 @@ static const int RPC_PORT_TESTNET = 19932;
 static const int P2P_PORT = 9933;
 static const int P2P_PORT_TESTNET = 19933;
 
-static const int64 COIN = 100000000;
-static const int64 CENT = 1000000;
+static const int64_t COIN = 100000000;
+static const int64_t CENT = 1000000;
 
 /** Dust Soft Limit, allowed with additional fee per output */
-static const int64 DUST_SOFT_LIMIT = 100000; // 0.001 CAT
+static const int64_t DUST_SOFT_LIMIT = 100000; // 0.001 CAT
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */
-static const int64 DUST_HARD_LIMIT = 1000;   // 0.00001 CAT mininput
+static const int64_t DUST_HARD_LIMIT = 1000;   // 0.00001 CAT mininput
 /** No amount larger than this (in satoshi) is valid */
-static const int64 MAX_MONEY = 21000000 * COIN;
-inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
+static const int64_t MAX_MONEY = 21000000 * COIN;
+inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 
 /** The interval over which we look to calculate the next difficulty **/
 static const int RETARGET_INTERVAL = 36;

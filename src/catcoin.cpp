@@ -53,9 +53,9 @@ const char *strTestNetDNSSeed[][2] = {
 	{NULL, NULL}
 };
 
-int64 GetBlockValue(CBlockIndex *block, int64 nFees)
+int64_t GetBlockValue(CBlockIndex *block, int64_t nFees)
 {
-	int64 nSubsidy = 50 * COIN;
+	int64_t nSubsidy = 50 * COIN;
 
 	// Making some sort of 'promise' of 21 million coins is like Monsanto trying to patent
 	// any roundup-resistant plant, or insisting on only running the 'Genuine IBM PC'
@@ -78,19 +78,19 @@ int64 GetBlockValue(CBlockIndex *block, int64 nFees)
 	return nSubsidy + nFees;
 }
 
-static const int64 nTargetTimespan = 6 * 60 * 60; // 6 hours
-static const int64 nTargetSpacing = 10 * 60;
-static const int64 nMinSpacing = 30;	// Absolute minimum spacing
-static const int64 nInterval = nTargetTimespan / nTargetSpacing;
+static const int64_t nTargetTimespan = 6 * 60 * 60; // 6 hours
+static const int64_t nTargetSpacing = 10 * 60;
+static const int64_t nMinSpacing = 30;	// Absolute minimum spacing
+static const int64_t nInterval = nTargetTimespan / nTargetSpacing;
 
-static const int64 nTargetTimespanOld = 14 * 24 * 60 * 60; // two weeks
-static const int64 nIntervalOld = nTargetTimespanOld / nTargetSpacing;
+static const int64_t nTargetTimespanOld = 14 * 24 * 60 * 60; // two weeks
+static const int64_t nIntervalOld = nTargetTimespanOld / nTargetSpacing;
 
 //
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
 //
-unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
+unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
 {
 	// Testnet has min-difficulty blocks
 	// after nTargetSpacing*2 time between blocks:
@@ -116,19 +116,19 @@ static int fork4Block = 27680; // Acceptblock needs this
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
-	int64 nTargetTimespanLocal = 0;
-	int64 nIntervalLocal = 0;
+	int64_t nTargetTimespanLocal = 0;
+	int64_t nIntervalLocal = 0;
 	int forkBlock = 20290 - 1;
 	int fork2Block = 21346;
 
 	 // moved variable inits to the top where they belong
 	 
 	unsigned int nProofOfWorkLimit = bnProofOfWorkLimit.GetCompact();
-	int64 nActualTimespan;
+	int64_t nActualTimespan;
 	const CBlockIndex* pindexFirst = pindexLast;
 
-	 int64 error;	 
-	 //int64 diffcalc;
+	 int64_t error;	 
+	 //int64_t diffcalc;
 	double pGainUp=-0.005125;	// Theses values can be changed to tune the PID formula
 	double iGainUp=-0.0225;	// Theses values can be changed to tune the PID formula
 	double dGainUp=-0.0075;		// Theses values can be changed to tune the PID formula
@@ -141,7 +141,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 	double iCalc;
 	double dCalc;
 	double dResult;
-	int64 result;
+	int64_t result;
 	CBigNum bResult;
 	CBigNum bnNew;
 	int i;
@@ -224,10 +224,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 		numerator = 112;
 		denominator = 100;
 	}
-	int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
-	int64 lowLimit = nTargetTimespanLocal*denominator/numerator;
-	int64 highLimit = nTargetTimespanLocal*numerator/denominator;
-	printf("  nActualTimespan = %"PRI64d"  before bounds\n", nActualTimespan);
+	int64_t nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
+	int64_t lowLimit = nTargetTimespanLocal*denominator/numerator;
+	int64_t highLimit = nTargetTimespanLocal*numerator/denominator;
+	printf("  nActualTimespan = %" PRId64"  before bounds\n", nActualTimespan);
 	if (nActualTimespan < lowLimit)
 		nActualTimespan = lowLimit;
 	if (nActualTimespan > highLimit)
@@ -243,7 +243,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
 	/// debug print
 	printf("GetNextWorkRequired RETARGET\n");
-	printf("nTargetTimespan = %"PRI64d"    nActualTimespan = %"PRI64d"\n", nTargetTimespanLocal, nActualTimespan);
+	printf("nTargetTimespan = %" PRId64"    nActualTimespan = %" PRId64"\n", nTargetTimespanLocal, nActualTimespan);
 	printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
 	printf("After:	%08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
 	}
@@ -268,7 +268,7 @@ If New diff < 0, then set static value of 0.0001 or so.
 		nActualTimespan = nActualTimespan / 8;	// Calculate average for last 8 blocks
 		if(pindexLast->nHeight > fork4Block || fTestNet){
 			if (nMinSpacing > nActualTimespan){
-				printf("WARNING: SANITY CHECK FAILED: PID nActualTimespan %"PRI64d" too small! increased to %"PRI64d"\n",
+				printf("WARNING: SANITY CHECK FAILED: PID nActualTimespan %" PRId64" too small! increased to %" PRId64"\n",
 					nActualTimespan, nMinSpacing );
 				nActualTimespan = nMinSpacing;
 			}
@@ -306,20 +306,20 @@ If New diff < 0, then set static value of 0.0001 or so.
 
 		if(error > -10 && error < 10)
 		{
-			if(fTestNet) printf("Within dead zone. No change!  error: %"PRI64d"\n", error);
+			if(fTestNet) printf("Within dead zone. No change!  error: %" PRId64"\n", error);
 			return(bnNew.GetCompact());
 		}		
 		
 		dResult = pCalc + iCalc + dCalc;	// Sum the PID calculations
 		
-		result = (int64)(dResult * 65536);	// Adjust for scrypt calcuation
+		result = (int64_t)(dResult * 65536);	// Adjust for scrypt calcuation
 		// Bring the result within max range to avoid overflow condition 
 		while(result >	8388607) result = result / 2; 
 		bResult = result;			// Set the bignum value
 		if(i>24) bResult = bResult << (i - 24);	// bit-shift integer value of result to be subtracted from current diff
 
-		if(fTestNet) printf("pCalc: %f, iCalc: %f, dCalc: %f, Result: %"PRI64d" (%f)\n", pCalc, iCalc, dCalc, result, dResult);
-		if(fTestNet) printf("Actual Time: %"PRI64d", error: %"PRI64d"\n", nActualTimespan, error); 
+		if(fTestNet) printf("pCalc: %f, iCalc: %f, dCalc: %f, Result: %" PRId64" (%f)\n", pCalc, iCalc, dCalc, result, dResult);
+		if(fTestNet) printf("Actual Time: %" PRId64", error: %" PRId64"\n", nActualTimespan, error); 
 		if(fTestNet) printf("Result: %08x %s\n",bResult.GetCompact(), bResult.getuint256().ToString().c_str()); 
 		if(fTestNet) printf("Before: %08x %s\n",bnNew.GetCompact(), bnNew.getuint256().ToString().c_str()); 
 		bnNew = bnNew - bResult;	// Subtract the result to set the current diff
