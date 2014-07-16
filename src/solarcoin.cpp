@@ -194,13 +194,13 @@ bool LoadBlockIndex()
 		pchMessageStart[1] = pchSLRTest[1];
 		pchMessageStart[2] = pchSLRTest[2];
 		pchMessageStart[3] = pchSLRTest[3];
-		hashGenesisBlock = uint256("0xec7987a2ab5225246c5cf9b8d93b4b75bcef383a4a65d5a265bc09ed54006188");
+		hashGenesisBlock = uint256("0x");
 	} else {
 		pchMessageStart[0] = pchSLRMain[0];
 		pchMessageStart[1] = pchSLRMain[1];
 		pchMessageStart[2] = pchSLRMain[2];
 		pchMessageStart[3] = pchSLRMain[3];
-		hashGenesisBlock = uint256("0xbc3b4ec43c4ebb2fef49e6240812549e61ffa623d9418608aa90eaad26c96296");
+		hashGenesisBlock = uint256("0xedcf32dbfd327fe7f546d3a175d91b05e955ec1224e087961acc9a2aa8f592ee");
 	}
 
 	//
@@ -225,43 +225,30 @@ bool InitBlockIndex() {
 
 	// Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
 	if (!fReindex) {
-		// Genesis Block:
-		// CBlock(hash=12a765e31ffd4059bada, PoW=0000050c34a64b415b6b, ver=1, hashPrevBlock=00000000000000000000, hashMerkleRoot=97ddfbbae6, nTime=1317972665, nBits=1e0ffff0, nNonce=2084524493, vtx=1)
-		//	 CTransaction(hash=97ddfbbae6, ver=1, vin.size=1, vout.size=1, nLockTime=0)
-		//	   CTxIn(COutPoint(0000000000, -1), coinbase 04ffff001d0104404e592054696d65732030352f4f63742f32303131205374657665204a6f62732c204170706c65e280997320566973696f6e6172792c2044696573206174203536)
-		//	   CTxOut(nValue=50.00000000, scriptPubKey=040184710fa689ad5023690c80f3a4)
-		//	 vMerkleTree: 97ddfbbae6
-
 		// Genesis block
-		const char* pszTimestamp = "NY Times - December 23, 2013 - For Today's Babes, Toyland Is Digital";
+		const char* pszTimestamp = "One Megawatt Hour";
 		CTransaction txNew;
 		txNew.vin.resize(1);
 		txNew.vout.resize(1);
 		txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
-		txNew.vout[0].nValue = 50 * COIN;
+		txNew.vout[0].nValue = 100 * COIN;
 		txNew.vout[0].scriptPubKey = CScript() << ParseHex("040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9") << OP_CHECKSIG;
+		txNew.strTxComment = "text:SolarCoin genesis block";
 		CBlock block;
 		block.vtx.push_back(txNew);
 		block.hashPrevBlock = 0;
 		block.hashMerkleRoot = block.BuildMerkleTree();
 		block.nVersion = 1;
-		block.nTime    = 1387838302;
+		block.nTime    = 1384473600;
 		block.nBits    = 0x1e0ffff0;
-		block.nNonce   = 588050;
-
-		if (fTestNet)
-		{
-			block.nTime    = 1387838303; //FIXME testnet0.1
-			block.nNonce   = 608937;
-		}
+		block.nNonce   = 1397766;
 
 		//// debug print
 		uint256 hash = block.GetHash();
 		printf("%s\n", hash.ToString().c_str());
 		printf("%s\n", hashGenesisBlock.ToString().c_str());
 		printf("%s\n", block.hashMerkleRoot.ToString().c_str());
-		assert(block.hashMerkleRoot == uint256("0x4007a33db5d9cdf2aab117335eb8431c8d13fb86e0214031fdaebe69a0f29cf7"));
-
+		assert(block.hashMerkleRoot == uint256("0x33ecdb1985425f576c65e2c85d7983edc6207038a2910fefaf86cfb4e53185a3"));
 
 		block.print();
 		assert(hash == hashGenesisBlock);
@@ -285,4 +272,36 @@ bool InitBlockIndex() {
 	return true;
 }
 
+namespace Checkpoints
+{
+		// What makes a good checkpoint block?
+	// + Is surrounded by blocks with reasonable timestamps
+	//	 (no blocks before with a timestamp after, none after with
+	//	  timestamp before)
+	// + Contains no strange transactions
+	// TODO put this in catcoin.cpp|.h
+	static MapCheckpoints mapCheckpoints =
+		boost::assign::map_list_of
+	(	0, hashGenesisBlock)
+	(	1, uint256("0xe8666c8715fafbfb095132deb1dd2af63fe14d3d7163715341d48feffab458cc"))
+	(	25, uint256("0xe49cfc3e60515965380cbc3a1add5ab007e5bd2f226624cad9ff0f79eef680cc"))
+	(	50, uint256("0x0b082428186ab2dc55403b2b3c9bd14f087590b204e05c09a656914285520b4d"))
+	(	98, uint256("0xd27e483ae4d334cc65575bcc66d65f7a97913f31188662e2d3fe329675714128"))
+	(	128, uint256("0xbce9c463a9e8b0d7b1c6df522fc80468fb47873c00b7b650f6b8046546c95dd0"))
+	(	50000, uint256("0xf4fd47272011481dda8bc2a7b1305e39ff3429ecf3bcb9bd5af32fdef3945860"))
+	(	100000, uint256("68d5027a570c605f6a0d24f8bad5c454769438eb4a237e93b4ee7a638eaa01b0"))
+	(	150000, uint256("a9d3915cc6c9a18a6fe72429d496c985308c5335e60afe616fe6c8123c6e624f"))
+//	(	200000, uint256("5f295d3a00a74641d9fda7bf538585456b30261d20bf559c4f4ca30a949062fe"))
+//	(	230000, uint256("6ef474fb57b765ced46e28878be7e49648046438894288e983f1d58c8450dfdd"))
+//	(	238000, uint256("c87ccce7cd13651126be87c4eff3d1429bc6e89b0cea417a807487f7cc81d768"))
+	;
 
+	const CCheckpointData data = {
+		&mapCheckpoints,
+		1398103556,     // * UNIX timestamp of last checkpoint block
+		274778,		// * total number of transactions between genesis and last checkpoint
+					//	 (the tx=... number in the SetBestChain debug.log lines)
+		1000.0		// * estimated number of transactions per day after checkpoint
+	};
+
+}
