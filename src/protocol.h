@@ -1,7 +1,8 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #ifndef __cplusplus
 # error This header can only be compiled as C++.
@@ -14,7 +15,7 @@
 #include "serialize.h"
 #include "netbase.h"
 #include <string>
-#include "uint256.h"
+#include "uintBIG.h"
 
 extern bool fTestNet;
 static inline unsigned short GetDefaultPort(const bool testnet = fTestNet)

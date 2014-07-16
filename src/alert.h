@@ -9,7 +9,7 @@
 #include <set>
 #include <string>
 
-#include "uint256.h"
+#include "uintBIG.h"
 #include "util.h"
 
 class CNode;

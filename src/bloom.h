@@ -1,12 +1,13 @@
 // Copyright (c) 2012 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef BITCOIN_BLOOM_H
-#define BITCOIN_BLOOM_H
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef CODECOIN_BLOOM_H
+#define CODECOIN_BLOOM_H
 
 #include <vector>
 
-#include "uint256.h"
+#include "uintBIG.h"
 #include "serialize.h"
 
 class COutPoint;

@@ -11,7 +11,11 @@
 #include "sync.h"
 #include "net.h"
 #include "script.h"
+#if defined(BRAND_uro)
+#include "hashblock.h"
+#else
 #include "scrypt.h"
+#endif
 
 #include <list>
 
@@ -1332,7 +1336,11 @@ public:
 
 	uint256 GetHash() const
 	{
+#if defined(BRAND_uro)
+		return Hash11(BEGIN(nVersion), END(nNonce));
+#else
 		return Hash(BEGIN(nVersion), END(nNonce));
+#endif
 	}
 
 	int64_t GetBlockTime() const
@@ -1378,9 +1386,13 @@ public:
 
 	uint256 GetPoWHash() const
 	{
+#if defined(BRAND_uro)
+		return GetHash();
+#else
 		uint256 thash;
 		scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
 		return thash;
+#endif
 	}
 
 	CBlockHeader GetBlockHeader() const

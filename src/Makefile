@@ -155,6 +155,23 @@ OBJS= $(OBJDIR)/$(COIN_BRAND).o \
     $(OBJDIR)/txdb.o
 
 
+ifeq ($(COIN_BRAND),uro)
+OBJS += \
+    $(OBJDIR)/cubehash.o \
+    $(OBJDIR)/luffa.o \
+    $(OBJDIR)/aes_helper.o \
+    $(OBJDIR)/echo.o \
+    $(OBJDIR)/shavite.o \
+    $(OBJDIR)/simd.o \
+    $(OBJDIR)/blake.o \
+    $(OBJDIR)/bmw.o \
+    $(OBJDIR)/groestl.o \
+    $(OBJDIR)/jh.o \
+    $(OBJDIR)/keccak.o \
+    $(OBJDIR)/skein.o
+endif
+
+
 ifdef USE_SSE2
 DEFS += -DUSE_SSE2
 OBJS_SSE2= $(OBJDIR)/scrypt-sse2.o
@@ -187,6 +204,13 @@ DEFS += -DHAVE_BUILD_INFO
 
 $(OBJDIR)/%-sse2.o: %-sse2.cpp
 	$(CXX) -c $(xCXXFLAGS) -msse2 -MMD -MF $(@:%.o=%.d) -o $@ $<
+	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
+	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
+	  rm -f $(@:%.o=%.d)
+
+$(OBJDIR)/%.o: %.c
+	$(CXX) -c $(xCXXFLAGS) -fpermissive -MMD -MF $(@:%.o=%.d) -o $@ $<
 	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \

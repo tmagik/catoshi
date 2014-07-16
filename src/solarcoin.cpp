@@ -69,10 +69,10 @@ static const int64_t DiffChangeBlock = 200000;
 //
 unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
 {
-    // Testnet has min-difficulty blocks
-    // after nTargetSpacing*2 time between blocks:
-    if (fTestNet && nTime > nTargetSpacing*2)
-        return bnProofOfWorkLimit.GetCompact();
+	// Testnet has min-difficulty blocks
+	// after nTargetSpacing*2 time between blocks:
+	if (fTestNet && nTime > nTargetSpacing*2)
+		return bnProofOfWorkLimit.GetCompact();
 
     CBigNum bnResult;
     bnResult.SetCompact(nBase);

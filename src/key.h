@@ -1,15 +1,16 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef BITCOIN_KEY_H
-#define BITCOIN_KEY_H
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef CODECOIN_KEY_H
+#define CODECOIN_KEY_H
 
 #include <vector>
 
 #include "allocators.h"
 #include "serialize.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "hash.h"
 
 // secp256k1:
