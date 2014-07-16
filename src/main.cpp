@@ -4309,6 +4309,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 	return true;
 }
 
+#if !defined(BRAND_uro)
 void static CodecoinMiner(CWallet *pwallet)
 {
 	printf("CodecoinMiner started\n");
@@ -4451,6 +4452,7 @@ void static CodecoinMiner(CWallet *pwallet)
 		throw;
 	}
 }
+#endif
 
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 {
@@ -4470,9 +4472,13 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 	if (nThreads == 0 || !fGenerate)
 		return;
 
+#if defined(BRAND_uro)
+	return;
+#else
 	minerThreads = new boost::thread_group();
 	for (int i = 0; i < nThreads; i++)
 		minerThreads->create_thread(boost::bind(&CodecoinMiner, pwallet));
+#endif
 }
 
 // Amount compression:

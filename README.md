@@ -1,4 +1,4 @@
-Catcoin/kittycoin Catbox
+Codecoin Catbox
 ================================
 
 http://kittyco.in
@@ -8,9 +8,16 @@ Copyright (c) 2011-2013 Litecoin Developers
 Copyright (c) 2013-2014 Catcoin Developers
 Copyright (c) 2014 Troy Benjegerdes <hozer@hozed.org>
 
-For the latest Official Catcoin release, use the 
-[github](https://github.com/CatcoinOfficial/CatcoinRelease)
+What is Codecoin
+----------------
 
+Codecoin is a project to build multiple C++ 'Catoshi' clients from the
+same source tree. Default build is Catcoin/Kittycoin. On linux, do this:
+
+    cd src
+    make                         # builds catcoin
+    make COIN_BRAND=solarcoin    # builds solarcoin
+    make COIN_BRAND=uro          # builds uro
 
 What is kittycoin?
 ----------------
@@ -22,7 +29,7 @@ as Bitcoin:
  - 10 minutes block targets
  - Subsidy halves in 210k blocks
  - 21 million total coins
- - 1 block difficulty adjustment, based on average time of last 36 blocks
+ - 1 block difficulty adjustment, with a PID ajustment.
 
 For more information, as well as an immediately useable, binary version of
 the Catcoin client sofware, see http://www.catcoins.org
