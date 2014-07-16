@@ -97,6 +97,7 @@ LIBS+= \
     # Build position independent code to take advantage of Address Space Layout Randomization
     # offered by some kernels.
     # see doc/build-unix.txt for more information.
+    PIE=1
     ifdef PIE
         HARDENING+=-fPIE
         LDHARDENING+=-pie

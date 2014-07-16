@@ -472,7 +472,13 @@ class CTransaction
 public:
 	static int64_t nMinTxFee;
 	static int64_t nMinRelayTxFee;
+#if !defined(BRAND_solarcoin)
 	static const int CURRENT_VERSION=1;
+#else
+	static const int CURRENT_VERSION=2;
+	static const int LEGACY_VERSION_1=1;
+	std::string strTxComment;
+#endif
 	int nVersion;
 	std::vector<CTxIn> vin;
 	std::vector<CTxOut> vout;
@@ -490,6 +496,11 @@ public:
 		READWRITE(vin);
 		READWRITE(vout);
 		READWRITE(nLockTime);
+#if defined(BRAND_solarcoin)
+		if(this->nVersion > LEGACY_VERSION_1) { 
+        		READWRITE(strTxComment);
+		}
+#endif
 	)
 
 	void SetNull()
@@ -498,6 +509,9 @@ public:
 		vin.clear();
 		vout.clear();
 		nLockTime = 0;
+#if defined(BRAND_solarcoin)
+		strTxComment.clear();
+#endif
 	}
 
 	bool IsNull() const
@@ -645,6 +659,9 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 	{
 		std::string str;
 		str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%" PRIszu", vout.size=%" PRIszu", nLockTime=%u)\n",
+#if defined(BRAND_solarcoin)
+#warning "need to implement ToString of txt comment too"
+#endif
 			GetHash().ToString().c_str(),
 			nVersion,
 			vin.size(),
