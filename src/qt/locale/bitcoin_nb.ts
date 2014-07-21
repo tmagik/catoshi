@@ -7,17 +7,17 @@
     <message>
         <location filename="../forms/aboutdialog.ui" line="14"/>
         <source>About Peerunity</source>
-        <translation type="unfinished"></translation>
+        <translation>Om Peerunity</translation>
     </message>
     <message>
         <location filename="../forms/aboutdialog.ui" line="75"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Peerunity&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Peerunity&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../forms/aboutdialog.ui" line="113"/>
         <source>Copyright © 2014 Peerunity Developers</source>
-        <translation type="unfinished"></translation>
+        <translation>Copyright © 2014 Peerunity Utviklerne</translation>
     </message>
     <message>
         <location filename="../forms/aboutdialog.ui" line="120"/>
@@ -51,8 +51,8 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="20"/>
-        <source>These are your Bitcoin addresses for receiving payments.  You may want to give a different one to each sender so you can keep track of who is paying you.</source>
-        <translation type="unfinished"></translation>
+        <source>These are your Bitcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
+        <translation>Dette er dine Peercoin-adresser for å motta betalinger. Du kan gi en adresse til hver enkelt som skal betale deg, slik at du kan holde orden på hvem som har betalt.</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="33"/>
@@ -193,7 +193,7 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
     <message>
         <location filename="../askpassphrasedialog.cpp" line="34"/>
         <source>Enter the new passphrase to the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;10 or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
-        <translation>Skriv inn det nye passordet for lommeboken.&lt;br/&gt;Vennligst bruk et passord med &lt;b&gt;10 eller flere tilfeldige tegn&lt;/b&gt;, eller &lt;b&gt;åtte eller flere ord&lt;/b&gt;.</translation>
+        <translation>Angi det nye passordet for lommeboken.&lt;br/&gt;Vennligst bruk et passord med &lt;b&gt;10 eller flere tilfeldige tegn&lt;/b&gt;, eller &lt;b&gt;åtte eller flere ord&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="35"/>
@@ -228,7 +228,7 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
     <message>
         <location filename="../askpassphrasedialog.cpp" line="55"/>
         <source>Enter the old and new passphrase to the wallet.</source>
-        <translation>Skriv inn gammelt og nytt passord for lommeboken.</translation>
+        <translation>Angi gammelt og nytt passord for lommeboken.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="101"/>
@@ -237,9 +237,8 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="102"/>
-        <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR PPCOINS AND SHARES&lt;/b&gt;!
-Are you sure you wish to encrypt your wallet?</source>
-        <translation type="unfinished"></translation>
+        <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR PPCOINS AND SHARES&lt;/b&gt;! Are you sure you wish to encrypt your wallet?</source>
+        <translation>ADVARSEL: Hvis du krypterer lommeboken og mister passordet, så vil du &lt;b&gt;MISTE ALLE DINE PEERCOINS OG SHARES&lt;/b&gt;! Er du sikker på at du vil kryptere lommeboken din?</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="111"/>
@@ -250,7 +249,7 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="112"/>
         <source>Peerunity will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your ppcoins or shares from being stolen by malware infecting your computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Peerunity vil nå lukkes for å fullføre krypteringsprosessen. Husk at kryptering av lommeboken ikke fullt ut kan beskytte dine peercoins fra å bli stjålet om skadevare infiserer datamaskinen.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="208"/>
@@ -350,7 +349,7 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="213"/>
         <source>Sign/Verify &amp;message</source>
-        <translation type="unfinished"></translation>
+        <translation>Signer/Verifiser &amp;melding</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="214"/>
@@ -405,12 +404,12 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="253"/>
         <source>&amp;Unlock Wallet for Minting Only</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lås Opp Lommebok Kun For Preging</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="254"/>
         <source>Unlock wallet only for minting. Sending coins will still require the passphrase.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lås opp lommebok kun for preging. Sending av mynter vil fortsatt kreve passordet.</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="256"/>
@@ -475,54 +474,54 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="75"/>
         <source>Peerunity Wallet</source>
-        <translation type="unfinished"></translation>
+        <translation>Peerunity Lommebok</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="208"/>
         <source>Send coins to a Peercoin address</source>
-        <translation type="unfinished"></translation>
+        <translation>Send mynter til en Peercoin-adresse</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="237"/>
         <source>&amp;About Peerunity</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Om Peerunity</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="238"/>
         <source>Show information about PeerCoin</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis informasjon om Peercoin</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="244"/>
         <source>Modify configuration options for Peerunity</source>
-        <translation type="unfinished"></translation>
+        <translation>Endre oppsett for Peerunity</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="246"/>
         <source>Show/Hide &amp;Peerunity</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis/Skjul &amp;Peerunity</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="247"/>
         <source>Show or hide the Peerunity window</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis eller skjul Peerunity-vinduet</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="397"/>
         <source>Peerunity client</source>
-        <translation type="unfinished"></translation>
+        <translation>Peerunity klient</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="425"/>
         <source>p-qt</source>
-        <translation type="unfinished"></translation>
+        <translation>p-qt</translation>
     </message>
     <message numerus="yes">
         <location filename="../bitcoingui.cpp" line="489"/>
         <source>%n active connection(s) to Peercoin network</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n aktiv forbindelse til Peercoin-nettverket</numerusform>
+            <numerusform>%n aktive forbindelser til Peercoin-nettverket</numerusform>
         </translation>
     </message>
     <message>
@@ -597,8 +596,8 @@ Are you sure you wish to encrypt your wallet?</source>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="640"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation type="unfinished"></translation>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>Denne transaksjonen er over grensen for størrelse. Du kan fortsatt sende den for et gebyr på %1. Ønsker du å betale gebyret?</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="645"/>
@@ -666,7 +665,7 @@ Adresse: %4
     <message>
         <location filename="../bitcoin.cpp" line="128"/>
         <source>A fatal error occured. Peerunity can no longer continue safely and will quit.</source>
-        <translation type="unfinished"></translation>
+        <translation>En fatal feil har inntruffet. Det er ikke trygt å fortsette og Peerunity må derfor avslutte.</translation>
     </message>
 </context>
 <context>
@@ -674,28 +673,28 @@ Adresse: %4
     <message>
         <location filename="../forms/coincontroldialog.ui" line="14"/>
         <source>Coin Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Myntkontroll</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="45"/>
         <source>Quantity:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mengde:</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="64"/>
         <location filename="../forms/coincontroldialog.ui" line="96"/>
         <source>0</source>
-        <translation type="unfinished">0</translation>
+        <translation>0</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="77"/>
         <source>Bytes:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bytes:</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="125"/>
         <source>Amount:</source>
-        <translation type="unfinished">Beløp:</translation>
+        <translation>Beløp:</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="144"/>
@@ -703,184 +702,184 @@ Adresse: %4
         <location filename="../forms/coincontroldialog.ui" line="310"/>
         <location filename="../forms/coincontroldialog.ui" line="348"/>
         <source>0.00 BTC</source>
-        <translation type="unfinished">123.456 BTC {0.00 ?}</translation>
+        <translation>0.00 PPC</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="157"/>
         <source>Priority:</source>
-        <translation type="unfinished"></translation>
+        <translation>Prioritet:</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="205"/>
         <source>Fee:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gebyr:</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="240"/>
         <source>Low Output:</source>
-        <translation type="unfinished"></translation>
+        <translation>Svake Utdata:</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="262"/>
         <location filename="../coincontroldialog.cpp" line="551"/>
         <source>no</source>
-        <translation type="unfinished"></translation>
+        <translation>nei</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="291"/>
         <source>After Fee:</source>
-        <translation type="unfinished"></translation>
+        <translation>Etter Gebyr:</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="326"/>
         <source>Change:</source>
-        <translation type="unfinished"></translation>
+        <translation>Veksel:</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="395"/>
         <source>(un)select all</source>
-        <translation type="unfinished"></translation>
+        <translation>velg eller fjern alt</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="408"/>
         <source>Tree mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Tremodus</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="424"/>
         <source>List mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Listemodus</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="477"/>
         <source>Amount</source>
-        <translation type="unfinished">Beløp</translation>
+        <translation>Beløp</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="487"/>
         <source>Address</source>
-        <translation type="unfinished">Adresse</translation>
+        <translation>Adresse</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="492"/>
         <source>Date</source>
-        <translation type="unfinished">Dato</translation>
+        <translation>Dato</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="497"/>
         <source>Confirmations</source>
-        <translation type="unfinished"></translation>
+        <translation>Bekreftelser</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="500"/>
         <source>Confirmed</source>
-        <translation type="unfinished">Bekreftet</translation>
+        <translation>Bekreftet</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="505"/>
         <source>Priority</source>
-        <translation type="unfinished"></translation>
+        <translation>Prioritet</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="36"/>
         <source>Copy address</source>
-        <translation type="unfinished">Kopier adresse</translation>
+        <translation>Kopier adresse</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="37"/>
         <source>Copy label</source>
-        <translation type="unfinished">Kopier merkelapp</translation>
+        <translation>Kopier merkelapp</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="38"/>
         <location filename="../coincontroldialog.cpp" line="64"/>
         <source>Copy amount</source>
-        <translation type="unfinished">Kopier beløp</translation>
+        <translation>Kopier beløp</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="39"/>
         <source>Copy transaction ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier transaksjons-ID</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="63"/>
         <source>Copy quantity</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier mengde</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="65"/>
         <source>Copy fee</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier gebyr</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="66"/>
         <source>Copy after fee</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier etter gebyr</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="67"/>
         <source>Copy bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier bytes</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="68"/>
         <source>Copy priority</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier prioritet</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="69"/>
         <source>Copy low output</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier svake utdata</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="70"/>
         <source>Copy change</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier veksel</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="387"/>
         <source>highest</source>
-        <translation type="unfinished"></translation>
+        <translation>høyest</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="388"/>
         <source>high</source>
-        <translation type="unfinished"></translation>
+        <translation>høy</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="389"/>
         <source>medium-high</source>
-        <translation type="unfinished"></translation>
+        <translation>medium-høy</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="390"/>
         <source>medium</source>
-        <translation type="unfinished"></translation>
+        <translation>medium</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="394"/>
         <source>low-medium</source>
-        <translation type="unfinished"></translation>
+        <translation>lav-medium</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="395"/>
         <source>low</source>
-        <translation type="unfinished"></translation>
+        <translation>lav</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="396"/>
         <source>lowest</source>
-        <translation type="unfinished"></translation>
+        <translation>lavest</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="551"/>
         <source>DUST</source>
-        <translation type="unfinished"></translation>
+        <translation>STØV</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="551"/>
         <source>yes</source>
-        <translation type="unfinished"></translation>
+        <translation>ja</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="561"/>
@@ -889,7 +888,11 @@ Adresse: %4
  This means a fee of at least %1 per kb is required.
 
  Can vary +/- 1 Byte per input.</source>
-        <translation type="unfinished"></translation>
+        <translation>Denne merkelappen blir rød, hvis transaksjonsstørrelsen er større enn 1000 bytes.
+
+Dette betyr at et gebyr på minst %1 per kB er påkrevd.
+
+Kan variere +/- 1 byte per input.</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="562"/>
@@ -898,39 +901,49 @@ Adresse: %4
 This label turns red, if the priority is smaller than &quot;medium&quot;.
 
  This means a fee of at least %1 per kb is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>Transaksjoner med høyere prioritet vil med større sannsynlighet komme med i en blokk.
+
+Denne merkelappen blir rød, hvis prioriteten er mindre enn &quot;medium&quot;.
+
+Dette betyr at et gebyr på minst %1 per kB er påkrevd.</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="563"/>
         <source>This label turns red, if any recipient receives an amount smaller than %1.
 
- This means a fee of at least %2 is required. 
+ This means a fee of at least %2 is required.
 
  Amounts below 0.546 times the minimum relay fee are shown as DUST.</source>
-        <translation type="unfinished"></translation>
+        <translation>Denne merkelappen blir rød, hvis en mottaker mottar en mengde på mindre enn %1.
+
+Dette betyr at et gebyr på minst %2 er påkrevd.
+
+Beløp under 0.546 ganger minimum relégebyr er vist som STØV.</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="564"/>
         <source>This label turns red, if the change is smaller than %1.
 
  This means a fee of at least %2 is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>Denne merkelappen blir rød, hvis endringen er mindre enn %1.
+
+Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="601"/>
         <location filename="../coincontroldialog.cpp" line="667"/>
         <source>(no label)</source>
-        <translation type="unfinished">(ingen merkelapp)</translation>
+        <translation>(ingen merkelapp)</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="658"/>
         <source>change from %1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>veksel fra %1 (%2)</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="659"/>
         <source>(change)</source>
-        <translation type="unfinished"></translation>
+        <translation>(veksel)</translation>
     </message>
 </context>
 <context>
@@ -953,17 +966,17 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../optionsdialog.cpp" line="286"/>
         <source>Whether to show Peerunity addresses in the transaction list</source>
-        <translation type="unfinished"></translation>
+        <translation>Om Peercoin-adresser skal vises i transaksjonslisten eller ikke.</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="289"/>
         <source>Display coin control features (experts only!)</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis funksjoner for myntkontroll (kun for eksperter!)</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="290"/>
         <source>Whether to show coin control features or not</source>
-        <translation type="unfinished"></translation>
+        <translation>Skal funksjoner for myntkontroll vises eller ikke</translation>
     </message>
 </context>
 <context>
@@ -1064,7 +1077,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../optionsdialog.cpp" line="187"/>
         <source>Automatically open the Peerunity client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Åpne automatisk Peerunity klientporten på ruteren. Dette virker kun om din ruter støtter UPnP og dette er påslått.</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="190"/>
@@ -1109,17 +1122,17 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../optionsdialog.cpp" line="217"/>
         <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly. Most transactions are 1 kB. Fee 0.01 recommended.</source>
-        <translation type="unfinished">Valgfritt transaksjonsgebyr per kB som sikrer at dine transaksjoner blir raskt prosessert. De fleste transaksjoner er 1 kB. Et gebyr på 0.01 er anbefalt.</translation>
+        <translation>Valgfritt transaksjonsgebyr per kB som sikrer at dine transaksjoner blir raskt prosessert. De fleste transaksjoner er 1 kB. Et gebyr på 0.01 er anbefalt.</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="172"/>
         <source>&amp;Start Peerunity on window system startup</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Start Peerunity ved oppstart av datamaskinen</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="173"/>
         <source>Automatically start Peerunity after the computer is turned on</source>
-        <translation type="unfinished"></translation>
+        <translation>Start Peerunity automatisk når datamaskinen blir slått på</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="223"/>
@@ -1368,7 +1381,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../rpcconsole.cpp" line="306"/>
         <source>Welcome to the Peerunity RPC console.&lt;br&gt;Use up and down arrows to navigate history, and &lt;b&gt;Ctrl-L&lt;/b&gt; to clear screen.&lt;br&gt;Type &lt;b&gt;help&lt;/b&gt; for an overview of available commands.</source>
-        <translation type="unfinished"></translation>
+        <translation>Velkommen til Peerunity sin RPC-konsoll.&lt;br&gt;Bruk opp og ned pil for å navigere historikken, og &lt;b&gt;Ctrl-L&lt;/b&gt; for å tømme skjermen.&lt;br&gt;Skriv &lt;b&gt;help&lt;/b&gt; for en oversikt over kommandoer.</translation>
     </message>
 </context>
 <context>
@@ -1388,43 +1401,43 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="90"/>
         <source>Coin Control Features</source>
-        <translation type="unfinished"></translation>
+        <translation>Myntkontroll Funksjoner</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="110"/>
         <source>Inputs...</source>
-        <translation type="unfinished"></translation>
+        <translation>Inndata...</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="117"/>
         <source>automatically selected</source>
-        <translation type="unfinished"></translation>
+        <translation>automatisk valgte</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="136"/>
         <source>Insufficient funds!</source>
-        <translation type="unfinished"></translation>
+        <translation>Utilstrekkelige midler!</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="213"/>
         <source>Quantity:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mengde:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="235"/>
         <location filename="../forms/sendcoinsdialog.ui" line="270"/>
         <source>0</source>
-        <translation type="unfinished">0</translation>
+        <translation>0</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="251"/>
         <source>Bytes:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bytes:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="302"/>
         <source>Amount:</source>
-        <translation type="unfinished">Beløp:</translation>
+        <translation>Beløp:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="324"/>
@@ -1432,47 +1445,47 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../forms/sendcoinsdialog.ui" line="496"/>
         <location filename="../forms/sendcoinsdialog.ui" line="528"/>
         <source>0.00 BTC</source>
-        <translation type="unfinished">123.456 BTC {0.00 ?}</translation>
+        <translation>0.00 PPC</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="337"/>
         <source>Priority:</source>
-        <translation type="unfinished"></translation>
+        <translation>Prioritet:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="356"/>
         <source>medium</source>
-        <translation type="unfinished"></translation>
+        <translation>medium</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="388"/>
         <source>Fee:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gebyr:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="423"/>
         <source>Low Output:</source>
-        <translation type="unfinished"></translation>
+        <translation>Svake Utdata:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="442"/>
         <source>no</source>
-        <translation type="unfinished"></translation>
+        <translation>nei</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="474"/>
         <source>After Fee:</source>
-        <translation type="unfinished"></translation>
+        <translation>Etter Gebyr:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="509"/>
         <source>Change</source>
-        <translation type="unfinished"></translation>
+        <translation>Veksel</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="559"/>
         <source>custom change address</source>
-        <translation type="unfinished"></translation>
+        <translation>Egendefinert adresse for veksel</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="665"/>
@@ -1517,47 +1530,47 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../sendcoinsdialog.cpp" line="36"/>
         <source>Enter a Peeroin address</source>
-        <translation type="unfinished"></translation>
+        <translation>Angi en Peercoin-adresse</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="51"/>
         <source>Copy quantity</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier mengde</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="52"/>
         <source>Copy amount</source>
-        <translation type="unfinished">Kopier beløp</translation>
+        <translation>Kopier beløp</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="53"/>
         <source>Copy fee</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier gebyr</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="54"/>
         <source>Copy after fee</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier etter gebyr</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="55"/>
         <source>Copy bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier bytes</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="56"/>
         <source>Copy priority</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier prioritet</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="57"/>
         <source>Copy low output</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier svake utdata</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="58"/>
         <source>Copy change</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopier veksel</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="144"/>
@@ -1591,28 +1604,28 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="203"/>
-        <source>Error: Transaction creation failed  </source>
-        <translation type="unfinished"></translation>
+        <source>Error: Transaction creation failed </source>
+        <translation>Feil: Opprettelse av transaksjon feilet </translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="208"/>
-        <source>Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
-        <translation type="unfinished"></translation>
+        <source>Error: The transaction was rejected. This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
+        <translation>Feil: Transaksjonen ble avvist! Dette kan skje hvis noen av myntene i lommeboken allerede er blitt brukt, som om du brukte en kopi av wallet.dat og myntene ble brukt i kopien, men ikke markert som brukt her.</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="457"/>
         <source>Warning: Invalid Bitcoin address</source>
-        <translation type="unfinished"></translation>
+        <translation>Advarsel: Ugyldig Peercoin-adresse</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="466"/>
         <source>Warning: Unknown change address</source>
-        <translation type="unfinished"></translation>
+        <translation>Advarsel: Ukjent adresse for veksel</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="477"/>
         <source>(no label)</source>
-        <translation type="unfinished">(ingen merkelapp)</translation>
+        <translation>(ingen merkelapp)</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="187"/>
@@ -1651,7 +1664,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../forms/sendcoinsentry.ui" line="66"/>
         <location filename="../sendcoinsentry.cpp" line="26"/>
         <source>Enter a label for this address to add it to your address book</source>
-        <translation>Skriv inn en merkelapp for denne adressen for å legge den til i din adressebok</translation>
+        <translation>Angi en merkelapp for denne adressen for å legge den til i din adressebok</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="75"/>
@@ -1691,7 +1704,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../sendcoinsentry.cpp" line="25"/>
         <source>Enter a Peercoin address</source>
-        <translation type="unfinished"></translation>
+        <translation>Angi en Peercoin-adresse</translation>
     </message>
 </context>
 <context>
@@ -1699,132 +1712,132 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="14"/>
         <source>Signatures - Sign / Verify a Message</source>
-        <translation type="unfinished"></translation>
+        <translation>Signaturer - Signer / Verifiser en Melding</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="24"/>
         <source>&amp;Sign Message</source>
-        <translation type="unfinished">&amp;Signer Melding</translation>
+        <translation>&amp;Signer Melding</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="30"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation type="unfinished">Du kan signere meldinger med dine adresser for å bevise at du eier dem. Ikke signer vage meldinger da phishing-angrep kan prøve å lure deg til å signere din identitet over til andre. Signer kun fullt detaljerte utsagn som du er enig i.</translation>
+        <translation>Du kan signere meldinger med dine adresser for å bevise at du eier dem. Ikke signer vage meldinger da phishing-angrep kan prøve å lure deg til å signere din identitet over til andre. Signer kun fullt detaljerte utsagn som du er enig i.</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="48"/>
         <source>The address to sign the message with</source>
-        <translation type="unfinished"></translation>
+        <translation>Adressen for signering av meldingen</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="55"/>
         <location filename="../forms/signverifymessagedialog.ui" line="265"/>
         <source>Choose previously used address</source>
-        <translation type="unfinished"></translation>
+        <translation>Velg tidligere brukt adresse</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="65"/>
         <location filename="../forms/signverifymessagedialog.ui" line="275"/>
         <source>Alt+A</source>
-        <translation type="unfinished">Alt+A</translation>
+        <translation>Alt+A</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="75"/>
         <source>Paste address from clipboard</source>
-        <translation type="unfinished">Lim inn adresse fra utklippstavlen</translation>
+        <translation>Lim inn adresse fra utklippstavlen</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="85"/>
         <source>Alt+P</source>
-        <translation type="unfinished">Alt+P</translation>
+        <translation>Alt+P</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="97"/>
         <source>Enter the message you want to sign here</source>
-        <translation type="unfinished">Skriv inn meldingen du vil signere her</translation>
+        <translation>Angi meldingen du vil signere her</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="104"/>
         <source>Signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Signatur</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="131"/>
         <source>Copy the current signature to the system clipboard</source>
-        <translation type="unfinished">Kopier den nåværende signaturen til systemets utklippstavle</translation>
+        <translation>Kopier den nåværende signaturen til systemets utklippstavle</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="152"/>
         <source>Sign the message to prove you own this Peercoin address</source>
-        <translation type="unfinished"></translation>
+        <translation>Signer meldingen for å bevise at du eier denne Peercoin-adressen</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="155"/>
         <source>Sign &amp;Message</source>
-        <translation type="unfinished"></translation>
+        <translation>Signer &amp;Melding</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="169"/>
         <source>Reset all sign message fields</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbakestill alle felter for meldingssignering</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="172"/>
         <location filename="../forms/signverifymessagedialog.ui" line="315"/>
         <source>Clear &amp;All</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjern &amp;Alt</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="231"/>
         <source>&amp;Verify Message</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verifiser Melding</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="237"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
-        <translation type="unfinished"></translation>
+        <translation>Angi adresse for signering, melding (vær sikker på at du kopierer linjeskift, mellomrom, tab, etc. helt nøyaktig) og signatur under for å verifisere meldingen. Vær forsiktig med at du ikke gir signaturen mer betydning enn det som faktisk står i meldingen, for å unngå å bli lurt av såkalte "man-in-the-middle" angrep.</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="258"/>
         <source>The address the message was signed with</source>
-        <translation type="unfinished"></translation>
+        <translation>Adressen meldingen var signert med</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="295"/>
         <source>Verify the message to ensure it was signed with the specified Peercoin address</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifiser meldingen for å være sikker på at den ble signert av den angitte Peercoin-adressen</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="298"/>
         <source>Verify &amp;Message</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifiser &amp;Melding</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="312"/>
         <source>Reset all verify message fields</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbakestill alle felter for meldingsverifikasjon</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="29"/>
         <source>Click &quot;Sign Message&quot; to generate signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Klikk &quot;Signer Melding&quot; for å generere signatur</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="30"/>
         <source>Enter the signature of the message</source>
-        <translation type="unfinished"></translation>
+        <translation>Angi signaturen til meldingen</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="31"/>
         <location filename="../signverifymessagedialog.cpp" line="32"/>
         <source>Enter a Peercoin address</source>
-        <translation type="unfinished"></translation>
+        <translation>Angi en Peercoin-adresse</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="115"/>
         <location filename="../signverifymessagedialog.cpp" line="195"/>
         <source>The entered address is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Angitt adresse er ugyldig.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="115"/>
@@ -1832,59 +1845,59 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../signverifymessagedialog.cpp" line="195"/>
         <location filename="../signverifymessagedialog.cpp" line="203"/>
         <source>Please check the address and try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vennligst sjekk adressen og prøv igjen.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="123"/>
         <location filename="../signverifymessagedialog.cpp" line="203"/>
         <source>The entered address does not refer to a key.</source>
-        <translation type="unfinished"></translation>
+        <translation>Angitt adresse refererer ikke til en nøkkel.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="131"/>
         <source>Wallet unlock was cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opplåsing av lommebok ble avbrutt.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="139"/>
         <source>Private key for the entered address is not available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Privat nøkkel for den angitte adressen er ikke tilgjengelig.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="151"/>
         <source>Message signing failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Signering av melding feilet.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="156"/>
         <source>Message signed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Melding signert.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="214"/>
         <source>The signature could not be decoded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Signaturen kunne ikke dekodes.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="214"/>
         <location filename="../signverifymessagedialog.cpp" line="227"/>
         <source>Please check the signature and try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vennligst sjekk signaturen og prøv igjen.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="227"/>
         <source>The signature did not match the message digest.</source>
-        <translation type="unfinished"></translation>
+        <translation>Signaturen passer ikke til meldingen.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="234"/>
         <source>Message verification failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifikasjon av melding feilet.</translation>
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="239"/>
         <source>Message verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Melding verifisert.</translation>
     </message>
 </context>
 <context>
@@ -2024,13 +2037,13 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="229"/>
-        <source>Generated coins must wait 520 blocks before they can be spent.  When you generated this block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be spendable.  This may occasionally happen if another node generates a block within a few seconds of yours.</source>
-        <translation type="unfinished"></translation>
+        <source>Generated coins must wait 520 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.</source>
+        <translation>Genererte coins må modnes 520 blokker før de kan brukes. Da du genererte denne blokken ble den kringkastet på nettverket for å bli lagt til i kjeden av blokker. Hvis den ikke kommer med i kjeden vil den endre seg til &quot;ikke akseptert&quot; og pengene vil ikke kunne brukes. Dette vil noen ganger skje hvis en annen node genererer en blokk noen sekunder i tid fra din egen.</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="231"/>
-        <source>Staked coins must wait 520 blocks before they can return to balance and be spent.  When you generated this proof-of-stake block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be a valid stake.  This may occasionally happen if another node generates a proof-of-stake block within a few seconds of yours.</source>
-        <translation type="unfinished"></translation>
+        <source>Staked coins must wait 520 blocks before they can return to balance and be spent. When you generated this proof-of-stake block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be a valid stake. This may occasionally happen if another node generates a proof-of-stake block within a few seconds of yours.</source>
+        <translation>Mynter som preger må vente 520 blokker før de kan returneres til balansen og bli brukt. Da du genererte denne proof-of-stake blokken, ble den kringkastet til nettverket for å bli lagt til i blokkjeden. Hvis den misslykkes med å komme inn i kjeden, vil den forandres til &quot;not accepted&quot; og ikke være en gyldig preging. Dette kan noen ganger skje hvis en annen node genererer en proof-of-stake blokk noen få sekunder fra din.</translation>
     </message>
 </context>
 <context>
@@ -2142,7 +2155,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactiontablemodel.cpp" line="358"/>
         <source>Mint by stake</source>
-        <translation>Preging med stake</translation>
+        <translation>Preging med eierandel</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="396"/>
@@ -2236,7 +2249,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactionview.cpp" line="78"/>
         <source>Mint by stake</source>
-        <translation>Preging med stake</translation>
+        <translation>Preging med eierandel</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="79"/>
@@ -2246,7 +2259,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactionview.cpp" line="85"/>
         <source>Enter address or label to search</source>
-        <translation>Skriv inn adresse eller merkelapp for søk</translation>
+        <translation>Angi adresse eller merkelapp for søk</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="91"/>
@@ -2356,8 +2369,8 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <name>bitcoin-core</name>
     <message>
         <location filename="../bitcoinstrings.cpp" line="11"/>
-        <source>Warning: Disk space is low  </source>
-        <translation type="unfinished"></translation>
+        <source>Warning: Disk space is low </source>
+        <translation>Advarsel: Lite ledig lagringsplass </translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="13"/>
@@ -2606,34 +2619,33 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="67"/>
-        <source>
-SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
-        <translation type="unfinished"></translation>
+        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
+        <translation>SSL valg: (se Peercoin Wiki for instruksjoner for oppsett av SSL)</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="78"/>
-        <source>Cannot obtain a lock on data directory %s.  Peerunity is probably already running.</source>
-        <translation type="unfinished"></translation>
+        <source>Cannot obtain a lock on data directory %s. Peerunity is probably already running.</source>
+        <translation>Ute av stand til å låse datamappen %s. Peerunity kjører sannsynligvis allerede.</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="81"/>
         <source>Peerunity</source>
-        <translation type="unfinished"></translation>
+        <translation>Peerunity</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="88"/>
         <source>Error loading wallet.dat: Wallet requires newer version of Peerunity</source>
-        <translation type="unfinished"></translation>
+        <translation>Feil ved lasting av wallet.dat: Lommeboken krever en nyere versjon av Peerunity</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="89"/>
         <source>Wallet needed to be rewritten: restart Peerunity to complete</source>
-        <translation type="unfinished"></translation>
+        <translation>Lommeboken måtte skrives om: start Peerunity på nytt for å fullføre</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="98"/>
-        <source>Warning: -paytxfee is set very high.  This is the transaction fee you will pay if you send a transaction.</source>
-        <translation type="unfinished"></translation>
+        <source>Warning: -paytxfee is set very high. This is the transaction fee you will pay if you send a transaction.</source>
+        <translation>Advarsel: -paytxfee er satt veldig høyt. Dette er transaksjonsgebyret du betaler når du sender transaksjoner.</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="103"/>
@@ -2645,27 +2657,35 @@ rpcpassword=%s
 (you do not need to remember this password)
 If the file does not exist, create it with owner-readable-only file permissions.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%s, du må angi rpcpassord i konfigurasjonsfilen.
+%s
+Det anbefales at du bruker det følgende tilfeldige passordet:
+rpcbruker=ppcoinrpc
+rpcpassord=%s
+(du behøver ikke å huske passordet)
+Brukernavnet og passordet MÅ IKKE være like.
+Om filen ikke eksisterer, opprett den nå med eier-kun-les filrettigheter.
+</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="122"/>
-        <source>Error: Wallet locked, unable to create transaction  </source>
-        <translation type="unfinished"></translation>
+        <source>Error: Wallet locked, unable to create transaction </source>
+        <translation>Feil: Lommebok låst, kan ikke opprette transaksjon </translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="123"/>
-        <source>Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds  </source>
-        <translation type="unfinished"></translation>
+        <source>Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds </source>
+        <translation>Feil: Denne transaksjonen trenger et gebyr på minst %s på grunn av beløpet, kompleksiteten eller bruk av allerede mottatte penger </translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="126"/>
-        <source>Error: Transaction creation failed  </source>
-        <translation type="unfinished"></translation>
+        <source>Error: Transaction creation failed </source>
+        <translation>Feil: Opprettelse av transaksjon feilet </translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="128"/>
-        <source>Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
-        <translation type="unfinished"></translation>
+        <source>Error: The transaction was rejected. This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
+        <translation>Feil: Transaksjonen ble avvist. Dette kan skje hvis noen av myntene i lommeboken allerede er blitt brukt, som om du brukte en kopi av wallet.dat og myntene ble brukt i kopien, men ikke markert som brukt her.</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="70"/>
@@ -2674,18 +2694,18 @@ If the file does not exist, create it with owner-readable-only file permissions.
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="8"/>
-        <source>Unable to bind to port %d on this computer.  Peerunity is probably already running.</source>
-        <translation type="unfinished"></translation>
+        <source>Unable to bind to port %d on this computer. Peerunity is probably already running.</source>
+        <translation>Ute av stand til å binde til port %d på denne datamaskinen. Peerunity kjører sannsynligvis allerede.</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="12"/>
         <source>Peerunity version</source>
-        <translation type="unfinished"></translation>
+        <translation>Peerunity versjon</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="14"/>
         <source>Send command to -server or peerunityd</source>
-        <translation type="unfinished"></translation>
+        <translation>Send kommando til -server eller peerunityd</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="71"/>
@@ -2813,8 +2833,8 @@ Hvis filen ikke finnes, opprett den med leserettighet kun for eier av filen.</tr
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="119"/>
-        <source>Warning: Please check that your computer&apos;s date and time are correct.  If your clock is wrong Peerunity will not work properly.</source>
-        <translation type="unfinished"></translation>
+        <source>Warning: Please check that your computer&apos;s date and time are correct. If your clock is wrong Peerunity will not work properly.</source>
+        <translation>Vennligst sjekk at datamaskinens dato og tid er korrekt. Hvis klokken din er feil vil ikke Peerunity fungere skikkelig.</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="127"/>
