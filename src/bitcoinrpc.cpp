@@ -1145,7 +1145,15 @@ Value sendmany(const Array& params, bool fHelp)
             "sendmany <fromaccount> {address:amount,...} [minconf=1] [comment]\n"
             "amounts are double-precision floating point numbers");
 
-    string strAccount = AccountFromValue(params[0]);
+    string strAccount = params[0].get_str();
+
+    bool fFromAllAccounts = false;
+    if (strAccount == "*")
+    {
+        fFromAllAccounts = true;
+        strAccount = "";
+    }
+
     Object sendTo = params[1].get_obj();
     int nMinDepth = 1;
     if (params.size() > 2)
@@ -1186,9 +1194,18 @@ Value sendmany(const Array& params, bool fHelp)
         throw JSONRPCError(-13, "Error: Wallet unlocked for block minting only.");
 
     // Check funds
-    int64 nBalance = GetAccountBalance(strAccount, nMinDepth);
-    if (totalAmount > nBalance)
-        throw JSONRPCError(-6, "Account has insufficient funds");
+    if (fFromAllAccounts)
+    {
+        int64 nBalance = pwalletMain->GetBalance();
+        if (totalAmount > nBalance)
+            throw JSONRPCError(-6, "Wallet has insufficient funds");
+    }
+    else
+    {
+        int64 nBalance = GetAccountBalance(strAccount, nMinDepth);
+        if (totalAmount > nBalance)
+            throw JSONRPCError(-6, "Account has insufficient funds");
+    }
 
     // Send
     CReserveKey keyChange(pwalletMain);
