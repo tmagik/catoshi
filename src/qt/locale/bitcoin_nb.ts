@@ -26,20 +26,20 @@
     </message>
     <message>
         <location filename="../forms/aboutdialog.ui" line="133"/>
-        <source>Copyright © 2009-2012 Bitcoin Developers
+        <source>Copyright © 2009-2014 Bitcoin Developers
 
 This is experimental software.
 
 Distributed under the MIT/X11 software license, see the accompanying file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
 This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.</source>
-        <translation>Copyright © 2009-2012 Bitcoin Utviklerne
+        <translation type="unfinished">Copyright © 2009-2012 Bitcoin Utviklerne
 
 Dette er eksperimentell programvare.
 
 Distribuert under MIT/X11 programvarelisensen, se medfølgende fil COPYING eller http://www.opensource.org/licenses/mit-license.php.
 
-Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i OpenSSL Toolkit (http://www.openssl.org/), kryptografisk programvare skrevet av Eric Young (eay@cryptsoft.com) og UPnP programvare skrevet av Thomas Bernard.</translation>
+Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i OpenSSL Toolkit (http://www.openssl.org/), kryptografisk programvare skrevet av Eric Young (eay@cryptsoft.com) og UPnP programvare skrevet av Thomas Bernard. {2009-2014 ?} {11 ?}</translation>
     </message>
 </context>
 <context>
@@ -51,8 +51,8 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="20"/>
-        <source>These are your Bitcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
-        <translation>Dette er dine Peercoin-adresser for å motta betalinger. Du kan gi en adresse til hver enkelt som skal betale deg, slik at du kan holde orden på hvem som har betalt.</translation>
+        <source>These are your Peercoin addresses for receiving payments.  You may want to give a different one to each sender so you can keep track of who is paying you.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="33"/>
@@ -236,20 +236,10 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
         <translation>Bekreft kryptering av lommebok</translation>
     </message>
     <message>
-        <location filename="../askpassphrasedialog.cpp" line="102"/>
-        <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR PPCOINS AND SHARES&lt;/b&gt;! Are you sure you wish to encrypt your wallet?</source>
-        <translation>ADVARSEL: Hvis du krypterer lommeboken og mister passordet, så vil du &lt;b&gt;MISTE ALLE DINE PEERCOINS OG SHARES&lt;/b&gt;! Er du sikker på at du vil kryptere lommeboken din?</translation>
-    </message>
-    <message>
         <location filename="../askpassphrasedialog.cpp" line="111"/>
         <location filename="../askpassphrasedialog.cpp" line="160"/>
         <source>Wallet encrypted</source>
         <translation>Lommebok kryptert</translation>
-    </message>
-    <message>
-        <location filename="../askpassphrasedialog.cpp" line="112"/>
-        <source>Peerunity will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your ppcoins or shares from being stolen by malware infecting your computer.</source>
-        <translation>Peerunity vil nå lukkes for å fullføre krypteringsprosessen. Husk at kryptering av lommeboken ikke fullt ut kan beskytte dine peercoins fra å bli stjålet om skadevare infiserer datamaskinen.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="208"/>
@@ -264,6 +254,17 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
         <location filename="../askpassphrasedialog.cpp" line="172"/>
         <source>Wallet encryption failed</source>
         <translation>Kryptering av lommebok feilet</translation>
+    </message>
+    <message>
+        <location filename="../askpassphrasedialog.cpp" line="102"/>
+        <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR PEERCOINS&lt;/b&gt;!
+Are you sure you wish to encrypt your wallet?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../askpassphrasedialog.cpp" line="112"/>
+        <source>Peerunity will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your Peercoins from being stolen by malware infecting your computer.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="118"/>
@@ -365,6 +366,11 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
         <location filename="../bitcoingui.cpp" line="234"/>
         <source>Quit application</source>
         <translation>Avslutt applikasjonen</translation>
+    </message>
+    <message>
+        <location filename="../bitcoingui.cpp" line="238"/>
+        <source>Show information about Peercoin</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="240"/>
@@ -472,6 +478,11 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
         <translation>[testnett]</translation>
     </message>
     <message>
+        <location filename="../bitcoingui.cpp" line="640"/>
+        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../bitcoingui.cpp" line="75"/>
         <source>Peerunity Wallet</source>
         <translation>Peerunity Lommebok</translation>
@@ -485,11 +496,6 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
         <location filename="../bitcoingui.cpp" line="237"/>
         <source>&amp;About Peerunity</source>
         <translation>&amp;Om Peerunity</translation>
-    </message>
-    <message>
-        <location filename="../bitcoingui.cpp" line="238"/>
-        <source>Show information about PeerCoin</source>
-        <translation>Vis informasjon om Peercoin</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="244"/>
@@ -593,11 +599,6 @@ Dette produktet inneholder programvare utviklet av OpenSSL Project for bruk i Op
         <location filename="../bitcoingui.cpp" line="584"/>
         <source>Last received block was generated %1.</source>
         <translation>Siste mottatte blokk ble generert %1.</translation>
-    </message>
-    <message>
-        <location filename="../bitcoingui.cpp" line="640"/>
-        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
-        <translation>Denne transaksjonen er over grensen for størrelse. Du kan fortsatt sende den for et gebyr på %1. Ønsker du å betale gebyret?</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="645"/>
@@ -721,7 +722,7 @@ Adresse: %4
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="262"/>
-        <location filename="../coincontroldialog.cpp" line="551"/>
+        <location filename="../coincontroldialog.cpp" line="571"/>
         <source>no</source>
         <translation>nei</translation>
     </message>
@@ -872,17 +873,17 @@ Adresse: %4
         <translation>lavest</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="551"/>
+        <location filename="../coincontroldialog.cpp" line="571"/>
         <source>DUST</source>
         <translation>STØV</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="551"/>
+        <location filename="../coincontroldialog.cpp" line="571"/>
         <source>yes</source>
         <translation>ja</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="561"/>
+        <location filename="../coincontroldialog.cpp" line="581"/>
         <source>This label turns red, if the transaction size is bigger than 10000 bytes.
 
  This means a fee of at least %1 per kb is required.
@@ -895,7 +896,7 @@ Dette betyr at et gebyr på minst %1 per kB er påkrevd.
 Kan variere +/- 1 byte per input.</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="562"/>
+        <location filename="../coincontroldialog.cpp" line="582"/>
         <source>Transactions with higher priority get more likely into a block.
 
 This label turns red, if the priority is smaller than &quot;medium&quot;.
@@ -908,20 +909,16 @@ Denne merkelappen blir rød, hvis prioriteten er mindre enn &quot;medium&quot;.
 Dette betyr at et gebyr på minst %1 per kB er påkrevd.</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="563"/>
+        <location filename="../coincontroldialog.cpp" line="583"/>
         <source>This label turns red, if any recipient receives an amount smaller than %1.
 
- This means a fee of at least %2 is required.
+ This means a fee of at least %2 is required. 
 
  Amounts below 0.546 times the minimum relay fee are shown as DUST.</source>
-        <translation>Denne merkelappen blir rød, hvis en mottaker mottar en mengde på mindre enn %1.
-
-Dette betyr at et gebyr på minst %2 er påkrevd.
-
-Beløp under 0.546 ganger minimum relégebyr er vist som STØV.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="564"/>
+        <location filename="../coincontroldialog.cpp" line="584"/>
         <source>This label turns red, if the change is smaller than %1.
 
  This means a fee of at least %2 is required.</source>
@@ -930,18 +927,18 @@ Beløp under 0.546 ganger minimum relégebyr er vist som STØV.</translation>
 Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="601"/>
-        <location filename="../coincontroldialog.cpp" line="667"/>
+        <location filename="../coincontroldialog.cpp" line="621"/>
+        <location filename="../coincontroldialog.cpp" line="687"/>
         <source>(no label)</source>
         <translation>(ingen merkelapp)</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="658"/>
+        <location filename="../coincontroldialog.cpp" line="678"/>
         <source>change from %1 (%2)</source>
         <translation>veksel fra %1 (%2)</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="659"/>
+        <location filename="../coincontroldialog.cpp" line="679"/>
         <source>(change)</source>
         <translation>(veksel)</translation>
     </message>
@@ -949,32 +946,32 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
 <context>
     <name>DisplayOptionsPage</name>
     <message>
-        <location filename="../optionsdialog.cpp" line="274"/>
+        <location filename="../optionsdialog.cpp" line="275"/>
         <source>&amp;Unit to show amounts in: </source>
         <translation>&amp;Enhet å vise beløp i: </translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="278"/>
+        <location filename="../optionsdialog.cpp" line="279"/>
         <source>Choose the default subdivision unit to show in the interface, and when sending coins</source>
         <translation>Velg standard underenhet som skal vises i grensesnittet og ved sending av peercoins</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="285"/>
+        <location filename="../optionsdialog.cpp" line="286"/>
         <source>&amp;Display addresses in transaction list</source>
         <translation>&amp;Vis adresser i transaksjonslisten</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="286"/>
+        <location filename="../optionsdialog.cpp" line="287"/>
         <source>Whether to show Peerunity addresses in the transaction list</source>
         <translation>Om Peercoin-adresser skal vises i transaksjonslisten eller ikke.</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="289"/>
+        <location filename="../optionsdialog.cpp" line="290"/>
         <source>Display coin control features (experts only!)</source>
         <translation>Vis funksjoner for myntkontroll (kun for eksperter!)</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="290"/>
+        <location filename="../optionsdialog.cpp" line="291"/>
         <source>Whether to show coin control features or not</source>
         <translation>Skal funksjoner for myntkontroll vises eller ikke</translation>
     </message>
@@ -1033,8 +1030,8 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="96"/>
-        <source>The entered address &quot;%1&quot; is not a valid bitcoin address.</source>
-        <translation>Den oppgitte adressen &quot;%1&quot; er ikke en gyldig Peercoin-adresse.</translation>
+        <source>The entered address &quot;%1&quot; is not a valid Peercoin address.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="101"/>
@@ -1110,19 +1107,24 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
         <translation>Port for mellomtjener (f.eks. 1234)</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="233"/>
+        <location filename="../optionsdialog.cpp" line="217"/>
+        <source>Mandatory network transaction fee per kB transferred. Most transactions are 1 kB and incur a 0.01 PPC fee. Note: transfer size may increase depending on the number of input transactions required to be added together to fund the payment.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="223"/>
+        <source>Additional network &amp;fee:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="234"/>
         <source>Detach databases at shutdown</source>
         <translation>Détacher les bases de données à la fermeture</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="234"/>
+        <location filename="../optionsdialog.cpp" line="235"/>
         <source>Detach block and address databases at shutdown. This means they can be moved to another data directory, but it slows down shutdown. The wallet is always detached.</source>
         <translation>Løsriv databasene for blokker og adresser ved nedstenging. Dette betyr at de kan flyttes til en annen datamappe, men det forsinker nedstengingen. Lommeboken er bestandig løsrevet.</translation>
-    </message>
-    <message>
-        <location filename="../optionsdialog.cpp" line="217"/>
-        <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly. Most transactions are 1 kB. Fee 0.01 recommended.</source>
-        <translation>Valgfritt transaksjonsgebyr per kB som sikrer at dine transaksjoner blir raskt prosessert. De fleste transaksjoner er 1 kB. Et gebyr på 0.01 er anbefalt.</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="172"/>
@@ -1133,11 +1135,6 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
         <location filename="../optionsdialog.cpp" line="173"/>
         <source>Automatically start Peerunity after the computer is turned on</source>
         <translation>Start Peerunity automatisk når datamaskinen blir slått på</translation>
-    </message>
-    <message>
-        <location filename="../optionsdialog.cpp" line="223"/>
-        <source>Pay transaction &amp;fee</source>
-        <translation>Betal &amp;transaksjonsgebyr</translation>
     </message>
 </context>
 <context>
@@ -1528,11 +1525,6 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
         <translation>&amp;Send</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="36"/>
-        <source>Enter a Peeroin address</source>
-        <translation>Angi en Peercoin-adresse</translation>
-    </message>
-    <message>
         <location filename="../sendcoinsdialog.cpp" line="51"/>
         <source>Copy quantity</source>
         <translation>Kopier mengde</translation>
@@ -1604,13 +1596,13 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="203"/>
-        <source>Error: Transaction creation failed </source>
-        <translation>Feil: Opprettelse av transaksjon feilet </translation>
+        <source>Error: Transaction creation failed  </source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="208"/>
-        <source>Error: The transaction was rejected. This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
-        <translation>Feil: Transaksjonen ble avvist! Dette kan skje hvis noen av myntene i lommeboken allerede er blitt brukt, som om du brukte en kopi av wallet.dat og myntene ble brukt i kopien, men ikke markert som brukt her.</translation>
+        <source>Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="457"/>
@@ -1631,6 +1623,11 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
         <location filename="../sendcoinsdialog.cpp" line="187"/>
         <source>Amount exceeds your balance</source>
         <translation>Beløpet overstiger saldoen din</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="36"/>
+        <source>Enter a Peercoin address</source>
+        <translation type="unfinished">Angi en Peercoin-adresse</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="192"/>
@@ -1795,7 +1792,7 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="237"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
-        <translation>Angi adresse for signering, melding (vær sikker på at du kopierer linjeskift, mellomrom, tab, etc. helt nøyaktig) og signatur under for å verifisere meldingen. Vær forsiktig med at du ikke gir signaturen mer betydning enn det som faktisk står i meldingen, for å unngå å bli lurt av såkalte "man-in-the-middle" angrep.</translation>
+        <translation>Angi adresse for signering, melding (vær sikker på at du kopierer linjeskift, mellomrom, tab, etc. helt nøyaktig) og signatur under for å verifisere meldingen. Vær forsiktig med at du ikke gir signaturen mer betydning enn det som faktisk står i meldingen, for å unngå å bli lurt av såkalte &quot;man-in-the-middle&quot; angrep.</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="258"/>
@@ -2016,34 +2013,39 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
         <translation>&lt;b&gt;Transaksjonsgebyr:&lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="216"/>
+        <location filename="../transactiondesc.cpp" line="218"/>
         <source>&lt;b&gt;Net amount:&lt;/b&gt; </source>
         <translation>&lt;b&gt;Netto beløp:&lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="222"/>
+        <location filename="../transactiondesc.cpp" line="220"/>
+        <source>&lt;b&gt;Retained amount:&lt;/b&gt; %1 until %2 more blocks&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../transactiondesc.cpp" line="227"/>
         <source>Message:</source>
         <translation>Melding:</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="224"/>
+        <location filename="../transactiondesc.cpp" line="229"/>
         <source>Comment:</source>
         <translation>Kommentar:</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="226"/>
+        <location filename="../transactiondesc.cpp" line="231"/>
         <source>Transaction ID:</source>
         <translation>Transaksjons-ID:</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="229"/>
-        <source>Generated coins must wait 520 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.</source>
-        <translation>Genererte coins må modnes 520 blokker før de kan brukes. Da du genererte denne blokken ble den kringkastet på nettverket for å bli lagt til i kjeden av blokker. Hvis den ikke kommer med i kjeden vil den endre seg til &quot;ikke akseptert&quot; og pengene vil ikke kunne brukes. Dette vil noen ganger skje hvis en annen node genererer en blokk noen sekunder i tid fra din egen.</translation>
+        <location filename="../transactiondesc.cpp" line="234"/>
+        <source>Generated coins must wait 520 blocks before they can be spent.  When you generated this block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be spendable.  This may occasionally happen if another node generates a block within a few seconds of yours.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="231"/>
-        <source>Staked coins must wait 520 blocks before they can return to balance and be spent. When you generated this proof-of-stake block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be a valid stake. This may occasionally happen if another node generates a proof-of-stake block within a few seconds of yours.</source>
-        <translation>Mynter som preger må vente 520 blokker før de kan returneres til balansen og bli brukt. Da du genererte denne proof-of-stake blokken, ble den kringkastet til nettverket for å bli lagt til i blokkjeden. Hvis den misslykkes med å komme inn i kjeden, vil den forandres til &quot;not accepted&quot; og ikke være en gyldig preging. Dette kan noen ganger skje hvis en annen node genererer en proof-of-stake blokk noen få sekunder fra din.</translation>
+        <location filename="../transactiondesc.cpp" line="236"/>
+        <source>Staked coins must wait 520 blocks before they can return to balance and be spent.  When you generated this proof-of-stake block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be a valid stake.  This may occasionally happen if another node generates a proof-of-stake block within a few seconds of yours.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2158,32 +2160,32 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
         <translation>Preging med eierandel</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="396"/>
+        <location filename="../transactiontablemodel.cpp" line="397"/>
         <source>(n/a)</source>
         <translation>(-)</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="595"/>
+        <location filename="../transactiontablemodel.cpp" line="597"/>
         <source>Transaction status. Hover over this field to show number of confirmations.</source>
         <translation>Transaksjonsstatus. Hold muspekeren over dette feltet for å se antall bekreftelser.</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="597"/>
+        <location filename="../transactiontablemodel.cpp" line="599"/>
         <source>Date and time that the transaction was received.</source>
         <translation>Dato og tid for da transaksjonen ble mottat.</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="599"/>
+        <location filename="../transactiontablemodel.cpp" line="601"/>
         <source>Type of transaction.</source>
         <translation>Type transaksjon.</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="601"/>
+        <location filename="../transactiontablemodel.cpp" line="603"/>
         <source>Destination address of transaction.</source>
         <translation>Mottaksadresse for transaksjonen.</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="603"/>
+        <location filename="../transactiontablemodel.cpp" line="605"/>
         <source>Amount removed from or added to balance.</source>
         <translation>Beløp fjernet eller lagt til saldo.</translation>
     </message>
@@ -2360,7 +2362,7 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
 <context>
     <name>WalletModel</name>
     <message>
-        <location filename="../walletmodel.cpp" line="155"/>
+        <location filename="../walletmodel.cpp" line="162"/>
         <source>Sending...</source>
         <translation>Sender...</translation>
     </message>
@@ -2368,9 +2370,14 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
 <context>
     <name>bitcoin-core</name>
     <message>
+        <location filename="../bitcoinstrings.cpp" line="8"/>
+        <source>Unable to bind to port %d on this computer.  Peerunity is probably already running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../bitcoinstrings.cpp" line="11"/>
-        <source>Warning: Disk space is low </source>
-        <translation>Advarsel: Lite ledig lagringsplass </translation>
+        <source>Warning: Disk space is low  </source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="13"/>
@@ -2618,14 +2625,24 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
         <translation>Hvor grundig verifisering av blokker gjøres (0-6, standardverdi: 1)</translation>
     </message>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="67"/>
-        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
-        <translation>SSL valg: (se Peercoin Wiki for instruksjoner for oppsett av SSL)</translation>
+        <location filename="../bitcoinstrings.cpp" line="119"/>
+        <source>Warning: Please check that your computer&apos;s date and time are correct.  If your clock is wrong Peerunity will not work properly.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="78"/>
-        <source>Cannot obtain a lock on data directory %s. Peerunity is probably already running.</source>
-        <translation>Ute av stand til å låse datamappen %s. Peerunity kjører sannsynligvis allerede.</translation>
+        <location filename="../bitcoinstrings.cpp" line="122"/>
+        <source>Error: Wallet locked, unable to create transaction  </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="123"/>
+        <source>Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds  </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="126"/>
+        <source>Error: Transaction creation failed  </source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="81"/>
@@ -2641,11 +2658,6 @@ Dette betyr at et gebyr på minst %2 er påkrevd.</translation>
         <location filename="../bitcoinstrings.cpp" line="89"/>
         <source>Wallet needed to be rewritten: restart Peerunity to complete</source>
         <translation>Lommeboken måtte skrives om: start Peerunity på nytt for å fullføre</translation>
-    </message>
-    <message>
-        <location filename="../bitcoinstrings.cpp" line="98"/>
-        <source>Warning: -paytxfee is set very high. This is the transaction fee you will pay if you send a transaction.</source>
-        <translation>Advarsel: -paytxfee er satt veldig høyt. Dette er transaksjonsgebyret du betaler når du sender transaksjoner.</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="103"/>
@@ -2668,34 +2680,9 @@ Om filen ikke eksisterer, opprett den nå med eier-kun-les filrettigheter.
 </translation>
     </message>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="122"/>
-        <source>Error: Wallet locked, unable to create transaction </source>
-        <translation>Feil: Lommebok låst, kan ikke opprette transaksjon </translation>
-    </message>
-    <message>
-        <location filename="../bitcoinstrings.cpp" line="123"/>
-        <source>Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds </source>
-        <translation>Feil: Denne transaksjonen trenger et gebyr på minst %s på grunn av beløpet, kompleksiteten eller bruk av allerede mottatte penger </translation>
-    </message>
-    <message>
-        <location filename="../bitcoinstrings.cpp" line="126"/>
-        <source>Error: Transaction creation failed </source>
-        <translation>Feil: Opprettelse av transaksjon feilet </translation>
-    </message>
-    <message>
-        <location filename="../bitcoinstrings.cpp" line="128"/>
-        <source>Error: The transaction was rejected. This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
-        <translation>Feil: Transaksjonen ble avvist. Dette kan skje hvis noen av myntene i lommeboken allerede er blitt brukt, som om du brukte en kopi av wallet.dat og myntene ble brukt i kopien, men ikke markert som brukt her.</translation>
-    </message>
-    <message>
         <location filename="../bitcoinstrings.cpp" line="70"/>
         <source>Use OpenSSL (https) for JSON-RPC connections</source>
         <translation>Bruk OpenSSL (https) for JSON-RPC forbindelser</translation>
-    </message>
-    <message>
-        <location filename="../bitcoinstrings.cpp" line="8"/>
-        <source>Unable to bind to port %d on this computer. Peerunity is probably already running.</source>
-        <translation>Ute av stand til å binde til port %d på denne datamaskinen. Peerunity kjører sannsynligvis allerede.</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="12"/>
@@ -2706,6 +2693,12 @@ Om filen ikke eksisterer, opprett den nå med eier-kun-les filrettigheter.
         <location filename="../bitcoinstrings.cpp" line="14"/>
         <source>Send command to -server or peerunityd</source>
         <translation>Send kommando til -server eller peerunityd</translation>
+    </message>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="67"/>
+        <source>
+SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="71"/>
@@ -2731,6 +2724,11 @@ Om filen ikke eksisterer, opprett den nå med eier-kun-les filrettigheter.
         <location filename="../bitcoinstrings.cpp" line="77"/>
         <source>Usage</source>
         <translation>Bruk</translation>
+    </message>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="78"/>
+        <source>Cannot obtain a lock on data directory %s.  Peerunity is probably already running.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="82"/>
@@ -2803,6 +2801,11 @@ Om filen ikke eksisterer, opprett den nå med eier-kun-les filrettigheter.
         <translation>Ugyldig beløp for -paytxfee=&lt;beløp&gt;</translation>
     </message>
     <message>
+        <location filename="../bitcoinstrings.cpp" line="98"/>
+        <source>Warning: -paytxfee is set very high.  This is the transaction fee you will pay if you send a transaction.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../bitcoinstrings.cpp" line="101"/>
         <source>Error: CreateThread(StartNode) failed</source>
         <translation>Feil: CreateThread(StartNode) feilet</translation>
@@ -2832,14 +2835,14 @@ If the file does not exist, create it with owner-readable-only file permissions.
 Hvis filen ikke finnes, opprett den med leserettighet kun for eier av filen.</translation>
     </message>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="119"/>
-        <source>Warning: Please check that your computer&apos;s date and time are correct. If your clock is wrong Peerunity will not work properly.</source>
-        <translation>Vennligst sjekk at datamaskinens dato og tid er korrekt. Hvis klokken din er feil vil ikke Peerunity fungere skikkelig.</translation>
-    </message>
-    <message>
         <location filename="../bitcoinstrings.cpp" line="127"/>
         <source>Sending...</source>
         <translation>Sender...</translation>
+    </message>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="128"/>
+        <source>Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="132"/>
