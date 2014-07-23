@@ -33,7 +33,7 @@ SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
 
 #if QT_VERSION >= 0x040700
     /* Do not move this to the XML file, Qt before 4.7 will choke on it */
-    ui->lineEditCoinControlChange->setPlaceholderText(tr("Enter a Peeroin address"));
+    ui->lineEditCoinControlChange->setPlaceholderText(tr("Enter a Peercoin address"));
 #endif
 
     addEntry();
@@ -490,12 +490,12 @@ void SendCoinsDialog::coinControlUpdateLabels()
         return;
     
     // set pay amounts
-    CoinControlDialog::payAmounts.clear();
+    CoinControlDialog::payAddresses.clear();
     for(int i = 0; i < ui->entries->count(); ++i)
     {
         SendCoinsEntry *entry = qobject_cast<SendCoinsEntry*>(ui->entries->itemAt(i)->widget());
         if(entry)
-            CoinControlDialog::payAmounts.append(entry->getValue().amount);
+            CoinControlDialog::payAddresses.append(std::make_pair(entry->getValue().address, entry->getValue().amount));
     }
         
     if (CoinControlDialog::coinControl->HasSelected())
