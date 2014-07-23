@@ -22,7 +22,7 @@
 #include <QTreeWidgetItem>
 
 using namespace std;
-QList<qint64> CoinControlDialog::payAmounts;
+QList<std::pair<QString, qint64> > CoinControlDialog::payAddresses;
 CCoinControl* CoinControlDialog::coinControl = new CCoinControl();
 
 CoinControlDialog::CoinControlDialog(QWidget *parent) :
@@ -419,17 +419,16 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
     bool fLowOutput = false;
     bool fDust = false;
     CTransaction txDummy;
-    foreach(const qint64 &amount, CoinControlDialog::payAmounts)
+
+    BOOST_FOREACH(const PAIRTYPE(QString, qint64) &payee, CoinControlDialog::payAddresses)
     {
+        qint64 amount = payee.second;
         nPayAmount += amount;
         
         if (amount > 0)
         {
             if (amount < CENT)
                 fLowOutput = true;
-
-            CTxOut txout(amount, (CScript)vector<unsigned char>(24, 0));
-            txDummy.vout.push_back(txout);
         }
     }
 
@@ -449,78 +448,99 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
     coinControl->ListSelected(vCoinControl);
     model->getOutputs(vCoinControl, vOutputs);
 
-    BOOST_FOREACH(const COutput& out, vOutputs)
+    nPayFee = nTransactionFee;
+    loop
     {
-        // Quantity
-        nQuantity++;
-            
-        // Amount
-        nAmount += out.tx->vout[out.i].nValue;
-        
-        // Priority
-        dPriorityInputs += (double)out.tx->vout[out.i].nValue * (out.nDepth+1);
-        
-        // Bytes
-        CTxDestination address;
-        if(ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+        txDummy.vin.clear();
+        txDummy.vout.clear();
+        nQuantity = 0;
+        nAmount = 0;
+        dPriorityInputs = 0;
+        nBytesInputs = 0;
+
+        // Inputs
+        BOOST_FOREACH(const COutput& out, vOutputs)
         {
-            CPubKey pubkey;
-            CKeyID *keyid = boost::get< CKeyID >(&address);
-            if (keyid && model->getPubKey(*keyid, pubkey))
-                nBytesInputs += (pubkey.IsCompressed() ? 148 : 180);
-            else
-                nBytesInputs += 148; // in all error cases, simply assume 148 here
+            // Quantity
+            nQuantity++;
+
+            // Amount
+            nAmount += out.tx->vout[out.i].nValue;
+
+            // Priority
+            dPriorityInputs += (double)out.tx->vout[out.i].nValue * (out.nDepth+1);
+
+            // Bytes
+            txDummy.vin.push_back(CTxIn(out.tx->vout[out.i].GetHash(), out.tx->vout[out.i].nValue));
+            nBytesInputs += 73; // Future ECDSA signature in DER format
         }
-        else nBytesInputs += 148;
-    }
-    
-    // calculation
-    if (nQuantity > 0)
-    {
-        // Bytes
-        nBytes = nBytesInputs + ((CoinControlDialog::payAmounts.size() > 0 ? CoinControlDialog::payAmounts.size() + 1 : 2) * 34) + 10; // always assume +1 output for change here
-        
-        // Priority
-        dPriority = dPriorityInputs / nBytes;
-        sPriorityLabel = CoinControlDialog::getPriorityLabel(dPriority);
-        
-        // Fee
-        int64 nFee = nTransactionFee * (1 + (int64)nBytes / 1000);
-        
-        // Min Fee
-        int64 nMinFee = txDummy.GetMinFee(1, false, GMF_SEND, nBytes);
-        
-        nPayFee = max(nFee, nMinFee);
-        
-        if (nPayAmount > 0)
+
+        // Outputs
+        BOOST_FOREACH(const PAIRTYPE(QString, qint64) &payee, CoinControlDialog::payAddresses)
         {
-            nChange = nAmount - nPayFee - nPayAmount;
-            
-            // if sub-cent change is required, the fee must be raised to at least CTransaction::nMinTxFee   
-            if (nPayFee < CENT && nChange > 0 && nChange < CENT)
+            QString address = payee.first;
+            qint64 amount = payee.second;
+            CScript scriptPubKey;
+            scriptPubKey.SetDestination(CBitcoinAddress(address.toStdString()).Get());
+            CTxOut txout(amount, scriptPubKey);
+            txDummy.vout.push_back(txout);
+        }
+
+        // calculation
+        if (nQuantity > 0)
+        {
+            nChange = nAmount - nPayAmount - nPayFee;
+            // if sub-cent change is required, the fee must be raised to at least MIN_TX_FEE
+            // or until nChange becomes zero
+            // NOTE: this depends on the exact behaviour of GetMinFee
+            if (nPayFee < MIN_TX_FEE && nChange > 0 && nChange < CENT)
             {
-                if (nChange < CENT) // change < 0.01 => simply move all change to fees
-                {
-                    nPayFee = nChange;
-                    nChange = 0;
-                }
-                else
-                {
-                    nChange = nChange + nPayFee - CENT;
-                    nPayFee = CENT;
-                }  
+                int64 nMoveToFee = min(nChange, MIN_TX_FEE - nPayFee);
+                nChange -= nMoveToFee;
+                nPayFee += nMoveToFee;
             }
-            
-            if (nChange == 0)
-                nBytes -= 34;
+
+            // ppcoin: sub-cent change is moved to fee
+            if (nChange > 0 && nChange < MIN_TXOUT_AMOUNT)
+            {
+                nPayFee += nChange;
+                nChange = 0;
+            }
+
+            if (nChange > 0)
+            {
+                // Add a change address in the outputs
+                CTxOut txout(0, (CScript)vector<unsigned char>(24, 0));
+                txDummy.vout.push_back(txout);
+            }
+
+            // Bytes
+            nBytes = nBytesInputs + GetSerializeSize(*(CTransaction*)&txDummy, SER_NETWORK, PROTOCOL_VERSION);
+
+            // Priority
+            dPriority = dPriorityInputs / nBytes;
+            sPriorityLabel = CoinControlDialog::getPriorityLabel(dPriority);
+
+            // Fee
+            int64 nFee = nTransactionFee * (1 + (int64)nBytes / 1000);
+
+            // Min Fee
+            int64 nMinFee = txDummy.GetMinFee(1, false, GMF_SEND, nBytes);
+
+            if (nPayFee < max(nFee, nMinFee))
+            {
+                nPayFee = max(nFee, nMinFee);
+                continue;
+            }
+
+            // after fee
+            nAfterFee = nAmount - nPayFee;
+            if (nAfterFee < 0)
+                nAfterFee = 0;
         }
-        
-        // after fee
-        nAfterFee = nAmount - nPayFee;
-        if (nAfterFee < 0)
-            nAfterFee = 0;
+        break;
     }
-    
+
     // actually update labels
     int nDisplayUnit = BitcoinUnits::BTC;
     if (model && model->getOptionsModel())

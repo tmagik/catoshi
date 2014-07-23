@@ -26,20 +26,20 @@
     </message>
     <message>
         <location filename="../forms/aboutdialog.ui" line="133"/>
-        <source>Copyright © 2009-2012 Bitcoin Developers
+        <source>Copyright © 2009-2014 Bitcoin Developers
 
 This is experimental software.
 
 Distributed under the MIT/X11 software license, see the accompanying file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
 This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.</source>
-        <translation>版权归比特币开发者所有  © 2009-2013 PPCoin Developers
+        <translation type="unfinished">版权归比特币开发者所有  © 2009-2013 PPCoin Developers
 
 这是一个实验性软件。
 
 Distributed under the MIT/X11 software license, see the accompanying file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
-This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.</translation>
+This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard. {2009-2014 ?} {11 ?}</translation>
     </message>
 </context>
 <context>
@@ -51,8 +51,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="20"/>
-        <source>These are your Bitcoin addresses for receiving payments.  You may want to give a different one to each sender so you can keep track of who is paying you.</source>
-        <translation>这些是你接受支付的Peercoin地址。当支付时你可以给出不同的地址，以便追踪不同的支付者。</translation>
+        <source>These are your Peercoin addresses for receiving payments.  You may want to give a different one to each sender so you can keep track of who is paying you.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="33"/>
@@ -236,22 +236,10 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>确认加密钱包</translation>
     </message>
     <message>
-        <location filename="../askpassphrasedialog.cpp" line="102"/>
-        <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR PPCOINS AND SHARES&lt;/b&gt;!
-Are you sure you wish to encrypt your wallet?</source>
-        <translation>警告：如果您加密了您的钱包之后忘记了口令，您将会&lt;b&gt;失去所有的Peercoin&lt;/b&gt;！
-确定要加密钱包吗？</translation>
-    </message>
-    <message>
         <location filename="../askpassphrasedialog.cpp" line="111"/>
         <location filename="../askpassphrasedialog.cpp" line="160"/>
         <source>Wallet encrypted</source>
         <translation>钱包已加密</translation>
-    </message>
-    <message>
-        <location filename="../askpassphrasedialog.cpp" line="112"/>
-        <source>Peerunity will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your ppcoins or shares from being stolen by malware infecting your computer.</source>
-        <translation>Peerunity将关闭软件以完成加密过程。 请谨记：钱包加密并不是万能的，电脑中毒，您的Peercoin还是有可能丢失。</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="208"/>
@@ -266,6 +254,17 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../askpassphrasedialog.cpp" line="172"/>
         <source>Wallet encryption failed</source>
         <translation>钱包加密失败</translation>
+    </message>
+    <message>
+        <location filename="../askpassphrasedialog.cpp" line="102"/>
+        <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR PEERCOINS&lt;/b&gt;!
+Are you sure you wish to encrypt your wallet?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../askpassphrasedialog.cpp" line="112"/>
+        <source>Peerunity will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your Peercoins from being stolen by malware infecting your computer.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="118"/>
@@ -367,6 +366,11 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="234"/>
         <source>Quit application</source>
         <translation>退出程序</translation>
+    </message>
+    <message>
+        <location filename="../bitcoingui.cpp" line="238"/>
+        <source>Show information about Peercoin</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="240"/>
@@ -487,11 +491,6 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="237"/>
         <source>&amp;About Peerunity</source>
         <translation>关于Peerunity(&amp;A)</translation>
-    </message>
-    <message>
-        <location filename="../bitcoingui.cpp" line="238"/>
-        <source>Show information about PeerCoin</source>
-        <translation>显示Peercoin的相关信息</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="244"/>
@@ -717,7 +716,7 @@ Address: %4
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="262"/>
-        <location filename="../coincontroldialog.cpp" line="551"/>
+        <location filename="../coincontroldialog.cpp" line="571"/>
         <source>no</source>
         <translation>否</translation>
     </message>
@@ -868,17 +867,17 @@ Address: %4
         <translation>最低</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="551"/>
+        <location filename="../coincontroldialog.cpp" line="571"/>
         <source>DUST</source>
         <translation>尘埃交易</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="551"/>
+        <location filename="../coincontroldialog.cpp" line="571"/>
         <source>yes</source>
         <translation>是</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="561"/>
+        <location filename="../coincontroldialog.cpp" line="581"/>
         <source>This label turns red, if the transaction size is bigger than 10000 bytes.
 
  This means a fee of at least %1 per kb is required.
@@ -891,7 +890,7 @@ Address: %4
 每个输入可能带来+/- 1字节的变化。</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="562"/>
+        <location filename="../coincontroldialog.cpp" line="582"/>
         <source>Transactions with higher priority get more likely into a block.
 
 This label turns red, if the priority is smaller than &quot;medium&quot;.
@@ -904,7 +903,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
 这意味着每千字节至少需要 %1的交易费。</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="563"/>
+        <location filename="../coincontroldialog.cpp" line="583"/>
         <source>This label turns red, if any recipient receives an amount smaller than %1.
 
  This means a fee of at least %2 is required. 
@@ -917,7 +916,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
 低于最小费用的0.546倍的金额显示为尘埃交易。</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="564"/>
+        <location filename="../coincontroldialog.cpp" line="584"/>
         <source>This label turns red, if the change is smaller than %1.
 
  This means a fee of at least %2 is required.</source>
@@ -926,18 +925,18 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
 这意味着至少需要 %2的交易费。</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="601"/>
-        <location filename="../coincontroldialog.cpp" line="667"/>
+        <location filename="../coincontroldialog.cpp" line="621"/>
+        <location filename="../coincontroldialog.cpp" line="687"/>
         <source>(no label)</source>
         <translation>(没有标签)</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="658"/>
+        <location filename="../coincontroldialog.cpp" line="678"/>
         <source>change from %1 (%2)</source>
         <translation>来自%1的零钱 (%2)</translation>
     </message>
     <message>
-        <location filename="../coincontroldialog.cpp" line="659"/>
+        <location filename="../coincontroldialog.cpp" line="679"/>
         <source>(change)</source>
         <translation>(零钱)</translation>
     </message>
@@ -945,32 +944,32 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
 <context>
     <name>DisplayOptionsPage</name>
     <message>
-        <location filename="../optionsdialog.cpp" line="274"/>
+        <location filename="../optionsdialog.cpp" line="275"/>
         <source>&amp;Unit to show amounts in: </source>
         <translation>金额显示单位（&amp;U）：</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="278"/>
+        <location filename="../optionsdialog.cpp" line="279"/>
         <source>Choose the default subdivision unit to show in the interface, and when sending coins</source>
         <translation>选择显示及发送币时使用的最小单位</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="285"/>
+        <location filename="../optionsdialog.cpp" line="286"/>
         <source>&amp;Display addresses in transaction list</source>
         <translation>在交易清单中显示地址(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="286"/>
+        <location filename="../optionsdialog.cpp" line="287"/>
         <source>Whether to show Peerunity addresses in the transaction list</source>
         <translation>是否需要在交易清单中显示币地址</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="289"/>
+        <location filename="../optionsdialog.cpp" line="290"/>
         <source>Display coin control features (experts only!)</source>
         <translation>显示交易源地址控制功能（只适合行家！）</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="290"/>
+        <location filename="../optionsdialog.cpp" line="291"/>
         <source>Whether to show coin control features or not</source>
         <translation>是否显示交易源地址控制功能</translation>
     </message>
@@ -1029,8 +1028,8 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="96"/>
-        <source>The entered address &quot;%1&quot; is not a valid bitcoin address.</source>
-        <translation>您输入的“%1”不是有效的比特币地址。</translation>
+        <source>The entered address &quot;%1&quot; is not a valid Peercoin address.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="101"/>
@@ -1106,19 +1105,24 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <translation>代理端口 (比如 1234)</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="233"/>
+        <location filename="../optionsdialog.cpp" line="217"/>
+        <source>Mandatory network transaction fee per kB transferred. Most transactions are 1 kB and incur a 0.01 PPC fee. Note: transfer size may increase depending on the number of input transactions required to be added together to fund the payment.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="223"/>
+        <source>Additional network &amp;fee:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="234"/>
         <source>Detach databases at shutdown</source>
         <translation>关闭时断开数据库</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="234"/>
+        <location filename="../optionsdialog.cpp" line="235"/>
         <source>Detach block and address databases at shutdown. This means they can be moved to another data directory, but it slows down shutdown. The wallet is always detached.</source>
         <translation>关闭时断开块和地址数据库。这使它们能被移动到另外目录，但减慢关闭速度。钱包总是断开的。</translation>
-    </message>
-    <message>
-        <location filename="../optionsdialog.cpp" line="223"/>
-        <source>Pay transaction &amp;fee</source>
-        <translation>支付交易 &amp;费用</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="172"/>
@@ -1129,11 +1133,6 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../optionsdialog.cpp" line="173"/>
         <source>Automatically start Peerunity after the computer is turned on</source>
         <translation>计算机启动后自动开启Peerunity客户端</translation>
-    </message>
-    <message>
-        <location filename="../optionsdialog.cpp" line="217"/>
-        <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly. Most transactions are 1 kB. Fee 0.01 recommended.</source>
-        <translation>建议支付交易费用，有助于您的交易得到尽快处理.  绝大多数交易的字节数为 1 kB. 建议支付0.01个比特币.</translation>
     </message>
 </context>
 <context>
@@ -1524,11 +1523,6 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <translation>&amp;发送</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="36"/>
-        <source>Enter a Peeroin address</source>
-        <translation>输入一个Peercoin地址</translation>
-    </message>
-    <message>
         <location filename="../sendcoinsdialog.cpp" line="51"/>
         <source>Copy quantity</source>
         <translation>复制总量</translation>
@@ -1617,6 +1611,11 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../sendcoinsdialog.cpp" line="187"/>
         <source>Amount exceeds your balance</source>
         <translation>余额不足</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="36"/>
+        <source>Enter a Peercoin address</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="192"/>
@@ -2012,32 +2011,37 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <translation>交易费</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="216"/>
+        <location filename="../transactiondesc.cpp" line="218"/>
         <source>&lt;b&gt;Net amount:&lt;/b&gt; </source>
         <translation>&lt;b&gt;网络金额：&lt;/b&gt; </translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="222"/>
+        <location filename="../transactiondesc.cpp" line="220"/>
+        <source>&lt;b&gt;Retained amount:&lt;/b&gt; %1 until %2 more blocks&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../transactiondesc.cpp" line="227"/>
         <source>Message:</source>
         <translation>消息：</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="224"/>
+        <location filename="../transactiondesc.cpp" line="229"/>
         <source>Comment:</source>
         <translation>备注</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="226"/>
+        <location filename="../transactiondesc.cpp" line="231"/>
         <source>Transaction ID:</source>
         <translation>交易ID：</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="229"/>
+        <location filename="../transactiondesc.cpp" line="234"/>
         <source>Generated coins must wait 520 blocks before they can be spent.  When you generated this block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be spendable.  This may occasionally happen if another node generates a block within a few seconds of yours.</source>
         <translation>新生产的币必须等待520个数据块之后才能被使用。 当您生产出此数据块,它被广播至比特币网络并添加至数据链。 如果添加到数据链失败, 它的状态将变成&quot;不被接受&quot;，生产的币将不能使用. 在您生产新数据块的几秒钟内, 如果其它节点也生产出数据块，有可能会发生这种情况。</translation>
     </message>
     <message>
-        <location filename="../transactiondesc.cpp" line="231"/>
+        <location filename="../transactiondesc.cpp" line="236"/>
         <source>Staked coins must wait 520 blocks before they can return to balance and be spent.  When you generated this proof-of-stake block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be a valid stake.  This may occasionally happen if another node generates a proof-of-stake block within a few seconds of yours.</source>
         <translation>权益币必须等待520个数据块之后才能回到余额中被使用。 当您生产出此权益证明数据块,它被广播至比特币网络并添加至数据链。 如果添加到数据链失败, 它的状态将变成&quot;不被接受&quot;，不能成为合法的权益，生产的币将不能使用. 在您生产新数据块的几秒钟内, 如果其它节点也生产出权益证明数据块，有可能会发生这种情况。</translation>
     </message>
@@ -2152,32 +2156,32 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <translation>权益铸造</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="396"/>
+        <location filename="../transactiontablemodel.cpp" line="397"/>
         <source>(n/a)</source>
         <translation>(n/a)</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="595"/>
+        <location filename="../transactiontablemodel.cpp" line="597"/>
         <source>Transaction status. Hover over this field to show number of confirmations.</source>
         <translation>交易状态。 鼠标移到此区域上可显示确认消息项的数目。</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="597"/>
+        <location filename="../transactiontablemodel.cpp" line="599"/>
         <source>Date and time that the transaction was received.</source>
         <translation>接收交易的时间</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="599"/>
+        <location filename="../transactiontablemodel.cpp" line="601"/>
         <source>Type of transaction.</source>
         <translation>交易类别。</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="601"/>
+        <location filename="../transactiontablemodel.cpp" line="603"/>
         <source>Destination address of transaction.</source>
         <translation>交易目的地址。</translation>
     </message>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="603"/>
+        <location filename="../transactiontablemodel.cpp" line="605"/>
         <source>Amount removed from or added to balance.</source>
         <translation>从余额添加或移除的金额</translation>
     </message>
@@ -2354,7 +2358,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
 <context>
     <name>WalletModel</name>
     <message>
-        <location filename="../walletmodel.cpp" line="155"/>
+        <location filename="../walletmodel.cpp" line="162"/>
         <source>Sending...</source>
         <translation>发送中...</translation>
     </message>
