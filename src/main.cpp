@@ -7,7 +7,6 @@
 
 #include "addrman.h"
 #include "alert.h"
-#include "bloom.h"
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "checkqueue.h"
@@ -41,11 +40,14 @@ CCriticalSection cs_main;
 map<uint256, CBlockIndex*> mapBlockIndex;
 CChain chainActive;
 int64_t nTimeBestReceived = 0;
+CWaitableCriticalSection csBestBlock;
+CConditionVariable cvBlockChange;
 int nScriptCheckThreads = 0;
 bool fImporting = false;
 bool fReindex = false;
 bool fBenchmark = false;
 bool fTxIndex = false;
+bool fIsBareMultisigStd = true;
 unsigned int nCoinCacheSize = 5000;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying and mining) */
@@ -123,15 +125,6 @@ namespace {
 
 } // anon namespace
 
-// Bloom filter to limit respend relays to one
-static const unsigned int MAX_DOUBLESPEND_BLOOM = 1000;
-static CBloomFilter doubleSpendFilter;
-void InitRespendFilter() {
-    seed_insecure_rand();
-    doubleSpendFilter = CBloomFilter(MAX_DOUBLESPEND_BLOOM, 0.01, insecure_rand(), BLOOM_UPDATE_NONE);
-}
-
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // dispatching functions
@@ -157,7 +150,6 @@ struct CMainSignals {
 } g_signals;
 
 } // anon namespace
-
 
 void RegisterWallet(CWalletInterface* pwalletIn) {
     g_signals.SyncTransaction.connect(boost::bind(&CWalletInterface::SyncTransaction, pwalletIn, _1, _2));
@@ -210,7 +202,7 @@ struct CBlockReject {
 struct CNodeState {
     // Accumulated misbehaviour score for this peer.
     int nMisbehavior;
-    // Whether this peer should be disconnected and banned.
+    // Whether this peer should be disconnected and banned (unless whitelisted).
     bool fShouldBan;
     // String name of this peer (debugging/logging purposes).
     std::string name;
@@ -602,9 +594,13 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
             reason = "scriptpubkey";
             return false;
         }
+
         if (whichType == TX_NULL_DATA)
             nDataOut++;
-        else if (txout.IsDust(::minRelayTxFee)) {
+        else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
+            reason = "bare-multisig";
+            return false;
+        } else if (txout.IsDust(::minRelayTxFee)) {
             reason = "dust";
             return false;
         }
@@ -874,60 +870,6 @@ int64_t GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
     return nMinFee;
 }
 
-// Exponentially limit the rate of nSize flow to nLimit.  nLimit unit is thousands-per-minute.
-bool RateLimitExceeded(double& dCount, int64_t& nLastTime, int64_t nLimit, unsigned int nSize)
-{
-    static CCriticalSection csLimiter;
-    int64_t nNow = GetTime();
-
-    LOCK(csLimiter);
-
-    dCount *= pow(1.0 - 1.0/600.0, (double)(nNow - nLastTime));
-    nLastTime = nNow;
-    if (dCount >= nLimit*10*1000)
-        return true;
-    dCount += nSize;
-    return false;
-}
-
-static bool RelayableRespend(const COutPoint& outPoint, const CTransaction& doubleSpend, bool fInBlock, CBloomFilter& filter)
-{
-    // Relaying double-spend attempts to our peers lets them detect when
-    // somebody might be trying to cheat them. However, blindly relaying
-    // every double-spend across the entire network gives attackers
-    // a denial-of-service attack: just generate a stream of double-spends
-    // re-spending the same (limited) set of outpoints owned by the attacker.
-    // So, we use a bloom filter and only relay (at most) the first double
-    // spend for each outpoint. False-positives ("we have already relayed")
-    // are OK, because if the peer doesn't hear about the double-spend
-    // from us they are very likely to hear about it from another peer, since
-    // each peer uses a different, randomized bloom filter.
-
-    if (fInBlock || filter.contains(outPoint)) return false;
-
-    // Apply an independent rate limit to double-spend relays
-    static double dRespendCount;
-    static int64_t nLastRespendTime;
-    static int64_t nRespendLimit = GetArg("-limitrespendrelay", 100);
-    unsigned int nSize = ::GetSerializeSize(doubleSpend, SER_NETWORK, PROTOCOL_VERSION);
-
-    if (RateLimitExceeded(dRespendCount, nLastRespendTime, nRespendLimit, nSize))
-    {
-        LogPrint("mempool", "Double-spend relay rejected by rate limiter\n");
-        return false;
-    }
-
-    LogPrint("mempool", "Rate limit dRespendCount: %g => %g\n", dRespendCount, dRespendCount+nSize);
-
-    // Clear the filter on average every MAX_DOUBLE_SPEND_BLOOM
-    // insertions
-    if (insecure_rand()%MAX_DOUBLESPEND_BLOOM == 0)
-        filter.clear();
-
-    filter.insert(outPoint);
-
-    return true;
-}
 
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
                         bool* pfMissingInputs, bool fRejectInsaneFee)
@@ -957,18 +899,15 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         return false;
 
     // Check for conflicts with in-memory transactions
-    bool relayableRespend = false;
     {
     LOCK(pool.cs); // protect pool.mapNextTx
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         COutPoint outpoint = tx.vin[i].prevout;
-        // Does tx conflict with a member of the pool, and is it not equivalent to that member?
-        if (pool.mapNextTx.count(outpoint) && !tx.IsEquivalentTo(*pool.mapNextTx[outpoint].ptx))
+        if (pool.mapNextTx.count(outpoint))
         {
-            relayableRespend = RelayableRespend(outpoint, tx, false, doubleSpendFilter);
-            if (!relayableRespend)
-                return false;
+            // Disable replacement feature for now
+            return false;
         }
     }
     }
@@ -1039,15 +978,23 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // be annoying or make others' transactions take longer to confirm.
         if (fLimitFree && nFees < ::minRelayTxFee.GetFee(nSize))
         {
+            static CCriticalSection csFreeLimiter;
             static double dFreeCount;
-            static int64_t nLastFreeTime;
-            static int64_t nFreeLimit = GetArg("-limitfreerelay", 15);
+            static int64_t nLastTime;
+            int64_t nNow = GetTime();
 
-            if (RateLimitExceeded(dFreeCount, nLastFreeTime, nFreeLimit, nSize))
+            LOCK(csFreeLimiter);
+
+            // Use an exponentially decaying ~10-minute window:
+            dFreeCount *= pow(1.0 - 1.0/600.0, (double)(nNow - nLastTime));
+            nLastTime = nNow;
+            // -limitfreerelay unit is thousand-bytes-per-minute
+            // At default rate it would take over a month to fill 1GB
+            if (dFreeCount >= GetArg("-limitfreerelay", 15)*10*1000)
                 return state.DoS(0, error("AcceptToMemoryPool : free transaction rejected by rate limiter"),
                                  REJECT_INSUFFICIENTFEE, "insufficient priority");
-
             LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
+            dFreeCount += nSize;
         }
 
         if (fRejectInsaneFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
@@ -1061,21 +1008,13 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         {
             return error("AcceptToMemoryPool: : ConnectInputs failed %s", hash.ToString());
         }
-
-        if (relayableRespend)
-        {
-            RelayTransaction(tx);
-        }
-        else
-        {
-            // Store transaction in memory
-            pool.addUnchecked(hash, entry);
-        }
+        // Store transaction in memory
+        pool.addUnchecked(hash, entry);
     }
 
     g_signals.SyncTransaction(tx, NULL);
 
-    return !relayableRespend;
+    return true;
 }
 
 
@@ -1425,7 +1364,8 @@ void Misbehaving(NodeId pnode, int howmuch)
         return;
 
     state->nMisbehavior += howmuch;
-    if (state->nMisbehavior >= GetArg("-banscore", 100))
+    int banscore = GetArg("-banscore", 100);
+    if (state->nMisbehavior >= banscore && state->nMisbehavior - howmuch < banscore)
     {
         LogPrintf("Misbehaving: %s (%d -> %d) BAN THRESHOLD EXCEEDED\n", state->name, state->nMisbehavior-howmuch, state->nMisbehavior);
         state->fShouldBan = true;
@@ -1915,7 +1855,7 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 // Update the on-disk chain state.
 bool static WriteChainState(CValidationState &state) {
     static int64_t nLastWrite = 0;
-    if (!IsInitialBlockDownload() || pcoinsTip->GetCacheSize() > nCoinCacheSize || GetTimeMicros() > nLastWrite + 600*1000000) {
+    if (pcoinsTip->GetCacheSize() > nCoinCacheSize || (!IsInitialBlockDownload() && GetTimeMicros() > nLastWrite + 600*1000000)) {
         // Typical CCoins structures on disk are around 100 bytes in size.
         // Pushing a new one to the database can cause it to be written
         // twice (once in the log, and once in the tables). This is already
@@ -1944,10 +1884,13 @@ void static UpdateTip(CBlockIndex *pindexNew) {
     // New best block
     nTimeBestReceived = GetTime();
     mempool.AddTransactionsUpdated(1);
+
     LogPrintf("UpdateTip: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f\n",
       chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), log(chainActive.Tip()->nChainWork.getdouble())/log(2.0), (unsigned long)chainActive.Tip()->nChainTx,
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
       Checkpoints::GuessVerificationProgress(chainActive.Tip()));
+
+    cvBlockChange.notify_all();
 
     // Check the version of the last 100 blocks to see if we need to upgrade:
     if (!fIsInitialDownload)
@@ -2512,7 +2455,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
         return false;
 
     if (!CheckBlock(block, state)) {
-        if (state.Invalid() && !state.CorruptionPossible()) {
+        if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
         }
         return false;
@@ -3948,6 +3891,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             unsigned int nEvicted = LimitOrphanTxSize(MAX_ORPHAN_TRANSACTIONS);
             if (nEvicted > 0)
                 LogPrint("mempool", "mapOrphan overflow, removed %u tx\n", nEvicted);
+        } else if (pfrom->fWhitelisted) {
+            // Always relay transactions received from whitelisted peers, even
+            // if they are already in the mempool (allowing the node to function
+            // as a gateway for nodes hidden behind it).
+            RelayTransaction(tx);
         }
         int nDoS = 0;
         if (state.IsInvalid(nDoS))
@@ -4371,7 +4319,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         if (pingSend) {
             uint64_t nonce = 0;
             while (nonce == 0) {
-                RAND_bytes((unsigned char*)&nonce, sizeof(nonce));
+                GetRandBytes((unsigned char*)&nonce, sizeof(nonce));
             }
             pto->fPingQueued = false;
             pto->nPingUsecStart = GetTimeMicros();
@@ -4441,11 +4389,14 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 
         CNodeState &state = *State(pto->GetId());
         if (state.fShouldBan) {
-            if (pto->addr.IsLocal())
-                LogPrintf("Warning: not banning local node %s!\n", pto->addr.ToString());
+            if (pto->fWhitelisted)
+                LogPrintf("Warning: not punishing whitelisted peer %s!\n", pto->addr.ToString());
             else {
                 pto->fDisconnect = true;
-                CNode::Ban(pto->addr);
+                if (pto->addr.IsLocal())
+                    LogPrintf("Warning: not banning local peer %s!\n", pto->addr.ToString());
+                else
+                    CNode::Ban(pto->addr);
             }
             state.fShouldBan = false;
         }
