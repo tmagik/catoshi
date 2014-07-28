@@ -4,9 +4,8 @@
 
 #define BOOST_TEST_MODULE Bitcoin Test Suite
 
-
-
 #include "main.h"
+#include "random.h"
 #include "txdb.h"
 #include "ui_interface.h"
 #include "util.h"
@@ -18,7 +17,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
 
-
+CClientUIInterface uiInterface;
 CWallet* pwalletMain;
 
 extern bool fPrintToConsole;
@@ -89,4 +88,3 @@ bool ShutdownRequested()
 {
   return false;
 }
-
