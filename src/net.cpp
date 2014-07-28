@@ -332,7 +332,7 @@ bool GetMyExternalIP2(const CService& addrConnect, const char* pszGet, const cha
             {
                 if (!RecvLine(hSocket, strLine))
                 {
-                    closesocket(hSocket);
+                    CloseSocket(hSocket);
                     return false;
                 }
                 if (pszKeyword == NULL)
@@ -343,7 +343,7 @@ bool GetMyExternalIP2(const CService& addrConnect, const char* pszGet, const cha
                     break;
                 }
             }
-            closesocket(hSocket);
+            CloseSocket(hSocket);
             if (strLine.find("<") != string::npos)
                 strLine = strLine.substr(0, strLine.find("<"));
             strLine = strLine.substr(strspn(strLine.c_str(), " \t\n\r"));
@@ -357,7 +357,7 @@ bool GetMyExternalIP2(const CService& addrConnect, const char* pszGet, const cha
             return true;
         }
     }
-    closesocket(hSocket);
+    CloseSocket(hSocket);
     return error("GetMyExternalIP() : connection closed");
 }
 
@@ -456,7 +456,7 @@ CNode* FindNode(const CNetAddr& ip)
     return NULL;
 }
 
-CNode* FindNode(std::string addrName)
+CNode* FindNode(const std::string& addrName)
 {
     LOCK(cs_vNodes);
     BOOST_FOREACH(CNode* pnode, vNodes)
@@ -501,14 +501,8 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
         addrman.Attempt(addrConnect);
 
         // Set to non-blocking
-#ifdef WIN32
-        u_long nOne = 1;
-        if (ioctlsocket(hSocket, FIONBIO, &nOne) == SOCKET_ERROR)
-            LogPrintf("ConnectSocket() : ioctlsocket non-blocking setting failed, error %s\n", NetworkErrorString(WSAGetLastError()));
-#else
-        if (fcntl(hSocket, F_SETFL, O_NONBLOCK) == SOCKET_ERROR)
-            LogPrintf("ConnectSocket() : fcntl non-blocking setting failed, error %s\n", NetworkErrorString(errno));
-#endif
+        if (!SetSocketNonBlocking(hSocket, true))
+            LogPrintf("ConnectNode: Setting socket to non-blocking failed, error %s\n", NetworkErrorString(WSAGetLastError()));
 
         // Add node
         CNode* pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false);
@@ -533,8 +527,7 @@ void CNode::CloseSocketDisconnect()
     if (hSocket != INVALID_SOCKET)
     {
         LogPrint("net", "disconnecting peer=%d\n", id);
-        closesocket(hSocket);
-        hSocket = INVALID_SOCKET;
+        CloseSocket(hSocket);
     }
 
     // in case this fails, we'll empty the recv buffer when the CNode is deleted
@@ -975,12 +968,12 @@ void ThreadSocketHandler()
                 }
                 else if (nInbound >= nMaxConnections - MAX_OUTBOUND_CONNECTIONS)
                 {
-                    closesocket(hSocket);
+                    CloseSocket(hSocket);
                 }
                 else if (CNode::IsBanned(addr) && !whitelisted)
                 {
                     LogPrintf("connection from %s dropped (banned)\n", addr.ToString());
-                    closesocket(hSocket);
+                    CloseSocket(hSocket);
                 }
                 else
                 {
@@ -1479,7 +1472,7 @@ bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOu
     if (!pszDest) {
         if (IsLocal(addrConnect) ||
             FindNode((CNetAddr)addrConnect) || CNode::IsBanned(addrConnect) ||
-            FindNode(addrConnect.ToStringIPPort().c_str()))
+            FindNode(addrConnect.ToStringIPPort()))
             return false;
     } else if (FindNode(pszDest))
         return false;
@@ -1643,14 +1636,9 @@ bool BindListenPort(const CService &addrBind, string& strError, bool fWhiteliste
     setsockopt(hListenSocket, SOL_SOCKET, SO_REUSEADDR, (void*)&nOne, sizeof(int));
 #endif
 
-#ifdef WIN32
     // Set to non-blocking, incoming connections will also inherit this
-    if (ioctlsocket(hListenSocket, FIONBIO, (u_long*)&nOne) == SOCKET_ERROR)
-#else
-    if (fcntl(hListenSocket, F_SETFL, O_NONBLOCK) == SOCKET_ERROR)
-#endif
-    {
-        strError = strprintf("Error: Couldn't set properties on socket for incoming connections (error %s)", NetworkErrorString(WSAGetLastError()));
+    if (!SetSocketNonBlocking(hListenSocket, true)) {
+        strError = strprintf("BindListenPort: Setting listening socket to non-blocking failed, error %s\n", NetworkErrorString(WSAGetLastError()));
         LogPrintf("%s\n", strError);
         return false;
     }
@@ -1679,6 +1667,7 @@ bool BindListenPort(const CService &addrBind, string& strError, bool fWhiteliste
         else
             strError = strprintf(_("Unable to bind to %s on this computer (bind returned error %s)"), addrBind.ToString(), NetworkErrorString(nErr));
         LogPrintf("%s\n", strError);
+        CloseSocket(hListenSocket);
         return false;
     }
     LogPrintf("Bound to %s\n", addrBind.ToString());
@@ -1688,6 +1677,7 @@ bool BindListenPort(const CService &addrBind, string& strError, bool fWhiteliste
     {
         strError = strprintf(_("Error: Listening for incoming connections failed (listen returned error %s)"), NetworkErrorString(WSAGetLastError()));
         LogPrintf("%s\n", strError);
+        CloseSocket(hListenSocket);
         return false;
     }
 
@@ -1817,11 +1807,11 @@ public:
         // Close sockets
         BOOST_FOREACH(CNode* pnode, vNodes)
             if (pnode->hSocket != INVALID_SOCKET)
-                closesocket(pnode->hSocket);
+                CloseSocket(pnode->hSocket);
         BOOST_FOREACH(ListenSocket& hListenSocket, vhListenSocket)
             if (hListenSocket.socket != INVALID_SOCKET)
-                if (closesocket(hListenSocket.socket) == SOCKET_ERROR)
-                    LogPrintf("closesocket(hListenSocket) failed with error %s\n", NetworkErrorString(WSAGetLastError()));
+                if (!CloseSocket(hListenSocket.socket))
+                    LogPrintf("CloseSocket(hListenSocket) failed with error %s\n", NetworkErrorString(WSAGetLastError()));
 
         // clean up some globals (to help leak detection)
         BOOST_FOREACH(CNode *pnode, vNodes)
