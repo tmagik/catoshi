@@ -40,6 +40,8 @@ void StartRPCThreads();
 void StartDummyRPCThread();
 /* Stop RPC threads */
 void StopRPCThreads();
+/* Query whether RPC is running */
+bool IsRPCRunning();
 
 /*
   Type-check arguments; throws JSONRPCError if wrong type given. Does not check that
@@ -131,6 +133,7 @@ extern json_spirit::Value getnettotals(const json_spirit::Array& params, bool fH
 
 extern json_spirit::Value dumpprivkey(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
 extern json_spirit::Value importprivkey(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value importaddress(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value dumpwallet(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value importwallet(const json_spirit::Array& params, bool fHelp);
 

@@ -80,9 +80,14 @@ CFeeRate::CFeeRate(int64_t nFeePaid, size_t nSize)
         nSatoshisPerK = 0;
 }
 
-int64_t CFeeRate::GetFee(size_t nSize)
+int64_t CFeeRate::GetFee(size_t nSize) const
 {
-    return nSatoshisPerK*nSize / 1000;
+    int64_t nFee = nSatoshisPerK*nSize / 1000;
+
+    if (nFee == 0 && nSatoshisPerK > 0)
+        nFee = nSatoshisPerK;
+
+    return nFee;
 }
 
 std::string CFeeRate::ToString() const
@@ -117,22 +122,6 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
     *const_cast<uint256*>(&hash) = tx.hash;
     return *this;
-}
-
-bool CTransaction::IsEquivalentTo(const CTransaction& tx) const
-{
-    if (nVersion   != tx.nVersion   ||
-        nLockTime  != tx.nLockTime  ||
-        vin.size() != tx.vin.size() ||
-        vout       != tx.vout)
-        return false;
-    for (unsigned int i = 0; i < vin.size(); i++)
-    {
-        if (vin[i].nSequence != tx.vin[i].nSequence ||
-            vin[i].prevout   != tx.vin[i].prevout)
-            return false;
-    }
-    return true;
 }
 
 int64_t CTransaction::GetValueOut() const
