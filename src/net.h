@@ -13,6 +13,7 @@
 #include "mruset.h"
 #include "netbase.h"
 #include "protocol.h"
+#include "random.h"
 #include "sync.h"
 #include "uint256.h"
 #include "util.h"
@@ -26,7 +27,6 @@
 
 #include <boost/foreach.hpp>
 #include <boost/signals2/signal.hpp>
-#include <openssl/rand.h>
 
 class CAddrMan;
 class CBlockIndex;
@@ -59,12 +59,13 @@ bool RecvLine(SOCKET hSocket, std::string& strLine);
 bool GetMyExternalIP(CNetAddr& ipRet);
 void AddressCurrentlyConnected(const CService& addr);
 CNode* FindNode(const CNetAddr& ip);
+CNode* FindNode(const std::string& addrName);
 CNode* FindNode(const CService& ip);
 CNode* ConnectNode(CAddress addrConnect, const char *pszDest = NULL);
 bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound = NULL, const char *strDest = NULL, bool fOneShot = false);
 void MapPort(bool fUseUPnP);
 unsigned short GetListenPort();
-bool BindListenPort(const CService &bindAddr, std::string& strError);
+bool BindListenPort(const CService &bindAddr, std::string& strError, bool fWhitelisted = false);
 void StartNode(boost::thread_group& threadGroup);
 bool StopNode();
 void SocketSendData(CNode *pnode);
@@ -154,6 +155,7 @@ public:
     uint64_t nSendBytes;
     uint64_t nRecvBytes;
     bool fSyncNode;
+    bool fWhitelisted;
     double dPingTime;
     double dPingWait;
     std::string addrLocal;
@@ -236,6 +238,7 @@ public:
     // store the sanitized version in cleanSubVer. The original should be used when dealing with
     // the network or wire types and the cleaned string used when displayed or logged.
     std::string strSubVer, cleanSubVer;
+    bool fWhitelisted; // This peer can bypass DoS banning.
     bool fOneShot;
     bool fClient;
     bool fInbound;
@@ -258,6 +261,11 @@ protected:
     // Key is IP address, value is banned-until-time
     static std::map<CNetAddr, int64_t> setBanned;
     static CCriticalSection cs_setBanned;
+
+    // Whitelisted ranges. Any node connecting from these is automatically
+    // whitelisted (as well as those connecting to whitelisted binds).
+    static std::vector<CSubNet> vWhitelistedRange;
+    static CCriticalSection cs_vWhitelistedRange;
 
     // Basic fuzz-testing
     void Fuzz(int nChance); // modifies ssSend
@@ -305,6 +313,7 @@ public:
         addrName = addrNameIn == "" ? addr.ToStringIPPort() : addrNameIn;
         nVersion = 0;
         strSubVer = "";
+        fWhitelisted = false;
         fOneShot = false;
         fClient = false; // set by version message
         fInbound = fInboundIn;
@@ -349,8 +358,7 @@ public:
     {
         if (hSocket != INVALID_SOCKET)
         {
-            closesocket(hSocket);
-            hSocket = INVALID_SOCKET;
+            CloseSocket(hSocket);
         }
         if (pfilter)
             delete pfilter;
@@ -719,6 +727,9 @@ public:
     static bool IsBanned(CNetAddr ip);
     static bool Ban(const CNetAddr &ip);
     void copyStats(CNodeStats &stats);
+
+    static bool IsWhitelistedRange(const CNetAddr &ip);
+    static void AddWhitelistedRange(const CSubNet &subnet);
 
     // Network stats
     static void RecordBytesRecv(uint64_t bytes);
