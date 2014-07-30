@@ -28,16 +28,16 @@
 #include <windows.h>
 #include <ws2tcpip.h>
 #else
-#include <sys/types.h>
-#include <arpa/inet.h>
-#include <ifaddrs.h>
-#include <limits.h>
-#include <net/if.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <sys/fcntl.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <limits.h>
+#include <netdb.h>
 #include <unistd.h>
 #endif
 
@@ -58,20 +58,5 @@ typedef u_int SOCKET;
 #define INVALID_SOCKET      (SOCKET)(~0)
 #define SOCKET_ERROR        -1
 #endif
-
-inline int myclosesocket(SOCKET& hSocket)
-{
-    if (hSocket == INVALID_SOCKET)
-        return WSAENOTSOCK;
-#ifdef WIN32
-    int ret = closesocket(hSocket);
-#else
-    int ret = close(hSocket);
-#endif
-    hSocket = INVALID_SOCKET;
-    return ret;
-}
-#define closesocket(s)      myclosesocket(s)
-
 
 #endif

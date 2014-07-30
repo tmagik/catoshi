@@ -20,6 +20,7 @@
 
 #include <QComboBox>
 #include <QDateTimeEdit>
+#include <QDesktopServices>
 #include <QDoubleValidator>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -28,7 +29,9 @@
 #include <QMenu>
 #include <QPoint>
 #include <QScrollBar>
+#include <QSignalMapper>
 #include <QTableView>
+#include <QUrl>
 #include <QVBoxLayout>
 
 TransactionView::TransactionView(QWidget *parent) :
@@ -120,6 +123,8 @@ TransactionView::TransactionView(QWidget *parent) :
     view->setTabKeyNavigation(false);
     view->setContextMenuPolicy(Qt::CustomContextMenu);
 
+    view->installEventFilter(this);
+
     transactionView = view;
 
     // Actions
@@ -138,7 +143,11 @@ TransactionView::TransactionView(QWidget *parent) :
     contextMenu->addAction(editLabelAction);
     contextMenu->addAction(showDetailsAction);
 
+    mapperThirdPartyTxUrls = new QSignalMapper(this);
+
     // Connect actions
+    connect(mapperThirdPartyTxUrls, SIGNAL(mapped(QString)), this, SLOT(openThirdPartyTxUrl(QString)));
+
     connect(dateWidget, SIGNAL(activated(int)), this, SLOT(chooseDate(int)));
     connect(typeWidget, SIGNAL(activated(int)), this, SLOT(chooseType(int)));
     connect(addressWidget, SIGNAL(textChanged(QString)), this, SLOT(changedPrefix(QString)));
@@ -183,6 +192,25 @@ void TransactionView::setModel(WalletModel *model)
         transactionView->setColumnWidth(TransactionTableModel::Amount, AMOUNT_MINIMUM_COLUMN_WIDTH);
 
         columnResizingFixer = new GUIUtil::TableViewLastColumnResizingFixer(transactionView, AMOUNT_MINIMUM_COLUMN_WIDTH, MINIMUM_COLUMN_WIDTH);
+
+        if (model->getOptionsModel())
+        {
+            // Add third party transaction URLs to context menu
+            QStringList listUrls = model->getOptionsModel()->getThirdPartyTxUrls().split("|", QString::SkipEmptyParts);
+            for (int i = 0; i < listUrls.size(); ++i)
+            {
+                QString host = QUrl(listUrls[i].trimmed(), QUrl::StrictMode).host();
+                if (!host.isEmpty())
+                {
+                    QAction *thirdPartyTxUrlAction = new QAction(host, this); // use host as menu item label
+                    if (i == 0)
+                        contextMenu->addSeparator();
+                    contextMenu->addAction(thirdPartyTxUrlAction);
+                    connect(thirdPartyTxUrlAction, SIGNAL(triggered()), mapperThirdPartyTxUrls, SLOT(map()));
+                    mapperThirdPartyTxUrls->setMapping(thirdPartyTxUrlAction, listUrls[i].trimmed());
+                }
+            }
+        }
     }
 }
 
@@ -283,7 +311,7 @@ void TransactionView::exportClicked()
     writer.addColumn(tr("Type"), TransactionTableModel::Type, Qt::EditRole);
     writer.addColumn(tr("Label"), 0, TransactionTableModel::LabelRole);
     writer.addColumn(tr("Address"), 0, TransactionTableModel::AddressRole);
-    writer.addColumn(tr("Amount"), 0, TransactionTableModel::FormattedAmountRole);
+    writer.addColumn(BitcoinUnits::getAmountColumnTitle(model->getOptionsModel()->getDisplayUnit()), 0, TransactionTableModel::FormattedAmountRole);
     writer.addColumn(tr("ID"), 0, TransactionTableModel::TxIDRole);
 
     if(!writer.write()) {
@@ -383,6 +411,15 @@ void TransactionView::showDetails()
     }
 }
 
+void TransactionView::openThirdPartyTxUrl(QString url)
+{
+    if(!transactionView || !transactionView->selectionModel())
+        return;
+    QModelIndexList selection = transactionView->selectionModel()->selectedRows(0);
+    if(!selection.isEmpty())
+         QDesktopServices::openUrl(QUrl::fromUserInput(url.replace("%s", selection.at(0).data(TransactionTableModel::TxHashRole).toString())));
+}
+
 QWidget *TransactionView::createDateRangeWidget()
 {
     dateRangeWidget = new QFrame();
@@ -444,4 +481,23 @@ void TransactionView::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
     columnResizingFixer->stretchColumnWidth(TransactionTableModel::ToAddress);
+}
+
+// Need to override default Ctrl+C action for amount as default behaviour is just to copy DisplayRole text
+bool TransactionView::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *ke = static_cast<QKeyEvent *>(event);
+        if (ke->key() == Qt::Key_C && ke->modifiers().testFlag(Qt::ControlModifier))
+        {
+            QModelIndex i = this->transactionView->currentIndex();
+            if (i.isValid() && i.column() == TransactionTableModel::Amount)
+            {
+                 GUIUtil::setClipboard(i.data(TransactionTableModel::FormattedAmountRole).toString());
+                 return true;
+            }
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }

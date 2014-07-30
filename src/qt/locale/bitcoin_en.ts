@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="en">
+<TS version="2.1" language="en">
 <context>
     <name>AboutDialog</name>
     <message>
@@ -724,7 +724,7 @@ Address: %4
         <translation>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;locked&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoin.cpp" line="+443"/>
+        <location filename="../bitcoin.cpp" line="+447"/>
         <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
         <translation>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</translation>
     </message>
@@ -732,7 +732,7 @@ Address: %4
 <context>
     <name>ClientModel</name>
     <message>
-        <location filename="../clientmodel.cpp" line="+128"/>
+        <location filename="../clientmodel.cpp" line="+137"/>
         <source>Network Alert</source>
         <translation>Network Alert</translation>
     </message>
@@ -1332,7 +1332,18 @@ Address: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+214"/>
+        <location line="+194"/>
+        <location line="+13"/>
+        <source>Third party URLs (e.g. a block explorer) that appear in the transactions tab as context menu items. %s in the URL is replaced by transaction hash. Multiple URLs are separated by vertical bar |.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-10"/>
+        <source>Third party transaction URLs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+41"/>
         <source>Active command-line options that override above options:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1347,7 +1358,7 @@ Address: %4
         <translation>&amp;Reset Options</translation>
     </message>
     <message>
-        <location line="-313"/>
+        <location line="-337"/>
         <source>&amp;Network</source>
         <translation>&amp;Network</translation>
     </message>
@@ -1482,7 +1493,7 @@ Address: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+398"/>
+        <location line="+422"/>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
     </message>
@@ -1497,12 +1508,12 @@ Address: %4
         <translation>default</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+61"/>
         <source>none</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+80"/>
+        <location line="+82"/>
         <source>Confirm options reset</source>
         <translation>Confirm options reset</translation>
     </message>
@@ -1695,7 +1706,7 @@ Address: %4
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../bitcoin.cpp" line="+63"/>
+        <location filename="../bitcoin.cpp" line="+71"/>
         <location line="+7"/>
         <location line="+13"/>
         <source>Bitcoin</source>
@@ -1714,6 +1725,11 @@ Address: %4
     <message>
         <location line="+12"/>
         <source>Error: Invalid combination of -regtest and -testnet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+60"/>
+        <source>Bitcoin Core didn&apos;t yet exit safely...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2728,7 +2744,7 @@ Address: %4
 <context>
     <name>TransactionDesc</name>
     <message>
-        <location filename="../transactiondesc.cpp" line="+28"/>
+        <location filename="../transactiondesc.cpp" line="+29"/>
         <source>Open until %1</source>
         <translation>Open until %1</translation>
     </message>
@@ -2753,7 +2769,7 @@ Address: %4
         <translation>%1 confirmations</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+17"/>
         <source>Status</source>
         <translation>Status</translation>
     </message>
@@ -2886,7 +2902,7 @@ Address: %4
         <translation>Inputs</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+21"/>
         <source>Amount</source>
         <translation>Amount</translation>
     </message>
@@ -2901,12 +2917,12 @@ Address: %4
         <translation>false</translation>
     </message>
     <message>
-        <location line="-232"/>
+        <location line="-230"/>
         <source>, has not been successfully broadcast yet</source>
         <translation>, has not been successfully broadcast yet</translation>
     </message>
     <message numerus="yes">
-        <location line="-37"/>
+        <location line="-36"/>
         <source>Open for %n more block(s)</source>
         <translation>
             <numerusform>Open for %n more block</numerusform>
@@ -2914,7 +2930,7 @@ Address: %4
         </translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+71"/>
         <source>unknown</source>
         <translation>unknown</translation>
     </message>
@@ -2935,7 +2951,7 @@ Address: %4
 <context>
     <name>TransactionTableModel</name>
     <message>
-        <location filename="../transactiontablemodel.cpp" line="+234"/>
+        <location filename="../transactiontablemodel.cpp" line="+238"/>
         <source>Date</source>
         <translation>Date</translation>
     </message>
@@ -2955,7 +2971,7 @@ Address: %4
         <translation>Amount</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+70"/>
         <source>Immature (%1 confirmations, will be available after %2)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3038,7 +3054,7 @@ Address: %4
         <translation>(n/a)</translation>
     </message>
     <message>
-        <location line="+190"/>
+        <location line="+192"/>
         <source>Transaction status. Hover over this field to show number of confirmations.</source>
         <translation>Transaction status. Hover over this field to show number of confirmations.</translation>
     </message>
@@ -3066,7 +3082,7 @@ Address: %4
 <context>
     <name>TransactionView</name>
     <message>
-        <location filename="../transactionview.cpp" line="+57"/>
+        <location filename="../transactionview.cpp" line="+60"/>
         <location line="+16"/>
         <source>All</source>
         <translation>All</translation>
@@ -3167,7 +3183,7 @@ Address: %4
         <translation>Show transaction details</translation>
     </message>
     <message>
-        <location line="+140"/>
+        <location line="+163"/>
         <source>Export Transaction History</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3232,7 +3248,7 @@ Address: %4
         <translation>ID</translation>
     </message>
     <message>
-        <location line="+107"/>
+        <location line="+116"/>
         <source>Range:</source>
         <translation>Range:</translation>
     </message>
@@ -3253,7 +3269,7 @@ Address: %4
 <context>
     <name>WalletModel</name>
     <message>
-        <location filename="../walletmodel.cpp" line="+245"/>
+        <location filename="../walletmodel.cpp" line="+258"/>
         <source>Send Coins</source>
         <translation>Send Coins</translation>
     </message>
@@ -3304,7 +3320,7 @@ Address: %4
 <context>
     <name>bitcoin-core</name>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="+261"/>
+        <location filename="../bitcoinstrings.cpp" line="+262"/>
         <source>Usage:</source>
         <translation>Usage:</translation>
     </message>
@@ -3314,12 +3330,12 @@ Address: %4
         <translation>List commands</translation>
     </message>
     <message>
-        <location line="-14"/>
+        <location line="-15"/>
         <source>Get help for a command</source>
         <translation>Get help for a command</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Options:</source>
         <translation>Options:</translation>
     </message>
@@ -3349,12 +3365,12 @@ Address: %4
         <translation>Maintain at most &lt;n&gt; connections to peers (default: 125)</translation>
     </message>
     <message>
-        <location line="-57"/>
+        <location line="-58"/>
         <source>Connect to a node to retrieve peer addresses, and disconnect</source>
         <translation>Connect to a node to retrieve peer addresses, and disconnect</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+101"/>
         <source>Specify your own public address</source>
         <translation>Specify your own public address</translation>
     </message>
@@ -3364,7 +3380,7 @@ Address: %4
         <translation>Threshold for disconnecting misbehaving peers (default: 100)</translation>
     </message>
     <message>
-        <location line="-172"/>
+        <location line="-173"/>
         <source>Number of seconds to keep misbehaving peers from reconnecting (default: 86400)</source>
         <translation>Number of seconds to keep misbehaving peers from reconnecting (default: 86400)</translation>
     </message>
@@ -3389,7 +3405,7 @@ Address: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location line="+88"/>
         <source>Run in the background as a daemon and accept commands</source>
         <translation>Run in the background as a daemon and accept commands</translation>
     </message>
@@ -3399,7 +3415,7 @@ Address: %4
         <translation>Use the test network</translation>
     </message>
     <message>
-        <location line="-136"/>
+        <location line="-137"/>
         <source>Accept connections from outside (default: 1 if no -proxy or -connect)</source>
         <translation>Accept connections from outside (default: 1 if no -proxy or -connect)</translation>
     </message>
@@ -3764,6 +3780,11 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+1"/>
+        <source>Importing...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+2"/>
         <source>Incorrect or no genesis block found. Wrong datadir for network?</source>
         <translation>Incorrect or no genesis block found. Wrong datadir for network?</translation>
@@ -3874,7 +3895,7 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation>Imports blocks from external blk000??.dat file</translation>
     </message>
     <message>
-        <location line="-149"/>
+        <location line="-150"/>
         <source>Cannot obtain a lock on data directory %s. Bitcoin Core is probably already running.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3894,7 +3915,7 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+102"/>
+        <location line="+103"/>
         <source>Information</source>
         <translation>Information</translation>
     </message>
@@ -4104,22 +4125,22 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation>Password for JSON-RPC connections</translation>
     </message>
     <message>
-        <location line="-77"/>
+        <location line="-78"/>
         <source>Allow JSON-RPC connections from specified IP address</source>
         <translation>Allow JSON-RPC connections from specified IP address</translation>
     </message>
     <message>
-        <location line="+94"/>
+        <location line="+95"/>
         <source>Send commands to node running on &lt;ip&gt; (default: 127.0.0.1)</source>
         <translation>Send commands to node running on &lt;ip&gt; (default: 127.0.0.1)</translation>
     </message>
     <message>
-        <location line="-163"/>
+        <location line="-164"/>
         <source>Execute command when the best block changes (%s in cmd is replaced by block hash)</source>
         <translation>Execute command when the best block changes (%s in cmd is replaced by block hash)</translation>
     </message>
     <message>
-        <location line="+196"/>
+        <location line="+197"/>
         <source>Upgrade wallet to latest format</source>
         <translation>Upgrade wallet to latest format</translation>
     </message>
@@ -4159,17 +4180,17 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation>Unable to bind to %s on this computer (bind returned error %d, %s)</translation>
     </message>
     <message>
-        <location line="-125"/>
+        <location line="-126"/>
         <source>Allow DNS lookups for -addnode, -seednode and -connect</source>
         <translation>Allow DNS lookups for -addnode, -seednode and -connect</translation>
     </message>
     <message>
-        <location line="+66"/>
+        <location line="+67"/>
         <source>Loading addresses...</source>
         <translation>Loading addresses...</translation>
     </message>
     <message>
-        <location line="-39"/>
+        <location line="-40"/>
         <source>Error loading wallet.dat: Wallet corrupted</source>
         <translation>Error loading wallet.dat: Wallet corrupted</translation>
     </message>
@@ -4179,17 +4200,17 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation>Error loading wallet.dat: Wallet requires newer version of Bitcoin</translation>
     </message>
     <message>
-        <location line="+112"/>
+        <location line="+113"/>
         <source>Wallet needed to be rewritten: restart Bitcoin to complete</source>
         <translation>Wallet needed to be rewritten: restart Bitcoin to complete</translation>
     </message>
     <message>
-        <location line="-114"/>
+        <location line="-115"/>
         <source>Error loading wallet.dat</source>
         <translation>Error loading wallet.dat</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+33"/>
         <source>Invalid -proxy address: &apos;%s&apos;</source>
         <translation>Invalid -proxy address: &apos;%s&apos;</translation>
     </message>
@@ -4204,7 +4225,7 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation>Unknown -socks proxy version requested: %i</translation>
     </message>
     <message>
-        <location line="-119"/>
+        <location line="-120"/>
         <source>Cannot resolve -bind address: &apos;%s&apos;</source>
         <translation>Cannot resolve -bind address: &apos;%s&apos;</translation>
     </message>
@@ -4214,7 +4235,7 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation>Cannot resolve -externalip address: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location line="+53"/>
+        <location line="+54"/>
         <source>Invalid amount for -paytxfee=&lt;amount&gt;: &apos;%s&apos;</source>
         <translation>Invalid amount for -paytxfee=&lt;amount&gt;: &apos;%s&apos;</translation>
     </message>
@@ -4234,17 +4255,17 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation>Loading block index...</translation>
     </message>
     <message>
-        <location line="-68"/>
+        <location line="-69"/>
         <source>Add a node to connect to and attempt to keep the connection open</source>
         <translation>Add a node to connect to and attempt to keep the connection open</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+70"/>
         <source>Loading wallet...</source>
         <translation>Loading wallet...</translation>
     </message>
     <message>
-        <location line="-62"/>
+        <location line="-63"/>
         <source>Cannot downgrade wallet</source>
         <translation>Cannot downgrade wallet</translation>
     </message>
@@ -4254,22 +4275,22 @@ for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.
         <translation>Cannot write default address</translation>
     </message>
     <message>
-        <location line="+80"/>
+        <location line="+81"/>
         <source>Rescanning...</source>
         <translation>Rescanning...</translation>
     </message>
     <message>
-        <location line="-67"/>
+        <location line="-68"/>
         <source>Done loading</source>
         <translation>Done loading</translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+100"/>
         <source>To use the %s option</source>
         <translation>To use the %s option</translation>
     </message>
     <message>
-        <location line="-91"/>
+        <location line="-92"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>

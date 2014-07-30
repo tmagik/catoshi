@@ -62,8 +62,6 @@ public:
 
         /** Force blocking, modal message box dialog (not just OS notification) */
         MODAL               = 0x10000000U,
-        /** Don't bring GUI to foreground. Use for messages during initialization */
-        NOSHOWGUI           = 0x20000000U,
 
         /** Predefined combinations for certain default usage cases */
         MSG_INFORMATION = ICON_INFORMATION,
@@ -94,6 +92,9 @@ public:
 
     /** A wallet has been loaded. */
     boost::signals2::signal<void (CWallet* wallet)> LoadWallet;
+
+    /** Show progress e.g. for verifychain */
+    boost::signals2::signal<void (const std::string &title, int nProgress)> ShowProgress;
 };
 
 extern CClientUIInterface uiInterface;
