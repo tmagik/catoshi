@@ -8,6 +8,7 @@
 #include "guiutil.h"
 
 #include <QWidget>
+#include <QKeyEvent>
 
 class TransactionFilterProxy;
 class WalletModel;
@@ -19,6 +20,7 @@ class QFrame;
 class QLineEdit;
 class QMenu;
 class QModelIndex;
+class QSignalMapper;
 class QTableView;
 QT_END_NAMESPACE
 
@@ -65,6 +67,7 @@ private:
     QLineEdit *amountWidget;
 
     QMenu *contextMenu;
+    QSignalMapper *mapperThirdPartyTxUrls;
 
     QFrame *dateRangeWidget;
     QDateTimeEdit *dateFrom;
@@ -76,6 +79,8 @@ private:
 
     virtual void resizeEvent(QResizeEvent* event);
 
+    bool eventFilter(QObject *obj, QEvent *event);
+
 private slots:
     void contextualMenu(const QPoint &);
     void dateRangeChanged();
@@ -85,6 +90,7 @@ private slots:
     void copyLabel();
     void copyAmount();
     void copyTxID();
+    void openThirdPartyTxUrl(QString url);
 
 signals:
     void doubleClicked(const QModelIndex&);
