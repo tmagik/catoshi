@@ -240,7 +240,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -connect=<ip>          " + _("Connect only to the specified node(s)") + "\n";
     strUsage += "  -discover              " + _("Discover own IP address (default: 1 when listening and no -externalip)") + "\n";
     strUsage += "  -dns                   " + _("Allow DNS lookups for -addnode, -seednode and -connect") + " " + _("(default: 1)") + "\n";
-    strUsage += "  -dnsseed               " + _("Find peers using DNS lookup (default: 1 unless -connect)") + "\n";
+    strUsage += "  -dnsseed               " + _("Query for peer addresses via DNS lookup, if low on addresses (default: 1 unless -connect)") + "\n";
+    strUsage += "  -forcednsseed          " + _("Always query for peer addresses via DNS lookup (default: 0)") + "\n";
     strUsage += "  -externalip=<ip>       " + _("Specify your own public address") + "\n";
     strUsage += "  -listen                " + _("Accept connections from outside (default: 1 if no -proxy or -connect)") + "\n";
     strUsage += "  -maxconnections=<n>    " + _("Maintain at most <n> connections to peers (default: 125)") + "\n";
@@ -248,6 +249,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -maxsendbuffer=<n>     " + _("Maximum per-connection send buffer, <n>*1000 bytes (default: 1000)") + "\n";
     strUsage += "  -onion=<ip:port>       " + _("Use separate SOCKS5 proxy to reach peers via Tor hidden services (default: -proxy)") + "\n";
     strUsage += "  -onlynet=<net>         " + _("Only connect to nodes in network <net> (IPv4, IPv6 or Tor)") + "\n";
+    strUsage += "  -permitbaremultisig    " + _("Relay non-P2SH multisig (default: 1)") + "\n";
     strUsage += "  -port=<port>           " + _("Listen for connections on <port> (default: 8333 or testnet: 18333)") + "\n";
     strUsage += "  -proxy=<ip:port>       " + _("Connect through SOCKS5 proxy") + "\n";
     strUsage += "  -seednode=<ip>         " + _("Connect to a node to retrieve peer addresses, and disconnect") + "\n";
@@ -261,6 +263,7 @@ std::string HelpMessage(HelpMessageMode mode)
 #endif
     strUsage += "  -whitebind=<addr>      " + _("Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6") + "\n";
     strUsage += "  -whitelist=<netmask>   " + _("Whitelist peers connecting from the given netmask or ip. Can be specified multiple times.") + "\n";
+    strUsage += "                         " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway") + "\n";
 
 #ifdef ENABLE_WALLET
     strUsage += "\n" + _("Wallet options:") + "\n";
@@ -284,7 +287,6 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "\n" + _("Debugging/Testing options:") + "\n";
     if (GetBoolArg("-help-debug", false))
     {
-        strUsage += "  -benchmark             " + _("Show benchmark information (default: 0)") + "\n";
         strUsage += "  -checkpoints           " + _("Only accept block chain matching built-in checkpoints (default: 1)") + "\n";
         strUsage += "  -dblogsize=<n>         " + _("Flush database activity from memory pool to disk log every <n> megabytes (default: 100)") + "\n";
         strUsage += "  -disablesafemode       " + _("Disable safemode, override a real safe mode event (default: 0)") + "\n";
@@ -297,7 +299,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -debug=<category>      " + _("Output debugging information (default: 0, supplying <category> is optional)") + "\n";
     strUsage += "                         " + _("If <category> is not supplied, output all debugging information.") + "\n";
     strUsage += "                         " + _("<category> can be:");
-    strUsage +=                                 " addrman, alert, coindb, db, lock, rand, rpc, selectcoins, mempool, net"; // Don't translate these and qt below
+    strUsage +=                                 " addrman, alert, bench, coindb, db, lock, rand, rpc, selectcoins, mempool, net"; // Don't translate these and qt below
     if (mode == HMM_BITCOIN_QT)
         strUsage += ", qt";
     strUsage += ".\n";
@@ -598,7 +600,9 @@ bool AppInit2(boost::thread_group& threadGroup)
     if (GetBoolArg("-tor", false))
         return InitError(_("Error: Unsupported argument -tor found, use -onion."));
 
-    fBenchmark = GetBoolArg("-benchmark", false);
+    if (GetBoolArg("-benchmark", false))
+        InitWarning(_("Warning: Unsupported argument -benchmark ignored, use -debug=bench."));
+
     // Checkmempool defaults to true in regtest mode
     mempool.setSanityCheck(GetBoolArg("-checkmempool", Params().DefaultCheckMemPool()));
     Checkpoints::fEnabled = GetBoolArg("-checkpoints", true);
@@ -676,7 +680,10 @@ bool AppInit2(boost::thread_group& threadGroup)
     bSpendZeroConfChange = GetArg("-spendzeroconfchange", true);
 
     std::string strWalletFile = GetArg("-wallet", "wallet.dat");
-#endif
+#endif // ENABLE_WALLET
+
+    fIsBareMultisigStd = GetArg("-permitbaremultisig", true);
+
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
     // Sanity check
     if (!InitSanityCheck())
@@ -1225,7 +1232,6 @@ bool AppInit2(boost::thread_group& threadGroup)
     LogPrintf("mapAddressBook.size() = %u\n",  pwalletMain ? pwalletMain->mapAddressBook.size() : 0);
 #endif
 
-    InitRespendFilter();
     StartNode(threadGroup);
     if (fServer)
         StartRPCThreads();
