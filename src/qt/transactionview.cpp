@@ -383,6 +383,11 @@ void TransactionView::clearOrphans()
         return;
 
     model->clearOrphans();
+    model->getTransactionTableModel()->refresh();
+    delete transactionProxyModel;
+    setModel(model);
+    transactionView->sortByColumn(TransactionTableModel::Status, Qt::DescendingOrder);
+    transactionView->sortByColumn(TransactionTableModel::Date, Qt::DescendingOrder);
 }
 
 QWidget *TransactionView::createDateRangeWidget()
