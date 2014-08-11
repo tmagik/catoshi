@@ -235,6 +235,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getblockcount",          &getblockcount,          true,      false,      false },
     { "getblock",               &getblock,               true,      false,      false },
     { "getblockhash",           &getblockhash,           true,      false,      false },
+    { "getchaintips",           &getchaintips,           true,      false,      false },
     { "getdifficulty",          &getdifficulty,          true,      false,      false },
     { "getrawmempool",          &getrawmempool,          true,      false,      false },
     { "gettxout",               &gettxout,               true,      false,      false },
@@ -861,7 +862,7 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
         else
             throw JSONRPCError(RPC_PARSE_ERROR, "Top-level object parse error");
 
-        conn->stream() << HTTPReply(HTTP_OK, strReply, fRun) << std::flush;
+        conn->stream() << HTTPReplyHeader(HTTP_OK, fRun, strReply.size()) << strReply << std::flush;
     }
     catch (Object& objError)
     {
@@ -890,7 +891,7 @@ void ServiceConnection(AcceptedConnection *conn)
             break;
 
         // Read HTTP message headers and body
-        ReadHTTPMessage(conn->stream(), mapHeaders, strRequest, nProto);
+        ReadHTTPMessage(conn->stream(), mapHeaders, strRequest, nProto, MAX_SIZE);
 
         // HTTP Keep-Alive is false; close connection immediately
         if (mapHeaders["connection"] == "close")
