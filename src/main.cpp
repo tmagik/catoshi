@@ -7,7 +7,6 @@
 
 #include "addrman.h"
 #include "alert.h"
-#include "bloom.h"
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "checkqueue.h"
@@ -41,11 +40,13 @@ CCriticalSection cs_main;
 map<uint256, CBlockIndex*> mapBlockIndex;
 CChain chainActive;
 int64_t nTimeBestReceived = 0;
+CWaitableCriticalSection csBestBlock;
+CConditionVariable cvBlockChange;
 int nScriptCheckThreads = 0;
 bool fImporting = false;
 bool fReindex = false;
-bool fBenchmark = false;
 bool fTxIndex = false;
+bool fIsBareMultisigStd = true;
 unsigned int nCoinCacheSize = 5000;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying and mining) */
@@ -94,7 +95,9 @@ namespace {
     };
 
     CBlockIndex *pindexBestInvalid;
-    // may contain all CBlockIndex*'s that have validness >=BLOCK_VALID_TRANSACTIONS, and must contain those who aren't failed
+
+    // The set of all CBlockIndex entries with BLOCK_VALID_TRANSACTIONS or better that are at least
+    // as good as our current tip. Entries may be failed, though.
     set<CBlockIndex*, CBlockIndexWorkComparator> setBlockIndexValid;
 
     CCriticalSection cs_LastBlockFile;
@@ -123,15 +126,6 @@ namespace {
 
 } // anon namespace
 
-// Bloom filter to limit respend relays to one
-static const unsigned int MAX_DOUBLESPEND_BLOOM = 1000;
-static CBloomFilter doubleSpendFilter;
-void InitRespendFilter() {
-    seed_insecure_rand();
-    doubleSpendFilter = CBloomFilter(MAX_DOUBLESPEND_BLOOM, 0.01, insecure_rand(), BLOOM_UPDATE_NONE);
-}
-
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // dispatching functions
@@ -157,7 +151,6 @@ struct CMainSignals {
 } g_signals;
 
 } // anon namespace
-
 
 void RegisterWallet(CWalletInterface* pwalletIn) {
     g_signals.SyncTransaction.connect(boost::bind(&CWalletInterface::SyncTransaction, pwalletIn, _1, _2));
@@ -210,7 +203,7 @@ struct CBlockReject {
 struct CNodeState {
     // Accumulated misbehaviour score for this peer.
     int nMisbehavior;
-    // Whether this peer should be disconnected and banned.
+    // Whether this peer should be disconnected and banned (unless whitelisted).
     bool fShouldBan;
     // String name of this peer (debugging/logging purposes).
     std::string name;
@@ -451,7 +444,7 @@ CBlockIndex *CChain::FindFork(const CBlockLocator &locator) const {
     return Genesis();
 }
 
-CBlockIndex *CChain::FindFork(CBlockIndex *pindex) const {
+const CBlockIndex *CChain::FindFork(const CBlockIndex *pindex) const {
     if (pindex->nHeight > Height())
         pindex = pindex->GetAncestor(Height());
     while (pindex && !Contains(pindex))
@@ -602,9 +595,13 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
             reason = "scriptpubkey";
             return false;
         }
+
         if (whichType == TX_NULL_DATA)
             nDataOut++;
-        else if (txout.IsDust(::minRelayTxFee)) {
+        else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
+            reason = "bare-multisig";
+            return false;
+        } else if (txout.IsDust(::minRelayTxFee)) {
             reason = "dust";
             return false;
         }
@@ -874,60 +871,6 @@ int64_t GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
     return nMinFee;
 }
 
-// Exponentially limit the rate of nSize flow to nLimit.  nLimit unit is thousands-per-minute.
-bool RateLimitExceeded(double& dCount, int64_t& nLastTime, int64_t nLimit, unsigned int nSize)
-{
-    static CCriticalSection csLimiter;
-    int64_t nNow = GetTime();
-
-    LOCK(csLimiter);
-
-    dCount *= pow(1.0 - 1.0/600.0, (double)(nNow - nLastTime));
-    nLastTime = nNow;
-    if (dCount >= nLimit*10*1000)
-        return true;
-    dCount += nSize;
-    return false;
-}
-
-static bool RelayableRespend(const COutPoint& outPoint, const CTransaction& doubleSpend, bool fInBlock, CBloomFilter& filter)
-{
-    // Relaying double-spend attempts to our peers lets them detect when
-    // somebody might be trying to cheat them. However, blindly relaying
-    // every double-spend across the entire network gives attackers
-    // a denial-of-service attack: just generate a stream of double-spends
-    // re-spending the same (limited) set of outpoints owned by the attacker.
-    // So, we use a bloom filter and only relay (at most) the first double
-    // spend for each outpoint. False-positives ("we have already relayed")
-    // are OK, because if the peer doesn't hear about the double-spend
-    // from us they are very likely to hear about it from another peer, since
-    // each peer uses a different, randomized bloom filter.
-
-    if (fInBlock || filter.contains(outPoint)) return false;
-
-    // Apply an independent rate limit to double-spend relays
-    static double dRespendCount;
-    static int64_t nLastRespendTime;
-    static int64_t nRespendLimit = GetArg("-limitrespendrelay", 100);
-    unsigned int nSize = ::GetSerializeSize(doubleSpend, SER_NETWORK, PROTOCOL_VERSION);
-
-    if (RateLimitExceeded(dRespendCount, nLastRespendTime, nRespendLimit, nSize))
-    {
-        LogPrint("mempool", "Double-spend relay rejected by rate limiter\n");
-        return false;
-    }
-
-    LogPrint("mempool", "Rate limit dRespendCount: %g => %g\n", dRespendCount, dRespendCount+nSize);
-
-    // Clear the filter on average every MAX_DOUBLE_SPEND_BLOOM
-    // insertions
-    if (insecure_rand()%MAX_DOUBLESPEND_BLOOM == 0)
-        filter.clear();
-
-    filter.insert(outPoint);
-
-    return true;
-}
 
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
                         bool* pfMissingInputs, bool fRejectInsaneFee)
@@ -957,18 +900,15 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         return false;
 
     // Check for conflicts with in-memory transactions
-    bool relayableRespend = false;
     {
     LOCK(pool.cs); // protect pool.mapNextTx
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         COutPoint outpoint = tx.vin[i].prevout;
-        // Does tx conflict with a member of the pool, and is it not equivalent to that member?
-        if (pool.mapNextTx.count(outpoint) && !tx.IsEquivalentTo(*pool.mapNextTx[outpoint].ptx))
+        if (pool.mapNextTx.count(outpoint))
         {
-            relayableRespend = RelayableRespend(outpoint, tx, false, doubleSpendFilter);
-            if (!relayableRespend)
-                return false;
+            // Disable replacement feature for now
+            return false;
         }
     }
     }
@@ -1048,15 +988,23 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // be annoying or make others' transactions take longer to confirm.
         if (fLimitFree && nFees < ::minRelayTxFee.GetFee(nSize))
         {
+            static CCriticalSection csFreeLimiter;
             static double dFreeCount;
-            static int64_t nLastFreeTime;
-            static int64_t nFreeLimit = GetArg("-limitfreerelay", 15);
+            static int64_t nLastTime;
+            int64_t nNow = GetTime();
 
-            if (RateLimitExceeded(dFreeCount, nLastFreeTime, nFreeLimit, nSize))
+            LOCK(csFreeLimiter);
+
+            // Use an exponentially decaying ~10-minute window:
+            dFreeCount *= pow(1.0 - 1.0/600.0, (double)(nNow - nLastTime));
+            nLastTime = nNow;
+            // -limitfreerelay unit is thousand-bytes-per-minute
+            // At default rate it would take over a month to fill 1GB
+            if (dFreeCount >= GetArg("-limitfreerelay", 15)*10*1000)
                 return state.DoS(0, error("AcceptToMemoryPool : free transaction rejected by rate limiter"),
                                  REJECT_INSUFFICIENTFEE, "insufficient priority");
-
             LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
+            dFreeCount += nSize;
         }
 
         if (fRejectInsaneFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
@@ -1070,21 +1018,13 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         {
             return error("AcceptToMemoryPool: : ConnectInputs failed %s", hash.ToString());
         }
-
-        if (relayableRespend)
-        {
-            RelayTransaction(tx);
-        }
-        else
-        {
-            // Store transaction in memory
-            pool.addUnchecked(hash, entry);
-        }
+        // Store transaction in memory
+        pool.addUnchecked(hash, entry);
     }
 
     g_signals.SyncTransaction(tx, NULL);
 
-    return !relayableRespend;
+    return true;
 }
 
 
@@ -1434,7 +1374,8 @@ void Misbehaving(NodeId pnode, int howmuch)
         return;
 
     state->nMisbehavior += howmuch;
-    if (state->nMisbehavior >= GetArg("-banscore", 100))
+    int banscore = GetArg("-banscore", 100);
+    if (state->nMisbehavior >= banscore && state->nMisbehavior - howmuch < banscore)
     {
         LogPrintf("Misbehaving: %s (%d -> %d) BAN THRESHOLD EXCEEDED\n", state->name, state->nMisbehavior-howmuch, state->nMisbehavior);
         state->fShouldBan = true;
@@ -1749,6 +1690,12 @@ void ThreadScriptCheck() {
     scriptcheckqueue.Thread();
 }
 
+static int64_t nTimeVerify = 0;
+static int64_t nTimeConnect = 0;
+static int64_t nTimeIndex = 0;
+static int64_t nTimeCallbacks = 0;
+static int64_t nTimeTotal = 0;
+
 bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck)
 {
     AssertLockHeld(cs_main);
@@ -1804,7 +1751,7 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 
     CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
 
-    int64_t nStart = GetTimeMicros();
+    int64_t nTimeStart = GetTimeMicros();
     int64_t nFees = 0;
     int nInputs = 0;
     unsigned int nSigOps = 0;
@@ -1854,9 +1801,8 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
-    int64_t nTime = GetTimeMicros() - nStart;
-    if (fBenchmark)
-        LogPrintf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)block.vtx.size(), 0.001 * nTime, 0.001 * nTime / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
+    int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
+    LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
     if (block.vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
         return state.DoS(100,
@@ -1866,9 +1812,8 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 
     if (!control.Wait())
         return state.DoS(100, false);
-    int64_t nTime2 = GetTimeMicros() - nStart;
-    if (fBenchmark)
-        LogPrintf("- Verify %u txins: %.2fms (%.3fms/txin)\n", nInputs - 1, 0.001 * nTime2, nInputs <= 1 ? 0 : 0.001 * nTime2 / (nInputs-1));
+    int64_t nTime2 = GetTimeMicros(); nTimeVerify += nTime2 - nTimeStart;
+    LogPrint("bench", "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1, 0.001 * (nTime2 - nTimeStart), nInputs <= 1 ? 0 : 0.001 * (nTime2 - nTimeStart) / (nInputs-1), nTimeVerify * 0.000001);
 
     if (fJustCheck)
         return true;
@@ -1909,6 +1854,9 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
     ret = view.SetBestBlock(pindex->GetBlockHash());
     assert(ret);
 
+    int64_t nTime3 = GetTimeMicros(); nTimeIndex += nTime3 - nTime2;
+    LogPrint("bench", "    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime3 - nTime2), nTimeIndex * 0.000001);
+
     // Watch for transactions paying to me
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
         g_signals.SyncTransaction(tx, &block);
@@ -1918,13 +1866,16 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
     g_signals.UpdatedTransaction(hashPrevBestCoinBase);
     hashPrevBestCoinBase = block.vtx[0].GetHash();
 
+    int64_t nTime4 = GetTimeMicros(); nTimeCallbacks += nTime4 - nTime3;
+    LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime4 - nTime3), nTimeCallbacks * 0.000001);
+
     return true;
 }
 
 // Update the on-disk chain state.
 bool static WriteChainState(CValidationState &state) {
     static int64_t nLastWrite = 0;
-    if (!IsInitialBlockDownload() || pcoinsTip->GetCacheSize() > nCoinCacheSize || GetTimeMicros() > nLastWrite + 600*1000000) {
+    if (pcoinsTip->GetCacheSize() > nCoinCacheSize || (!IsInitialBlockDownload() && GetTimeMicros() > nLastWrite + 600*1000000)) {
         // Typical CCoins structures on disk are around 100 bytes in size.
         // Pushing a new one to the database can cause it to be written
         // twice (once in the log, and once in the tables). This is already
@@ -1953,10 +1904,13 @@ void static UpdateTip(CBlockIndex *pindexNew) {
     // New best block
     nTimeBestReceived = GetTime();
     mempool.AddTransactionsUpdated(1);
+
     LogPrintf("UpdateTip: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f\n",
       chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), log(chainActive.Tip()->nChainWork.getdouble())/log(2.0), (unsigned long)chainActive.Tip()->nChainTx,
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
       Checkpoints::GuessVerificationProgress(chainActive.Tip()));
+
+    cvBlockChange.notify_all();
 
     // Check the version of the last 100 blocks to see if we need to upgrade:
     if (!fIsInitialDownload)
@@ -1994,8 +1948,7 @@ bool static DisconnectTip(CValidationState &state) {
             return error("DisconnectTip() : DisconnectBlock %s failed", pindexDelete->GetBlockHash().ToString());
         assert(view.Flush());
     }
-    if (fBenchmark)
-        LogPrintf("- Disconnect: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
+    LogPrint("bench", "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
     // Write the chain state to disk, if necessary.
     if (!WriteChainState(state))
         return false;
@@ -2019,16 +1972,25 @@ bool static DisconnectTip(CValidationState &state) {
     return true;
 }
 
+static int64_t nTimeReadFromDisk = 0;
+static int64_t nTimeConnectTotal = 0;
+static int64_t nTimeFlush = 0;
+static int64_t nTimeChainState = 0;
+static int64_t nTimePostConnect = 0;
+
 // Connect a new block to chainActive.
 bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew) {
     assert(pindexNew->pprev == chainActive.Tip());
     mempool.check(pcoinsTip);
     // Read block from disk.
+    int64_t nTime1 = GetTimeMicros();
     CBlock block;
     if (!ReadBlockFromDisk(block, pindexNew))
         return state.Abort(_("Failed to read block"));
     // Apply the block atomically to the chain state.
-    int64_t nStart = GetTimeMicros();
+    int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
+    int64_t nTime3;
+    LogPrint("bench", "  - Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001, nTimeReadFromDisk * 0.000001);
     {
         CCoinsViewCache view(*pcoinsTip, true);
         CInv inv(MSG_BLOCK, pindexNew->GetBlockHash());
@@ -2038,13 +2000,17 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew) {
             return error("ConnectTip() : ConnectBlock %s failed", pindexNew->GetBlockHash().ToString());
         }
         mapBlockSource.erase(inv.hash);
+        nTime3 = GetTimeMicros(); nTimeConnectTotal += nTime3 - nTime2;
+        LogPrint("bench", "  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001, nTimeConnectTotal * 0.000001);
         assert(view.Flush());
     }
-    if (fBenchmark)
-        LogPrintf("- Connect: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
+    int64_t nTime4 = GetTimeMicros(); nTimeFlush += nTime4 - nTime3;
+    LogPrint("bench", "  - Flush: %.2fms [%.2fs]\n", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
     // Write the chain state to disk, if necessary.
     if (!WriteChainState(state))
         return false;
+    int64_t nTime5 = GetTimeMicros(); nTimeChainState += nTime5 - nTime4;
+    LogPrint("bench", "  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001, nTimeChainState * 0.000001);
     // Remove conflicting transactions from the mempool.
     list<CTransaction> txConflicted;
     mempool.removeForBlock(block.vtx, pindexNew->nHeight, txConflicted);
@@ -2060,6 +2026,9 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew) {
     BOOST_FOREACH(const CTransaction &tx, block.vtx) {
         SyncWithWallets(tx, &block);
     }
+    int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
+    LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
+    LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
     return true;
 }
 
@@ -2082,7 +2051,7 @@ static CBlockIndex* FindMostWorkChain() {
         CBlockIndex *pindexTest = pindexNew;
         bool fInvalidAncestor = false;
         while (pindexTest && !chainActive.Contains(pindexTest)) {
-            if (!pindexTest->IsValid(BLOCK_VALID_TRANSACTIONS) || !(pindexTest->nStatus & BLOCK_HAVE_DATA)) {
+            if (pindexTest->nStatus & BLOCK_FAILED_MASK) {
                 // Candidate has an invalid ancestor, remove entire chain from the set.
                 if (pindexBestInvalid == NULL || pindexNew->nChainWork > pindexBestInvalid->nChainWork)
                     pindexBestInvalid = pindexNew;
@@ -2092,6 +2061,7 @@ static CBlockIndex* FindMostWorkChain() {
                     setBlockIndexValid.erase(pindexFailed);
                     pindexFailed = pindexFailed->pprev;
                 }
+                setBlockIndexValid.erase(pindexTest);
                 fInvalidAncestor = true;
                 break;
             }
@@ -2106,8 +2076,8 @@ static CBlockIndex* FindMostWorkChain() {
 static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMostWork) {
     AssertLockHeld(cs_main);
     bool fInvalidFound = false;
-    CBlockIndex *pindexOldTip = chainActive.Tip();
-    CBlockIndex *pindexFork = chainActive.FindFork(pindexMostWork);
+    const CBlockIndex *pindexOldTip = chainActive.Tip();
+    const CBlockIndex *pindexFork = chainActive.FindFork(pindexMostWork);
 
     // Disconnect active blocks which are no longer in the best chain.
     while (chainActive.Tip() && chainActive.Tip() != pindexFork) {
@@ -2138,6 +2108,15 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
                 return false;
             }
         } else {
+            // Delete all entries in setBlockIndexValid that are worse than our new current block.
+            // Note that we can't delete the current block itself, as we may need to return to it later in case a
+            // reorganization to a better block fails.
+            std::set<CBlockIndex*, CBlockIndexWorkComparator>::iterator it = setBlockIndexValid.begin();
+            while (setBlockIndexValid.value_comp()(*it, chainActive.Tip())) {
+                setBlockIndexValid.erase(it++);
+            }
+            // Either the current tip or a successor of it we're working towards is left in setBlockIndexValid.
+            assert(!setBlockIndexValid.empty());
             if (!pindexOldTip || chainActive.Tip()->nChainWork > pindexOldTip->nChainWork) {
                 // We're in a better position than we were. Return temporarily to release the lock.
                 break;
@@ -2520,7 +2499,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
         return false;
 
     if (!CheckBlock(block, state)) {
-        if (state.Invalid() && !state.CorruptionPossible()) {
+        if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
         }
         return false;
@@ -3082,7 +3061,7 @@ bool CVerifyDB::VerifyDB(int nCheckLevel, int nCheckDepth)
             }
         }
         // check level 3: check for inconsistencies during memory-only disconnect of tip blocks
-        if (nCheckLevel >= 3 && pindex == pindexState && (coins.GetCacheSize() + pcoinsTip->GetCacheSize()) <= 2*nCoinCacheSize + 32000) {
+        if (nCheckLevel >= 3 && pindex == pindexState && (coins.GetCacheSize() + pcoinsTip->GetCacheSize()) <= nCoinCacheSize) {
             bool fClean = true;
             if (!DisconnectBlock(block, state, pindex, coins, &fClean))
                 return error("VerifyDB() : *** irrecoverable inconsistency in block data at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
@@ -3658,7 +3637,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         pfrom->fSuccessfullyConnected = true;
 
-        LogPrintf("receive version message: %s: version %d, blocks=%d, us=%s, peer=%d\n", pfrom->cleanSubVer, pfrom->nVersion, pfrom->nStartingHeight, addrMe.ToString(), pfrom->id);
+        string remoteAddr;
+        if (fLogIPs)
+            remoteAddr = ", peeraddr=" + pfrom->addr.ToString();
+
+        LogPrintf("receive version message: %s: version %d, blocks=%d, us=%s, peer=%d%s\n",
+                  pfrom->cleanSubVer, pfrom->nVersion,
+                  pfrom->nStartingHeight, addrMe.ToString(), pfrom->id,
+                  remoteAddr);
 
         AddTimeData(pfrom->addr, nTime);
     }
@@ -3956,6 +3942,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             unsigned int nEvicted = LimitOrphanTxSize(MAX_ORPHAN_TRANSACTIONS);
             if (nEvicted > 0)
                 LogPrint("mempool", "mapOrphan overflow, removed %u tx\n", nEvicted);
+        } else if (pfrom->fWhitelisted) {
+            // Always relay transactions received from whitelisted peers, even
+            // if they are already in the mempool (allowing the node to function
+            // as a gateway for nodes hidden behind it).
+            RelayTransaction(tx);
         }
         int nDoS = 0;
         if (state.IsInvalid(nDoS))
@@ -4379,7 +4370,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         if (pingSend) {
             uint64_t nonce = 0;
             while (nonce == 0) {
-                RAND_bytes((unsigned char*)&nonce, sizeof(nonce));
+                GetRandBytes((unsigned char*)&nonce, sizeof(nonce));
             }
             pto->fPingQueued = false;
             pto->nPingUsecStart = GetTimeMicros();
@@ -4449,11 +4440,14 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 
         CNodeState &state = *State(pto->GetId());
         if (state.fShouldBan) {
-            if (pto->addr.IsLocal())
-                LogPrintf("Warning: not banning local node %s!\n", pto->addr.ToString());
+            if (pto->fWhitelisted)
+                LogPrintf("Warning: not punishing whitelisted peer %s!\n", pto->addr.ToString());
             else {
                 pto->fDisconnect = true;
-                CNode::Ban(pto->addr);
+                if (pto->addr.IsLocal())
+                    LogPrintf("Warning: not banning local peer %s!\n", pto->addr.ToString());
+                else
+                    CNode::Ban(pto->addr);
             }
             state.fShouldBan = false;
         }

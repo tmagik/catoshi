@@ -58,7 +58,8 @@ CWallet* pwalletMain;
 enum BindFlags {
     BF_NONE         = 0,
     BF_EXPLICIT     = (1U << 0),
-    BF_REPORT_ERROR = (1U << 1)
+    BF_REPORT_ERROR = (1U << 1),
+    BF_WHITELIST    = (1U << 2),
 };
 
 static const char* FEE_ESTIMATES_FILENAME="fee_estimates.dat";
@@ -126,12 +127,14 @@ void Shutdown()
     StopNode();
     UnregisterNodeSignals(GetNodeSignals());
 
-    boost::filesystem::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
-    CAutoFile est_fileout = CAutoFile(fopen(est_path.string().c_str(), "wb"), SER_DISK, CLIENT_VERSION);
-    if (est_fileout)
-        mempool.WriteFeeEstimates(est_fileout);
-    else
-        LogPrintf("%s: Failed to write fee estimates to %s\n", __func__, est_path.string());
+    {
+        boost::filesystem::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
+        CAutoFile est_fileout(fopen(est_path.string().c_str(), "wb"), SER_DISK, CLIENT_VERSION);
+        if (est_fileout)
+            mempool.WriteFeeEstimates(est_fileout);
+        else
+            LogPrintf("%s: Failed to write fee estimates to %s\n", __func__, est_path.string());
+    }
 
     {
         LOCK(cs_main);
@@ -178,13 +181,13 @@ void HandleSIGHUP(int)
 
 bool static InitError(const std::string &str)
 {
-    uiInterface.ThreadSafeMessageBox(str, "", CClientUIInterface::MSG_ERROR | CClientUIInterface::NOSHOWGUI);
+    uiInterface.ThreadSafeMessageBox(str, "", CClientUIInterface::MSG_ERROR);
     return false;
 }
 
 bool static InitWarning(const std::string &str)
 {
-    uiInterface.ThreadSafeMessageBox(str, "", CClientUIInterface::MSG_WARNING | CClientUIInterface::NOSHOWGUI);
+    uiInterface.ThreadSafeMessageBox(str, "", CClientUIInterface::MSG_WARNING);
     return true;
 }
 
@@ -192,7 +195,7 @@ bool static Bind(const CService &addr, unsigned int flags) {
     if (!(flags & BF_EXPLICIT) && IsLimited(addr))
         return false;
     std::string strError;
-    if (!BindListenPort(addr, strError)) {
+    if (!BindListenPort(addr, strError, flags & BF_WHITELIST)) {
         if (flags & BF_REPORT_ERROR)
             return InitError(strError);
         return false;
@@ -223,6 +226,9 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -par=<n>               " + strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"), -(int)boost::thread::hardware_concurrency(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS) + "\n";
     strUsage += "  -pid=<file>            " + _("Specify pid file (default: bitcoind.pid)") + "\n";
     strUsage += "  -reindex               " + _("Rebuild block chain index from current blk000??.dat files") + " " + _("on startup") + "\n";
+#if !defined(WIN32)
+    strUsage += "  -sysperms              " + _("Create new files with system default permissions, instead of umask 077 (only effective with disabled wallet functionality)") + "\n";
+#endif
     strUsage += "  -txindex               " + _("Maintain a full transaction index (default: 0)") + "\n";
 
     strUsage += "\n" + _("Connection options:") + "\n";
@@ -233,14 +239,16 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -connect=<ip>          " + _("Connect only to the specified node(s)") + "\n";
     strUsage += "  -discover              " + _("Discover own IP address (default: 1 when listening and no -externalip)") + "\n";
     strUsage += "  -dns                   " + _("Allow DNS lookups for -addnode, -seednode and -connect") + " " + _("(default: 1)") + "\n";
-    strUsage += "  -dnsseed               " + _("Find peers using DNS lookup (default: 1 unless -connect)") + "\n";
+    strUsage += "  -dnsseed               " + _("Query for peer addresses via DNS lookup, if low on addresses (default: 1 unless -connect)") + "\n";
     strUsage += "  -externalip=<ip>       " + _("Specify your own public address") + "\n";
+    strUsage += "  -forcednsseed          " + _("Always query for peer addresses via DNS lookup (default: 0)") + "\n";
     strUsage += "  -listen                " + _("Accept connections from outside (default: 1 if no -proxy or -connect)") + "\n";
     strUsage += "  -maxconnections=<n>    " + _("Maintain at most <n> connections to peers (default: 125)") + "\n";
     strUsage += "  -maxreceivebuffer=<n>  " + _("Maximum per-connection receive buffer, <n>*1000 bytes (default: 5000)") + "\n";
     strUsage += "  -maxsendbuffer=<n>     " + _("Maximum per-connection send buffer, <n>*1000 bytes (default: 1000)") + "\n";
     strUsage += "  -onion=<ip:port>       " + _("Use separate SOCKS5 proxy to reach peers via Tor hidden services (default: -proxy)") + "\n";
     strUsage += "  -onlynet=<net>         " + _("Only connect to nodes in network <net> (IPv4, IPv6 or Tor)") + "\n";
+    strUsage += "  -permitbaremultisig    " + _("Relay non-P2SH multisig (default: 1)") + "\n";
     strUsage += "  -port=<port>           " + _("Listen for connections on <port> (default: 8333 or testnet: 18333)") + "\n";
     strUsage += "  -proxy=<ip:port>       " + _("Connect through SOCKS5 proxy") + "\n";
     strUsage += "  -seednode=<ip>         " + _("Connect to a node to retrieve peer addresses, and disconnect") + "\n";
@@ -252,6 +260,9 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -upnp                  " + _("Use UPnP to map the listening port (default: 0)") + "\n";
 #endif
 #endif
+    strUsage += "  -whitebind=<addr>      " + _("Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6") + "\n";
+    strUsage += "  -whitelist=<netmask>   " + _("Whitelist peers connecting from the given netmask or ip. Can be specified multiple times.") + "\n";
+    strUsage += "                         " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway") + "\n";
 
 #ifdef ENABLE_WALLET
     strUsage += "\n" + _("Wallet options:") + "\n";
@@ -268,14 +279,13 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -upgradewallet         " + _("Upgrade wallet to latest format") + " " + _("on startup") + "\n";
     strUsage += "  -wallet=<file>         " + _("Specify wallet file (within data directory)") + " " + _("(default: wallet.dat)") + "\n";
     strUsage += "  -walletnotify=<cmd>    " + _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)") + "\n";
-    strUsage += "  -zapwallettxes=<mode>  " + _("Delete all wallet transactions and only recover those part of the blockchain through -rescan on startup") + "\n";
+    strUsage += "  -zapwallettxes=<mode>  " + _("Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup") + "\n";
     strUsage += "                         " + _("(default: 1, 1 = keep tx meta data e.g. account owner and payment request information, 2 = drop tx meta data)") + "\n";
 #endif
 
     strUsage += "\n" + _("Debugging/Testing options:") + "\n";
     if (GetBoolArg("-help-debug", false))
     {
-        strUsage += "  -benchmark             " + _("Show benchmark information (default: 0)") + "\n";
         strUsage += "  -checkpoints           " + _("Only accept block chain matching built-in checkpoints (default: 1)") + "\n";
         strUsage += "  -dblogsize=<n>         " + _("Flush database activity from memory pool to disk log every <n> megabytes (default: 100)") + "\n";
         strUsage += "  -disablesafemode       " + _("Disable safemode, override a real safe mode event (default: 0)") + "\n";
@@ -288,7 +298,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -debug=<category>      " + _("Output debugging information (default: 0, supplying <category> is optional)") + "\n";
     strUsage += "                         " + _("If <category> is not supplied, output all debugging information.") + "\n";
     strUsage += "                         " + _("<category> can be:");
-    strUsage +=                                 " addrman, alert, coindb, db, lock, rand, rpc, selectcoins, mempool, net"; // Don't translate these and qt below
+    strUsage +=                                 " addrman, alert, bench, coindb, db, lock, rand, rpc, selectcoins, mempool, net"; // Don't translate these and qt below
     if (mode == HMM_BITCOIN_QT)
         strUsage += ", qt";
     strUsage += ".\n";
@@ -481,7 +491,15 @@ bool AppInit2(boost::thread_group& threadGroup)
     }
 #endif
 #ifndef WIN32
-    umask(077);
+
+    if (GetBoolArg("-sysperms", false)) {
+#ifdef ENABLE_WALLET
+        if (!GetBoolArg("-disablewallet", false))
+            return InitError("Error: -sysperms is not allowed in combination with enabled wallet functionality");
+#endif
+    } else {
+        umask(077);
+    }
 
     // Clean shutdown on SIGTERM
     struct sigaction sa;
@@ -506,11 +524,11 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     // ********************************************************* Step 2: parameter interactions
 
-    if (mapArgs.count("-bind")) {
+    if (mapArgs.count("-bind") || mapArgs.count("-whitebind")) {
         // when specifying an explicit binding address, you want to listen on it
         // even when -connect or -proxy is specified
         if (SoftSetBoolArg("-listen", true))
-            LogPrintf("AppInit2 : parameter interaction: -bind set -> setting -listen=1\n");
+            LogPrintf("AppInit2 : parameter interaction: -bind or -whitebind set -> setting -listen=1\n");
     }
 
     if (mapArgs.count("-connect") && mapMultiArgs["-connect"].size() > 0) {
@@ -554,7 +572,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     }
 
     // Make sure enough file descriptors are available
-    int nBind = std::max((int)mapArgs.count("-bind"), 1);
+    int nBind = std::max((int)mapArgs.count("-bind") + (int)mapArgs.count("-whitebind"), 1);
     nMaxConnections = GetArg("-maxconnections", 125);
     nMaxConnections = std::max(std::min(nMaxConnections, (int)(FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS)), 0);
     int nFD = RaiseFileDescriptorLimit(nMaxConnections + MIN_CORE_FILEDESCRIPTORS);
@@ -581,7 +599,9 @@ bool AppInit2(boost::thread_group& threadGroup)
     if (GetBoolArg("-tor", false))
         return InitError(_("Error: Unsupported argument -tor found, use -onion."));
 
-    fBenchmark = GetBoolArg("-benchmark", false);
+    if (GetBoolArg("-benchmark", false))
+        InitWarning(_("Warning: Unsupported argument -benchmark ignored, use -debug=bench."));
+
     // Checkmempool defaults to true in regtest mode
     mempool.setSanityCheck(GetBoolArg("-checkmempool", Params().DefaultCheckMemPool()));
     Checkpoints::fEnabled = GetBoolArg("-checkpoints", true);
@@ -659,7 +679,10 @@ bool AppInit2(boost::thread_group& threadGroup)
     bSpendZeroConfChange = GetArg("-spendzeroconfchange", true);
 
     std::string strWalletFile = GetArg("-wallet", "wallet.dat");
-#endif
+#endif // ENABLE_WALLET
+
+    fIsBareMultisigStd = GetArg("-permitbaremultisig", true);
+
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
     // Sanity check
     if (!InitSanityCheck())
@@ -771,6 +794,15 @@ bool AppInit2(boost::thread_group& threadGroup)
         }
     }
 
+    if (mapArgs.count("-whitelist")) {
+        BOOST_FOREACH(const std::string& net, mapMultiArgs["-whitelist"]) {
+            CSubNet subnet(net);
+            if (!subnet.IsValid())
+                return InitError(strprintf(_("Invalid netmask specified in -whitelist: '%s'"), net));
+            CNode::AddWhitelistedRange(subnet);
+        }
+    }
+
     CService addrProxy;
     bool fProxy = false;
     if (mapArgs.count("-proxy")) {
@@ -807,12 +839,20 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     bool fBound = false;
     if (fListen) {
-        if (mapArgs.count("-bind")) {
+        if (mapArgs.count("-bind") || mapArgs.count("-whitebind")) {
             BOOST_FOREACH(std::string strBind, mapMultiArgs["-bind"]) {
                 CService addrBind;
                 if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
                     return InitError(strprintf(_("Cannot resolve -bind address: '%s'"), strBind));
                 fBound |= Bind(addrBind, (BF_EXPLICIT | BF_REPORT_ERROR));
+            }
+            BOOST_FOREACH(std::string strBind, mapMultiArgs["-whitebind"]) {
+                CService addrBind;
+                if (!Lookup(strBind.c_str(), addrBind, 0, false))
+                    return InitError(strprintf(_("Cannot resolve -whitebind address: '%s'"), strBind));
+                if (addrBind.GetPort() == 0)
+                    return InitError(strprintf(_("Need to specify a port with -whitebind: '%s'"), strBind));
+                fBound |= Bind(addrBind, (BF_EXPLICIT | BF_REPORT_ERROR | BF_WHITELIST));
             }
         }
         else {
@@ -1046,10 +1086,10 @@ bool AppInit2(boost::thread_group& threadGroup)
                 InitWarning(msg);
             }
             else if (nLoadWalletRet == DB_TOO_NEW)
-                strErrors << _("Error loading wallet.dat: Wallet requires newer version of Bitcoin") << "\n";
+                strErrors << _("Error loading wallet.dat: Wallet requires newer version of Bitcoin Core") << "\n";
             else if (nLoadWalletRet == DB_NEED_REWRITE)
             {
-                strErrors << _("Wallet needed to be rewritten: restart Bitcoin to complete") << "\n";
+                strErrors << _("Wallet needed to be rewritten: restart Bitcoin Core to complete") << "\n";
                 LogPrintf("%s", strErrors.str());
                 return InitError(strErrors.str());
             }
@@ -1191,7 +1231,6 @@ bool AppInit2(boost::thread_group& threadGroup)
     LogPrintf("mapAddressBook.size() = %u\n",  pwalletMain ? pwalletMain->mapAddressBook.size() : 0);
 #endif
 
-    InitRespendFilter();
     StartNode(threadGroup);
     if (fServer)
         StartRPCThreads();

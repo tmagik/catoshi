@@ -5,13 +5,14 @@
 
 #include "script.h"
 
+#include "crypto/ripemd160.h"
+#include "crypto/sha1.h"
+#include "crypto/sha2.h"
 #include "core.h"
 #include "hash.h"
 #include "key.h"
 #include "keystore.h"
-#include "crypto/sha1.h"
-#include "crypto/sha2.h"
-#include "crypto/ripemd160.h"
+#include "random.h"
 #include "sync.h"
 #include "uint256.h"
 #include "util.h"
@@ -1097,7 +1098,6 @@ uint256 SignatureHash(const CScript &scriptCode, const CTransaction& txTo, unsig
 // Valid signature cache, to avoid doing expensive ECDSA signature checking
 // twice for every transaction (once when accepted into memory pool, and
 // again when accepted into the block chain)
-
 class CSignatureCache
 {
 private:
@@ -1443,18 +1443,6 @@ unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
     }
     return nResult;
 }
-
-
-class CKeyStoreIsMineVisitor : public boost::static_visitor<bool>
-{
-private:
-    const CKeyStore *keystore;
-public:
-    CKeyStoreIsMineVisitor(const CKeyStore *keystoreIn) : keystore(keystoreIn) { }
-    bool operator()(const CNoDestination &dest) const { return false; }
-    bool operator()(const CKeyID &keyID) const { return keystore->HaveKey(keyID); }
-    bool operator()(const CScriptID &scriptID) const { return keystore->HaveCScript(scriptID); }
-};
 
 isminetype IsMine(const CKeyStore &keystore, const CTxDestination& dest)
 {

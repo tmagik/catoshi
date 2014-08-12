@@ -40,6 +40,8 @@ void StartRPCThreads();
 void StartDummyRPCThread();
 /* Stop RPC threads */
 void StopRPCThreads();
+/* Query whether RPC is running */
+bool IsRPCRunning();
 
 /*
   Type-check arguments; throws JSONRPCError if wrong type given. Does not check that
@@ -69,6 +71,7 @@ typedef json_spirit::Value(*rpcfn_type)(const json_spirit::Array& params, bool f
 class CRPCCommand
 {
 public:
+    std::string category;
     std::string name;
     rpcfn_type actor;
     bool okSafeMode;
@@ -203,5 +206,6 @@ extern json_spirit::Value getblock(const json_spirit::Array& params, bool fHelp)
 extern json_spirit::Value gettxoutsetinfo(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value gettxout(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value verifychain(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getchaintips(const json_spirit::Array& params, bool fHelp);
 
 #endif
