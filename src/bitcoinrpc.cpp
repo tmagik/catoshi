@@ -967,13 +967,12 @@ Value listminting(const Array& params, bool fHelp)
 
     int count = -1;
 
-    // Cannot get the ConvertTo method work without getting a "value is type str, expected int" error
     if(params.size() > 0)
-        count = boost::lexical_cast<int>(params[0].get_str());
+        count = params[0].get_int();
 
     int from = 0;
     if(params.size() > 1)
-        from = boost::lexical_cast<int>(params[1].get_str());;
+        from = params[1].get_int();
 
     Array ret;
 
@@ -4077,7 +4076,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "sendrawtransaction"     && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "gettxout"               && n > 1) ConvertTo<int64_t>(params[1]);
     if (strMethod == "gettxout"               && n > 2) ConvertTo<bool>(params[2]);
-
+    if (strMethod == "listminting"            && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "listminting"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     return params;
 }
 
