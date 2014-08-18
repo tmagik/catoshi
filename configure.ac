@@ -90,6 +90,12 @@ AC_ARG_ENABLE([hardening],
   [use_hardening=$enableval],
   [use_hardening=yes])
 
+AC_ARG_ENABLE([reduce-exports],
+  [AS_HELP_STRING([--enable-reduce-exports],
+  [attempt to reduce exported symbols in the resulting executables (default is yes)])],
+  [use_reduce_exports=$enableval],
+  [use_reduce_exports=auto])
+
 AC_ARG_ENABLE([ccache],
   [AS_HELP_STRING([--enable-ccache],
   [use ccache for building (default is yes if ccache is found)])],
@@ -396,6 +402,40 @@ AC_TRY_COMPILE([#include <sys/socket.h>],
 
 AC_SEARCH_LIBS([clock_gettime],[rt])
 
+AC_MSG_CHECKING([for visibility attribute])
+AC_LINK_IFELSE([AC_LANG_SOURCE([
+  int foo_def( void ) __attribute__((visibility("default")));
+  int main(){}
+  ])],
+  [
+    AC_DEFINE(HAVE_VISIBILITY_ATTRIBUTE,1,[Define if the visibility attribute is supported.])
+    AC_MSG_RESULT(yes)
+  ],
+  [
+    AC_MSG_RESULT(no)
+    if test x$use_reduce_exports = xyes; then
+      AC_MSG_ERROR([Cannot find a working visibility attribute. Use --disable-reduced-exports.])
+    fi
+      AC_MSG_WARN([Cannot find a working visibility attribute. Disabling reduced exports.])
+      use_reduce_exports=no
+  ]
+)
+
+if test x$use_reduce_exports != xno; then
+  AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],[RE_CXXFLAGS="-fvisibility=hidden"],
+  [
+    if test x$use_reduce_exports = xyes; then
+      AC_MSG_ERROR([Cannot set default symbol visibility. Use --disable-reduced-exports.])
+    fi
+    AC_MSG_WARN([Cannot set default symbol visibility. Disabling reduced exports.])
+    use_reduce_exports=no
+  ])
+  if test x$use_reduce_exports != xno; then
+    AX_CHECK_LINK_FLAG([[-Wl,--exclude-libs,ALL]], [RELDFLAGS="-Wl,--exclude-libs,ALL"])
+    CXXFLAGS="$CXXFLAGS $RE_CXXFLAGS"
+  fi
+fi
+
 LEVELDB_CPPFLAGS=
 LIBLEVELDB=
 LIBMEMENV=
@@ -420,6 +460,35 @@ fi
 
 dnl Check for boost libs
 AX_BOOST_BASE
+
+if test x$use_reduce_exports != xno; then
+  AC_MSG_CHECKING([for working boost reduced exports])
+  TEMP_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$BOOST_CPPFLAGS $CPPFLAGS"
+  AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[
+      @%:@include <boost/version.hpp>
+    ]], [[
+      #if BOOST_VERSION >= 104900
+      // Everything is okay
+      #else
+      #  error Boost version is too old
+      #endif
+    ]])],[
+      AC_MSG_RESULT(yes)
+    ],[:
+    if test x$use_reduce_exports = xauto; then
+      use_reduce_exports=no
+    else
+      if test x$use_reduce_exports = xyes; then
+        AC_MSG_ERROR([boost versions < 1.49 are known to be broken with reduced exports. Use --disable-reduced-exports.])
+      fi
+    fi
+    AC_MSG_RESULT(no)
+    AC_MSG_WARN([boost versions < 1.49 are known to have symbol visibility issues. Disabling reduced exports.])
+  ])
+  CPPFLAGS="$TEMP_CPPFLAGS"
+fi
+
 AX_BOOST_SYSTEM
 AX_BOOST_FILESYSTEM
 AX_BOOST_PROGRAM_OPTIONS
@@ -510,15 +579,15 @@ if test x$boost_sleep != xyes; then
   AC_MSG_ERROR(No working boost sleep implementation found. If on ubuntu 13.10 with libboost1.54-all-dev remove libboost.1.54-all-dev and use libboost1.53-all-dev)
 fi
 
-AC_ARG_WITH([cli],
-  [AS_HELP_STRING([--with-cli],
-  [with CLI (default is yes)])],
-  [build_bitcoin_cli=$withval],
-  [build_bitcoin_cli=yes])
+AC_ARG_WITH([utils],
+  [AS_HELP_STRING([--with-utils],
+  [build bitcoin-cli bitcoin-tx (default=yes)])],
+  [build_bitcoin_utils=$withval],
+  [build_bitcoin_utils=yes])
 
 AC_ARG_WITH([daemon],
   [AS_HELP_STRING([--with-daemon],
-  [with daemon (default is yes)])],
+  [build bitcoind daemon (default=yes)])],
   [build_bitcoind=$withval],
   [build_bitcoind=yes])
 
@@ -562,9 +631,9 @@ AC_MSG_CHECKING([whether to build bitcoind])
 AM_CONDITIONAL([BUILD_BITCOIND], [test x$build_bitcoind = xyes])
 AC_MSG_RESULT($build_bitcoind)
 
-AC_MSG_CHECKING([whether to build bitcoin-cli])
-AM_CONDITIONAL([BUILD_BITCOIN_CLI], [test x$build_bitcoin_cli = xyes])
-AC_MSG_RESULT($build_bitcoin_cli)
+AC_MSG_CHECKING([whether to build utils (bitcoin-cli bitcoin-tx)])
+AM_CONDITIONAL([BUILD_BITCOIN_UTILS], [test x$build_bitcoin_utils = xyes])
+AC_MSG_RESULT($build_bitcoin_utils)
 
 dnl sets $bitcoin_enable_qt, $bitcoin_enable_qt_test, $bitcoin_enable_qt_dbus
 BITCOIN_QT_CONFIGURE([$use_pkgconfig], [qt4])
@@ -672,8 +741,15 @@ else
   AC_MSG_RESULT([no])
 fi
 
-if test "x$use_tests$build_bitcoind$use_qt" = "xnonono"; then
-  AC_MSG_ERROR([No targets! Please specify at least one of: --enable-cli --enable-daemon --enable-gui or --enable-tests])
+AC_MSG_CHECKING([whether to reduce exports])
+if test x$use_reduce_exports != xno; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+fi
+
+if test x$build_bitcoin_utils$build_bitcoind$bitcoin_enable_qt$use_tests = xnononono; then
+  AC_MSG_ERROR([No targets! Please specify at least one of: --with-utils --with-daemon --with-gui or --enable-tests])
 fi
 
 AM_CONDITIONAL([TARGET_DARWIN], [test x$TARGET_OS = xdarwin])
@@ -704,6 +780,7 @@ AC_SUBST(CLIENT_VERSION_IS_RELEASE, _CLIENT_VERSION_IS_RELEASE)
 AC_SUBST(COPYRIGHT_YEAR, _COPYRIGHT_YEAR)
 
 
+AC_SUBST(RELDFLAGS)
 AC_SUBST(LIBTOOL_LDFLAGS)
 AC_SUBST(USE_UPNP)
 AC_SUBST(USE_QRCODE)

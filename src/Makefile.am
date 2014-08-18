@@ -55,11 +55,9 @@ if BUILD_BITCOIND
   bin_PROGRAMS += bitcoind
 endif
 
-if BUILD_BITCOIN_CLI
-  bin_PROGRAMS += bitcoin-cli
+if BUILD_BITCOIN_UTILS
+  bin_PROGRAMS += bitcoin-cli bitcoin-tx
 endif
-
-bin_PROGRAMS += bitcoin-tx
 
 .PHONY: FORCE
 # bitcoin core #
@@ -229,6 +227,7 @@ libbitcoin_util_a_SOURCES += compat/glibcxx_compat.cpp
 endif
 
 # cli: shared between bitcoin-cli and bitcoin-qt
+libbitcoin_cli_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_cli_a_SOURCES = \
   rpcclient.cpp \
   $(BITCOIN_CORE_H)
@@ -262,6 +261,7 @@ endif
 
 bitcoind_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS)
 bitcoind_CPPFLAGS = $(BITCOIN_INCLUDES)
+bitcoind_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS)
 
 # bitcoin-cli binary #
 bitcoin_cli_LDADD = \
@@ -299,10 +299,12 @@ endif
 bitcoin_tx_SOURCES = bitcoin-tx.cpp
 bitcoin_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
 #
+bitcoin_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS)
 
 if TARGET_WINDOWS
 bitcoin_cli_SOURCES += bitcoin-cli-res.rc
 endif
+bitcoin_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS)
 
 CLEANFILES = leveldb/libleveldb.a leveldb/libmemenv.a *.gcda *.gcno
 
