@@ -55,11 +55,9 @@ if BUILD_BITCOIND
   bin_PROGRAMS += bitcoind
 endif
 
-if BUILD_BITCOIN_CLI
-  bin_PROGRAMS += bitcoin-cli
+if BUILD_BITCOIN_UTILS
+  bin_PROGRAMS += bitcoin-cli bitcoin-tx
 endif
-
-bin_PROGRAMS += bitcoin-tx
 
 .PHONY: FORCE
 # bitcoin core #
@@ -187,6 +185,7 @@ univalue_libbitcoin_univalue_a_SOURCES = \
   univalue/univalue.cpp \
   univalue/univalue_read.cpp \
   univalue/univalue_write.cpp \
+  univalue/univalue_escapes.h \
   univalue/univalue.h
 
 # common: shared between bitcoind, and bitcoin-qt and non-server tools
