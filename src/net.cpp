@@ -1810,12 +1810,6 @@ void static Discover()
 
 void StartNode(void* parg)
 {
-    if (semOutbound == NULL) {
-        // initialize semaphore
-        int nMaxOutbound = min(MAX_OUTBOUND_CONNECTIONS, (int)GetArg("-maxconnections", 125));
-        semOutbound = new CSemaphore(nMaxOutbound);
-    }
-
 #ifdef USE_UPNP
 #if USE_UPNP
     fUseUPnP = GetBoolArg("-upnp", true);
