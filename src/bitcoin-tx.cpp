@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <boost/assign/list_of.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 using namespace boost::assign;
@@ -283,12 +284,12 @@ static const struct {
     const char *flagStr;
     int flags;
 } sighashOptions[N_SIGHASH_OPTS] = {
-    "ALL", SIGHASH_ALL,
-    "NONE", SIGHASH_NONE,
-    "SINGLE", SIGHASH_SINGLE,
-    "ALL|ANYONECANPAY", SIGHASH_ALL|SIGHASH_ANYONECANPAY,
-    "NONE|ANYONECANPAY", SIGHASH_NONE|SIGHASH_ANYONECANPAY,
-    "SINGLE|ANYONECANPAY", SIGHASH_SINGLE|SIGHASH_ANYONECANPAY,
+    {"ALL", SIGHASH_ALL},
+    {"NONE", SIGHASH_NONE},
+    {"SINGLE", SIGHASH_SINGLE},
+    {"ALL|ANYONECANPAY", SIGHASH_ALL|SIGHASH_ANYONECANPAY},
+    {"NONE|ANYONECANPAY", SIGHASH_NONE|SIGHASH_ANYONECANPAY},
+    {"SINGLE|ANYONECANPAY", SIGHASH_SINGLE|SIGHASH_ANYONECANPAY},
 };
 
 static bool findSighashFlags(int& flags, const string& flagStr)
@@ -501,13 +502,34 @@ static void OutputTx(const CTransaction& tx)
         OutputTxHex(tx);
 }
 
+static string readStdin()
+{
+    char buf[4096];
+    string ret;
+
+    while (!feof(stdin)) {
+        size_t bread = fread(buf, 1, sizeof(buf), stdin);
+        ret.append(buf, bread);
+        if (bread < sizeof(buf))
+            break;
+    }
+
+    if (ferror(stdin))
+        throw runtime_error("error reading stdin");
+
+    boost::algorithm::trim_right(ret);
+
+    return ret;
+}
+
 static int CommandLineRawTx(int argc, char* argv[])
 {
     string strPrint;
     int nRet = 0;
     try {
-        // Skip switches
-        while (argc > 1 && IsSwitchChar(argv[1][0])) {
+        // Skip switches; Permit common stdin convention "-"
+        while (argc > 1 && IsSwitchChar(argv[1][0]) &&
+               (argv[1][1] != 0)) {
             argc--;
             argv++;
         }
@@ -522,6 +544,8 @@ static int CommandLineRawTx(int argc, char* argv[])
 
             // param: hex-encoded bitcoin transaction
             string strHexTx(argv[1]);
+            if (strHexTx == "-")                 // "-" implies standard input
+                strHexTx = readStdin();
 
             if (!DecodeHexTx(txDecodeTmp, strHexTx))
                 throw runtime_error("invalid transaction encoding");
