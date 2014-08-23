@@ -60,15 +60,14 @@ public:
         READWRITE(setSubVer);
         READWRITE(nPriority);
 
-        READWRITE(strComment);
-        READWRITE(strStatusBar);
-        READWRITE(strReserved);
+        READWRITE(LIMITED_STRING(strComment, 65536));
+        READWRITE(LIMITED_STRING(strStatusBar, 256));
+        READWRITE(LIMITED_STRING(strReserved, 256));
     )
 
     void SetNull();
 
     std::string ToString() const;
-    void print() const;
 };
 
 /** An alert is a combination of a serialized CUnsignedAlert and a signature. */
