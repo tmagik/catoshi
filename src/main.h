@@ -45,6 +45,8 @@ static const unsigned int MAX_STANDARD_TX_SIZE = 100000;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 /** Maxiumum number of signature check operations in an IsStandard() P2SH script */
 static const unsigned int MAX_P2SH_SIGOPS = 15;
+/** The maximum number of sigops we're willing to relay/mine in a single tx */
+static const unsigned int MAX_TX_SIGOPS = MAX_BLOCK_SIGOPS/5;
 /** The maximum number of orphan transactions kept in memory */
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
 /** Default for -maxorphanblocks, maximum number of orphan blocks kept in memory */
@@ -837,11 +839,6 @@ public:
             GetBlockHash().ToString());
     }
 
-    void print() const
-    {
-        LogPrintf("%s\n", ToString());
-    }
-
     // Check whether this block index entry is valid up to the passed validity level.
     bool IsValid(enum BlockStatus nUpTo = BLOCK_VALID_TRANSACTIONS) const
     {
@@ -932,11 +929,6 @@ public:
             GetBlockHash().ToString(),
             hashPrev.ToString());
         return str;
-    }
-
-    void print() const
-    {
-        LogPrintf("%s\n", ToString());
     }
 };
 
