@@ -824,11 +824,6 @@ public:
     {
         return strprintf("COutput(%s, %d, %d) [%s]", tx->GetHash().ToString(), i, nDepth, FormatMoney(tx->vout[i].nValue).c_str());
     }
-
-    void print() const
-    {
-        LogPrintf("%s\n", ToString());
-    }
 };
 
 
@@ -858,7 +853,7 @@ public:
         READWRITE(vchPrivKey);
         READWRITE(nTimeCreated);
         READWRITE(nTimeExpires);
-        READWRITE(strComment);
+        READWRITE(LIMITED_STRING(strComment, 65536));
     )
 };
 
@@ -933,7 +928,7 @@ public:
         // Note: strAccount is serialized as part of the key, not here.
         READWRITE(nCreditDebit);
         READWRITE(nTime);
-        READWRITE(strOtherAccount);
+        READWRITE(LIMITED_STRING(strOtherAccount, 65536));
 
         if (!fRead)
         {
@@ -949,7 +944,7 @@ public:
             }
         }
 
-        READWRITE(strComment);
+        READWRITE(LIMITED_STRING(strComment, 65536));
 
         size_t nSepPos = strComment.find("\0", 0, 1);
         if (fRead)
