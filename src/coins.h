@@ -247,7 +247,10 @@ private:
 
 public:
     CCoinsKeyHasher();
-    uint64_t operator()(const uint256& key) const {
+    // This *must* return size_t. With Boost 1.46 on 32-bit systems the
+    // unordered_map will behave unpredictably if the custom hasher returns a
+    // uint64_t, resulting in failures when syncing the chain (#4634).
+    size_t operator()(const uint256& key) const {
         return key.GetHash(salt);
     }
 };
@@ -288,8 +291,9 @@ public:
     // Modify the currently active block hash
     virtual bool SetBestBlock(const uint256 &hashBlock);
 
-    // Do a bulk modification (multiple SetCoins + one SetBestBlock)
-    virtual bool BatchWrite(const CCoinsMap &mapCoins, const uint256 &hashBlock);
+    // Do a bulk modification (multiple SetCoins + one SetBestBlock).
+    // The passed mapCoins can be modified.
+    virtual bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
 
     // Calculate statistics about the unspent transaction output set
     virtual bool GetStats(CCoinsStats &stats);
@@ -313,7 +317,7 @@ public:
     uint256 GetBestBlock();
     bool SetBestBlock(const uint256 &hashBlock);
     void SetBackend(CCoinsView &viewIn);
-    bool BatchWrite(const CCoinsMap &mapCoins, const uint256 &hashBlock);
+    bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
     bool GetStats(CCoinsStats &stats);
 };
 
@@ -334,7 +338,7 @@ public:
     bool HaveCoins(const uint256 &txid);
     uint256 GetBestBlock();
     bool SetBestBlock(const uint256 &hashBlock);
-    bool BatchWrite(const CCoinsMap &mapCoins, const uint256 &hashBlock);
+    bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
 
     // Return a modifiable reference to a CCoins. Check HaveCoins first.
     // Many methods explicitly require a CCoinsViewCache because of this method, to reduce
@@ -343,6 +347,7 @@ public:
 
     // Push the modifications applied to this cache to its base.
     // Failure to call this method before destruction will cause the changes to be forgotten.
+    // If false is returned, the state of this cache (and its backing view) will be undefined.
     bool Flush();
 
     // Calculate the size of the cache (in number of transactions)
