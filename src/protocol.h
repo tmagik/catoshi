@@ -64,6 +64,7 @@ class CMessageHeader
 enum
 {
     NODE_NETWORK = (1 << 0),
+    NODE_GETUTXOS = (1 << 1),
 
     // Bits 24-31 are reserved for temporary experiments. Just pick a bit that
     // isn't getting used, or one not being used much, and notify the
@@ -98,8 +99,6 @@ class CAddress : public CService
              READWRITE(*pip);
             )
 
-        void print() const;
-
     // TODO: make private (improves encapsulation)
     public:
         uint64_t nServices;
@@ -130,7 +129,6 @@ class CInv
         bool IsKnownType() const;
         const char* GetCommand() const;
         std::string ToString() const;
-        void print() const;
 
     // TODO: make private (improves encapsulation)
     public:

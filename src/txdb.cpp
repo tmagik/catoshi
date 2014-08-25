@@ -54,12 +54,15 @@ bool CCoinsViewDB::SetBestBlock(const uint256 &hashBlock) {
     return db.WriteBatch(batch);
 }
 
-bool CCoinsViewDB::BatchWrite(const CCoinsMap &mapCoins, const uint256 &hashBlock) {
+bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
     LogPrint("coindb", "Committing %u changed transactions to coin database...\n", (unsigned int)mapCoins.size());
 
     CLevelDBBatch batch;
-    for (CCoinsMap::const_iterator it = mapCoins.begin(); it != mapCoins.end(); it++)
+    for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         BatchWriteCoins(batch, it->first, it->second);
+        CCoinsMap::iterator itOld = it++;
+        mapCoins.erase(itOld);
+    }
     if (hashBlock != uint256(0))
         BatchWriteHashBestChain(batch, hashBlock);
 
@@ -103,7 +106,7 @@ bool CBlockTreeDB::ReadLastBlockFile(int &nFile) {
 }
 
 bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
-    leveldb::Iterator *pcursor = db.NewIterator();
+    boost::scoped_ptr<leveldb::Iterator> pcursor(db.NewIterator());
     pcursor->SeekToFirst();
 
     CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
@@ -146,7 +149,6 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
             return error("%s : Deserialize or I/O error - %s", __func__, e.what());
         }
     }
-    delete pcursor;
     stats.nHeight = mapBlockIndex.find(GetBestBlock())->second->nHeight;
     stats.hashSerialized = ss.GetHash();
     stats.nTotalAmount = nTotalAmount;
@@ -178,7 +180,7 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
 
 bool CBlockTreeDB::LoadBlockIndexGuts()
 {
-    leveldb::Iterator *pcursor = NewIterator();
+    boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
 
     CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
     ssKeySet << make_pair('b', uint256(0));
@@ -224,7 +226,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
             return error("%s : Deserialize or I/O error - %s", __func__, e.what());
         }
     }
-    delete pcursor;
 
     return true;
 }
