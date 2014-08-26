@@ -20,9 +20,11 @@
 
 #include <sstream>
 
+#include <boost/dynamic_bitset.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/thread.hpp>
 
 using namespace std;
 using namespace boost;
@@ -643,7 +645,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 // 2. P2SH scripts with a crazy number of expensive
 //    CHECKSIG/CHECKMULTISIG operations
 //
-bool AreInputsStandard(const CTransaction& tx, CCoinsViewCache& mapInputs)
+bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
 {
     if (tx.IsCoinBase())
         return true; // Coinbases don't use vin normally
@@ -716,7 +718,7 @@ unsigned int GetLegacySigOpCount(const CTransaction& tx)
     return nSigOps;
 }
 
-unsigned int GetP2SHSigOpCount(const CTransaction& tx, CCoinsViewCache& inputs)
+unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& inputs)
 {
     if (tx.IsCoinBase())
         return 0;
@@ -956,9 +958,18 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         if (Params().RequireStandard() && !AreInputsStandard(tx, view))
             return error("AcceptToMemoryPool: : nonstandard transaction input");
 
-        // Note: if you modify this code to accept non-standard transactions, then
-        // you should add code here to check that the transaction does a
-        // reasonable number of ECDSA signature verifications.
+        // Check that the transaction doesn't have an excessive number of
+        // sigops, making it impossible to mine. Since the coinbase transaction
+        // itself can contain sigops MAX_TX_SIGOPS is less than
+        // MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
+        // merely non-standard transaction.
+        unsigned int nSigOps = GetLegacySigOpCount(tx);
+        nSigOps += GetP2SHSigOpCount(tx, view);
+        if (nSigOps > MAX_TX_SIGOPS)
+            return state.DoS(0,
+                             error("AcceptToMemoryPool : too many sigops %s, %d > %d",
+                                   hash.ToString(), nSigOps, MAX_TX_SIGOPS),
+                             REJECT_NONSTANDARD, "bad-txns-too-many-sigops");
 
         int64_t nValueOut = tx.GetValueOut();
         int64_t nFees = nValueIn-nValueOut;
@@ -1013,7 +1024,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         pool.addUnchecked(hash, entry);
     }
 
-    g_signals.SyncTransaction(tx, NULL);
+    SyncWithWallets(tx, NULL);
 
     return true;
 }
@@ -1460,7 +1471,7 @@ bool VerifySignature(const CCoins& txFrom, const CTransaction& txTo, unsigned in
     return CScriptCheck(txFrom, txTo, nIn, flags, nHashType)();
 }
 
-bool CheckInputs(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, std::vector<CScriptCheck> *pvChecks)
+bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, std::vector<CScriptCheck> *pvChecks)
 {
     if (!tx.IsCoinBase())
     {
@@ -1847,10 +1858,6 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 
     int64_t nTime3 = GetTimeMicros(); nTimeIndex += nTime3 - nTime2;
     LogPrint("bench", "    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime3 - nTime2), nTimeIndex * 0.000001);
-
-    // Watch for transactions paying to me
-    BOOST_FOREACH(const CTransaction& tx, block.vtx)
-        g_signals.SyncTransaction(tx, &block);
 
     // Watch for changes to the previous coinbase transaction.
     static uint256 hashPrevBestCoinBase;
@@ -3052,7 +3059,7 @@ bool CVerifyDB::VerifyDB(int nCheckLevel, int nCheckDepth)
             }
         }
         // check level 3: check for inconsistencies during memory-only disconnect of tip blocks
-        if (nCheckLevel >= 3 && pindex == pindexState && (coins.GetCacheSize() + pcoinsTip->GetCacheSize()) <= 2*nCoinCacheSize + 32000) {
+        if (nCheckLevel >= 3 && pindex == pindexState && (coins.GetCacheSize() + pcoinsTip->GetCacheSize()) <= nCoinCacheSize) {
             bool fClean = true;
             if (!DisconnectBlock(block, state, pindex, coins, &fClean))
                 return error("VerifyDB() : *** irrecoverable inconsistency in block data at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
@@ -3228,7 +3235,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
             }
         }
         uint64_t nRewind = blkdat.GetPos();
-        while (blkdat.good() && !blkdat.eof()) {
+        while (!blkdat.eof()) {
             boost::this_thread::interruption_point();
 
             blkdat.SetPos(nRewind);
@@ -3512,6 +3519,75 @@ void static ProcessGetData(CNode* pfrom)
     }
 }
 
+struct CCoin {
+    uint32_t nTxVer;   // Don't call this nVersion, that name has a special meaning inside IMPLEMENT_SERIALIZE
+    uint32_t nHeight;
+    CTxOut out;
+
+    IMPLEMENT_SERIALIZE(
+        READWRITE(nTxVer);
+        READWRITE(nHeight);
+        READWRITE(out);
+    )
+};
+
+bool ProcessGetUTXOs(const vector<COutPoint> &vOutPoints, bool fCheckMemPool, vector<unsigned char> *result, vector<CCoin> *resultCoins)
+{
+    // Defined by BIP 64.
+    //
+    // Allows a peer to retrieve the CTxOut structures corresponding to the given COutPoints. 
+    // Note that this data is not authenticated by anything: this code could just invent any
+    // old rubbish and hand it back, with the peer being unable to tell unless they are checking
+    // the outpoints against some out of band data.
+    //
+    // Also the answer could change the moment after we give it. However some apps can tolerate
+    // this, because they're only using the result as a hint or are willing to trust the results
+    // based on something else. For example we may be a "trusted node" for the peer, or it may
+    // be checking the results given by several nodes for consistency, it may
+    // run the UTXOs returned against scriptSigs of transactions obtained elsewhere (after checking
+    // for a standard script form), and because the height in which the UTXO was defined is provided
+    // a client that has a map of heights to block headers (as SPV clients do, for recent blocks)
+    // can request the creating block via hash.
+    //
+    // IMPORTANT: Clients expect ordering to be preserved!
+    if (vOutPoints.size() > MAX_INV_SZ)
+        return error("message getutxos size() = %u", vOutPoints.size());
+
+    LogPrint("net", "getutxos for %d queries %s mempool\n", vOutPoints.size(), fCheckMemPool ? "with" : "without");
+
+    boost::dynamic_bitset<unsigned char> hits(vOutPoints.size());
+    {
+        LOCK2(cs_main, mempool.cs);
+        CCoinsViewMemPool cvMemPool(*pcoinsTip, mempool);
+        CCoinsViewCache view(fCheckMemPool ? cvMemPool : *pcoinsTip);
+        for (size_t i = 0; i < vOutPoints.size(); i++)
+        {
+            CCoins coins;
+            uint256 hash = vOutPoints[i].hash;
+            if (view.GetCoins(hash, coins))
+            {
+                mempool.pruneSpent(hash, coins);
+                if (coins.IsAvailable(vOutPoints[i].n))
+                {
+                    hits[i] = true;
+                    // Safe to index into vout here because IsAvailable checked if it's off the end of the array, or if
+                    // n is valid but points to an already spent output (IsNull).
+                    CCoin coin;
+                    coin.nTxVer = coins.nVersion;
+                    coin.nHeight = coins.nHeight;
+                    coin.out = coins.vout.at(vOutPoints[i].n);
+                    assert(!coin.out.IsNull());
+                    resultCoins->push_back(coin);
+                }
+            }
+        }
+    }
+
+    boost::to_block_range(hits, std::back_inserter(*result));
+    return true;
+}
+
+
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, int64_t nTimeReceived)
 {
     RandAddSeedPerfmon();
@@ -3559,7 +3635,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
         if (!vRecv.empty()) {
-            vRecv >> pfrom->strSubVer;
+            vRecv >> LIMITED_STRING(pfrom->strSubVer, 256);
             pfrom->cleanSubVer = SanitizeString(pfrom->strSubVer);
         }
         if (!vRecv.empty())
@@ -3860,6 +3936,22 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     }
 
 
+    else if (strCommand == "getutxos")
+    {
+        bool fCheckMemPool;
+        vector<COutPoint> vOutPoints;
+        vRecv >> fCheckMemPool;
+        vRecv >> vOutPoints;
+
+        vector<unsigned char> bitmap;
+        vector<CCoin> outs;
+        if (ProcessGetUTXOs(vOutPoints, fCheckMemPool, &bitmap, &outs))
+            pfrom->PushMessage("utxos", chainActive.Height(), chainActive.Tip()->GetBlockHash(), bitmap, outs);
+        else
+            Misbehaving(pfrom->GetId(), 20);
+    }
+
+
     else if (strCommand == "tx")
     {
         vector<uint256> vWorkQueue;
@@ -3959,7 +4051,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         vRecv >> block;
 
         LogPrint("net", "received block %s peer=%d\n", block.GetHash().ToString(), pfrom->id);
-        // block.print();
 
         CInv inv(MSG_BLOCK, block.GetHash());
         pfrom->AddInventoryKnown(inv);
@@ -4183,7 +4274,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         if (fDebug)
         {
             string strMsg; unsigned char ccode; string strReason;
-            vRecv >> strMsg >> ccode >> strReason;
+            vRecv >> LIMITED_STRING(strMsg, CMessageHeader::COMMAND_SIZE) >> ccode >> LIMITED_STRING(strReason, 111);
 
             ostringstream ss;
             ss << strMsg << " code " << itostr(ccode) << ": " << strReason;
@@ -4194,10 +4285,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 vRecv >> hash;
                 ss << ": hash " << hash.ToString();
             }
-            // Truncate to reasonable length and sanitize before printing:
-            string s = ss.str();
-            if (s.size() > 111) s.erase(111, string::npos);
-            LogPrint("net", "Reject %s\n", SanitizeString(s));
+            LogPrint("net", "Reject %s\n", SanitizeString(ss.str()));
         }
     }
 
@@ -4568,7 +4656,68 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 }
 
 
+bool CBlockUndo::WriteToDisk(CDiskBlockPos &pos, const uint256 &hashBlock)
+{
+    // Open history file to append
+    CAutoFile fileout = CAutoFile(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
+    if (!fileout)
+        return error("CBlockUndo::WriteToDisk : OpenUndoFile failed");
 
+    // Write index header
+    unsigned int nSize = fileout.GetSerializeSize(*this);
+    fileout << FLATDATA(Params().MessageStart()) << nSize;
+
+    // Write undo data
+    long fileOutPos = ftell(fileout);
+    if (fileOutPos < 0)
+        return error("CBlockUndo::WriteToDisk : ftell failed");
+    pos.nPos = (unsigned int)fileOutPos;
+    fileout << *this;
+
+    // calculate & write checksum
+    CHashWriter hasher(SER_GETHASH, PROTOCOL_VERSION);
+    hasher << hashBlock;
+    hasher << *this;
+    fileout << hasher.GetHash();
+
+    // Flush stdio buffers and commit to disk before returning
+    fflush(fileout);
+    if (!IsInitialBlockDownload())
+        FileCommit(fileout);
+
+    return true;
+}
+
+bool CBlockUndo::ReadFromDisk(const CDiskBlockPos &pos, const uint256 &hashBlock)
+{
+    // Open history file to read
+    CAutoFile filein = CAutoFile(OpenUndoFile(pos, true), SER_DISK, CLIENT_VERSION);
+    if (!filein)
+        return error("CBlockUndo::ReadFromDisk : OpenBlockFile failed");
+
+    // Read block
+    uint256 hashChecksum;
+    try {
+        filein >> *this;
+        filein >> hashChecksum;
+    }
+    catch (std::exception &e) {
+        return error("%s : Deserialize or I/O error - %s", __func__, e.what());
+    }
+
+    // Verify checksum
+    CHashWriter hasher(SER_GETHASH, PROTOCOL_VERSION);
+    hasher << hashBlock;
+    hasher << *this;
+    if (hashChecksum != hasher.GetHash())
+        return error("CBlockUndo::ReadFromDisk : Checksum mismatch");
+
+    return true;
+}
+
+ std::string CBlockFileInfo::ToString() const {
+     return strprintf("CBlockFileInfo(blocks=%u, size=%u, heights=%u...%u, time=%s...%s)", nBlocks, nSize, nHeightFirst, nHeightLast, DateTimeStrFormat("%Y-%m-%d", nTimeFirst).c_str(), DateTimeStrFormat("%Y-%m-%d", nTimeLast).c_str());
+ }
 
 
 
