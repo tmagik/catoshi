@@ -5,6 +5,7 @@
 
 #include "core.h"
 #include "txmempool.h"
+#include "util.h"
 
 #include <boost/circular_buffer.hpp>
 
@@ -402,6 +403,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry)
         for (unsigned int i = 0; i < tx.vin.size(); i++)
             mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
         nTransactionsUpdated++;
+        totalTxSize += entry.GetTxSize();
     }
     return true;
 }
@@ -426,6 +428,8 @@ void CTxMemPool::remove(const CTransaction &tx, std::list<CTransaction>& removed
             removed.push_front(tx);
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
+
+            totalTxSize -= mapTx[hash].GetTxSize();
             mapTx.erase(hash);
             nTransactionsUpdated++;
         }
@@ -477,19 +481,23 @@ void CTxMemPool::clear()
     LOCK(cs);
     mapTx.clear();
     mapNextTx.clear();
+    totalTxSize = 0;
     ++nTransactionsUpdated;
 }
 
-void CTxMemPool::check(CCoinsViewCache *pcoins) const
+void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 {
     if (!fSanityCheck)
         return;
 
     LogPrint("mempool", "Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(), (unsigned int)mapNextTx.size());
 
+    uint64_t checkTotal = 0;
+
     LOCK(cs);
     for (std::map<uint256, CTxMemPoolEntry>::const_iterator it = mapTx.begin(); it != mapTx.end(); it++) {
         unsigned int i = 0;
+        checkTotal += it->second.GetTxSize();
         const CTransaction& tx = it->second.GetTx();
         BOOST_FOREACH(const CTxIn &txin, tx.vin) {
             // Check that every mempool transaction's inputs refer to available coins, or other mempool tx's.
@@ -498,7 +506,7 @@ void CTxMemPool::check(CCoinsViewCache *pcoins) const
                 const CTransaction& tx2 = it2->second.GetTx();
                 assert(tx2.vout.size() > txin.prevout.n && !tx2.vout[txin.prevout.n].IsNull());
             } else {
-                CCoins &coins = pcoins->GetCoins(txin.prevout.hash);
+                const CCoins &coins = pcoins->GetCoins(txin.prevout.hash);
                 assert(coins.IsAvailable(txin.prevout.n));
             }
             // Check whether its inputs are marked in mapNextTx.
@@ -518,6 +526,8 @@ void CTxMemPool::check(CCoinsViewCache *pcoins) const
         assert(tx.vin.size() > it->second.n);
         assert(it->first == it->second.ptx->vin[it->second.n].prevout);
     }
+
+    assert(totalTxSize == checkTotal);
 }
 
 void CTxMemPool::queryHashes(vector<uint256>& vtxid)
@@ -616,7 +626,7 @@ void CTxMemPool::ClearPrioritisation(const uint256 hash)
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView &baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
 
-bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) {
+bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) const {
     // If an entry in the mempool exists, always return that one, as it's guaranteed to never
     // conflict with the underlying cache, and it cannot have pruned entries (as it contains full)
     // transactions. First checking the underlying cache risks returning a pruned entry instead.
@@ -628,7 +638,7 @@ bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) {
     return (base->GetCoins(txid, coins) && !coins.IsPruned());
 }
 
-bool CCoinsViewMemPool::HaveCoins(const uint256 &txid) {
+bool CCoinsViewMemPool::HaveCoins(const uint256 &txid) const {
     return mempool.exists(txid) || base->HaveCoins(txid);
 }
 

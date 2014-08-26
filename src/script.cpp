@@ -18,8 +18,9 @@
 #include "util.h"
 
 #include <boost/foreach.hpp>
-#include <boost/tuple/tuple.hpp>
+#include <boost/thread.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
+#include <boost/tuple/tuple.hpp>
 
 using namespace std;
 using namespace boost;
@@ -1444,18 +1445,6 @@ unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
     return nResult;
 }
 
-
-class CKeyStoreIsMineVisitor : public boost::static_visitor<bool>
-{
-private:
-    const CKeyStore *keystore;
-public:
-    CKeyStoreIsMineVisitor(const CKeyStore *keystoreIn) : keystore(keystoreIn) { }
-    bool operator()(const CNoDestination &dest) const { return false; }
-    bool operator()(const CKeyID &keyID) const { return keystore->HaveKey(keyID); }
-    bool operator()(const CScriptID &scriptID) const { return keystore->HaveCScript(scriptID); }
-};
-
 isminetype IsMine(const CKeyStore &keystore, const CTxDestination& dest)
 {
     CScript script;
@@ -1886,9 +1875,11 @@ bool CScript::IsPushOnly() const
     const_iterator pc = begin();
     while (pc < end())
     {
+        // Note how a script with an invalid PUSHDATA returns False.
         opcodetype opcode;
         if (!GetOp(pc, opcode))
             return false;
+
         // Note that IsPushOnly() *does* consider OP_RESERVED to be a
         // push-type opcode, however execution of OP_RESERVED fails, so
         // it's not relevant to P2SH as the scriptSig would fail prior to
