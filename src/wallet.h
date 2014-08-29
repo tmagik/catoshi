@@ -11,7 +11,6 @@
 #include "keystore.h"
 #include "main.h"
 #include "ui_interface.h"
-#include "util.h"
 #include "walletdb.h"
 
 #include <algorithm>
@@ -61,16 +60,8 @@ public:
     int64_t nTime;
     CPubKey vchPubKey;
 
-    CKeyPool()
-    {
-        nTime = GetTime();
-    }
-
-    CKeyPool(const CPubKey& vchPubKeyIn)
-    {
-        nTime = GetTime();
-        vchPubKey = vchPubKeyIn;
-    }
+    CKeyPool();
+    CKeyPool(const CPubKey& vchPubKeyIn);
 
     IMPLEMENT_SERIALIZE
     (
@@ -408,6 +399,9 @@ public:
 
     /** Show progress e.g. for rescan */
     boost::signals2::signal<void (const std::string &title, int nProgress)> ShowProgress;
+
+    /** Watch-only address added */
+    boost::signals2::signal<void (bool fHaveWatchOnly)> NotifyWatchonlyChanged;
 };
 
 /** A key allocated from the key pool. */
@@ -820,15 +814,7 @@ public:
         tx = txIn; i = iIn; nDepth = nDepthIn; fSpendable = fSpendableIn;
     }
 
-    std::string ToString() const
-    {
-        return strprintf("COutput(%s, %d, %d) [%s]", tx->GetHash().ToString(), i, nDepth, FormatMoney(tx->vout[i].nValue).c_str());
-    }
-
-    void print() const
-    {
-        LogPrintf("%s\n", ToString());
-    }
+    std::string ToString() const;
 };
 
 
@@ -845,11 +831,7 @@ public:
     //// todo: add something to note what created it (user, getnewaddress, change)
     ////   maybe should have a map<string, string> property map
 
-    CWalletKey(int64_t nExpires=0)
-    {
-        nTimeCreated = (nExpires ? GetTime() : 0);
-        nTimeExpires = nExpires;
-    }
+    CWalletKey(int64_t nExpires=0);
 
     IMPLEMENT_SERIALIZE
     (
@@ -858,7 +840,7 @@ public:
         READWRITE(vchPrivKey);
         READWRITE(nTimeCreated);
         READWRITE(nTimeExpires);
-        READWRITE(strComment);
+        READWRITE(LIMITED_STRING(strComment, 65536));
     )
 };
 
@@ -923,6 +905,7 @@ public:
         strOtherAccount.clear();
         strComment.clear();
         nOrderPos = -1;
+        nEntryNo = 0;
     }
 
     IMPLEMENT_SERIALIZE
@@ -933,7 +916,7 @@ public:
         // Note: strAccount is serialized as part of the key, not here.
         READWRITE(nCreditDebit);
         READWRITE(nTime);
-        READWRITE(strOtherAccount);
+        READWRITE(LIMITED_STRING(strOtherAccount, 65536));
 
         if (!fRead)
         {
@@ -949,7 +932,7 @@ public:
             }
         }
 
-        READWRITE(strComment);
+        READWRITE(LIMITED_STRING(strComment, 65536));
 
         size_t nSepPos = strComment.find("\0", 0, 1);
         if (fRead)
