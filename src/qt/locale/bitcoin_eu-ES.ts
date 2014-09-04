@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="eu_ES">
+<TS version="2.0" language="eu-ES">
 <defaultcodec>UTF-8</defaultcodec>
 <context>
     <name>AboutDialog</name>
@@ -543,8 +543,8 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="533"/>
         <source>~%n block(s) remaining</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>~%n block remaining</numerusform>
+            <numerusform>~%n blocks remaining</numerusform>
         </translation>
     </message>
     <message>
@@ -561,32 +561,32 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="571"/>
         <source>%n second(s) ago</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n second ago</numerusform>
+            <numerusform>%n seconds ago</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../bitcoingui.cpp" line="575"/>
         <source>%n minute(s) ago</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n minute ago</numerusform>
+            <numerusform>%n minutes ago</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../bitcoingui.cpp" line="579"/>
         <source>%n hour(s) ago</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n hour ago</numerusform>
+            <numerusform>%n hours ago</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../bitcoingui.cpp" line="583"/>
         <source>%n day(s) ago</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n day ago</numerusform>
+            <numerusform>%n days ago</numerusform>
         </translation>
     </message>
     <message>
@@ -759,7 +759,7 @@ Address: %4
     <message>
         <location filename="../forms/coincontroldialog.ui" line="479"/>
         <source>Address</source>
-        <translation type="unfinished">Helbidea</translation>
+        <translation>Helbidea</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="484"/>
@@ -2257,9 +2257,9 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message numerus="yes">
         <location filename="../transactiontablemodel.cpp" line="281"/>
         <source>Open for %n block(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Open for %n block</numerusform>
+            <numerusform>Open for %n blocks</numerusform>
         </translation>
     </message>
     <message>
@@ -2285,9 +2285,9 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message numerus="yes">
         <location filename="../transactiontablemodel.cpp" line="301"/>
         <source>Mined balance will be available in %n more blocks</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Mined balance will be available in %n more block</numerusform>
+            <numerusform>Mined balance will be available in %n more blocks</numerusform>
         </translation>
     </message>
     <message>
