@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="eu_ES">
+<TS version="2.0" language="ar">
 <defaultcodec>UTF-8</defaultcodec>
 <context>
     <name>AboutDialog</name>
@@ -41,7 +41,7 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../forms/addressbookpage.ui" line="14"/>
         <source>Address Book</source>
-        <translation>Helbide-liburua</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="20"/>
@@ -56,7 +56,7 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../forms/addressbookpage.ui" line="57"/>
         <source>Create a new address</source>
-        <translation>Sortu helbide berria</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="60"/>
@@ -96,7 +96,7 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../forms/addressbookpage.ui" line="113"/>
         <source>&amp;Delete</source>
-        <translation>&amp;Ezabatu</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="65"/>
@@ -149,7 +149,7 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../addresstablemodel.cpp" line="79"/>
         <source>Address</source>
-        <translation>Helbidea</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../addresstablemodel.cpp" line="115"/>
@@ -182,7 +182,7 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../forms/askpassphrasedialog.ui" line="75"/>
         <source>Repeat new passphrase</source>
-        <translation type="unfinished"></translation>
+        <translation>أعد كتابته كلمة المرور</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="34"/>
@@ -532,6 +532,10 @@ Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished">
             <numerusform></numerusform>
             <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -543,6 +547,10 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="533"/>
         <source>~%n block(s) remaining</source>
         <translation type="unfinished">
+            <numerusform>~%n block remaining</numerusform>
+            <numerusform>~%n blocks remaining</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -561,6 +569,10 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="571"/>
         <source>%n second(s) ago</source>
         <translation type="unfinished">
+            <numerusform>%n second ago</numerusform>
+            <numerusform>%n seconds ago</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -569,6 +581,10 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="575"/>
         <source>%n minute(s) ago</source>
         <translation type="unfinished">
+            <numerusform>%n minute ago</numerusform>
+            <numerusform>%n minutes ago</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -577,6 +593,10 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="579"/>
         <source>%n hour(s) ago</source>
         <translation type="unfinished">
+            <numerusform>%n hour ago</numerusform>
+            <numerusform>%n hours ago</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -585,6 +605,10 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="583"/>
         <source>%n day(s) ago</source>
         <translation type="unfinished">
+            <numerusform>%n day ago</numerusform>
+            <numerusform>%n days ago</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -759,7 +783,7 @@ Address: %4
     <message>
         <location filename="../forms/coincontroldialog.ui" line="479"/>
         <source>Address</source>
-        <translation type="unfinished">Helbidea</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="484"/>
@@ -1142,7 +1166,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../mintingtablemodel.cpp" line="203"/>
         <source>Address</source>
-        <translation type="unfinished">Helbidea</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../mintingtablemodel.cpp" line="203"/>
@@ -1270,7 +1294,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../mintingview.cpp" line="171"/>
         <source>Address</source>
-        <translation type="unfinished">Helbidea</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../mintingview.cpp" line="172"/>
@@ -1371,7 +1395,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../overviewpage.cpp" line="104"/>
         <source>Your current balance</source>
-        <translation type="unfinished"></translation>
+        <translation>رصيدك الحالي</translation>
     </message>
     <message>
         <location filename="../overviewpage.cpp" line="109"/>
@@ -1783,7 +1807,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../sendcoinsdialog.cpp" line="187"/>
         <source>Amount exceeds your balance</source>
-        <translation type="unfinished"></translation>
+        <translation>المبلغ يتجاوز رصيدك</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="36"/>
@@ -2247,7 +2271,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactiontablemodel.cpp" line="214"/>
         <source>Address</source>
-        <translation>Helbidea</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="214"/>
@@ -2257,7 +2281,11 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message numerus="yes">
         <location filename="../transactiontablemodel.cpp" line="281"/>
         <source>Open for %n block(s)</source>
-        <translation type="unfinished">
+        <translation>
+            <numerusform>Open for %n block</numerusform>
+            <numerusform>Open for %n blocks</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -2285,7 +2313,11 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message numerus="yes">
         <location filename="../transactiontablemodel.cpp" line="301"/>
         <source>Mined balance will be available in %n more blocks</source>
-        <translation type="unfinished">
+        <translation>
+            <numerusform>Mined balance will be available in %n more block</numerusform>
+            <numerusform>Mined balance will be available in %n more blocks</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -2502,7 +2534,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactionview.cpp" line="287"/>
         <source>Address</source>
-        <translation>Helbidea</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="288"/>

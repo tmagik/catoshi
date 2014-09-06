@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="eu_ES">
+<TS version="2.0" language="ro-RO">
 <defaultcodec>UTF-8</defaultcodec>
 <context>
     <name>AboutDialog</name>
@@ -41,7 +41,7 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../forms/addressbookpage.ui" line="14"/>
         <source>Address Book</source>
-        <translation>Helbide-liburua</translation>
+        <translation>Listă de adrese</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="20"/>
@@ -51,27 +51,27 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../forms/addressbookpage.ui" line="33"/>
         <source>Double-click to edit address or label</source>
-        <translation type="unfinished"></translation>
+        <translation>Dublu-click pentru a edita adresa sau eticheta</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="57"/>
         <source>Create a new address</source>
-        <translation>Sortu helbide berria</translation>
+        <translation>Creaţi o adresă nouă</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="60"/>
         <source>&amp;New Address...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adresă nouă...</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="71"/>
         <source>Copy the currently selected address to the system clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiați adresa selectată în clipboard</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="74"/>
         <source>&amp;Copy to Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Copiere în Clipboard</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="85"/>
@@ -91,22 +91,22 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../forms/addressbookpage.ui" line="110"/>
         <source>Delete the currently selected address from the list. Only sending addresses can be deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ștergeți adresa selectată din listă. Doar adresele de trimitere pot fi șterse.</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="113"/>
         <source>&amp;Delete</source>
-        <translation>&amp;Ezabatu</translation>
+        <translation>&amp;Șterge</translation>
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="65"/>
         <source>Copy address</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiază adresa</translation>
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="66"/>
         <source>Copy label</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiază eticheta</translation>
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="67"/>
@@ -121,22 +121,22 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../addressbookpage.cpp" line="273"/>
         <source>Export Address Book Data</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportă Lista de adrese</translation>
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="274"/>
         <source>Comma separated file (*.csv)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fişier text cu valori separate prin virgulă (*.csv)</translation>
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="287"/>
         <source>Error exporting</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare în timpul exportului</translation>
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="287"/>
         <source>Could not write to file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fisierul %1 nu a putut fi accesat pentru scriere.</translation>
     </message>
 </context>
 <context>
@@ -144,17 +144,17 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../addresstablemodel.cpp" line="79"/>
         <source>Label</source>
-        <translation type="unfinished"></translation>
+        <translation>Etichetă</translation>
     </message>
     <message>
         <location filename="../addresstablemodel.cpp" line="79"/>
         <source>Address</source>
-        <translation>Helbidea</translation>
+        <translation>Adresă</translation>
     </message>
     <message>
         <location filename="../addresstablemodel.cpp" line="115"/>
         <source>(no label)</source>
-        <translation type="unfinished"></translation>
+        <translation>(fără etichetă)</translation>
     </message>
 </context>
 <context>
@@ -162,78 +162,78 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location filename="../forms/askpassphrasedialog.ui" line="26"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <location filename="../forms/askpassphrasedialog.ui" line="94"/>
         <source>TextLabel</source>
-        <translation type="unfinished"></translation>
+        <translation>Textul etichetei</translation>
     </message>
     <message>
         <location filename="../forms/askpassphrasedialog.ui" line="47"/>
         <source>Enter passphrase</source>
-        <translation type="unfinished"></translation>
+        <translation>Introduceți fraza de acces.</translation>
     </message>
     <message>
         <location filename="../forms/askpassphrasedialog.ui" line="61"/>
         <source>New passphrase</source>
-        <translation type="unfinished"></translation>
+        <translation>Frază de acces nouă </translation>
     </message>
     <message>
         <location filename="../forms/askpassphrasedialog.ui" line="75"/>
         <source>Repeat new passphrase</source>
-        <translation type="unfinished"></translation>
+        <translation>Repetaţi noua frază de acces</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="34"/>
         <source>Enter the new passphrase to the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;10 or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Introduceţi noua parolă a portofelului electronic.&lt;br/&gt;Vă rugăm să folosiţi &lt;b&gt;minimum 10 caractere aleatoare&lt;/b&gt;, sau &lt;b&gt;minimum 8 cuvinte&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="35"/>
         <source>Encrypt wallet</source>
-        <translation type="unfinished"></translation>
+        <translation>Criptează portofelul</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="38"/>
         <source>This operation needs your wallet passphrase to unlock the wallet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aceasta operație are nevoie de un portofel deblocat.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="43"/>
         <source>Unlock wallet</source>
-        <translation type="unfinished"></translation>
+        <translation>Deblochează portofelul</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="46"/>
         <source>This operation needs your wallet passphrase to decrypt the wallet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Această operaţiune necesită parola pentru decriptarea portofelului electronic.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="51"/>
         <source>Decrypt wallet</source>
-        <translation type="unfinished"></translation>
+        <translation>Decriptează portofelul.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="54"/>
         <source>Change passphrase</source>
-        <translation type="unfinished"></translation>
+        <translation>Schimbă fraza de acces</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="55"/>
         <source>Enter the old and new passphrase to the wallet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Introduceţi vechea parola a portofelului eletronic şi apoi pe cea nouă.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="101"/>
         <source>Confirm wallet encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>Confirmă criptarea portofelului.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="111"/>
         <location filename="../askpassphrasedialog.cpp" line="160"/>
         <source>Wallet encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>Portofel criptat </translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="208"/>
@@ -247,7 +247,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <location filename="../askpassphrasedialog.cpp" line="166"/>
         <location filename="../askpassphrasedialog.cpp" line="172"/>
         <source>Wallet encryption failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Criptarea portofelului a eșuat.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="102"/>
@@ -263,35 +263,35 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="118"/>
         <source>Wallet encryption failed due to an internal error. Your wallet was not encrypted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Criptarea portofelului a eșuat din cauza unei erori interne. Portofelul tău nu a fost criptat.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="125"/>
         <location filename="../askpassphrasedialog.cpp" line="173"/>
         <source>The supplied passphrases do not match.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fraza de acces introdusă nu se potrivește.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="136"/>
         <source>Wallet unlock failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Deblocarea portofelului electronic a eşuat.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="137"/>
         <location filename="../askpassphrasedialog.cpp" line="148"/>
         <location filename="../askpassphrasedialog.cpp" line="167"/>
         <source>The passphrase entered for the wallet decryption was incorrect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Parola introdusă pentru decriptarea portofelului electronic a fost incorectă.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="147"/>
         <source>Wallet decryption failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Decriptarea portofelului electronic a eşuat.</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="161"/>
         <source>Wallet passphrase was succesfully changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Parola portofelului electronic a fost schimbată.</translation>
     </message>
 </context>
 <context>
@@ -299,22 +299,22 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="191"/>
         <source>&amp;Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Detalii</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="192"/>
         <source>Show general overview of wallet</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează detalii despre portofelul electronic</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="197"/>
         <source>&amp;Transactions</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tranzacţii</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="198"/>
         <source>Browse transaction history</source>
-        <translation type="unfinished"></translation>
+        <translation>Istoricul tranzacţiilor</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="203"/>
@@ -329,27 +329,27 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="209"/>
         <source>&amp;Address Book</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lista de adrese</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="210"/>
         <source>Edit the list of stored addresses and labels</source>
-        <translation type="unfinished"></translation>
+        <translation>Editaţi lista de adrese şi etichete.</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="215"/>
         <source>&amp;Receive coins</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Primiţi PPCoin</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="216"/>
         <source>Show the list of addresses for receiving payments</source>
-        <translation type="unfinished"></translation>
+        <translation>Lista de adrese pentru recepţionarea plăţilor</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="221"/>
         <source>&amp;Send coins</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Trimiteţi PPCoin</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="227"/>
@@ -369,7 +369,7 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="250"/>
         <source>Quit application</source>
-        <translation type="unfinished"></translation>
+        <translation>Părăsiţi aplicaţia</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="254"/>
@@ -389,12 +389,12 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="259"/>
         <source>&amp;Options...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Setări...</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="264"/>
         <source>&amp;Export...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Exportă...</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="265"/>
@@ -404,12 +404,12 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="266"/>
         <source>&amp;Encrypt Wallet</source>
-        <translation type="unfinished"></translation>
+        <translation>Criptează portofelul electronic</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="267"/>
         <source>Encrypt or decrypt wallet</source>
-        <translation type="unfinished"></translation>
+        <translation>Criptează şi decriptează portofelul electronic</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="269"/>
@@ -434,12 +434,12 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="274"/>
         <source>&amp;Change Passphrase</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Schimbă parola</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="275"/>
         <source>Change the passphrase used for wallet encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Schimbă parola folosită pentru criptarea portofelului electronic</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="276"/>
@@ -454,32 +454,32 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="301"/>
         <source>&amp;File</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fişier</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="310"/>
         <source>&amp;Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Setări</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="317"/>
         <source>&amp;Help</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ajutor</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="326"/>
         <source>Tabs toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Bara de ferestre de lucru</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="338"/>
         <source>Actions toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Bara de acţiuni</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="350"/>
         <source>[testnet]</source>
-        <translation type="unfinished"></translation>
+        <translation>[testnet]</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="658"/>
@@ -532,18 +532,20 @@ Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished">
             <numerusform></numerusform>
             <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="531"/>
         <source>Synchronizing with network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Se sincronizează cu reţeaua...</translation>
     </message>
     <message numerus="yes">
         <location filename="../bitcoingui.cpp" line="533"/>
         <source>~%n block(s) remaining</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
+            <numerusform>~%n block remaining</numerusform>
+            <numerusform>~%n blocks remaining</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -555,13 +557,14 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../bitcoingui.cpp" line="556"/>
         <source>Downloaded %1 blocks of transaction history.</source>
-        <translation type="unfinished"></translation>
+        <translation>S-au descărcat %1 blocuri din istoricul tranzaciilor.</translation>
     </message>
     <message numerus="yes">
         <location filename="../bitcoingui.cpp" line="571"/>
         <source>%n second(s) ago</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
+            <numerusform>%n seconds ago</numerusform>
+            <numerusform>%n seconds ago</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -569,7 +572,8 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="575"/>
         <source>%n minute(s) ago</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
+            <numerusform>Acum %n minut</numerusform>
+            <numerusform>Acum %n minute</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -577,7 +581,8 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="579"/>
         <source>%n hour(s) ago</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
+            <numerusform>Acum %n oră</numerusform>
+            <numerusform>Acum %n ore</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -585,39 +590,40 @@ Are you sure you wish to encrypt your wallet?</source>
         <location filename="../bitcoingui.cpp" line="583"/>
         <source>%n day(s) ago</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
+            <numerusform>Acum %n zi</numerusform>
+            <numerusform>Acum %n zile</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="589"/>
         <source>Up to date</source>
-        <translation type="unfinished"></translation>
+        <translation>Actualizat</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="594"/>
         <source>Catching up...</source>
-        <translation type="unfinished"></translation>
+        <translation>Se actualizează...</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="602"/>
         <source>Last received block was generated %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultimul bloc primit a fost generat %1.</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="661"/>
         <source>Sending...</source>
-        <translation type="unfinished"></translation>
+        <translation>Se expediază...</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="688"/>
         <source>Sent transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Tranzacţie expediată</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="689"/>
         <source>Incoming transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Tranzacţie recepţionată</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="690"/>
@@ -636,12 +642,12 @@ Address: %4
     <message>
         <location filename="../bitcoingui.cpp" line="821"/>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;unlocked&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Portofelul electronic este &lt;b&gt;criptat&lt;/b&gt; iar in momentul de faţă este &lt;b&gt;deblocat&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="831"/>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;locked&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Portofelul electronic este &lt;b&gt;criptat&lt;/b&gt; iar in momentul de faţă este &lt;b&gt;blocat&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="888"/>
@@ -685,7 +691,7 @@ Address: %4
         <location filename="../forms/coincontroldialog.ui" line="64"/>
         <location filename="../forms/coincontroldialog.ui" line="96"/>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation>0</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="77"/>
@@ -703,7 +709,7 @@ Address: %4
         <location filename="../forms/coincontroldialog.ui" line="310"/>
         <location filename="../forms/coincontroldialog.ui" line="348"/>
         <source>0.00 BTC</source>
-        <translation type="unfinished"></translation>
+        <translation>123.456 BTC {0.00 ?}</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="157"/>
@@ -754,17 +760,17 @@ Address: %4
     <message>
         <location filename="../forms/coincontroldialog.ui" line="469"/>
         <source>Amount</source>
-        <translation type="unfinished"></translation>
+        <translation>Sumă</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="479"/>
         <source>Address</source>
-        <translation type="unfinished">Helbidea</translation>
+        <translation>Adresă</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="484"/>
         <source>Date</source>
-        <translation type="unfinished"></translation>
+        <translation>Data</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="489"/>
@@ -774,7 +780,7 @@ Address: %4
     <message>
         <location filename="../forms/coincontroldialog.ui" line="492"/>
         <source>Confirmed</source>
-        <translation type="unfinished"></translation>
+        <translation>Confirmat</translation>
     </message>
     <message>
         <location filename="../forms/coincontroldialog.ui" line="497"/>
@@ -789,12 +795,12 @@ Address: %4
     <message>
         <location filename="../coincontroldialog.cpp" line="36"/>
         <source>Copy address</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiază adresa</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="37"/>
         <source>Copy label</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiază eticheta</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="38"/>
@@ -925,7 +931,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../coincontroldialog.cpp" line="622"/>
         <location filename="../coincontroldialog.cpp" line="688"/>
         <source>(no label)</source>
-        <translation type="unfinished"></translation>
+        <translation>(fără etichetă)</translation>
     </message>
     <message>
         <location filename="../coincontroldialog.cpp" line="679"/>
@@ -943,12 +949,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../optionsdialog.cpp" line="275"/>
         <source>&amp;Unit to show amounts in: </source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Unitatea de măsură pentru afişarea sumelor: </translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="279"/>
         <source>Choose the default subdivision unit to show in the interface, and when sending coins</source>
-        <translation type="unfinished"></translation>
+        <translation>Alege subdiviziunea folosită la afişarea interfeţei şi la trimiterea de PPCoin.</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="286"/>
@@ -976,52 +982,52 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/editaddressdialog.ui" line="14"/>
         <source>Edit Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Editează adresa</translation>
     </message>
     <message>
         <location filename="../forms/editaddressdialog.ui" line="25"/>
         <source>&amp;Label</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Eticheta</translation>
     </message>
     <message>
         <location filename="../forms/editaddressdialog.ui" line="35"/>
         <source>The label associated with this address book entry</source>
-        <translation type="unfinished"></translation>
+        <translation>Eticheta asociată cu această înregistrare în Lista de adrese</translation>
     </message>
     <message>
         <location filename="../forms/editaddressdialog.ui" line="42"/>
         <source>&amp;Address</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adresă</translation>
     </message>
     <message>
         <location filename="../forms/editaddressdialog.ui" line="52"/>
         <source>The address associated with this address book entry. This can only be modified for sending addresses.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresa asociată cu această înregistrare în Lista de adrese. Aceasta poate fi modificată doar pentru expediere.</translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="20"/>
         <source>New receiving address</source>
-        <translation type="unfinished"></translation>
+        <translation>Noua adresă de primire</translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="24"/>
         <source>New sending address</source>
-        <translation type="unfinished"></translation>
+        <translation>Noua adresă de trimitere</translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="27"/>
         <source>Edit receiving address</source>
-        <translation type="unfinished"></translation>
+        <translation>Editează adresa de primire</translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="31"/>
         <source>Edit sending address</source>
-        <translation type="unfinished"></translation>
+        <translation>Editează adresa de trimitere</translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="91"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresa introdusă &quot;%1&quot; se află deja în Lista de adrese.</translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="96"/>
@@ -1031,12 +1037,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../editaddressdialog.cpp" line="101"/>
         <source>Could not unlock wallet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Portofelul electronic nu a putut fi deblocat .</translation>
     </message>
     <message>
         <location filename="../editaddressdialog.cpp" line="106"/>
         <source>New key generation failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>New key generation failed.</translation>
     </message>
 </context>
 <context>
@@ -1044,27 +1050,27 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../optionsdialog.cpp" line="177"/>
         <source>&amp;Minimize to the tray instead of the taskbar</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;M Ascunde în tray în loc de taskbar</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="178"/>
         <source>Show only a tray icon after minimizing the window</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează doar un icon in tray la ascunderea ferestrei</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="186"/>
         <source>Map port using &amp;UPnP</source>
-        <translation type="unfinished"></translation>
+        <translation>Mapeaza portul folosind &amp;UPnP</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="181"/>
         <source>M&amp;inimize on close</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;i Ascunde fereastra în locul închiderii programului</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="182"/>
         <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Quit in the menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ascunde fereastra în locul părăsirii programului în momentul închiderii ferestrei. Când acestă opţiune e activă, aplicaţia se va opri doar în momentul selectării comenzii Quit din menu.</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="187"/>
@@ -1074,32 +1080,32 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../optionsdialog.cpp" line="190"/>
         <source>&amp;Connect through SOCKS4 proxy:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Conectează prin proxy SOCKS4:</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="191"/>
         <source>Connect to the Bitcon network through a SOCKS4 proxy (e.g. when connecting through Tor)</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectare la reţeaua PPCoin folosind un proxy SOCKS4 (de exemplu, când conexiunea se stabileşte prin reţeaua Tor)</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="196"/>
         <source>Proxy &amp;IP: </source>
-        <translation type="unfinished"></translation>
+        <translation>Proxy &amp;IP: </translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="202"/>
         <source>IP address of the proxy (e.g. 127.0.0.1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresa de IP a proxy serverului (de exemplu: 127.0.0.1)</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="205"/>
         <source>&amp;Port: </source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Port: </translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="211"/>
         <source>Port of the proxy (e.g. 1234)</source>
-        <translation type="unfinished"></translation>
+        <translation>Portul pe care se concetează proxy serverul (de exemplu: 1234)</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="217"/>
@@ -1142,7 +1148,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../mintingtablemodel.cpp" line="203"/>
         <source>Address</source>
-        <translation type="unfinished">Helbidea</translation>
+        <translation type="unfinished">Adresă</translation>
     </message>
     <message>
         <location filename="../mintingtablemodel.cpp" line="203"/>
@@ -1265,12 +1271,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../mintingview.cpp" line="163"/>
         <source>Comma separated file (*.csv)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Fişier text cu valori separate prin virgulă (*.csv)</translation>
     </message>
     <message>
         <location filename="../mintingview.cpp" line="171"/>
         <source>Address</source>
-        <translation type="unfinished">Helbidea</translation>
+        <translation type="unfinished">Adresă</translation>
     </message>
     <message>
         <location filename="../mintingview.cpp" line="172"/>
@@ -1300,12 +1306,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../mintingview.cpp" line="180"/>
         <source>Error exporting</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Eroare în timpul exportului</translation>
     </message>
     <message>
         <location filename="../mintingview.cpp" line="180"/>
         <source>Could not write to file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Fisierul %1 nu a putut fi accesat pentru scriere.</translation>
     </message>
 </context>
 <context>
@@ -1313,17 +1319,17 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../optionsdialog.cpp" line="81"/>
         <source>Main</source>
-        <translation type="unfinished"></translation>
+        <translation>Principal</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="86"/>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişare</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="106"/>
         <source>Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Setări</translation>
     </message>
 </context>
 <context>
@@ -1331,27 +1337,27 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/overviewpage.ui" line="14"/>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Form</translation>
     </message>
     <message>
         <location filename="../forms/overviewpage.ui" line="40"/>
         <source>Balance:</source>
-        <translation type="unfinished"></translation>
+        <translation>Balanţă:</translation>
     </message>
     <message>
         <location filename="../forms/overviewpage.ui" line="54"/>
         <source>Number of transactions:</source>
-        <translation type="unfinished"></translation>
+        <translation>Număr total de tranzacţii:</translation>
     </message>
     <message>
         <location filename="../forms/overviewpage.ui" line="61"/>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation>0</translation>
     </message>
     <message>
         <location filename="../forms/overviewpage.ui" line="68"/>
         <source>Unconfirmed:</source>
-        <translation type="unfinished"></translation>
+        <translation>Neconfirmat:</translation>
     </message>
     <message>
         <location filename="../forms/overviewpage.ui" line="82"/>
@@ -1366,12 +1372,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/overviewpage.ui" line="138"/>
         <source>&lt;b&gt;Recent transactions&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Ultimele tranzacţii&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../overviewpage.cpp" line="104"/>
         <source>Your current balance</source>
-        <translation type="unfinished"></translation>
+        <translation>Soldul contul</translation>
     </message>
     <message>
         <location filename="../overviewpage.cpp" line="109"/>
@@ -1381,12 +1387,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../overviewpage.cpp" line="114"/>
         <source>Total of transactions that have yet to be confirmed, and do not yet count toward the current balance</source>
-        <translation type="unfinished"></translation>
+        <translation>Totalul tranzacţiilor care aşteaptă să fie confirmate şi care nu sunt încă luate în calcul la afişarea soldului contului.</translation>
     </message>
     <message>
         <location filename="../overviewpage.cpp" line="117"/>
         <source>Total number of transactions in wallet</source>
-        <translation type="unfinished"></translation>
+        <translation>Numărul total de tranzacţii din portofelul electronic</translation>
     </message>
 </context>
 <context>
@@ -1394,7 +1400,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/qrcodedialog.ui" line="14"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <location filename="../forms/qrcodedialog.ui" line="32"/>
@@ -1424,7 +1430,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/qrcodedialog.ui" line="144"/>
         <source>Message:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mesaj:</translation>
     </message>
     <message>
         <location filename="../forms/qrcodedialog.ui" line="186"/>
@@ -1564,7 +1570,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../sendcoinsdialog.cpp" line="202"/>
         <location filename="../sendcoinsdialog.cpp" line="207"/>
         <source>Send Coins</source>
-        <translation type="unfinished"></translation>
+        <translation>Trimite PPCoin</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="90"/>
@@ -1595,7 +1601,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../forms/sendcoinsdialog.ui" line="235"/>
         <location filename="../forms/sendcoinsdialog.ui" line="270"/>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation>0</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="251"/>
@@ -1613,7 +1619,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../forms/sendcoinsdialog.ui" line="496"/>
         <location filename="../forms/sendcoinsdialog.ui" line="528"/>
         <source>0.00 BTC</source>
-        <translation type="unfinished"></translation>
+        <translation>123.456 BTC {0.00 ?}</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="337"/>
@@ -1658,12 +1664,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="665"/>
         <source>Send to multiple recipients at once</source>
-        <translation type="unfinished"></translation>
+        <translation>Trimite simultan către mai mulţi destinatari</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="668"/>
         <source>&amp;Add recipient...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adaugă destinatar...</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="685"/>
@@ -1673,27 +1679,27 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="688"/>
         <source>Clear all</source>
-        <translation type="unfinished"></translation>
+        <translation>Şterge tot</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="707"/>
         <source>Balance:</source>
-        <translation type="unfinished"></translation>
+        <translation>Balanţă:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="714"/>
         <source>123.456 BTC</source>
-        <translation type="unfinished"></translation>
+        <translation>123.456 BTC</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="745"/>
         <source>Confirm the send action</source>
-        <translation type="unfinished"></translation>
+        <translation>Confirmă operaţiunea de trimitere</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="748"/>
         <source>&amp;Send</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;S Trimite</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="51"/>
@@ -1738,27 +1744,27 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../sendcoinsdialog.cpp" line="144"/>
         <source>&lt;b&gt;%1&lt;/b&gt; to %2 (%3)</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; la %2 (%3)</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="149"/>
         <source>Confirm send coins</source>
-        <translation type="unfinished"></translation>
+        <translation>Confirmaţi trimiterea de PPCoin</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="150"/>
         <source>Are you sure you want to send %1?</source>
-        <translation type="unfinished"></translation>
+        <translation>Sunteţi sigur că doriţi să trimiteţi %1?</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="150"/>
         <source> and </source>
-        <translation type="unfinished"></translation>
+        <translation> şi </translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="177"/>
         <source>The recepient address is not valid, please recheck.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresa destinatarului nu este validă, vă rugăm să o verificaţi.</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="182"/>
@@ -1778,12 +1784,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../sendcoinsdialog.cpp" line="477"/>
         <source>(no label)</source>
-        <translation type="unfinished"></translation>
+        <translation>(fără etichetă)</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="187"/>
         <source>Amount exceeds your balance</source>
-        <translation type="unfinished"></translation>
+        <translation>Suma depăşeşte soldul contului.</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="36"/>
@@ -1793,22 +1799,22 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../sendcoinsdialog.cpp" line="192"/>
         <source>Total exceeds your balance when the %1 transaction fee is included</source>
-        <translation type="unfinished"></translation>
+        <translation>Total depăşeşte soldul contului in cazul plăţii comisionului de %1.</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="198"/>
         <source>Duplicate address found, can only send to each address once in one send operation</source>
-        <translation type="unfinished"></translation>
+        <translation>S-a descoperit o adresă care figurează de două ori. Expedierea se poate realiza către fiecare adresă doar o singură dată pe operaţiune.</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="203"/>
         <source>Error: Transaction creation failed  </source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare: Tranyacţia nu a putut fi iniţiată </translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="208"/>
         <source>Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare: Tranyacţia a fost respinsă.  Acesta poate fi rezultatul cheltuirii prealabile a unei sume de PPCoin din portofelul electronic, ca în cazul folosirii unei copii a fisierului wallet.dat, în care s-au efectuat tranzacţii neînregistrate în fisierul curent.</translation>
     </message>
 </context>
 <context>
@@ -1816,28 +1822,28 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="14"/>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Form</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="29"/>
         <source>A&amp;mount:</source>
-        <translation type="unfinished"></translation>
+        <translation>Su&amp;mă :</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="42"/>
         <source>Pay &amp;To:</source>
-        <translation type="unfinished"></translation>
+        <translation>Plăteşte Că&amp;tre:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="66"/>
         <location filename="../sendcoinsentry.cpp" line="26"/>
         <source>Enter a label for this address to add it to your address book</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaugă o etichetă acestei adrese pentru a o trece în Lista de adrese</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="75"/>
         <source>&amp;Label:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;L Etichetă:</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="93"/>
@@ -1852,22 +1858,22 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="113"/>
         <source>Alt+A</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+A</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="120"/>
         <source>Paste address from clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Lipiţi adresa copiată in clipboard.</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="130"/>
         <source>Alt+P</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+P</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="137"/>
         <source>Remove this recipient</source>
-        <translation type="unfinished"></translation>
+        <translation>Şterge destinatarul</translation>
     </message>
     <message>
         <location filename="../sendcoinsentry.cpp" line="25"/>
@@ -1907,17 +1913,17 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../forms/signverifymessagedialog.ui" line="65"/>
         <location filename="../forms/signverifymessagedialog.ui" line="275"/>
         <source>Alt+A</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+A</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="75"/>
         <source>Paste address from clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Lipiţi adresa copiată in clipboard.</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="85"/>
         <source>Alt+P</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+P</translation>
     </message>
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="97"/>
@@ -2073,85 +2079,85 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactiondesc.cpp" line="21"/>
         <source>Open for %1 blocks</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschis pentru %1 blocuri</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="23"/>
         <source>Open until %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschis până la %1</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="29"/>
         <source>%1/offline?</source>
-        <translation type="unfinished"></translation>
+        <translation>%1/offline?</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="31"/>
         <source>%1/unconfirmed</source>
-        <translation type="unfinished"></translation>
+        <translation>%1/neconfirmat</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="33"/>
         <source>%1 confirmations</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 confirmări</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="51"/>
         <source>&lt;b&gt;Status:&lt;/b&gt; </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Stare:&lt;/b&gt; </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="56"/>
         <source>, has not been successfully broadcast yet</source>
-        <translation type="unfinished"></translation>
+        <translation>, nu s-a propagat încă</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="58"/>
         <source>, broadcast through %1 node</source>
-        <translation type="unfinished"></translation>
+        <translation>, se propagă prin %1 nod</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="60"/>
         <source>, broadcast through %1 nodes</source>
-        <translation type="unfinished"></translation>
+        <translation>, se propagă prin %1 noduri</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="64"/>
         <source>&lt;b&gt;Date:&lt;/b&gt; </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Data:&lt;/b&gt; </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="71"/>
         <source>&lt;b&gt;Source:&lt;/b&gt; Generated&lt;br&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Sursă:&lt;/b&gt; Generat&lt;br&gt;</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="77"/>
         <location filename="../transactiondesc.cpp" line="94"/>
         <source>&lt;b&gt;From:&lt;/b&gt; </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;De la:&lt;/b&gt; </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="94"/>
         <source>unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>necunoscut</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="95"/>
         <location filename="../transactiondesc.cpp" line="118"/>
         <location filename="../transactiondesc.cpp" line="178"/>
         <source>&lt;b&gt;To:&lt;/b&gt; </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Către:&lt;/b&gt; </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="98"/>
         <source> (yours, label: </source>
-        <translation type="unfinished"></translation>
+        <translation> (propriu, etichetă: </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="100"/>
         <source> (yours)</source>
-        <translation type="unfinished"></translation>
+        <translation> (propriu)</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="136"/>
@@ -2159,34 +2165,34 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../transactiondesc.cpp" line="195"/>
         <location filename="../transactiondesc.cpp" line="212"/>
         <source>&lt;b&gt;Credit:&lt;/b&gt; </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Credit:&lt;/b&gt; </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="138"/>
         <source>(%1 matures in %2 more blocks)</source>
-        <translation type="unfinished"></translation>
+        <translation>(%1 se definitivează peste %2 blocuri)</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="142"/>
         <source>(not accepted)</source>
-        <translation type="unfinished"></translation>
+        <translation>(nu este acceptat)</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="186"/>
         <location filename="../transactiondesc.cpp" line="194"/>
         <location filename="../transactiondesc.cpp" line="209"/>
         <source>&lt;b&gt;Debit:&lt;/b&gt; </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Debit:&lt;/b&gt; </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="200"/>
         <source>&lt;b&gt;Transaction fee:&lt;/b&gt; </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Comisionul tranzacţiei:&lt;/b&gt; </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="218"/>
         <source>&lt;b&gt;Net amount:&lt;/b&gt; </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Suma netă:&lt;/b&gt; </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="220"/>
@@ -2196,12 +2202,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactiondesc.cpp" line="227"/>
         <source>Message:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mesaj:</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="229"/>
         <source>Comment:</source>
-        <translation type="unfinished"></translation>
+        <translation>Comentarii:</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="231"/>
@@ -2211,7 +2217,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactiondesc.cpp" line="234"/>
         <source>Generated coins must wait 520 blocks before they can be spent.  When you generated this block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be spendable.  This may occasionally happen if another node generates a block within a few seconds of yours.</source>
-        <translation type="unfinished"></translation>
+        <translation>Monedele PPCoin generate se pot cheltui dupa parcurgerea a 120 de blocuri.  După ce a fost generat, s-a propagat în reţea, urmând să fie adăugat lanţului de blocuri.  Dacă nu poate fi inclus in lanţ, starea sa va deveni &quot;neacceptat&quot; si nu va putea fi folosit la tranzacţii.  Acest fenomen se întâmplă atunci cand un alt nod a generat un bloc la o diferenţa de câteva secunde. {520 ?}</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="236"/>
@@ -2224,12 +2230,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../forms/transactiondescdialog.ui" line="14"/>
         <source>Transaction details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detaliile tranzacţiei</translation>
     </message>
     <message>
         <location filename="../forms/transactiondescdialog.ui" line="20"/>
         <source>This pane shows a detailed description of the transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează detalii despre tranzacţie</translation>
     </message>
 </context>
 <context>
@@ -2237,73 +2243,75 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactiontablemodel.cpp" line="214"/>
         <source>Date</source>
-        <translation type="unfinished"></translation>
+        <translation>Data</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="214"/>
         <source>Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipul</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="214"/>
         <source>Address</source>
-        <translation>Helbidea</translation>
+        <translation>Adresă</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="214"/>
         <source>Amount</source>
-        <translation type="unfinished"></translation>
+        <translation>Sumă</translation>
     </message>
     <message numerus="yes">
         <location filename="../transactiontablemodel.cpp" line="281"/>
         <source>Open for %n block(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Deschis pentru for %n bloc</numerusform>
+            <numerusform>Deschis pentru %n blocuri</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="284"/>
         <source>Open until %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschis până la %1</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="287"/>
         <source>Offline (%1 confirmations)</source>
-        <translation type="unfinished"></translation>
+        <translation>Neconectat (%1 confirmări)</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="290"/>
         <source>Unconfirmed (%1 of %2 confirmations)</source>
-        <translation type="unfinished"></translation>
+        <translation>Neconfirmat (%1 din %2 confirmări)</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="293"/>
         <source>Confirmed (%1 confirmations)</source>
-        <translation type="unfinished"></translation>
+        <translation>Confirmat (%1 confirmări)</translation>
     </message>
     <message numerus="yes">
         <location filename="../transactiontablemodel.cpp" line="301"/>
         <source>Mined balance will be available in %n more blocks</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Soldul de PPCoin produs va fi disponibil după încă %n bloc</numerusform>
+            <numerusform>Soldul de PPCoin produs va fi disponibil după încă %n blocuri</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="307"/>
         <source>This block was not received by any other nodes and will probably not be accepted!</source>
-        <translation type="unfinished"></translation>
+        <translation>Blocul nu a fost recepţionat de niciun alt nod şi e probabil că nu va fi acceptat.</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="310"/>
         <source>Generated but not accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>Generat, dar neacceptat</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="353"/>
         <source>Received with</source>
-        <translation type="unfinished"></translation>
+        <translation>Recepţionat cu...</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="355"/>
@@ -2313,17 +2321,17 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactiontablemodel.cpp" line="358"/>
         <source>Sent to</source>
-        <translation type="unfinished"></translation>
+        <translation>Trimis către</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="360"/>
         <source>Payment to yourself</source>
-        <translation type="unfinished"></translation>
+        <translation>Plată către un cont propriu</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="362"/>
         <source>Mined</source>
-        <translation type="unfinished"></translation>
+        <translation>Produs</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="364"/>
@@ -2333,32 +2341,32 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactiontablemodel.cpp" line="403"/>
         <source>(n/a)</source>
-        <translation type="unfinished"></translation>
+        <translation>(n/a)</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="603"/>
         <source>Transaction status. Hover over this field to show number of confirmations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Starea tranzacţiei. Treceţi cu mouse-ul peste acest câmp pentru afişarea numărului de confirmări.</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="605"/>
         <source>Date and time that the transaction was received.</source>
-        <translation type="unfinished"></translation>
+        <translation>Data şi ora la care a fost recepţionată tranzacţia.</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="607"/>
         <source>Type of transaction.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipul tranzacţiei.</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="609"/>
         <source>Destination address of transaction.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresa de destinaţie a tranzacţiei.</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="611"/>
         <source>Amount removed from or added to balance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Suma extrasă sau adăugată la sold.</translation>
     </message>
 </context>
 <context>
@@ -2367,57 +2375,57 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location filename="../transactionview.cpp" line="56"/>
         <location filename="../transactionview.cpp" line="72"/>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Toate</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="57"/>
         <source>Today</source>
-        <translation type="unfinished"></translation>
+        <translation>Astăzi</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="58"/>
         <source>This week</source>
-        <translation type="unfinished"></translation>
+        <translation>Săptămâna aceasta</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="59"/>
         <source>This month</source>
-        <translation type="unfinished"></translation>
+        <translation>Luna aceasta</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="60"/>
         <source>Last month</source>
-        <translation type="unfinished"></translation>
+        <translation>Luna trecută</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="61"/>
         <source>This year</source>
-        <translation type="unfinished"></translation>
+        <translation>Anul acesta</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="62"/>
         <source>Range...</source>
-        <translation type="unfinished"></translation>
+        <translation>Între...</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="73"/>
         <source>Received with</source>
-        <translation type="unfinished"></translation>
+        <translation>Recepţionat cu...</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="75"/>
         <source>Sent to</source>
-        <translation type="unfinished"></translation>
+        <translation>Trimis către</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="77"/>
         <source>To yourself</source>
-        <translation type="unfinished"></translation>
+        <translation>Către propriul cont</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="78"/>
         <source>Mined</source>
-        <translation type="unfinished"></translation>
+        <translation>Produs</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="79"/>
@@ -2427,27 +2435,27 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactionview.cpp" line="80"/>
         <source>Other</source>
-        <translation type="unfinished"></translation>
+        <translation>Altele</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="86"/>
         <source>Enter address or label to search</source>
-        <translation type="unfinished"></translation>
+        <translation>Introduceţi adresa sau eticheta pentru căutare</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="92"/>
         <source>Min amount</source>
-        <translation type="unfinished"></translation>
+        <translation>Cantitatea produsă</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="126"/>
         <source>Copy address</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiază adresa</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="127"/>
         <source>Copy label</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiază eticheta</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="128"/>
@@ -2457,12 +2465,12 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactionview.cpp" line="129"/>
         <source>Edit label</source>
-        <translation type="unfinished"></translation>
+        <translation>Editează eticheta</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="130"/>
         <source>Show details...</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează detalii...</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="131"/>
@@ -2472,67 +2480,67 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../transactionview.cpp" line="274"/>
         <source>Export Transaction Data</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportă tranzacţiile</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="275"/>
         <source>Comma separated file (*.csv)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fişier text cu valori separate prin virgulă (*.csv)</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="283"/>
         <source>Confirmed</source>
-        <translation type="unfinished"></translation>
+        <translation>Confirmat</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="284"/>
         <source>Date</source>
-        <translation type="unfinished"></translation>
+        <translation>Data</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="285"/>
         <source>Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipul</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="286"/>
         <source>Label</source>
-        <translation type="unfinished"></translation>
+        <translation>Etichetă</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="287"/>
         <source>Address</source>
-        <translation>Helbidea</translation>
+        <translation>Adresă</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="288"/>
         <source>Amount</source>
-        <translation type="unfinished"></translation>
+        <translation>Sumă</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="289"/>
         <source>ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="293"/>
         <source>Error exporting</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare în timpul exportului</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="293"/>
         <source>Could not write to file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fisierul %1 nu a putut fi accesat pentru scriere.</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="401"/>
         <source>Range:</source>
-        <translation type="unfinished"></translation>
+        <translation>Interval:</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="409"/>
         <source>to</source>
-        <translation type="unfinished"></translation>
+        <translation>către</translation>
     </message>
 </context>
 <context>
@@ -2540,7 +2548,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../walletmodel.cpp" line="164"/>
         <source>Sending...</source>
-        <translation type="unfinished"></translation>
+        <translation>Se expediază...</translation>
     </message>
 </context>
 <context>
@@ -2553,7 +2561,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../bitcoinstrings.cpp" line="13"/>
         <source>Usage:</source>
-        <translation type="unfinished"></translation>
+        <translation>Uz:</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="8"/>
@@ -2573,17 +2581,17 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location filename="../bitcoinstrings.cpp" line="15"/>
         <source>List commands</source>
-        <translation type="unfinished"></translation>
+        <translation>Listă de comenzi</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="16"/>
         <source>Get help for a command</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajutor pentru o comandă</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="17"/>
         <source>Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Setări:</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="18"/>
@@ -2886,7 +2894,7 @@ If the file does not exist, create it with owner-readable-only file permissions.
     <message>
         <location filename="../bitcoinstrings.cpp" line="82"/>
         <source>Loading addresses...</source>
-        <translation type="unfinished"></translation>
+        <translation>Încarc adrese...</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="83"/>
@@ -2896,7 +2904,7 @@ If the file does not exist, create it with owner-readable-only file permissions.
     <message>
         <location filename="../bitcoinstrings.cpp" line="84"/>
         <source>Loading block index...</source>
-        <translation type="unfinished"></translation>
+        <translation>Încarc indice bloc...</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="85"/>
@@ -2906,7 +2914,7 @@ If the file does not exist, create it with owner-readable-only file permissions.
     <message>
         <location filename="../bitcoinstrings.cpp" line="86"/>
         <source>Loading wallet...</source>
-        <translation type="unfinished"></translation>
+        <translation>Încarc portofel...</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="87"/>
@@ -2936,12 +2944,12 @@ If the file does not exist, create it with owner-readable-only file permissions.
     <message>
         <location filename="../bitcoinstrings.cpp" line="94"/>
         <source>Rescanning...</source>
-        <translation type="unfinished"></translation>
+        <translation>Rescanez...</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="95"/>
         <source>Done loading</source>
-        <translation type="unfinished"></translation>
+        <translation>Încărcare terminată</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="96"/>
@@ -2998,17 +3006,17 @@ If the file does not exist, create it with owner-readable-only file permissions.
     <message>
         <location filename="../bitcoinstrings.cpp" line="126"/>
         <source>Error: Transaction creation failed  </source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare: Tranyacţia nu a putut fi iniţiată </translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="127"/>
         <source>Sending...</source>
-        <translation type="unfinished"></translation>
+        <translation>Se expediază...</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="128"/>
         <source>Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare: Tranyacţia a fost respinsă.  Acesta poate fi rezultatul cheltuirii prealabile a unei sume de PPCoin din portofelul electronic, ca în cazul folosirii unei copii a fisierului wallet.dat, în care s-au efectuat tranzacţii neînregistrate în fisierul curent.</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="132"/>
