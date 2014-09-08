@@ -7,17 +7,16 @@
 #define H_BITCOIN_SCRIPT
 
 #include "key.h"
-#include "util.h"
+#include "utilstrencodings.h"
+#include "tinyformat.h"
 
 #include <stdexcept>
 #include <stdint.h>
 #include <string>
 #include <vector>
 
-#include <boost/foreach.hpp>
 #include <boost/variant.hpp>
 
-class CCoins;
 class CKeyStore;
 class CTransaction;
 struct CMutableTransaction;
@@ -410,25 +409,6 @@ inline std::string ValueString(const std::vector<unsigned char>& vch)
         return HexStr(vch);
 }
 
-inline std::string StackString(const std::vector<std::vector<unsigned char> >& vStack)
-{
-    std::string str;
-    BOOST_FOREACH(const std::vector<unsigned char>& vch, vStack)
-    {
-        if (!str.empty())
-            str += " ";
-        str += ValueString(vch);
-    }
-    return str;
-}
-
-
-
-
-
-
-
-
 /** Serialized script, used inside transaction inputs and outputs */
 class CScript : public std::vector<unsigned char>
 {
@@ -730,6 +710,12 @@ public:
     {
         return CScriptID(Hash160(*this));
     }
+
+    void clear()
+    {
+        // The default std::vector::clear() does not release memory.
+        std::vector<unsigned char>().swap(*this);
+    }
 };
 
 /** Compact serializer for scripts.
@@ -826,4 +812,4 @@ bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, const C
 // combine them intelligently and return the result.
 CScript CombineSignatures(CScript scriptPubKey, const CTransaction& txTo, unsigned int nIn, const CScript& scriptSig1, const CScript& scriptSig2);
 
-#endif
+#endif // H_BITCOIN_SCRIPT
