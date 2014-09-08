@@ -11,6 +11,7 @@
 #include "miner.h"
 #include "pow.h"
 #include "core_io.h"
+#include "util.h"
 #ifdef ENABLE_WALLET
 #include "db.h"
 #include "wallet.h"
@@ -457,7 +458,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     CBlock* pblock = &pblocktemplate->block; // pointer for convenience
 
     // Update nTime
-    UpdateTime(*pblock, pindexPrev);
+    UpdateTime(pblock, pindexPrev);
     pblock->nNonce = 0;
 
     Array transactions;
