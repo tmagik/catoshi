@@ -9,7 +9,7 @@
 #include "checkpoints.h"
 
 #include "main.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 namespace Checkpoints
 {
