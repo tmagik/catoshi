@@ -12,6 +12,7 @@
 #include "keystore.h"
 #include "main.h"
 #include "ui_interface.h"
+#include "wallet_ismine.h"
 #include "walletdb.h"
 
 #include <algorithm>
