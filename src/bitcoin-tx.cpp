@@ -3,21 +3,24 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "base58.h"
-#include "util.h"
-#include "utilmoneystr.h"
 #include "core.h"
-#include "main.h"         // for MAX_BLOCK_SIZE
+#include "core_io.h"
 #include "keystore.h"
+#include "main.h" // for MAX_BLOCK_SIZE
+#include "script/script.h"
+#include "script/sign.h"
 #include "ui_interface.h" // for _(...)
 #include "univalue/univalue.h"
-#include "core_io.h"
+#include "util.h"
+#include "utilmoneystr.h"
 
 #include <stdio.h>
-#include <boost/assign/list_of.hpp>
-#include <boost/algorithm/string.hpp>
 
-using namespace std;
+#include <boost/algorithm/string.hpp>
+#include <boost/assign/list_of.hpp>
+
 using namespace boost::assign;
+using namespace std;
 
 static bool fCreateBlank;
 static map<string,UniValue> registers;
@@ -235,8 +238,7 @@ static void MutateTxAddOutScript(CMutableTransaction& tx, const string& strInput
     // separate VALUE:SCRIPT in string
     size_t pos = strInput.find(':');
     if ((pos == string::npos) ||
-        (pos == 0) ||
-        (pos == (strInput.size() - 1)))
+        (pos == 0))
         throw runtime_error("TX output missing separator");
 
     // extract and validate VALUE
@@ -418,12 +420,12 @@ static void MutateTxSign(CMutableTransaction& tx, const string& flagStr)
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
         CTxIn& txin = mergedTx.vin[i];
-        CCoins coins;
-        if (!view.GetCoins(txin.prevout.hash, coins) || !coins.IsAvailable(txin.prevout.n)) {
+        const CCoins* coins = view.AccessCoins(txin.prevout.hash);
+        if (!coins || !coins->IsAvailable(txin.prevout.n)) {
             fComplete = false;
             continue;
         }
-        const CScript& prevPubKey = coins.vout[txin.prevout.n].scriptPubKey;
+        const CScript& prevPubKey = coins->vout[txin.prevout.n].scriptPubKey;
 
         txin.scriptSig.clear();
         // Only sign SIGHASH_SINGLE if there's a corresponding output:

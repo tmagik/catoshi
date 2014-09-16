@@ -155,6 +155,7 @@ public:
         vSeeds.push_back(CDNSSeedData("alexykot.me", "testnet-seed.alexykot.me"));
         vSeeds.push_back(CDNSSeedData("bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"));
         vSeeds.push_back(CDNSSeedData("bluematt.me", "testnet-seed.bluematt.me"));
+        vSeeds.push_back(CDNSSeedData("bitcoin.schildbach.de", "testnet-seed.bitcoin.schildbach.de"));
 
         base58Prefixes[PUBKEY_ADDRESS] = list_of(111);
         base58Prefixes[SCRIPT_ADDRESS] = list_of(196);
@@ -220,22 +221,23 @@ const CChainParams &Params() {
     return *pCurrentParams;
 }
 
-void SelectParams(CBaseChainParams::Network network) {
-    SelectBaseParams(network);
+CChainParams &Params(CBaseChainParams::Network network) {
     switch (network) {
         case CBaseChainParams::MAIN:
-            pCurrentParams = &mainParams;
-            break;
+            return mainParams;
         case CBaseChainParams::TESTNET:
-            pCurrentParams = &testNetParams;
-            break;
+            return testNetParams;
         case CBaseChainParams::REGTEST:
-            pCurrentParams = &regTestParams;
-            break;
+            return regTestParams;
         default:
             assert(false && "Unimplemented network");
-            return;
+            return mainParams;
     }
+}
+
+void SelectParams(CBaseChainParams::Network network) {
+    SelectBaseParams(network);
+    pCurrentParams = &Params(network);
 }
 
 bool SelectParamsFromCommandLine() {
