@@ -15,8 +15,8 @@
 #endif
 
 #include "compat.h"
-#include "utiltime.h"
 #include "tinyformat.h"
+#include "utiltime.h"
 
 #include <exception>
 #include <map>
@@ -222,4 +222,4 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
     }
 }
 
-#endif
+#endif // BITCOIN_UTIL_H

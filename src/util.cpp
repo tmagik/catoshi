@@ -211,6 +211,7 @@ int LogPrintStr(const std::string &str)
     {
         // print to console
         ret = fwrite(str.data(), 1, str.size(), stdout);
+        fflush(stdout);
     }
     else if (fPrintToDebugLog && AreBaseParamsConfigured())
     {
@@ -494,7 +495,7 @@ bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest)
 {
 #ifdef WIN32
     return MoveFileExA(src.string().c_str(), dest.string().c_str(),
-                      MOVEFILE_REPLACE_EXISTING);
+                       MOVEFILE_REPLACE_EXISTING) != 0;
 #else
     int rc = std::rename(src.string().c_str(), dest.string().c_str());
     return (rc == 0);
