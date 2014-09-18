@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef BITCOIN_COINS_H
 #define BITCOIN_COINS_H
 
@@ -194,8 +195,8 @@ public:
         ::Unserialize(s, VARINT(nCode), nType, nVersion);
         fCoinBase = nCode & 1;
         std::vector<bool> vAvail(2, false);
-        vAvail[0] = nCode & 2;
-        vAvail[1] = nCode & 4;
+        vAvail[0] = (nCode & 2) != 0;
+        vAvail[1] = (nCode & 4) != 0;
         unsigned int nMaskCode = (nCode / 8) + ((nCode & 6) != 0 ? 0 : 1);
         // spentness bitmask
         while (nMaskCode > 0) {
@@ -343,11 +344,13 @@ public:
     bool SetBestBlock(const uint256 &hashBlock);
     bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
 
+    // Return a pointer to CCoins in the cache, or NULL if not found. This is
+    // more efficient than GetCoins. Modifications to other cache entries are
+    // allowed while accessing the returned pointer.
+    const CCoins* AccessCoins(const uint256 &txid) const;
+
     // Return a modifiable reference to a CCoins. Check HaveCoins first.
-    // Many methods explicitly require a CCoinsViewCache because of this method, to reduce
-    // copying.
     CCoins &GetCoins(const uint256 &txid);
-    const CCoins &GetCoins(const uint256 &txid) const;
 
     // Push the modifications applied to this cache to its base.
     // Failure to call this method before destruction will cause the changes to be forgotten.
@@ -379,4 +382,4 @@ private:
     CCoinsMap::const_iterator FetchCoins(const uint256 &txid) const;
 };
 
-#endif
+#endif // BITCOIN_COINS_H

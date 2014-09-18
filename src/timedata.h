@@ -5,10 +5,10 @@
 #ifndef BITCOIN_TIMEDATA_H
 #define BITCOIN_TIMEDATA_H
 
-#include <stdint.h>
-#include <vector>
 #include <algorithm>
 #include <assert.h>
+#include <stdint.h>
+#include <vector>
 
 class CNetAddr;
 
@@ -73,4 +73,4 @@ int64_t GetTimeOffset();
 int64_t GetAdjustedTime();
 void AddTimeData(const CNetAddr& ip, int64_t nTime);
 
-#endif
+#endif // BITCOIN_TIMEDATA_H
