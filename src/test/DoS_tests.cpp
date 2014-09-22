@@ -12,7 +12,7 @@
 #include "main.h"
 #include "net.h"
 #include "pow.h"
-#include "script.h"
+#include "script/sign.h"
 #include "serialize.h"
 #include "util.h"
 
@@ -24,9 +24,14 @@
 #include <boost/test/unit_test.hpp>
 
 // Tests this internal-to-main.cpp method:
-extern bool AddOrphanTx(const CTransaction& tx);
+extern bool AddOrphanTx(const CTransaction& tx, NodeId peer);
+extern void EraseOrphansFor(NodeId peer);
 extern unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans);
-extern std::map<uint256, CTransaction> mapOrphanTransactions;
+struct COrphanTx {
+    CTransaction tx;
+    NodeId fromPeer;
+};
+extern std::map<uint256, COrphanTx> mapOrphanTransactions;
 extern std::map<uint256, std::set<uint256> > mapOrphanTransactionsByPrev;
 
 CService ip(uint32_t i)
@@ -148,11 +153,11 @@ BOOST_AUTO_TEST_CASE(DoS_checknbits)
 
 CTransaction RandomOrphan()
 {
-    std::map<uint256, CTransaction>::iterator it;
+    std::map<uint256, COrphanTx>::iterator it;
     it = mapOrphanTransactions.lower_bound(GetRandHash());
     if (it == mapOrphanTransactions.end())
         it = mapOrphanTransactions.begin();
-    return it->second;
+    return it->second.tx;
 }
 
 BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
@@ -172,9 +177,9 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
         tx.vin[0].scriptSig << OP_1;
         tx.vout.resize(1);
         tx.vout[0].nValue = 1*CENT;
-        tx.vout[0].scriptPubKey.SetDestination(key.GetPubKey().GetID());
+        tx.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
 
-        AddOrphanTx(tx);
+        AddOrphanTx(tx, i);
     }
 
     // ... and 50 that depend on other orphans:
@@ -188,10 +193,10 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
         tx.vin[0].prevout.hash = txPrev.GetHash();
         tx.vout.resize(1);
         tx.vout[0].nValue = 1*CENT;
-        tx.vout[0].scriptPubKey.SetDestination(key.GetPubKey().GetID());
+        tx.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
         SignSignature(keystore, txPrev, tx, 0);
 
-        AddOrphanTx(tx);
+        AddOrphanTx(tx, i);
     }
 
     // This really-big orphan should be ignored:
@@ -202,7 +207,7 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
         CMutableTransaction tx;
         tx.vout.resize(1);
         tx.vout[0].nValue = 1*CENT;
-        tx.vout[0].scriptPubKey.SetDestination(key.GetPubKey().GetID());
+        tx.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
         tx.vin.resize(500);
         for (unsigned int j = 0; j < tx.vin.size(); j++)
         {
@@ -215,7 +220,15 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
         for (unsigned int j = 1; j < tx.vin.size(); j++)
             tx.vin[j].scriptSig = tx.vin[0].scriptSig;
 
-        BOOST_CHECK(!AddOrphanTx(tx));
+        BOOST_CHECK(!AddOrphanTx(tx, i));
+    }
+
+    // Test EraseOrphansFor:
+    for (NodeId i = 0; i < 3; i++)
+    {
+        size_t sizeBefore = mapOrphanTransactions.size();
+        EraseOrphansFor(i);
+        BOOST_CHECK(mapOrphanTransactions.size() < sizeBefore);
     }
 
     // Test LimitOrphanTxSize() function:

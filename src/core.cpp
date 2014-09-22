@@ -7,6 +7,8 @@
 
 #include "tinyformat.h"
 
+#include <boost/foreach.hpp>
+
 std::string COutPoint::ToString() const
 {
     return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10), n);
@@ -122,6 +124,14 @@ int64_t CTransaction::GetValueOut() const
 
 double CTransaction::ComputePriority(double dPriorityInputs, unsigned int nTxSize) const
 {
+    nTxSize = CalculateModifiedSize(nTxSize);
+    if (nTxSize == 0) return 0.0;
+
+    return dPriorityInputs / nTxSize;
+}
+
+unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
+{
     // In order to avoid disincentivizing cleaning up the UTXO set we don't count
     // the constant overhead for each txin and up to 110 bytes of scriptSig (which
     // is enough to cover a compressed pubkey p2sh redemption) for priority.
@@ -129,14 +139,14 @@ double CTransaction::ComputePriority(double dPriorityInputs, unsigned int nTxSiz
     // risk encouraging people to create junk outputs to redeem later.
     if (nTxSize == 0)
         nTxSize = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
+
     BOOST_FOREACH(const CTxIn& txin, vin)
     {
         unsigned int offset = 41U + std::min(110U, (unsigned int)txin.scriptSig.size());
         if (nTxSize > offset)
             nTxSize -= offset;
     }
-    if (nTxSize == 0) return 0.0;
-    return dPriorityInputs / nTxSize;
+    return nTxSize;
 }
 
 std::string CTransaction::ToString() const
@@ -216,6 +226,13 @@ uint256 CBlockHeader::GetHash() const
 
 uint256 CBlock::BuildMerkleTree() const
 {
+    // WARNING! If you're reading this because you're learning about crypto
+    // and/or designing a new system that will use merkle trees, keep in mind
+    // that the following merkle tree algorithm has a serious flaw related to
+    // duplicate txids, resulting in a vulnerability. (CVE-2012-2459) Bitcoin
+    // has since worked around the flaw, but for new applications you should
+    // use something different; don't just copy-and-paste this code without
+    // understanding the problem first.
     vMerkleTree.clear();
     BOOST_FOREACH(const CTransaction& tx, vtx)
         vMerkleTree.push_back(tx.GetHash());
