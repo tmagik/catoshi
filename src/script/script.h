@@ -320,20 +320,6 @@ inline std::string ValueString(const std::vector<unsigned char>& vch)
         return HexStr(vch);
 }
 
-class CNoDestination {
-public:
-    friend bool operator==(const CNoDestination &a, const CNoDestination &b) { return true; }
-    friend bool operator<(const CNoDestination &a, const CNoDestination &b) { return true; }
-};
-
-/** A txout script template with a specific destination. It is either:
- *  * CNoDestination: no destination set
- *  * CKeyID: TX_PUBKEYHASH destination
- *  * CScriptID: TX_SCRIPTHASH destination
- *  A CTxDestination is the internal data type encoded in a CBitcoinAddress
- */
-typedef boost::variant<CNoDestination, CKeyID, CScriptID> CTxDestination;
-
 /** Serialized script, used inside transaction inputs and outputs */
 class CScript : public std::vector<unsigned char>
 {
@@ -354,9 +340,7 @@ public:
     CScript() { }
     CScript(const CScript& b) : std::vector<unsigned char>(b.begin(), b.end()) { }
     CScript(const_iterator pbegin, const_iterator pend) : std::vector<unsigned char>(pbegin, pend) { }
-#ifndef _MSC_VER
     CScript(const unsigned char* pbegin, const unsigned char* pend) : std::vector<unsigned char>(pbegin, pend) { }
-#endif
 
     CScript& operator+=(const CScript& b)
     {
@@ -603,9 +587,6 @@ public:
     {
         return (size() > 0 && *begin() == OP_RETURN);
     }
-
-    void SetDestination(const CTxDestination& address);
-    void SetMultisig(int nRequired, const std::vector<CPubKey>& keys);
 
     std::string ToString() const
     {
