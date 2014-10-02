@@ -45,7 +45,7 @@ using namespace boost;
 using namespace std;
 
 #ifdef ENABLE_WALLET
-CWallet* pwalletMain;
+CWallet* pwalletMain = NULL;
 #endif
 
 #ifdef WIN32
@@ -109,7 +109,7 @@ bool ShutdownRequested()
     return fRequestShutdown;
 }
 
-static CCoinsViewDB *pcoinsdbview;
+static CCoinsViewDB *pcoinsdbview = NULL;
 
 void Shutdown()
 {
@@ -165,8 +165,8 @@ void Shutdown()
 #endif
     UnregisterAllWallets();
 #ifdef ENABLE_WALLET
-    if (pwalletMain)
-        delete pwalletMain;
+    delete pwalletMain;
+    pwalletMain = NULL;
 #endif
     LogPrintf("%s: done\n", __func__);
 }
@@ -662,7 +662,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     // cost to you of processing a transaction.
     if (mapArgs.count("-minrelaytxfee"))
     {
-        int64_t n = 0;
+        CAmount n = 0;
         if (ParseMoney(mapArgs["-minrelaytxfee"], n) && n > 0)
             ::minRelayTxFee = CFeeRate(n);
         else
@@ -672,7 +672,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 #ifdef ENABLE_WALLET
     if (mapArgs.count("-mintxfee"))
     {
-        int64_t n = 0;
+        CAmount n = 0;
         if (ParseMoney(mapArgs["-mintxfee"], n) && n > 0)
             CWallet::minTxFee = CFeeRate(n);
         else
@@ -680,7 +680,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     }
     if (mapArgs.count("-paytxfee"))
     {
-        int64_t nFeePerK = 0;
+        CAmount nFeePerK = 0;
         if (!ParseMoney(mapArgs["-paytxfee"], nFeePerK))
             return InitError(strprintf(_("Invalid amount for -paytxfee=<amount>: '%s'"), mapArgs["-paytxfee"]));
         if (nFeePerK > nHighTransactionFeeWarning)
@@ -701,6 +701,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     fIsBareMultisigStd = GetArg("-permitbaremultisig", true) != 0;
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
+
     // Sanity check
     if (!InitSanityCheck())
         return InitError(_("Initialization sanity check failed. Bitcoin Core is shutting down."));
