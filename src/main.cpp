@@ -17,6 +17,7 @@
 #include "txmempool.h"
 #include "ui_interface.h"
 #include "util.h"
+#include "utilmoneystr.h"
 
 #include <sstream>
 
@@ -1316,7 +1317,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 bool CScriptCheck::operator()() const {
     const CScript &scriptSig = ptxTo->vin[nIn].scriptSig;
     if (!VerifyScript(scriptSig, scriptPubKey, *ptxTo, nIn, nFlags))
-        return error("CScriptCheck() : %s VerifySignature failed", ptxTo->GetHash().ToString());
+        return error("CScriptCheck() : %s:%d VerifySignature failed", ptxTo->GetHash().ToString(), nIn);
     return true;
 }
 
@@ -1361,7 +1362,8 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
         }
 
         if (nValueIn < tx.GetValueOut())
-            return state.DoS(100, error("CheckInputs() : %s value in < value out", tx.GetHash().ToString()),
+            return state.DoS(100, error("CheckInputs() : %s value in (%s) < value out (%s)",
+                                        tx.GetHash().ToString(), FormatMoney(nValueIn), FormatMoney(tx.GetValueOut())),
                              REJECT_INVALID, "bad-txns-in-belowout");
 
         // Tally transaction fees
@@ -2236,13 +2238,12 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
         if (!CheckTransaction(tx, state))
             return error("CheckBlock() : CheckTransaction failed");
 
-    // Check for duplicate txids. This is caught by ConnectInputs(),
-    // but catching it earlier avoids a potential DoS attack:
-    set<uint256> uniqueTx;
-    BOOST_FOREACH(const CTransaction &tx, block.vtx) {
-        uniqueTx.insert(tx.GetHash());
-    }
-    if (uniqueTx.size() != block.vtx.size())
+    // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
+    // of transactions in a block without affecting the merkle root of a block,
+    // while still invalidating it.
+    bool mutated;
+    uint256 hashMerkleRoot2 = block.BuildMerkleTree(&mutated);
+    if (mutated)
         return state.DoS(100, error("CheckBlock() : duplicate transaction"),
                          REJECT_INVALID, "bad-txns-duplicate", true);
 
@@ -2256,7 +2257,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
                          REJECT_INVALID, "bad-blk-sigops", true);
 
     // Check merkle root
-    if (fCheckMerkleRoot && block.hashMerkleRoot != block.BuildMerkleTree())
+    if (fCheckMerkleRoot && block.hashMerkleRoot != hashMerkleRoot2)
         return state.DoS(100, error("CheckBlock() : hashMerkleRoot mismatch"),
                          REJECT_INVALID, "bad-txnmrklroot", true);
 
@@ -2304,7 +2305,8 @@ bool AcceptBlockHeader(CBlockHeader& block, CValidationState& state, CBlockIndex
         nHeight = pindexPrev->nHeight+1;
 
         // Check proof of work
-        if (block.nBits != GetNextWorkRequired(pindexPrev, &block))
+        if ((!Params().SkipProofOfWorkCheck()) &&
+           (block.nBits != GetNextWorkRequired(pindexPrev, &block)))
             return state.DoS(100, error("AcceptBlock() : incorrect proof of work"),
                              REJECT_INVALID, "bad-diffbits");
 
