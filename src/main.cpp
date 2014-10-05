@@ -1185,7 +1185,7 @@ bool ConnectBestBlock(CValidationState &state) {
 
 void CBlockHeader::UpdateTime(const CBlockIndex* pindexPrev)
 {
-	nTime = max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+	nTime = max(pindexPrev->GetMedianTimePast()+MINIMUM_BLOCK_SPACING, GetAdjustedTime());
 
 	// Updating time can change work required on testnet:
 	if (fTestNet)
@@ -1966,7 +1966,7 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 		return state.DoS(50, error("CheckBlock() : proof of work failed"));
 
 	// Check timestamp
-	if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
+	if (GetBlockTime() > GetAdjustedTime() + 15 * 60)
 		return state.Invalid(error("CheckBlock() : block timestamp too far in the future"));
 
 	// First transaction must be coinbase, the rest must not be
@@ -2034,6 +2034,10 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 		// Check timestamp against prev
 		if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
 			return state.Invalid(error("AcceptBlock() : block's timestamp is too early"));
+		
+		// some coins may have tighter tolerances
+		if (!AcceptBlockTimestamp(state, pindexPrev, this))
+			return false;
 
 		// Check that all transactions are finalized
 		BOOST_FOREACH(const CTransaction& tx, vtx)
@@ -2150,6 +2154,12 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 			return state.DoS(100, error(
 				"ProcessBlock() : block with too little proof-of-work"));
 		}
+	}
+
+#warning "not sure how tight this should be, but test it for now - T, oct5"
+	if (pblock->GetBlockTime() > GetAdjustedTime()){
+		return state.DoS(10, error("ProcessBlock(): block with future timestamp %" PRId64"\n",
+			pblock->GetBlockTime()));
 	}
 
 	// If we don't already have its previous block, shunt it off to holding area until we get it

@@ -2317,6 +2317,7 @@ bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAdd
 // FIXME DOXYGEN THIS
 extern int64_t GetBlockValue(CBlockIndex *block, int64_t nFees);
 extern unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, int height);
+bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock);
 extern unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock);
 extern bool LoadBlockIndex(); 
 extern bool InitBlockIndex();

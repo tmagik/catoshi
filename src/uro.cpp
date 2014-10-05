@@ -85,6 +85,11 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
 	return bnResult.GetCompact();
 }
 
+bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock)
+{
+	return true;	
+}
+
 unsigned int static GetNextWorkRequired_V1(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
 	unsigned int nProofOfWorkLimit = bnProofOfWorkLimit.GetCompact();
@@ -145,11 +150,13 @@ unsigned int static GetNextWorkRequired_V1(const CBlockIndex* pindexLast, const 
 	if (bnNew > bnProofOfWorkLimit)
 		bnNew = bnProofOfWorkLimit;
 
+#if 0
 	/// debug print
 	printf("GetNextWorkRequired RETARGET\n");
 	printf("nTargetTimespan = %" PRId64"    nActualTimespan = %" PRId64"\n", nTargetTimespan, nActualTimespan);
 	printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
 	printf("After:	%08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+#endif
 
 	return bnNew.GetCompact();
 }

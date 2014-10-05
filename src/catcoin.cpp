@@ -78,7 +78,6 @@ int64_t GetBlockValue(CBlockIndex *block, int64_t nFees)
 
 static const int64_t nTargetTimespan = 6 * 60 * 60; // 6 hours
 static const int64_t nTargetSpacing = 10 * 60;
-static const int64_t nMinSpacing = 30;	// Absolute minimum spacing
 static const int64_t nInterval = nTargetTimespan / nTargetSpacing;
 
 static const int64_t nTargetTimespanOld = 14 * 24 * 60 * 60; // two weeks
@@ -111,6 +110,35 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
 
 static int fork3Block = 27260; // FIXME move to top...
 static int fork4Block = 27680; // Acceptblock needs this
+//static int fork1min = 31830;
+//static int MIN_BLOCK_SPACING = 60;
+
+//Checks for 'hardcoded' block timestamps
+bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock)
+{
+	int64_t time_allow = -30;
+	int64_t time_warn = 60;
+	int64_t delta = pblock->GetBlockTime() - pindexPrev->GetBlockTime();
+	int nHeight = pindexPrev->nHeight + 1;
+
+	if (nHeight > fork4Block){
+		time_allow = MINIMUM_BLOCK_SPACING;
+	}
+	
+	if (delta < time_warn){
+		printf("WARNING blocktime nHeight %d time_allow %" PRId64" time_warn %" PRId64" time delta %" PRId64"\n", nHeight, time_allow, time_warn, delta);
+	}
+
+	if (nHeight > fork3Block) {
+		if (delta < time_allow) // see above
+			return state.Invalid(error("AcceptBlock(height=%d) : block's timestamp (%" PRId64") is too soon after prev->(%" PRId64")", nHeight, pblock->GetBlockTime(), pindexPrev->GetBlockTime()));
+	}
+//	if (nHeight > fork1min) {
+//		if (delta < 60)
+//			return state.DoS(10, error("AcceptBlock(height=%d) : block's timestamp (%" PRId64") is too soon after prev->(%" PRId64")", nHeight, pblock->GetBlockTime(), pindexPrev->GetBlockTime()));
+//	}
+	return true;	
+}
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
@@ -202,48 +230,47 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
 	if(pindexLast->nHeight < fork3Block && !fTestNet) // let it walk through 2nd fork stuff if below fork3Block, and ignore if on testnet
 	{
-#warning retabme
 	// Catcoin: This fixes an issue where a 51% attack can change difficulty at will.
 	// Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
-	int blockstogoback = nIntervalLocal-1;
-	if ((pindexLast->nHeight+1) != nIntervalLocal)
-		blockstogoback = nIntervalLocal;
+		int blockstogoback = nIntervalLocal-1;
+		if ((pindexLast->nHeight+1) != nIntervalLocal)
+			blockstogoback = nIntervalLocal;
 
-	// Go back by what we want to be 14 days worth of blocks
-	const CBlockIndex* pindexFirst = pindexLast;
-	for (i = 0; pindexFirst && i < blockstogoback; i++)
-		pindexFirst = pindexFirst->pprev;
-	assert(pindexFirst);
+		// Go back by what we want to be 14 days worth of blocks
+		const CBlockIndex* pindexFirst = pindexLast;
+		for (i = 0; pindexFirst && i < blockstogoback; i++)
+			pindexFirst = pindexFirst->pprev;
+		assert(pindexFirst);
 
-	// Limit adjustment step
-	int numerator = 4;
-	int denominator = 1;
-	if(pindexLast->nHeight >= fork2Block){
-		numerator = 112;
-		denominator = 100;
-	}
-	int64_t nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
-	int64_t lowLimit = nTargetTimespanLocal*denominator/numerator;
-	int64_t highLimit = nTargetTimespanLocal*numerator/denominator;
-	printf("  nActualTimespan = %" PRId64"  before bounds\n", nActualTimespan);
-	if (nActualTimespan < lowLimit)
-		nActualTimespan = lowLimit;
-	if (nActualTimespan > highLimit)
-		nActualTimespan = highLimit;
+		// Limit adjustment step
+		int numerator = 4;
+		int denominator = 1;
+		if(pindexLast->nHeight >= fork2Block){
+			numerator = 112;
+			denominator = 100;
+		}
+		int64_t nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
+		int64_t lowLimit = nTargetTimespanLocal*denominator/numerator;
+		int64_t highLimit = nTargetTimespanLocal*numerator/denominator;
+		printf("  nActualTimespan = %" PRId64"  before bounds\n", nActualTimespan);
+		if (nActualTimespan < lowLimit)
+			nActualTimespan = lowLimit;
+		if (nActualTimespan > highLimit)
+			nActualTimespan = highLimit;
 
-	// Retarget
-	bnNew.SetCompact(pindexLast->nBits);
-	bnNew *= nActualTimespan;
-	bnNew /= nTargetTimespanLocal;
+		// Retarget
+		bnNew.SetCompact(pindexLast->nBits);
+		bnNew *= nActualTimespan;
+		bnNew /= nTargetTimespanLocal;
+	
+		if (bnNew > bnProofOfWorkLimit)
+			bnNew = bnProofOfWorkLimit;
 
-	if (bnNew > bnProofOfWorkLimit)
-		bnNew = bnProofOfWorkLimit;
-
-	/// debug print
-	printf("GetNextWorkRequired RETARGET\n");
-	printf("nTargetTimespan = %" PRId64"    nActualTimespan = %" PRId64"\n", nTargetTimespanLocal, nActualTimespan);
-	printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
-	printf("After:	%08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+		/// debug print
+		if(fTestNet) printf("GetNextWorkRequired RETARGET\n");
+		if(fTestNet) printf("nTargetTimespan = %" PRId64"    nActualTimespan = %" PRId64"\n", nTargetTimespanLocal, nActualTimespan);
+		if(fTestNet) printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
+		if(fTestNet) printf("After:	%08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
 	}
 /*
 PID formula
@@ -265,10 +292,10 @@ If New diff < 0, then set static value of 0.0001 or so.
 		nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();		// Get last X blocks time
 		nActualTimespan = nActualTimespan / 8;	// Calculate average for last 8 blocks
 		if(pindexLast->nHeight > fork4Block || fTestNet){
-			if (nMinSpacing > nActualTimespan){
+			if (MINIMUM_BLOCK_SPACING > nActualTimespan){
 				printf("WARNING: SANITY CHECK FAILED: PID nActualTimespan %" PRId64" too small! increased to %" PRId64"\n",
-					nActualTimespan, nMinSpacing );
-				nActualTimespan = nMinSpacing;
+					nActualTimespan, MINIMUM_BLOCK_SPACING );
+				nActualTimespan = MINIMUM_BLOCK_SPACING;
 			}
 		}
 		bnNew.SetCompact(pindexLast->nBits);	// Get current difficulty
@@ -316,15 +343,20 @@ If New diff < 0, then set static value of 0.0001 or so.
 		bResult = result;			// Set the bignum value
 		if(i>24) bResult = bResult << (i - 24);	// bit-shift integer value of result to be subtracted from current diff
 
-		if(fTestNet) printf("pCalc: %f, iCalc: %f, dCalc: %f, Result: %" PRId64" (%f)\n", pCalc, iCalc, dCalc, result, dResult);
-		if(fTestNet) printf("Actual Time: %" PRId64", error: %" PRId64"\n", nActualTimespan, error); 
-		if(fTestNet) printf("Result: %08x %s\n",bResult.GetCompact(), bResult.getuint256().ToString().c_str()); 
-		if(fTestNet) printf("Before: %08x %s\n",bnNew.GetCompact(), bnNew.getuint256().ToString().c_str()); 
+		//if(fTestNet)
+		printf("pCalc: %f, iCalc: %f, dCalc: %f, Result: %" PRId64" (%f)\n", pCalc, iCalc, dCalc, result, dResult);
+		//if(fTestNet) // TODO: make this key on a 'debugPID' or something
+		printf("PID Actual Time: %" PRId64", error: %" PRId64"\n", nActualTimespan, error); 
+		//if(fTestNet)
+		printf("Result: %08x %s\n",bResult.GetCompact(), bResult.getuint256().ToString().c_str()); 
+		//if(fTestNet)
+		printf("Before: %08x %s\n",bnNew.GetCompact(), bnNew.getuint256().ToString().c_str()); 
 		bnNew = bnNew - bResult;	// Subtract the result to set the current diff
 		
 		// Make sure that diff is not set too low, ever
 		if (bnNew.GetCompact() > 0x1e0fffff) bnNew.SetCompact(0x1e0fffff);
-		if(fTestNet) printf("After:  %08x %s\n",bnNew.GetCompact(), bnNew.getuint256().ToString().c_str()); 
+		//if(fTestNet) 
+		printf("After:  %08x %s\n",bnNew.GetCompact(), bnNew.getuint256().ToString().c_str()); 
 		
 	} // End Fork 3 to use a PID routine instead of the other 2 forks routine
 
@@ -464,13 +496,14 @@ namespace Checkpoints
 		(22950, uint256("0xcecc4ab30b39fc09bf85eb191e64c1660ab2206c5f80953694997ec5c2db5338"))
 		(25890, uint256("0x4806f91100ae83904aa0113cc3acda8fe6ac422186243719a68b76c98e7487c2"))
 		(29400,	uint256("0x6740c8907d9a13dfa1019142cc3b1e0abfe2fe8c832c5333df82a404d9a3e40e"))
-//		(23000, uint256("0x"))
+		(31830, uint256("0x9275b100cd5e540177c285c8801a63e644e7611a60a49b50831f70df6e5ea825"))
+//		(33000, uint256("0x"))
 
 		;
 	const CCheckpointData data = {
 		&mapCheckpoints,
-		1405246669, 	// * UNIX timestamp of last checkpoint block
-		87168,		// * total number of transactions between genesis and last checkpoint
+		1412473618, 	// * UNIX timestamp of last checkpoint block
+		90366,		// * total number of transactions between genesis and last checkpoint
 					//	 (the tx=... number in the SetBestChain debug.log lines)
 		1000.0		// * estimated number of transactions per day after checkpoint
 	};
