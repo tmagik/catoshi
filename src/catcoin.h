@@ -27,6 +27,11 @@ static const int RETARGET_INTERVAL = 36;
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 100;
 
+/** Minimum block time spacing (hard limit) **/
+static const int64_t MINIMUM_BLOCK_SPACING = 30;	// Absolute minimum spacing
+
+
+
 #define BRAND "CatCoin"
 #define BRAND_upper "CatCoin"
 #define BRAND_lower "catcoin"

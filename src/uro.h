@@ -27,6 +27,9 @@ inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MO
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 20; /* probably to small */
 
+/** Minimum block time spacing (see also: AcceptBlockTimestamp) **/
+static const int64_t MINIMUM_BLOCK_SPACING = 1;	// Absolute minimum spacing:
+
 #define BRAND "Uro"
 #define BRAND_upper "Uro"
 #define BRAND_lower "uro"
