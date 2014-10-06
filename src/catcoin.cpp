@@ -347,16 +347,16 @@ If New diff < 0, then set static value of 0.0001 or so.
 		printf("pCalc: %f, iCalc: %f, dCalc: %f, Result: %" PRId64" (%f)\n", pCalc, iCalc, dCalc, result, dResult);
 		//if(fTestNet) // TODO: make this key on a 'debugPID' or something
 		printf("PID Actual Time: %" PRId64", error: %" PRId64"\n", nActualTimespan, error); 
-		//if(fTestNet)
-		printf("Result: %08x %s\n",bResult.GetCompact(), bResult.getuint256().ToString().c_str()); 
-		//if(fTestNet)
-		printf("Before: %08x %s\n",bnNew.GetCompact(), bnNew.getuint256().ToString().c_str()); 
+		if(fTestNet)
+			printf("Result: %08x %s\n",bResult.GetCompact(), bResult.getuint256().ToString().c_str()); 
+		if(fTestNet)
+			printf("Before: %08x %s\n",bnNew.GetCompact(), bnNew.getuint256().ToString().c_str()); 
 		bnNew = bnNew - bResult;	// Subtract the result to set the current diff
 		
 		// Make sure that diff is not set too low, ever
 		if (bnNew.GetCompact() > 0x1e0fffff) bnNew.SetCompact(0x1e0fffff);
-		//if(fTestNet) 
-		printf("After:  %08x %s\n",bnNew.GetCompact(), bnNew.getuint256().ToString().c_str()); 
+		if(fTestNet) 
+			printf("After:  %08x %s\n",bnNew.GetCompact(), bnNew.getuint256().ToString().c_str()); 
 		
 	} // End Fork 3 to use a PID routine instead of the other 2 forks routine
 
@@ -470,7 +470,7 @@ bool InitBlockIndex() {
 
 namespace Checkpoints
 {
-		// What makes a good checkpoint block?
+	// What makes a good checkpoint block?
 	// + Is surrounded by blocks with reasonable timestamps
 	//	 (no blocks before with a timestamp after, none after with
 	//	  timestamp before)
@@ -496,6 +496,7 @@ namespace Checkpoints
 		(22950, uint256("0xcecc4ab30b39fc09bf85eb191e64c1660ab2206c5f80953694997ec5c2db5338"))
 		(25890, uint256("0x4806f91100ae83904aa0113cc3acda8fe6ac422186243719a68b76c98e7487c2"))
 		(29400,	uint256("0x6740c8907d9a13dfa1019142cc3b1e0abfe2fe8c832c5333df82a404d9a3e40e"))
+		(30000, uint256("0xff05303dc58caf2d102c85a0504ed16939c7840c91f5f0b37a5bf128e9afb73f"))
 		(31830, uint256("0x9275b100cd5e540177c285c8801a63e644e7611a60a49b50831f70df6e5ea825"))
 //		(33000, uint256("0x"))
 

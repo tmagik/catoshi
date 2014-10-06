@@ -32,7 +32,6 @@ double nbitstoDifficulty(unsigned int nBits)
 		nShift--;
 	}
 
-	printf("nbitstodifficulty nBits 0x%x dDiff %f\n", nBits, dDiff);
 	return dDiff;
 }
 
