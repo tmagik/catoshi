@@ -12,8 +12,8 @@ else
 fi
 
 if [ -e "$(which hg)" ]; then
-    # get a string like "472fdd7d1efd+ tip"
-    DESC="$(hg identify)"
+    # get a string like "472fdd7d1efd+"
+    DESC="$(hg identify -i)"
 
     # get a string like "2012-04-10 16:27:19 +0200"
     TIME="$(hg tip --template "{date|isodate}\n")"

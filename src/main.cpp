@@ -2157,8 +2157,9 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 		}
 	}
 
-#warning "not sure how tight this should be, but test it for now - T, oct5"
-	if (pblock->GetBlockTime() > GetAdjustedTime()){
+#warning "move this code to *coin.cpp"
+	/* allow up to 30 seconds in the future to accommodate inaccurate clocks" */
+	if (pblock->GetBlockTime() > GetAdjustedTime() + 30){
 		return state.DoS(10, error("ProcessBlock(): block with future timestamp %" PRId64"\n",
 			pblock->GetBlockTime()));
 	}
