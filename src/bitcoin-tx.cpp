@@ -214,7 +214,7 @@ static void MutateTxAddOutAddr(CMutableTransaction& tx, const string& strInput)
 
     // extract and validate VALUE
     string strValue = strInput.substr(0, pos);
-    int64_t value;
+    CAmount value;
     if (!ParseMoney(strValue, value))
         throw runtime_error("invalid TX output value");
 
@@ -242,7 +242,7 @@ static void MutateTxAddOutScript(CMutableTransaction& tx, const string& strInput
 
     // extract and validate VALUE
     string strValue = strInput.substr(0, pos);
-    int64_t value;
+    CAmount value;
     if (!ParseMoney(strValue, value))
         throw runtime_error("invalid TX output value");
 
@@ -435,7 +435,7 @@ static void MutateTxSign(CMutableTransaction& tx, const string& flagStr)
         BOOST_FOREACH(const CTransaction& txv, txVariants) {
             txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
         }
-        if (!VerifyScript(txin.scriptSig, prevPubKey, mergedTx, i, STANDARD_SCRIPT_VERIFY_FLAGS))
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, SignatureChecker(mergedTx, i)))
             fComplete = false;
     }
 
