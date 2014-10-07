@@ -28,7 +28,7 @@ static const int RETARGET_INTERVAL = 36;
 static const int COINBASE_MATURITY = 100;
 
 /** Minimum block time spacing (hard limit) **/
-static const int64_t MINIMUM_BLOCK_SPACING = 30;	// Absolute minimum spacing
+static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 
 
 
