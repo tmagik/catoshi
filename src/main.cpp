@@ -1186,7 +1186,8 @@ bool ConnectBestBlock(CValidationState &state) {
 void CBlockHeader::UpdateTime(const CBlockIndex* pindexPrev)
 {
 	/* This is tighter tolerance than original Satoshi client */
-	nTime = max(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING, GetAdjustedTime());
+	/* danger, there be off-by-one here, add 1 to be safe until we have regression tests -- T */
+	nTime = max(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1, GetAdjustedTime());
 
 	// Updating time can change work required on testnet:
 	if (fTestNet)

@@ -603,7 +603,8 @@ Value getblocktemplate(const Array& params, bool fHelp)
 	result.push_back(Pair("coinbaseaux", aux));
 	result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
 	result.push_back(Pair("target", hashTarget.GetHex()));
-	result.push_back(Pair("mintime", (int64_t)(pindexPrev->GetMedianTimePast()+MINIMUM_BLOCK_SPACING)));
+	/* danger, there be off-by-one here, add 1 to be safe until we have regression tests -- T */
+	result.push_back(Pair("mintime", (int64_t)(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1)));
 
 	result.push_back(Pair("mutable", aMutable));
 	result.push_back(Pair("noncerange", "00000000ffffffff"));
