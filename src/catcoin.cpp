@@ -110,33 +110,32 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
 
 static int fork3Block = 27260; // FIXME move to top...
 static int fork4Block = 27680; // Acceptblock needs this
-//static int fork1min = 31830;
-//static int MIN_BLOCK_SPACING = 60;
+static int fork1min = 31919;
 
 //Checks for 'hardcoded' block timestamps
 bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock)
 {
 	int64_t time_allow = -30;
-	int64_t time_warn = 60;
+	int64_t time_warn = MINIMUM_BLOCK_SPACING;
 	int64_t delta = pblock->GetBlockTime() - pindexPrev->GetBlockTime();
 	int nHeight = pindexPrev->nHeight + 1;
 
 	if (nHeight > fork4Block){
-		time_allow = MINIMUM_BLOCK_SPACING;
+		time_allow = 30;
 	}
 	
 	if (delta < time_warn){
 		printf("WARNING blocktime nHeight %d time_allow %" PRId64" time_warn %" PRId64" time delta %" PRId64"\n", nHeight, time_allow, time_warn, delta);
 	}
 
-	if (nHeight > fork3Block) {
-		if (delta < time_allow) // see above
-			return state.Invalid(error("AcceptBlock(height=%d) : block's timestamp (%" PRId64") is too soon after prev->(%" PRId64")", nHeight, pblock->GetBlockTime(), pindexPrev->GetBlockTime()));
+	if (nHeight >= fork3Block) {
+		if (delta < time_allow) // see above, from first hard limit
+			return state.Invalid(error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta));
 	}
-//	if (nHeight > fork1min) {
-//		if (delta < 60)
-//			return state.DoS(10, error("AcceptBlock(height=%d) : block's timestamp (%" PRId64") is too soon after prev->(%" PRId64")", nHeight, pblock->GetBlockTime(), pindexPrev->GetBlockTime()));
-//	}
+	if (nHeight >= fork1min) { /* don't forward these */
+		if (delta < MINIMUM_BLOCK_SPACING)
+			return state.DoS(10, (error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta)));
+	}
 	return true;	
 }
 
@@ -283,6 +282,10 @@ New Diff = (Current Diff + P Calc + I Calc + D Calc)
 
 If New diff < 0, then set static value of 0.0001 or so.
 */	
+
+	int nMinSpacing = 30;
+	if(pindexLast->nHeight >= fork1min || fTestNet)
+		nMinSpacing = MINIMUM_BLOCK_SPACING;
 	
 	if(pindexLast->nHeight >= fork3Block || fTestNet)
 	// Fork 3 to use a PID routine instead of the other 2 forks 
@@ -292,10 +295,10 @@ If New diff < 0, then set static value of 0.0001 or so.
 		nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();		// Get last X blocks time
 		nActualTimespan = nActualTimespan / 8;	// Calculate average for last 8 blocks
 		if(pindexLast->nHeight > fork4Block || fTestNet){
-			if (MINIMUM_BLOCK_SPACING > nActualTimespan){
-				printf("WARNING: SANITY CHECK FAILED: PID nActualTimespan %" PRId64" too small! increased to %" PRId64"\n",
-					nActualTimespan, MINIMUM_BLOCK_SPACING );
-				nActualTimespan = MINIMUM_BLOCK_SPACING;
+			if (nMinSpacing > nActualTimespan){
+				printf("WARNING: SANITY CHECK FAILED: PID nActualTimespan %" PRId64" too small! increased to %d\n",
+					nActualTimespan, nMinSpacing );
+				nActualTimespan = nMinSpacing;
 			}
 		}
 		bnNew.SetCompact(pindexLast->nBits);	// Get current difficulty
