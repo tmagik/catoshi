@@ -129,11 +129,11 @@ bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, cons
 	}
 
 	if (nHeight >= fork3Block) {
-		if (delta < time_allow) // see above, from first hard limit
+		if (delta <= time_allow) // see above, from first hard limit
 			return state.Invalid(error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta));
 	}
 	if (nHeight >= fork1min) { /* don't forward these */
-		if (delta < MINIMUM_BLOCK_SPACING)
+		if (delta <= MINIMUM_BLOCK_SPACING)
 			return state.DoS(10, (error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta)));
 	}
 	return true;	
@@ -190,8 +190,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 	} 
 	else if(pindexLast->nHeight == forkBlock && !fTestNet) 
 	{
-			bnNew.SetCompact(0x1c0ffff0); // Difficulty 16
-			return bnNew.GetCompact();
+		bnNew.SetCompact(0x1c0ffff0); // Difficulty 16
+		return bnNew.GetCompact();
 	} 
 	else // Keep in for a resync
 	{
