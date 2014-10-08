@@ -45,7 +45,7 @@ using namespace boost;
 using namespace std;
 
 #ifdef ENABLE_WALLET
-CWallet* pwalletMain;
+CWallet* pwalletMain = NULL;
 #endif
 
 #ifdef WIN32
@@ -109,7 +109,7 @@ bool ShutdownRequested()
     return fRequestShutdown;
 }
 
-static CCoinsViewDB *pcoinsdbview;
+static CCoinsViewDB *pcoinsdbview = NULL;
 
 void Shutdown()
 {
@@ -165,8 +165,8 @@ void Shutdown()
 #endif
     UnregisterAllWallets();
 #ifdef ENABLE_WALLET
-    if (pwalletMain)
-        delete pwalletMain;
+    delete pwalletMain;
+    pwalletMain = NULL;
 #endif
     LogPrintf("%s: done\n", __func__);
 }
@@ -237,7 +237,7 @@ std::string HelpMessage(HelpMessageMode mode)
 #if !defined(WIN32)
     strUsage += "  -sysperms              " + _("Create new files with system default permissions, instead of umask 077 (only effective with disabled wallet functionality)") + "\n";
 #endif
-    strUsage += "  -txindex               " + _("Maintain a full transaction index (default: 0)") + "\n";
+    strUsage += "  -txindex               " + _("Maintain a full transaction index, used by the getrawtransaction rpc call (default: 0)") + "\n";
 
     strUsage += "\n" + _("Connection options:") + "\n";
     strUsage += "  -addnode=<ip>          " + _("Add a node to connect to and attempt to keep the connection open") + "\n";
@@ -280,7 +280,6 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += "  -mintxfee=<amt>        " + strprintf(_("Fees (in BTC/Kb) smaller than this are considered zero fee for transaction creation (default: %s)"), FormatMoney(CWallet::minTxFee.GetFeePerK())) + "\n";
     strUsage += "  -paytxfee=<amt>        " + strprintf(_("Fee (in BTC/kB) to add to transactions you send (default: %s)"), FormatMoney(payTxFee.GetFeePerK())) + "\n";
     strUsage += "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + " " + _("on startup") + "\n";
-    strUsage += "  -respendnotify=<cmd>   " + _("Execute command when a network tx respends wallet tx input (%s=respend TxID, %t=wallet TxID)") + "\n";
     strUsage += "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + " " + _("on startup") + "\n";
     strUsage += "  -spendzeroconfchange   " + _("Spend unconfirmed change when sending transactions (default: 1)") + "\n";
     strUsage += "  -txconfirmtarget=<n>   " + _("If paytxfee is not set, include enough fee so transactions are confirmed on average within n blocks (default: 1)") + "\n";
@@ -662,7 +661,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     // cost to you of processing a transaction.
     if (mapArgs.count("-minrelaytxfee"))
     {
-        int64_t n = 0;
+        CAmount n = 0;
         if (ParseMoney(mapArgs["-minrelaytxfee"], n) && n > 0)
             ::minRelayTxFee = CFeeRate(n);
         else
@@ -672,7 +671,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 #ifdef ENABLE_WALLET
     if (mapArgs.count("-mintxfee"))
     {
-        int64_t n = 0;
+        CAmount n = 0;
         if (ParseMoney(mapArgs["-mintxfee"], n) && n > 0)
             CWallet::minTxFee = CFeeRate(n);
         else
@@ -680,7 +679,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     }
     if (mapArgs.count("-paytxfee"))
     {
-        int64_t nFeePerK = 0;
+        CAmount nFeePerK = 0;
         if (!ParseMoney(mapArgs["-paytxfee"], nFeePerK))
             return InitError(strprintf(_("Invalid amount for -paytxfee=<amount>: '%s'"), mapArgs["-paytxfee"]));
         if (nFeePerK > nHighTransactionFeeWarning)
@@ -701,6 +700,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     fIsBareMultisigStd = GetArg("-permitbaremultisig", true) != 0;
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
+
     // Sanity check
     if (!InitSanityCheck())
         return InitError(_("Initialization sanity check failed. Bitcoin Core is shutting down."));
@@ -1058,7 +1058,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     }
 
     boost::filesystem::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
-    CAutoFile est_filein = CAutoFile(fopen(est_path.string().c_str(), "rb"), SER_DISK, CLIENT_VERSION);
+    CAutoFile est_filein(fopen(est_path.string().c_str(), "rb"), SER_DISK, CLIENT_VERSION);
     // Allowed to fail as this file IS missing on first startup.
     if (est_filein)
         mempool.ReadFeeEstimates(est_filein);
@@ -1159,7 +1159,7 @@ bool AppInit2(boost::thread_group& threadGroup)
             CWalletDB walletdb(strWalletFile);
             CBlockLocator locator;
             if (walletdb.ReadBestBlock(locator))
-                pindexRescan = chainActive.FindFork(locator);
+                pindexRescan = FindForkInGlobalIndex(chainActive, locator);
             else
                 pindexRescan = chainActive.Genesis();
         }
