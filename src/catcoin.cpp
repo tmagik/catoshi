@@ -110,7 +110,8 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
 
 static int fork3Block = 27260; // FIXME move to top...
 static int fork4Block = 27680; // Acceptblock needs this
-static int fork1min = 31919;
+// static int fork1min = 31919;
+static int fork1min = 210000;	// kittycoin fork block
 
 //Checks for 'hardcoded' block timestamps
 bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock)
