@@ -1,11 +1,13 @@
+// Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCON_COMPAT_SANITY_H
-#define BITCON_COMPAT_SANITY_H
+#ifndef BITCOIN_AMOUNT_H
+#define BITCOIN_AMOUNT_H
 
-bool glibc_sanity_test();
-bool glibcxx_sanity_test();
+#include <stdint.h>
 
-#endif // BITCON_COMPAT_SANITY_H
+typedef int64_t CAmount;
+
+#endif //  BITCOIN_AMOUNT_H
