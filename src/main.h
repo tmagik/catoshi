@@ -104,6 +104,9 @@ extern unsigned int nCoinCacheSize;
 extern int64_t nTransactionFee;
 extern int64_t nMinimumInputValue;
 
+// Maximum future timestamp we will accept in ProcessBlock
+extern int64_t nMaxFutureTime;
+
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64_t nMinDiskSpace = 52428800;
 

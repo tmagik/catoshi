@@ -41,6 +41,7 @@ const int ORPHAN_WORK_THRESHOLD = 1; // FIXME WAY TOO WIDE right now
 	  (a future) mailing list that we need to do it to fix the network
  */
 const char *strMainNetDNSSeed[][2] = {
+	{"thepeeps.net", "p2pool.thepeeps.net"},
 	{"catstat.info", "seed.catstat.info"},
 	{"catcoinwallets.com", "seed.catcoinwallets.com"},
 	{"geekhash.org", "cat.geekhash.org"},

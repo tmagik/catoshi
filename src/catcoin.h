@@ -30,8 +30,6 @@ static const int COINBASE_MATURITY = 100;
 /** Minimum block time spacing (hard limit) **/
 static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 
-
-
 #define BRAND "CatCoin"
 #define BRAND_upper "CatCoin"
 #define BRAND_lower "catcoin"
