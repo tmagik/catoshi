@@ -72,7 +72,7 @@ int64_t nHPSTimerStart = 0;
 // Settings
 int64_t nTransactionFee = 0;
 int64_t nMinimumInputValue = DUST_HARD_LIMIT;
-
+int64_t nMaxFutureTime = 30;
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -2158,11 +2158,11 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 		}
 	}
 
-#warning "move this code to *coin.cpp"
-	/* allow up to 30 seconds in the future to accommodate inaccurate clocks" */
-	if (pblock->GetBlockTime() > GetAdjustedTime() + 30){
-		return state.DoS(10, error("ProcessBlock(): block with future timestamp %" PRId64"\n",
-			pblock->GetBlockTime()));
+	/* allow up to nMaxFutureTime seconds in the future to accommodate inaccurate clocks" */
+	/* Wizards beware the off-by-one, for they are subtle and quick to anger */
+	if (pblock->GetBlockTime() > GetAdjustedTime() + nMaxFutureTime){
+		return state.DoS(10, error("ProcessBlock(): block with future %" PRId64" timestamp %" PRId64,
+			pblock->GetBlockTime() + nMaxFutureTime, pblock->GetBlockTime()));
 	}
 
 	// If we don't already have its previous block, shunt it off to holding area until we get it
