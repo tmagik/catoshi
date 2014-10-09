@@ -267,7 +267,7 @@ int OutputDebugStringF(const char* pszFormat, ...)
 
         // Debug print useful for profiling
         if (fLogTimestamps && fStartedNewLine)
-            ret += fprintf(fileout, "%s ", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()).c_str());
+            ret += fprintf(fileout, "%" PRId64" ", GetTime());
         if (pszFormat[strlen(pszFormat) - 1] == '\n')
             fStartedNewLine = true;
         else
