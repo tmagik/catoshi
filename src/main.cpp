@@ -2161,8 +2161,8 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 	/* allow up to nMaxFutureTime seconds in the future to accommodate inaccurate clocks" */
 	/* Wizards beware the off-by-one, for they are subtle and quick to anger */
 	if (pblock->GetBlockTime() > GetAdjustedTime() + nMaxFutureTime){
-		return state.DoS(10, error("ProcessBlock(): block with future %" PRId64" timestamp %" PRId64,
-			pblock->GetBlockTime() + nMaxFutureTime, pblock->GetBlockTime()));
+		return state.DoS(10, error("ProcessBlock(): block timestamp %" PRId64" is %" PRId64 "s in the future",
+			pblock->GetBlockTime(), pblock->GetBlockTime()-GetAdjustedTime()));
 	}
 
 	// If we don't already have its previous block, shunt it off to holding area until we get it
