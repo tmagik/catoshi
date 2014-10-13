@@ -335,6 +335,7 @@ std::string HelpMessage()
 		"  -banscore=<n>		  " + _("Threshold for disconnecting misbehaving peers (default: 100)") + "\n" +
 		"  -bantime=<n>			  " + _("Number of seconds to keep misbehaving peers from reconnecting (default: 86400)") + "\n" +
 		"  -maxfuture=<n>		  " + _("Maximum number of seconds into the future to accept block timestamps") + "\n" +
+		"  -minblocktime=<n>	  " + _("[EXPERIMENTAL] minimum block time hard limit (seconds)") + "\n" +
 		"  -maxreceivebuffer=<n>  " + _("Maximum per-connection receive buffer, <n>*1000 bytes (default: 5000)") + "\n" +
 		"  -maxsendbuffer=<n>	  " + _("Maximum per-connection send buffer, <n>*1000 bytes (default: 1000)") + "\n" +
 		"  -bloomfilters		  " + _("Allow peers to set bloom filters (default: 1)") + "\n" +
@@ -630,6 +631,28 @@ bool AppInit2(boost::thread_group& threadGroup)
 			InitWarning(strprintf(_("maxfuture (nMaxFutureTime) set to %d"), nMaxFutureTime));
 		}
 	}
+
+	if (mapArgs.count("-minblocktime"))
+	{
+		int nNewMin = GetArg("-minblocktime", 30);
+		if (nNewMin > 0 && nNewMin < 15*60){
+			nMinBlockTime = nNewMin;
+			InitWarning(strprintf(_("HARD minimum block time (nMinBlockTime) set to %d"), nMinBlockTime));
+		}
+	}
+
+#if defined(BRAND_catcoin)
+	extern int64_t nFork9min;
+	if (mapArgs.count("-forkminimum"))
+	{
+		int64_t nNewFork = GetArg("-forkminimum", 210000);
+		if (nNewFork > 0 && nNewFork < 999999){
+			nFork9min = nNewFork;
+			InitWarning(strprintf(_("Minimum block time fork block set to %d"), nFork9min));
+		}
+	}
+#endif
+
 
 	// Fee-per-kilobyte amount considered the same as "free"
 	// If you are mining, be careful setting this:

@@ -216,6 +216,10 @@ static const CRPCCommand vRPCCommands[] =
     { "getinfo",                &getinfo,                true,      false,      false },
     { "getmininginfo",          &getmininginfo,          true,      false,      false },
     { "getestnextdiff",         &getestnextdiff,         true,      false,      false },
+    { "getminblocktime",        &getminblocktime,        true,      false,      false },
+    { "setminblocktime",        &setminblocktime,        true,      false,      false },
+    { "getmaxfuture",           &getmaxfuture,           true,      false,      false },
+    { "setmaxfuture",           &setmaxfuture,           true,      false,      false },
     { "getnewaddress",          &getnewaddress,          true,      false,      true },
     { "getaccountaddress",      &getaccountaddress,      true,      false,      true },
     { "setaccount",             &setaccount,             true,      false,      true },
@@ -1197,6 +1201,9 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "importprivkey"          && n > 2) ConvertTo<bool>(params[2]);
     if (strMethod == "verifychain"            && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "verifychain"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "getestnextdiff"         && n > 1) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "setminblocktime"        && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "setmaxfuture"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
 
     return params;
 }
