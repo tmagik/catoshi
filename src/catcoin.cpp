@@ -111,8 +111,9 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
 
 static int fork3Block = 27260; // FIXME move to top...
 static int fork4Block = 27680; // Acceptblock needs this
-// static int fork1min = 31919;
-static int fork1min = 210000;	// kittycoin fork block
+// static int nFork9min = 31919;
+int64_t nFork9min = 210000;	// kittycoin fork block
+int nMinBlockTime = 9*60; // 9 minute minimum 
 
 //Checks for 'hardcoded' block timestamps
 bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock)
@@ -134,7 +135,7 @@ bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, cons
 		if (delta <= time_allow) // see above, from first hard limit
 			return state.Invalid(error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta));
 	}
-	if (nHeight >= fork1min) { /* don't forward these */
+	if (nHeight >= nFork9min) { /* don't forward these */
 		if (delta <= MINIMUM_BLOCK_SPACING)
 			return state.DoS(10, (error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta)));
 	}
@@ -286,7 +287,7 @@ If New diff < 0, then set static value of 0.0001 or so.
 */	
 
 	int nMinSpacing = 30;
-	if(pindexLast->nHeight >= fork1min || fTestNet)
+	if(pindexLast->nHeight >= nFork9min || fTestNet)
 		nMinSpacing = MINIMUM_BLOCK_SPACING;
 	
 	if(pindexLast->nHeight >= fork3Block || fTestNet)

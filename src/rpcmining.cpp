@@ -119,6 +119,55 @@ Value getestnextdiff(const Array& params, bool fHelp)
 	return nbitstoDifficulty(nextWork);
 }
 
+Value setminblocktime(const Array& params, bool fHelp)
+{
+	int mintime = 30;
+	if (fHelp || params.size() > 1)
+		throw runtime_error(
+			"setminblocktime [time] !!EXPERIMENTAL, expect to generate orphans!!\n"
+			"Set the minimum block time hard limit (nMinBlockTime)");
+
+	if (params.size() > 0) mintime = params[0].get_int();
+	if (mintime > 30 || mintime < 15*60) nMinBlockTime = mintime;
+
+	return nMinBlockTime;
+}
+
+Value getminblocktime(const Array& params, bool fHelp)
+{
+	if (fHelp || params.size() > 0)
+		throw runtime_error(
+			"getminblocktime !!EXPERIMENTAL!! anything other than 30 will generate orphans\n"
+			"Get the current minimum block time hard limit (nMinBlockTime)");
+
+	return nMinBlockTime;
+}
+
+Value setmaxfuture(const Array& params, bool fHelp)
+{
+	int maxtime = 15*60;
+	if (fHelp || params.size() > 1)
+		throw runtime_error(
+			"setmaxfuture [time] !!EXPERIMENTAL!!\n"
+			"Set the current maximum future block time limit (nMaxFuture)");
+
+	if (params.size() > 0) maxtime = params[0].get_int();
+	if (maxtime > 1 || maxtime < 15*60) nMaxFutureTime = maxtime;
+
+	return nMaxFutureTime;
+}
+
+Value getmaxfuture(const Array& params, bool fHelp)
+{
+	if (fHelp || params.size() > 0)
+		throw runtime_error(
+			"getminblocktime !!EXPERIMENTAL!!\n"
+			"Get the current maximum future block time limit (nMaxFuture)");
+
+	return nMaxFutureTime;
+}
+
+
 // Key used by getwork/getblocktemplate miners.
 // Allocated in InitRPCMining, free'd in ShutdownRPCMining
 static CReserveKey* pMiningKey = NULL;
