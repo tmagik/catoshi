@@ -1,138 +1,122 @@
-**LevelDB is a fast key-value storage library written at Google that provides an ordered mapping from string keys to string values.**
+Bitcoin Core integration/staging tree
+=====================================
 
-Authors: Sanjay Ghemawat (sanjay@google.com) and Jeff Dean (jeff@google.com)
+[![Build Status](https://travis-ci.org/bitcoin/bitcoin.svg?branch=master)](https://travis-ci.org/bitcoin/bitcoin)
 
-# Features
-  * Keys and values are arbitrary byte arrays.
-  * Data is stored sorted by key.
-  * Callers can provide a custom comparison function to override the sort order.
-  * The basic operations are `Put(key,value)`, `Get(key)`, `Delete(key)`.
-  * Multiple changes can be made in one atomic batch.
-  * Users can create a transient snapshot to get a consistent view of data.
-  * Forward and backward iteration is supported over the data.
-  * Data is automatically compressed using the [Snappy compression library](http://code.google.com/p/snappy).
-  * External activity (file system operations etc.) is relayed through a virtual interface so users can customize the operating system interactions.
-  * [Detailed documentation](http://htmlpreview.github.io/?https://github.com/google/leveldb/blob/master/doc/index.html) about how to use the library is included with the source code.
+https://www.bitcoin.org
 
+Copyright (c) 2009-2014 Bitcoin Core Developers
 
-# Limitations
-  * This is not a SQL database.  It does not have a relational data model, it does not support SQL queries, and it has no support for indexes.
-  * Only a single process (possibly multi-threaded) can access a particular database at a time.
-  * There is no client-server support builtin to the library.  An application that needs such support will have to wrap their own server around the library.
+What is Bitcoin?
+----------------
 
-# Performance
+Bitcoin is an experimental new digital currency that enables instant payments to
+anyone, anywhere in the world. Bitcoin uses peer-to-peer technology to operate
+with no central authority: managing transactions and issuing money are carried
+out collectively by the network. Bitcoin Core is the name of open source
+software which enables the use of this currency.
 
-Here is a performance report (with explanations) from the run of the
-included db_bench program.  The results are somewhat noisy, but should
-be enough to get a ballpark performance estimate.
+For more information, as well as an immediately useable, binary version of
+the Bitcoin Core software, see https://www.bitcoin.org/en/download.
 
-## Setup
+License
+-------
 
-We use a database with a million entries.  Each entry has a 16 byte
-key, and a 100 byte value.  Values used by the benchmark compress to
-about half their original size.
+Bitcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
+information or see http://opensource.org/licenses/MIT.
 
-    LevelDB:    version 1.1
-    Date:       Sun May  1 12:11:26 2011
-    CPU:        4 x Intel(R) Core(TM)2 Quad CPU    Q6600  @ 2.40GHz
-    CPUCache:   4096 KB
-    Keys:       16 bytes each
-    Values:     100 bytes each (50 bytes after compression)
-    Entries:    1000000
-    Raw Size:   110.6 MB (estimated)
-    File Size:  62.9 MB (estimated)
+Development process
+-------------------
 
-## Write performance
+Developers work in their own trees, then submit pull requests when they think
+their feature or bug fix is ready.
 
-The "fill" benchmarks create a brand new database, in either
-sequential, or random order.  The "fillsync" benchmark flushes data
-from the operating system to the disk after every operation; the other
-write operations leave the data sitting in the operating system buffer
-cache for a while.  The "overwrite" benchmark does random writes that
-update existing keys in the database.
+If it is a simple/trivial/non-controversial change, then one of the Bitcoin
+development team members simply pulls it.
 
-    fillseq      :       1.765 micros/op;   62.7 MB/s
-    fillsync     :     268.409 micros/op;    0.4 MB/s (10000 ops)
-    fillrandom   :       2.460 micros/op;   45.0 MB/s
-    overwrite    :       2.380 micros/op;   46.5 MB/s
+If it is a *more complicated or potentially controversial* change, then the patch
+submitter will be asked to start a discussion (if they haven't already) on the
+[mailing list](http://sourceforge.net/mailarchive/forum.php?forum_name=bitcoin-development).
 
-Each "op" above corresponds to a write of a single key/value pair.
-I.e., a random write benchmark goes at approximately 400,000 writes per second.
+The patch will be accepted if there is broad consensus that it is a good thing.
+Developers should expect to rework and resubmit patches if the code doesn't
+match the project's coding conventions (see [doc/coding.md](doc/coding.md)) or are
+controversial.
 
-Each "fillsync" operation costs much less (0.3 millisecond)
-than a disk seek (typically 10 milliseconds).  We suspect that this is
-because the hard disk itself is buffering the update in its memory and
-responding before the data has been written to the platter.  This may
-or may not be safe based on whether or not the hard disk has enough
-power to save its memory in the event of a power failure.
+The `master` branch is regularly built and tested, but is not guaranteed to be
+completely stable. [Tags](https://github.com/bitcoin/bitcoin/tags) are created
+regularly to indicate new official, stable release versions of Bitcoin.
 
-## Read performance
+Testing
+-------
 
-We list the performance of reading sequentially in both the forward
-and reverse direction, and also the performance of a random lookup.
-Note that the database created by the benchmark is quite small.
-Therefore the report characterizes the performance of leveldb when the
-working set fits in memory.  The cost of reading a piece of data that
-is not present in the operating system buffer cache will be dominated
-by the one or two disk seeks needed to fetch the data from disk.
-Write performance will be mostly unaffected by whether or not the
-working set fits in memory.
+Testing and code review is the bottleneck for development; we get more pull
+requests than we can review and test on short notice. Please be patient and help out by testing
+other people's pull requests, and remember this is a security-critical project where any mistake might cost people
+lots of money.
 
-    readrandom   :      16.677 micros/op;  (approximately 60,000 reads per second)
-    readseq      :       0.476 micros/op;  232.3 MB/s
-    readreverse  :       0.724 micros/op;  152.9 MB/s
+### Automated Testing
 
-LevelDB compacts its underlying storage data in the background to
-improve read performance.  The results listed above were done
-immediately after a lot of random writes.  The results after
-compactions (which are usually triggered automatically) are better.
+Developers are strongly encouraged to write unit tests for new code, and to
+submit new unit tests for old code. Unit tests can be compiled and run (assuming they weren't disabled in configure) with: `make check`
 
-    readrandom   :      11.602 micros/op;  (approximately 85,000 reads per second)
-    readseq      :       0.423 micros/op;  261.8 MB/s
-    readreverse  :       0.663 micros/op;  166.9 MB/s
+Every pull request is built for both Windows and Linux on a dedicated server,
+and unit and sanity tests are automatically run. The binaries produced may be
+used for manual QA testing — a link to them will appear in a comment on the
+pull request posted by [BitcoinPullTester](https://github.com/BitcoinPullTester). See https://github.com/TheBlueMatt/test-scripts
+for the build/test scripts.
 
-Some of the high cost of reads comes from repeated decompression of blocks
-read from disk.  If we supply enough cache to the leveldb so it can hold the
-uncompressed blocks in memory, the read performance improves again:
+### Manual Quality Assurance (QA) Testing
 
-    readrandom   :       9.775 micros/op;  (approximately 100,000 reads per second before compaction)
-    readrandom   :       5.215 micros/op;  (approximately 190,000 reads per second after compaction)
+Large changes should have a test plan, and should be tested by somebody other
+than the developer who wrote the code.
+See https://github.com/bitcoin/QA/ for how to create a test plan.
 
-## Repository contents
+Translations
+------------
 
-See doc/index.html for more explanation. See doc/impl.html for a brief overview of the implementation.
+Changes to translations as well as new translations can be submitted to
+[Bitcoin Core's Transifex page](https://www.transifex.com/projects/p/bitcoin/).
 
-The public interface is in include/*.h.  Callers should not include or
-rely on the details of any other header files in this package.  Those
-internal APIs may be changed without warning.
+Translations are periodically pulled from Transifex and merged into the git repository. See the
+[translation process](doc/translation_process.md) for details on how this works.
 
-Guide to header files:
+**Important**: We do not accept translation changes as GitHub pull requests because the next
+pull from Transifex would automatically overwrite them again.
 
-* **include/db.h**: Main interface to the DB: Start here
+Translators should also subscribe to the [mailing list](https://groups.google.com/forum/#!forum/bitcoin-translators).
 
-* **include/options.h**: Control over the behavior of an entire database,
-and also control over the behavior of individual reads and writes.
+Development tips and tricks
+---------------------------
 
-* **include/comparator.h**: Abstraction for user-specified comparison function. 
-If you want just bytewise comparison of keys, you can use the default
-comparator, but clients can write their own comparator implementations if they
-want custom ordering (e.g. to handle different character encodings, etc.)
+**compiling for debugging**
 
-* **include/iterator.h**: Interface for iterating over data. You can get
-an iterator from a DB object.
+Run configure with the --enable-debug option, then make. Or run configure with
+CXXFLAGS="-g -ggdb -O0" or whatever debug flags you need.
 
-* **include/write_batch.h**: Interface for atomically applying multiple
-updates to a database.
+**debug.log**
 
-* **include/slice.h**: A simple module for maintaining a pointer and a
-length into some other byte array.
+If the code is behaving strangely, take a look in the debug.log file in the data directory;
+error and debugging messages are written there.
 
-* **include/status.h**: Status is returned from many of the public interfaces
-and is used to report success and various kinds of errors.
+The -debug=... command-line option controls debugging; running with just -debug will turn
+on all categories (and give you a very large debug.log file).
 
-* **include/env.h**: 
-Abstraction of the OS environment.  A posix implementation of this interface is
-in util/env_posix.cc
+The Qt code routes qDebug() output to debug.log under category "qt": run with -debug=qt
+to see it.
 
-* **include/table.h, include/table_builder.h**: Lower-level modules that most
-clients probably won't use directly
+**testnet and regtest modes**
+
+Run with the -testnet option to run with "play bitcoins" on the test network, if you
+are testing multi-machine code that needs to operate across the internet.
+
+If you are testing something that can run on one machine, run with the -regtest option.
+In regression test mode, blocks can be created on-demand; see qa/rpc-tests/ for tests
+that run in -regtest mode.
+
+**DEBUG_LOCKORDER**
+
+Bitcoin Core is a multithreaded application, and deadlocks or other multithreading bugs
+can be very difficult to track down. Compiling with -DDEBUG_LOCKORDER (configure
+CXXFLAGS="-DDEBUG_LOCKORDER -g") inserts run-time checks to keep track of which locks
+are held, and adds warnings to the debug.log file if inconsistencies are detected.
