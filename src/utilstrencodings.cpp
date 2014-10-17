@@ -9,14 +9,14 @@
 
 #include <errno.h>
 #include <limits>
-
-#include <boost/foreach.hpp>
+#include <cstdlib>
+#include <cstring>
 
 using namespace std;
 
 // safeChars chosen to allow simple messages/URLs/email addresses, but avoid anything
 // even possibly remotely dangerous like & or >
-static string safeChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890 .,;_/:?@");
+static string safeChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890 .,;_/:?@()");
 string SanitizeString(const string& str)
 {
     string strResult;
@@ -53,9 +53,9 @@ signed char HexDigit(char c)
 
 bool IsHex(const string& str)
 {
-    BOOST_FOREACH(char c, str)
+    for(std::string::const_iterator it(str.begin()); it != str.end(); ++it)
     {
-        if (HexDigit(c) < 0)
+        if (HexDigit(*it) < 0)
             return false;
     }
     return (str.size() > 0) && (str.size()%2 == 0);
