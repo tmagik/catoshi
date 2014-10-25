@@ -7,6 +7,7 @@
 
 #include "random.h"
 #include "util.h"
+#include "utilstrencodings.h"
 
 #include <assert.h>
 
@@ -265,6 +266,7 @@ public:
         nDefaultPort = 18444;
         assert(hashGenesisBlock == uint256("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
 
+        vFixedSeeds.clear(); // Regtest mode doesn't have any fixed seeds.
         vSeeds.clear();  // Regtest mode doesn't have any DNS seeds.
 
         fRequireRPCPassword = false;
@@ -354,10 +356,13 @@ void SelectParams(CBaseChainParams::Network network) {
     pCurrentParams = &Params(network);
 }
 
-bool SelectParamsFromCommandLine() {
-    if (!SelectBaseParamsFromCommandLine())
+bool SelectParamsFromCommandLine()
+{
+    CBaseChainParams::Network network = NetworkIdFromCommandLine();
+    if (network == CBaseChainParams::MAX_NETWORK_TYPES)
         return false;
 
-    SelectParams(BaseParams().NetworkID());
+    SelectBaseParams(network);
+    SelectParams(network);
     return true;
 }

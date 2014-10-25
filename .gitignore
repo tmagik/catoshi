@@ -75,6 +75,7 @@ Bitcoin-Qt.app
 # Unit-tests
 Makefile.test
 bitcoin-qt_test
+src/test/buildenv.py
 
 # Resources cpp
 qrc_*.cpp
@@ -101,3 +102,5 @@ qa/pull-tester/run-bitcoind-for-test.sh
 qa/pull-tester/build-tests.sh
 
 !src/leveldb*/Makefile
+
+/doc/doxygen/
