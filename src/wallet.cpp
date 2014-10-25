@@ -1192,18 +1192,13 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CW
 
                 if (nChange > 0)
                 {
-                    if (!GetBoolArg("-avatar")) // ppcoin: not avatar mode
+                    // coin control: send change to custom address
+                    if (coinControl && !boost::get<CNoDestination>(&coinControl->destChange))
+                        scriptChange.SetDestination(coinControl->destChange);
+                    else
                     {
-                        // Fill a vout to ourself
-                        // TODO: pass in scriptChange instead of reservekey so
-                        // change transaction isn't always pay-to-bitcoin-address
-
-                        // coin control: send change to custom address
-                        if (coinControl && !boost::get<CNoDestination>(&coinControl->destChange))
-                            scriptChange.SetDestination(coinControl->destChange);
-                        
-                        // no coin control: send change to newly generated address
-                        else
+                        // no coin control: send change to newly generated address unless avatar mode is enabled
+                        if (!GetBoolArg("-avatar")) // ppcoin: not avatar mode
                         {
                             // Note: We use a new key here to keep it from being obvious which side is the change.
                             //  The drawback is that by not reusing a previous key, the change may be lost if a
