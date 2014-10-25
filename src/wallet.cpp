@@ -1164,10 +1164,12 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CW
                 int64 nValueIn = 0;
                 if (!SelectCoins(nTotalValue, wtxNew.nTime, setCoins, nValueIn, coinControl))
                     return false;
+                CScript scriptChange;
                 BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, setCoins)
                 {
                     int64 nCredit = pcoin.first->vout[pcoin.second].nValue;
                     dPriority += (double)nCredit * pcoin.first->GetDepthInMainChain();
+                    scriptChange = pcoin.first->vout[pcoin.second].scriptPubKey;
                 }
 
                 int64 nChange = nValueIn - nValue - nFeeRet;
@@ -1195,7 +1197,6 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CW
                         // Fill a vout to ourself
                         // TODO: pass in scriptChange instead of reservekey so
                         // change transaction isn't always pay-to-bitcoin-address
-                        CScript scriptChange;
 
                         // coin control: send change to custom address
                         if (coinControl && !boost::get<CNoDestination>(&coinControl->destChange))
@@ -1216,11 +1217,11 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CW
 
                             scriptChange.SetDestination(vchPubKey.GetID());
                         }
-
-                        // Insert change txn at random position:
-                        vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
-                        wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
                     }
+
+                    // Insert change txn at random position:
+                    vector<CTxOut>::iterator position = wtxNew.vout.begin()+GetRandInt(wtxNew.vout.size());
+                    wtxNew.vout.insert(position, CTxOut(nChange, scriptChange));
                 }
                 else
                     reservekey.ReturnKey();
