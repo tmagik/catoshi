@@ -3,11 +3,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef H_BITCOIN_SCRIPT_STANDARD
-#define H_BITCOIN_SCRIPT_STANDARD
+#ifndef BITCOIN_SCRIPT_STANDARD_H
+#define BITCOIN_SCRIPT_STANDARD_H
 
-#include "key.h"
-#include "script/script.h"
+#include "uint256.h"
 #include "script/interpreter.h"
 
 #include <boost/variant.hpp>
@@ -15,6 +14,7 @@
 #include <stdint.h>
 
 class CScript;
+class CKeyID;
 
 /** A reference to a CScript: the Hash160 of its serialization (see script.h) */
 class CScriptID : public uint160
@@ -84,4 +84,4 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, std::
 CScript GetScriptForDestination(const CTxDestination& dest);
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
 
-#endif // H_BITCOIN_SCRIPT_STANDARD
+#endif // BITCOIN_SCRIPT_STANDARD_H

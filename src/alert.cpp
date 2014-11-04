@@ -7,7 +7,7 @@
 
 #include "chainparams.h"
 #include "clientversion.h"
-#include "key.h"
+#include "pubkey.h"
 #include "net.h"
 #include "timedata.h"
 #include "ui_interface.h"
@@ -127,6 +127,9 @@ bool CAlert::AppliesToMe() const
 bool CAlert::RelayTo(CNode* pnode) const
 {
     if (!IsInEffect())
+        return false;
+    // don't relay to nodes which haven't sent their version message
+    if (pnode->nVersion == 0)
         return false;
     // returns true if wasn't already contained in the set
     if (pnode->setKnown.insert(GetHash()).second)
