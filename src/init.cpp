@@ -18,6 +18,7 @@
 #include "miner.h"
 #include "net.h"
 #include "rpcserver.h"
+#include "script/standard.h"
 #include "txdb.h"
 #include "ui_interface.h"
 #include "util.h"
@@ -319,7 +320,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += ".\n";
 #ifdef ENABLE_WALLET
     strUsage += "  -gen                   " + strprintf(_("Generate coins (default: %u)"), 0) + "\n";
-    strUsage += "  -genproclimit=<n>      " + strprintf(_("Set the processor limit for when generation is on (-1 = unlimited, default: %d)"), -1) + "\n";
+    strUsage += "  -genproclimit=<n>      " + strprintf(_("Set the number of threads for coin generation if enabled (-1 = all cores, default: %d)"), 1) + "\n";
 #endif
     strUsage += "  -help-debug            " + _("Show all debugging options (usage: --help -help-debug)") + "\n";
     strUsage += "  -logips                " + strprintf(_("Include IP addresses in debug output (default: %u)"), 0) + "\n";
@@ -346,6 +347,7 @@ std::string HelpMessage(HelpMessageMode mode)
 
     strUsage += "\n" + _("Node relay options:") + "\n";
     strUsage += "  -datacarrier           " + strprintf(_("Relay and mine data carrier transactions (default: %u)"), 1) + "\n";
+    strUsage += "  -datacarriersize       " + strprintf(_("Maximum size of data in data carrier transactions we relay and mine (default: %u)"), MAX_OP_RETURN_RELAY) + "\n";
 
     strUsage += "\n" + _("Block creation options:") + "\n";
     strUsage += "  -blockminsize=<n>      " + strprintf(_("Set minimum block size in bytes (default: %u)"), 0) + "\n";
@@ -572,6 +574,9 @@ bool AppInit2(boost::thread_group& threadGroup)
         // to protect privacy, do not listen by default if a default proxy server is specified
         if (SoftSetBoolArg("-listen", false))
             LogPrintf("AppInit2 : parameter interaction: -proxy set -> setting -listen=0\n");
+        // to protect privacy, do not discover addresses by default
+        if (SoftSetBoolArg("-discover", false))
+            LogPrintf("AppInit2 : parameter interaction: -proxy set -> setting -discover=0\n");
     }
 
     if (!GetBoolArg("-listen", true)) {
@@ -704,6 +709,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 #endif // ENABLE_WALLET
 
     fIsBareMultisigStd = GetArg("-permitbaremultisig", true) != 0;
+    nMaxDatacarrierBytes = GetArg("-datacarriersize", nMaxDatacarrierBytes);
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
@@ -743,10 +749,21 @@ bool AppInit2(boost::thread_group& threadGroup)
     LogPrintf("Using at most %i connections (%i file descriptors available)\n", nMaxConnections, nFD);
     std::ostringstream strErrors;
 
+    LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
     if (nScriptCheckThreads) {
-        LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
         for (int i=0; i<nScriptCheckThreads-1; i++)
             threadGroup.create_thread(&ThreadScriptCheck);
+    }
+
+    /* Start the RPC server already.  It will be started in "warmup" mode
+     * and not really process calls already (but it will signify connections
+     * that the server is there and will be ready later).  Warmup mode will
+     * be disabled when initialisation is finished.
+     */
+    if (fServer)
+    {
+        uiInterface.InitMessage.connect(SetRPCWarmupStatus);
+        StartRPCThreads();
     }
 
     int64_t nStart;
@@ -1245,17 +1262,16 @@ bool AppInit2(boost::thread_group& threadGroup)
 #endif
 
     StartNode(threadGroup);
-    if (fServer)
-        StartRPCThreads();
 
 #ifdef ENABLE_WALLET
     // Generate coins in the background
     if (pwalletMain)
-        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", -1));
+        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
 #endif
 
     // ********************************************************* Step 11: finished
 
+    SetRPCWarmupFinished();
     uiInterface.InitMessage(_("Done loading"));
 
 #ifdef ENABLE_WALLET

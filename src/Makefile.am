@@ -86,6 +86,7 @@ BITCOIN_CORE_H = \
   core_io.h \
   crypter.h \
   db.h \
+  eccryptoverify.h \
   ecwrapper.h \
   hash.h \
   init.h \
@@ -101,6 +102,7 @@ BITCOIN_CORE_H = \
   noui.h \
   pow.h \
   protocol.h \
+  pubkey.h \
   random.h \
   rpcclient.h \
   rpcprotocol.h \
@@ -169,6 +171,7 @@ libbitcoin_server_a_SOURCES = \
   rpcnet.cpp \
   rpcrawtransaction.cpp \
   rpcserver.cpp \
+  script/sigcache.cpp \
   timedata.cpp \
   txdb.cpp \
   txmempool.cpp \
@@ -220,15 +223,16 @@ libbitcoin_common_a_SOURCES = \
   core/transaction.cpp \
   core_read.cpp \
   core_write.cpp \
+  eccryptoverify.cpp \
   ecwrapper.cpp \
   hash.cpp \
   key.cpp \
   keystore.cpp \
   netbase.cpp \
   protocol.cpp \
+  pubkey.cpp \
   script/interpreter.cpp \
   script/script.cpp \
-  script/sigcache.cpp \
   script/sign.cpp \
   script/standard.cpp \
   $(BITCOIN_CORE_H)
@@ -297,13 +301,10 @@ bitcoind_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS)
 # bitcoin-cli binary #
 bitcoin_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
-  $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO) \
   $(BOOST_LIBS) \
   $(SSL_LIBS) \
-  $(CRYPTO_LIBS) \
-  $(MINIUPNPC_LIBS)
+  $(CRYPTO_LIBS)
 
 bitcoin_cli_SOURCES = \
   bitcoin-cli.cpp
@@ -326,9 +327,7 @@ if USE_LIBSECP256K1
 endif
 
   bitcoin_tx_LDADD += $(BOOST_LIBS) \
-  $(SSL_LIBS) \
-  $(CRYPTO_LIBS) \
-  $(MINIUPNPC_LIBS)
+  $(CRYPTO_LIBS)
 
 bitcoin_tx_SOURCES = bitcoin-tx.cpp
 bitcoin_tx_CPPFLAGS = $(BITCOIN_INCLUDES)

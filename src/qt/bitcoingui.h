@@ -2,8 +2,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOINGUI_H
-#define BITCOINGUI_H
+#ifndef BITCOIN_QT_BITCOINGUI_H
+#define BITCOIN_QT_BITCOINGUI_H
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
@@ -64,6 +64,7 @@ public:
     bool setCurrentWallet(const QString& name);
     void removeAllWallets();
 #endif // ENABLE_WALLET
+    bool enableWallet;
 
 protected:
     void changeEvent(QEvent *e);
@@ -236,4 +237,4 @@ private slots:
     void onMenuSelection(QAction* action);
 };
 
-#endif // BITCOINGUI_H
+#endif // BITCOIN_QT_BITCOINGUI_H

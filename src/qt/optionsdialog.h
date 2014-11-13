@@ -2,14 +2,17 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef OPTIONSDIALOG_H
-#define OPTIONSDIALOG_H
+#ifndef BITCOIN_QT_OPTIONSDIALOG_H
+#define BITCOIN_QT_OPTIONSDIALOG_H
 
 #include <QDialog>
 
-class QDataWidgetMapper;
 class OptionsModel;
 class QValidatedLineEdit;
+
+QT_BEGIN_NAMESPACE
+class QDataWidgetMapper;
+QT_END_NAMESPACE
 
 namespace Ui {
 class OptionsDialog;
@@ -21,7 +24,7 @@ class OptionsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit OptionsDialog(QWidget *parent);
+    explicit OptionsDialog(QWidget *parent, bool enableWallet);
     ~OptionsDialog();
 
     void setModel(OptionsModel *model);
@@ -56,4 +59,4 @@ private:
     bool fProxyIpValid;
 };
 
-#endif // OPTIONSDIALOG_H
+#endif // BITCOIN_QT_OPTIONSDIALOG_H
