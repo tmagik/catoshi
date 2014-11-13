@@ -1,9 +1,9 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_EC_WRAPPER_H
-#define BITCOIN_EC_WRAPPER_H
+#ifndef BITCOIN_ECWRAPPER_H
+#define BITCOIN_ECWRAPPER_H
 
 #include <cstddef>
 #include <vector>
@@ -28,7 +28,7 @@ public:
     bool SetPrivKey(const unsigned char* privkey, size_t size, bool fSkipCheck=false);
     void GetPubKey(std::vector<unsigned char>& pubkey, bool fCompressed);
     bool SetPubKey(const unsigned char* pubkey, size_t size);
-    bool Sign(const uint256 &hash, std::vector<unsigned char>& vchSig, bool lowS);
+    bool Sign(const uint256 &hash, std::vector<unsigned char>& vchSig);
     bool Verify(const uint256 &hash, const std::vector<unsigned char>& vchSig);
     bool SignCompact(const uint256 &hash, unsigned char *p64, int &rec);
 
@@ -43,4 +43,4 @@ public:
     static bool SanityCheck();
 };
 
-#endif
+#endif // BITCOIN_ECWRAPPER_H
