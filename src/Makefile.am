@@ -112,6 +112,7 @@ BITCOIN_CORE_H = \
   script/sigcache.h \
   script/sign.h \
   script/standard.h \
+  script/script_error.h \
   serialize.h \
   streams.h \
   sync.h \
@@ -165,6 +166,7 @@ libbitcoin_server_a_SOURCES = \
   net.cpp \
   noui.cpp \
   pow.cpp \
+  rest.cpp \
   rpcblockchain.cpp \
   rpcmining.cpp \
   rpcmisc.cpp \
@@ -235,6 +237,7 @@ libbitcoin_common_a_SOURCES = \
   script/script.cpp \
   script/sign.cpp \
   script/standard.cpp \
+  script/script_error.cpp \
   $(BITCOIN_CORE_H)
 
 # util: shared between all executables.
