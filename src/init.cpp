@@ -10,6 +10,7 @@
 #include "init.h"
 
 #include "addrman.h"
+#include "amount.h"
 #include "checkpoints.h"
 #include "compat/sanity.h"
 #include "key.h"
@@ -17,6 +18,7 @@
 #include "miner.h"
 #include "net.h"
 #include "rpcserver.h"
+#include "script/standard.h"
 #include "txdb.h"
 #include "ui_interface.h"
 #include "util.h"
@@ -288,6 +290,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -paytxfee=<amt>        " + strprintf(_("Fee (in BTC/kB) to add to transactions you send (default: %s)"), FormatMoney(payTxFee.GetFeePerK())) + "\n";
     strUsage += "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + " " + _("on startup") + "\n";
     strUsage += "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + " " + _("on startup") + "\n";
+    strUsage += "  -sendfreetransactions  " + strprintf(_("Send transactions as zero-fee transactions if possible (default: %u)"), 0) + "\n";
     strUsage += "  -spendzeroconfchange   " + strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), 1) + "\n";
     strUsage += "  -txconfirmtarget=<n>   " + strprintf(_("If paytxfee is not set, include enough fee so transactions are confirmed on average within n blocks (default: %u)"), 1) + "\n";
     strUsage += "  -upgradewallet         " + _("Upgrade wallet to latest format") + " " + _("on startup") + "\n";
@@ -318,7 +321,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += ".\n";
 #ifdef ENABLE_WALLET
     strUsage += "  -gen                   " + strprintf(_("Generate coins (default: %u)"), 0) + "\n";
-    strUsage += "  -genproclimit=<n>      " + strprintf(_("Set the processor limit for when generation is on (-1 = unlimited, default: %d)"), -1) + "\n";
+    strUsage += "  -genproclimit=<n>      " + strprintf(_("Set the number of threads for coin generation if enabled (-1 = all cores, default: %d)"), 1) + "\n";
 #endif
     strUsage += "  -help-debug            " + _("Show all debugging options (usage: --help -help-debug)") + "\n";
     strUsage += "  -logips                " + strprintf(_("Include IP addresses in debug output (default: %u)"), 0) + "\n";
@@ -345,6 +348,7 @@ std::string HelpMessage(HelpMessageMode mode)
 
     strUsage += "\n" + _("Node relay options:") + "\n";
     strUsage += "  -datacarrier           " + strprintf(_("Relay and mine data carrier transactions (default: %u)"), 1) + "\n";
+    strUsage += "  -datacarriersize       " + strprintf(_("Maximum size of data in data carrier transactions we relay and mine (default: %u)"), MAX_OP_RETURN_RELAY) + "\n";
 
     strUsage += "\n" + _("Block creation options:") + "\n";
     strUsage += "  -blockminsize=<n>      " + strprintf(_("Set minimum block size in bytes (default: %u)"), 0) + "\n";
@@ -375,7 +379,7 @@ std::string LicenseInfo()
            "\n" +
            FormatParagraph(_("This is experimental software.")) + "\n" +
            "\n" +
-           FormatParagraph(_("Distributed under the MIT/X11 software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
+           FormatParagraph(_("Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
            "\n" +
            FormatParagraph(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.")) +
            "\n";
@@ -547,6 +551,10 @@ bool AppInit2(boost::thread_group& threadGroup)
 #endif
 
     // ********************************************************* Step 2: parameter interactions
+    // Set this early so that parameter interactions go to console
+    fPrintToConsole = GetBoolArg("-printtoconsole", false);
+    fLogTimestamps = GetBoolArg("-logtimestamps", true);
+    fLogIPs = GetBoolArg("-logips", false);
 
     if (mapArgs.count("-bind") || mapArgs.count("-whitebind")) {
         // when specifying an explicit binding address, you want to listen on it
@@ -567,6 +575,9 @@ bool AppInit2(boost::thread_group& threadGroup)
         // to protect privacy, do not listen by default if a default proxy server is specified
         if (SoftSetBoolArg("-listen", false))
             LogPrintf("AppInit2 : parameter interaction: -proxy set -> setting -listen=0\n");
+        // to protect privacy, do not discover addresses by default
+        if (SoftSetBoolArg("-discover", false))
+            LogPrintf("AppInit2 : parameter interaction: -proxy set -> setting -discover=0\n");
     }
 
     if (!GetBoolArg("-listen", true)) {
@@ -640,9 +651,6 @@ bool AppInit2(boost::thread_group& threadGroup)
         nScriptCheckThreads = MAX_SCRIPTCHECK_THREADS;
 
     fServer = GetBoolArg("-server", false);
-    fPrintToConsole = GetBoolArg("-printtoconsole", false);
-    fLogTimestamps = GetBoolArg("-logtimestamps", true);
-    fLogIPs = GetBoolArg("-logips", false);
 #ifdef ENABLE_WALLET
     bool fDisableWallet = GetBoolArg("-disablewallet", false);
 #endif
@@ -697,11 +705,13 @@ bool AppInit2(boost::thread_group& threadGroup)
     }
     nTxConfirmTarget = GetArg("-txconfirmtarget", 1);
     bSpendZeroConfChange = GetArg("-spendzeroconfchange", true);
+    fSendFreeTransactions = GetArg("-sendfreetransactions", false);
 
     std::string strWalletFile = GetArg("-wallet", "wallet.dat");
 #endif // ENABLE_WALLET
 
     fIsBareMultisigStd = GetArg("-permitbaremultisig", true) != 0;
+    nMaxDatacarrierBytes = GetArg("-datacarriersize", nMaxDatacarrierBytes);
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
@@ -741,10 +751,21 @@ bool AppInit2(boost::thread_group& threadGroup)
     LogPrintf("Using at most %i connections (%i file descriptors available)\n", nMaxConnections, nFD);
     std::ostringstream strErrors;
 
+    LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
     if (nScriptCheckThreads) {
-        LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
         for (int i=0; i<nScriptCheckThreads-1; i++)
             threadGroup.create_thread(&ThreadScriptCheck);
+    }
+
+    /* Start the RPC server already.  It will be started in "warmup" mode
+     * and not really process calls already (but it will signify connections
+     * that the server is there and will be ready later).  Warmup mode will
+     * be disabled when initialisation is finished.
+     */
+    if (fServer)
+    {
+        uiInterface.InitMessage.connect(SetRPCWarmupStatus);
+        StartRPCThreads();
     }
 
     int64_t nStart;
@@ -1243,17 +1264,16 @@ bool AppInit2(boost::thread_group& threadGroup)
 #endif
 
     StartNode(threadGroup);
-    if (fServer)
-        StartRPCThreads();
 
 #ifdef ENABLE_WALLET
     // Generate coins in the background
     if (pwalletMain)
-        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", -1));
+        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
 #endif
 
     // ********************************************************* Step 11: finished
 
+    SetRPCWarmupFinished();
     uiInterface.InitMessage(_("Done loading"));
 
 #ifdef ENABLE_WALLET

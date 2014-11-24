@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef H_BITCOIN_SCRIPT
-#define H_BITCOIN_SCRIPT
+#ifndef BITCOIN_SCRIPT_SCRIPT_H
+#define BITCOIN_SCRIPT_SCRIPT_H
 
 #include <assert.h>
 #include <climits>
@@ -179,12 +179,14 @@ public:
 
 class CScriptNum
 {
-// Numeric opcodes (OP_1ADD, etc) are restricted to operating on 4-byte integers.
-// The semantics are subtle, though: operands must be in the range [-2^31 +1...2^31 -1],
-// but results may overflow (and are valid as long as they are not used in a subsequent
-// numeric operation). CScriptNum enforces those semantics by storing results as
-// an int64 and allowing out-of-range values to be returned as a vector of bytes but
-// throwing an exception if arithmetic is done or the result is interpreted as an integer.
+/**
+ * Numeric opcodes (OP_1ADD, etc) are restricted to operating on 4-byte integers.
+ * The semantics are subtle, though: operands must be in the range [-2^31 +1...2^31 -1],
+ * but results may overflow (and are valid as long as they are not used in a subsequent
+ * numeric operation). CScriptNum enforces those semantics by storing results as
+ * an int64 and allowing out-of-range values to be returned as a vector of bytes but
+ * throwing an exception if arithmetic is done or the result is interpreted as an integer.
+ */
 public:
 
     explicit CScriptNum(const int64_t& n)
@@ -192,10 +194,29 @@ public:
         m_value = n;
     }
 
-    explicit CScriptNum(const std::vector<unsigned char>& vch)
+    explicit CScriptNum(const std::vector<unsigned char>& vch, bool fRequireMinimal)
     {
-        if (vch.size() > nMaxNumSize)
-            throw scriptnum_error("CScriptNum(const std::vector<unsigned char>&) : overflow");
+        if (vch.size() > nMaxNumSize) {
+            throw scriptnum_error("script number overflow");
+        }
+        if (fRequireMinimal && vch.size() > 0) {
+            // Check that the number is encoded with the minimum possible
+            // number of bytes.
+            //
+            // If the most-significant-byte - excluding the sign bit - is zero
+            // then we're not minimal. Note how this test also rejects the
+            // negative-zero encoding, 0x80.
+            if ((vch.back() & 0x7f) == 0) {
+                // One exception: if there's more than one byte and the most
+                // significant bit of the second-most-significant-byte is set
+                // it would conflict with the sign bit. An example of this case
+                // is +-255, which encode to 0xff00 and 0xff80 respectively.
+                // (big-endian).
+                if (vch.size() <= 1 || (vch[vch.size() - 2] & 0x80) == 0) {
+                    throw scriptnum_error("non-minimally encoded script number");
+                }
+            }
+        }
         m_value = set_vch(vch);
     }
 
@@ -319,7 +340,6 @@ private:
     int64_t m_value;
 };
 
-
 /** Serialized script, used inside transaction inputs and outputs */
 class CScript : public std::vector<unsigned char>
 {
@@ -329,6 +349,10 @@ protected:
         if (n == -1 || (n >= 1 && n <= 16))
         {
             push_back(n + (OP_1 - 1));
+        }
+        else if (n == 0)
+        {
+            push_back(OP_0);
         }
         else
         {
@@ -494,7 +518,7 @@ public:
         return true;
     }
 
-    // Encode/decode small integers:
+    /** Encode/decode small integers: */
     static int DecodeOP_N(opcodetype opcode)
     {
         if (opcode == OP_0)
@@ -538,28 +562,31 @@ public:
         return nFound;
     }
 
-    // Pre-version-0.6, Bitcoin always counted CHECKMULTISIGs
-    // as 20 sigops. With pay-to-script-hash, that changed:
-    // CHECKMULTISIGs serialized in scriptSigs are
-    // counted more accurately, assuming they are of the form
-    //  ... OP_N CHECKMULTISIG ...
+    /**
+     * Pre-version-0.6, Bitcoin always counted CHECKMULTISIGs
+     * as 20 sigops. With pay-to-script-hash, that changed:
+     * CHECKMULTISIGs serialized in scriptSigs are
+     * counted more accurately, assuming they are of the form
+     *  ... OP_N CHECKMULTISIG ...
+     */
     unsigned int GetSigOpCount(bool fAccurate) const;
 
-    // Accurately count sigOps, including sigOps in
-    // pay-to-script-hash transactions:
+    /**
+     * Accurately count sigOps, including sigOps in
+     * pay-to-script-hash transactions:
+     */
     unsigned int GetSigOpCount(const CScript& scriptSig) const;
 
     bool IsPayToScriptHash() const;
 
-    // Called by IsStandardTx and P2SH VerifyScript (which makes it consensus-critical).
+    /** Called by IsStandardTx and P2SH/BIP62 VerifyScript (which makes it consensus-critical). */
     bool IsPushOnly() const;
 
-    // Called by IsStandardTx.
-    bool HasCanonicalPushes() const;
-
-    // Returns whether the script is guaranteed to fail at execution,
-    // regardless of the initial stack. This allows outputs to be pruned
-    // instantly when entering the UTXO set.
+    /**
+     * Returns whether the script is guaranteed to fail at execution,
+     * regardless of the initial stack. This allows outputs to be pruned
+     * instantly when entering the UTXO set.
+     */
     bool IsUnspendable() const
     {
         return (size() > 0 && *begin() == OP_RETURN);
@@ -573,4 +600,4 @@ public:
     }
 };
 
-#endif // H_BITCOIN_SCRIPT
+#endif // BITCOIN_SCRIPT_SCRIPT_H
