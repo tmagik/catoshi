@@ -35,7 +35,7 @@ bool fPayAtLeastCustomFee = true;
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) 
  * Override with -mintxfee
  */
-CFeeRate CWallet::minTxFee = CFeeRate(10000);
+CFeeRate CWallet::minTxFee = CFeeRate(1000);
 
 /** @defgroup mapWallet
  *
@@ -79,6 +79,7 @@ CPubKey CWallet::GenerateNewKey()
         SetMinVersion(FEATURE_COMPRPUBKEY);
 
     CPubKey pubkey = secret.GetPubKey();
+    assert(secret.VerifyPubKey(pubkey));
 
     // Create new metadata
     int64_t nCreationTime = GetTime();
