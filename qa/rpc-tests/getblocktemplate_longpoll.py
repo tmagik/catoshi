@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-# Exercise the listtransactions API
 
 from test_framework import BitcoinTestFramework
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
@@ -46,7 +44,7 @@ class LongpollThread(threading.Thread):
     def run(self):
         self.node.getblocktemplate({'longpollid':self.longpollid})
 
-class GetBlockTemplateTest(BitcoinTestFramework):
+class GetBlockTemplateLPTest(BitcoinTestFramework):
     '''
     Test longpolling with getblocktemplate.
     '''
@@ -90,5 +88,5 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         assert(not thr.is_alive())
 
 if __name__ == '__main__':
-    GetBlockTemplateTest().main()
+    GetBlockTemplateLPTest().main()
 
