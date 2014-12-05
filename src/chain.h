@@ -6,7 +6,7 @@
 #ifndef BITCOIN_CHAIN_H
 #define BITCOIN_CHAIN_H
 
-#include "core/block.h"
+#include "primitives/block.h"
 #include "pow.h"
 #include "tinyformat.h"
 #include "uint256.h"
@@ -218,11 +218,6 @@ public:
     int64_t GetBlockTime() const
     {
         return (int64_t)nTime;
-    }
-
-    uint256 GetBlockWork() const
-    {
-        return GetProofIncrement(nBits);
     }
 
     enum { nMedianTimeSpan=11 };
