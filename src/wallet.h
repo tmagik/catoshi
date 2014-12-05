@@ -7,8 +7,8 @@
 #define BITCOIN_WALLET_H
 
 #include "amount.h"
-#include "core/block.h"
-#include "core/transaction.h"
+#include "primitives/block.h"
+#include "primitives/transaction.h"
 #include "crypter.h"
 #include "key.h"
 #include "keystore.h"
@@ -32,6 +32,8 @@
 extern CFeeRate payTxFee;
 extern unsigned int nTxConfirmTarget;
 extern bool bSpendZeroConfChange;
+extern bool fSendFreeTransactions;
+extern bool fPayAtLeastCustomFee;
 
 //! -paytxfee default
 static const CAmount DEFAULT_TRANSACTION_FEE = 0;

@@ -34,6 +34,10 @@ using namespace std;
 static std::string strRPCUserColonPass;
 
 static bool fRPCRunning = false;
+static bool fRPCInWarmup = true;
+static std::string rpcWarmupStatus("RPC server started");
+static CCriticalSection cs_rpcWarmup;
+
 //! These are created by StartRPCThreads, destroyed in StopRPCThreads
 static asio::io_service* rpc_io_service = NULL;
 static map<string, boost::shared_ptr<deadline_timer> > deadlineTimers;
@@ -156,7 +160,7 @@ string CRPCTable::help(string strCommand) const
         // We already filter duplicates, but these deprecated screw up the sort order
         if (strMethod.find("label") != string::npos)
             continue;
-        if (strCommand != "" && strMethod != strCommand)
+        if ((strCommand != "" || pcmd->category == "hidden") && strMethod != strCommand)
             continue;
 #ifdef ENABLE_WALLET
         if (pcmd->reqWallet && !pwalletMain)
@@ -265,6 +269,8 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "gettxout",               &gettxout,               true,      false,      false },
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true,      false,      false },
     { "blockchain",         "verifychain",            &verifychain,            true,      false,      false },
+    { "blockchain",         "invalidateblock",        &invalidateblock,        true,      true,       false },
+    { "blockchain",         "reconsiderblock",        &reconsiderblock,        true,      true,       false },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true,      false,      false },
@@ -294,6 +300,11 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "verifymessage",          &verifymessage,          true,      false,      false },
     { "util",               "estimatefee",            &estimatefee,            true,      true,       false },
     { "util",               "estimatepriority",       &estimatepriority,       true,      true,       false },
+
+    /* Not shown in help */
+    { "hidden",             "invalidateblock",        &invalidateblock,        true,      true,       false },
+    { "hidden",             "reconsiderblock",        &reconsiderblock,        true,      true,       false },
+    { "hidden",             "setmocktime",            &setmocktime,            true,      false,      false },
 
 #ifdef ENABLE_WALLET
     /* Wallet */
@@ -560,13 +571,8 @@ void StartRPCThreads()
     {
         unsigned char rand_pwd[32];
         GetRandBytes(rand_pwd, 32);
-        string strWhatAmI = "To use bitcoind";
-        if (mapArgs.count("-server"))
-            strWhatAmI = strprintf(_("To use the %s option"), "\"-server\"");
-        else if (mapArgs.count("-daemon"))
-            strWhatAmI = strprintf(_("To use the %s option"), "\"-daemon\"");
         uiInterface.ThreadSafeMessageBox(strprintf(
-            _("%s, you must set a rpcpassword in the configuration file:\n"
+            _("To use bitcoind, or the -server option to bitcoin-qt, you must set an rpcpassword in the configuration file:\n"
               "%s\n"
               "It is recommended you use the following random password:\n"
               "rpcuser=bitcoinrpc\n"
@@ -576,7 +582,6 @@ void StartRPCThreads()
               "If the file does not exist, create it with owner-readable-only file permissions.\n"
               "It is also recommended to set alertnotify so you are notified of problems;\n"
               "for example: alertnotify=echo %%s | mail -s \"Bitcoin Alert\" admin@foo.com\n"),
-                strWhatAmI,
                 GetConfigFile().string(),
                 EncodeBase58(&rand_pwd[0],&rand_pwd[0]+32)),
                 "", CClientUIInterface::MSG_ERROR | CClientUIInterface::SECURE);
@@ -744,6 +749,27 @@ bool IsRPCRunning()
     return fRPCRunning;
 }
 
+void SetRPCWarmupStatus(const std::string& newStatus)
+{
+    LOCK(cs_rpcWarmup);
+    rpcWarmupStatus = newStatus;
+}
+
+void SetRPCWarmupFinished()
+{
+    LOCK(cs_rpcWarmup);
+    assert(fRPCInWarmup);
+    fRPCInWarmup = false;
+}
+
+bool RPCIsInWarmup(std::string *outStatus)
+{
+    LOCK(cs_rpcWarmup);
+    if (outStatus)
+        *outStatus = rpcWarmupStatus;
+    return fRPCInWarmup;
+}
+
 void RPCRunHandler(const boost::system::error_code& err, boost::function<void(void)> func)
 {
     if (!err)
@@ -870,6 +896,13 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
         if (!read_string(strRequest, valRequest))
             throw JSONRPCError(RPC_PARSE_ERROR, "Parse error");
 
+        // Return immediately if in warmup
+        {
+            LOCK(cs_rpcWarmup);
+            if (fRPCInWarmup)
+                throw JSONRPCError(RPC_IN_WARMUP, rpcWarmupStatus);
+        }
+
         string strReply;
 
         // singleton request
@@ -922,9 +955,16 @@ void ServiceConnection(AcceptedConnection *conn)
         if (mapHeaders["connection"] == "close")
             fRun = false;
 
+        // Process via JSON-RPC API
         if (strURI == "/") {
             if (!HTTPReq_JSONRPC(conn, strRequest, mapHeaders, fRun))
                 break;
+
+        // Process via HTTP REST API
+        } else if (strURI.substr(0, 6) == "/rest/" && GetBoolArg("-rest", false)) {
+            if (!HTTPReq_REST(conn, strURI, mapHeaders, fRun))
+                break;
+
         } else {
             conn->stream() << HTTPError(HTTP_NOT_FOUND, false) << std::flush;
             break;
