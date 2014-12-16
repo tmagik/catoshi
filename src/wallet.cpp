@@ -28,12 +28,14 @@ using namespace std;
 CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);
 unsigned int nTxConfirmTarget = 1;
 bool bSpendZeroConfChange = true;
+bool fSendFreeTransactions = false;
+bool fPayAtLeastCustomFee = true;
 
 /** 
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) 
  * Override with -mintxfee
  */
-CFeeRate CWallet::minTxFee = CFeeRate(10000);
+CFeeRate CWallet::minTxFee = CFeeRate(1000);
 
 /** @defgroup mapWallet
  *
@@ -77,6 +79,7 @@ CPubKey CWallet::GenerateNewKey()
         SetMinVersion(FEATURE_COMPRPUBKEY);
 
     CPubKey pubkey = secret.GetPubKey();
+    assert(secret.VerifyPubKey(pubkey));
 
     // Create new metadata
     int64_t nCreationTime = GetTime();
@@ -422,15 +425,13 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
     RandAddSeedPerfmon();
 
     vMasterKey.resize(WALLET_CRYPTO_KEY_SIZE);
-    if (!GetRandBytes(&vMasterKey[0], WALLET_CRYPTO_KEY_SIZE))
-        return false;
+    GetRandBytes(&vMasterKey[0], WALLET_CRYPTO_KEY_SIZE);
 
     CMasterKey kMasterKey;
     RandAddSeedPerfmon();
 
     kMasterKey.vchSalt.resize(WALLET_CRYPTO_SALT_SIZE);
-    if (!GetRandBytes(&kMasterKey.vchSalt[0], WALLET_CRYPTO_SALT_SIZE))
-        return false;
+    GetRandBytes(&kMasterKey.vchSalt[0], WALLET_CRYPTO_SALT_SIZE);
 
     CCrypter crypter;
     int64_t nStartTime = GetTimeMillis();
@@ -1384,7 +1385,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, CAmount> >& vecSend,
     {
         LOCK2(cs_main, cs_wallet);
         {
-            nFeeRet = payTxFee.GetFeePerK();
+            nFeeRet = 0;
             while (true)
             {
                 txNew.vin.clear();
@@ -1504,7 +1505,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, CAmount> >& vecSend,
                     break; // Done, enough fee included.
 
                 // Too big to send for free? Include more fee and try again:
-                if (nBytes > MAX_FREE_TRANSACTION_CREATE_SIZE)
+                if (!fSendFreeTransactions || nBytes > MAX_FREE_TRANSACTION_CREATE_SIZE)
                 {
                     nFeeRet = nFeeNeeded;
                     continue;
@@ -1586,50 +1587,16 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
     return true;
 }
 
-
-
-
-string CWallet::SendMoney(const CTxDestination &address, CAmount nValue, CWalletTx& wtxNew)
-{
-    // Check amount
-    if (nValue <= 0)
-        return _("Invalid amount");
-    if (nValue > GetBalance())
-        return _("Insufficient funds");
-
-    string strError;
-    if (IsLocked())
-    {
-        strError = _("Error: Wallet locked, unable to create transaction!");
-        LogPrintf("SendMoney() : %s", strError);
-        return strError;
-    }
-
-    // Parse Bitcoin address
-    CScript scriptPubKey = GetScriptForDestination(address);
-
-    // Create and send the transaction
-    CReserveKey reservekey(this);
-    CAmount nFeeRequired;
-    if (!CreateTransaction(scriptPubKey, nValue, wtxNew, reservekey, nFeeRequired, strError))
-    {
-        if (nValue + nFeeRequired > GetBalance())
-            strError = strprintf(_("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!"), FormatMoney(nFeeRequired));
-        LogPrintf("SendMoney() : %s\n", strError);
-        return strError;
-    }
-    if (!CommitTransaction(wtxNew, reservekey))
-        return _("Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
-
-    return "";
-}
-
-
-
 CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool)
 {
     // payTxFee is user-set "I want to pay this much"
     CAmount nFeeNeeded = payTxFee.GetFee(nTxBytes);
+    // prevent user from paying a non-sense fee (like 1 satoshi): 0 < fee < minRelayFee
+    if (nFeeNeeded > 0 && nFeeNeeded < ::minRelayTxFee.GetFee(nTxBytes))
+        nFeeNeeded = ::minRelayTxFee.GetFee(nTxBytes);
+    // user selected total at least (default=true)
+    if (fPayAtLeastCustomFee && nFeeNeeded > 0 && nFeeNeeded < payTxFee.GetFeePerK())
+        nFeeNeeded = payTxFee.GetFeePerK();
     // User didn't set: use -txconfirmtarget to estimate...
     if (nFeeNeeded == 0)
         nFeeNeeded = pool.estimateFee(nConfirmTarget).GetFee(nTxBytes);
@@ -2023,7 +1990,7 @@ set< set<CTxDestination> > CWallet::GetAddressGroupings()
 
 set<CTxDestination> CWallet::GetAccountAddresses(string strAccount) const
 {
-    AssertLockHeld(cs_wallet); // mapWallet
+    LOCK(cs_wallet);
     set<CTxDestination> result;
     BOOST_FOREACH(const PAIRTYPE(CTxDestination, CAddressBookData)& item, mapAddressBook)
     {
