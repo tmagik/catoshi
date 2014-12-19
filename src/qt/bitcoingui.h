@@ -2,8 +2,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOINGUI_H
-#define BITCOINGUI_H
+#ifndef BITCOIN_QT_BITCOINGUI_H
+#define BITCOIN_QT_BITCOINGUI_H
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
@@ -19,6 +19,7 @@
 #include <QSystemTrayIcon>
 
 class ClientModel;
+class NetworkStyle;
 class Notificator;
 class OptionsModel;
 class RPCConsole;
@@ -46,7 +47,7 @@ class BitcoinGUI : public QMainWindow
 public:
     static const QString DEFAULT_WALLET;
 
-    explicit BitcoinGUI(bool fIsTestnet = false, QWidget *parent = 0);
+    explicit BitcoinGUI(const NetworkStyle *networkStyle, QWidget *parent = 0);
     ~BitcoinGUI();
 
     /** Set the client model.
@@ -62,7 +63,8 @@ public:
     bool addWallet(const QString& name, WalletModel *walletModel);
     bool setCurrentWallet(const QString& name);
     void removeAllWallets();
-#endif
+#endif // ENABLE_WALLET
+    bool enableWallet;
 
 protected:
     void changeEvent(QEvent *e);
@@ -114,13 +116,13 @@ private:
     int spinnerFrame;
 
     /** Create the main UI actions. */
-    void createActions(bool fIsTestnet);
+    void createActions(const NetworkStyle *networkStyle);
     /** Create the menu bar and sub-menus. */
     void createMenuBar();
     /** Create the toolbars */
     void createToolBars();
     /** Create system tray icon and notification */
-    void createTrayIcon(bool fIsTestnet);
+    void createTrayIcon(const NetworkStyle *networkStyle);
     /** Create system tray menu (or setup the dock menu) */
     void createTrayIconMenu();
 
@@ -162,7 +164,7 @@ public slots:
 
     /** Show incoming transaction notification for new transactions. */
     void incomingTransaction(const QString& date, int unit, const CAmount& amount, const QString& type, const QString& address);
-#endif
+#endif // ENABLE_WALLET
 
 private slots:
 #ifdef ENABLE_WALLET
@@ -182,7 +184,7 @@ private slots:
 
     /** Show open dialog */
     void openClicked();
-#endif
+#endif // ENABLE_WALLET
     /** Show configuration dialog */
     void optionsClicked();
     /** Show about dialog */
@@ -235,4 +237,4 @@ private slots:
     void onMenuSelection(QAction* action);
 };
 
-#endif // BITCOINGUI_H
+#endif // BITCOIN_QT_BITCOINGUI_H

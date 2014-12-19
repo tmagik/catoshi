@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright (c) 2014 The Bitcoin Core developers
-# Distributed under the MIT/X11 software license, see the accompanying
+# Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 TIMEOUT=10
 SIGNAL=HUP
@@ -16,7 +16,7 @@ fi
 
 if [ $1 = "-STOP" ]; then
   if [ -s ${PIDFILE} ]; then
-      kill -s ${SIGNAL} $(<${PIDFILE})
+      kill -s ${SIGNAL} $(<$PIDFILE 2>/dev/null) 2>/dev/null
   fi
   exit 0
 fi
