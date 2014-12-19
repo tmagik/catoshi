@@ -6,8 +6,8 @@
 #include "miner.h"
 
 #include "amount.h"
-#include "core/block.h"
-#include "core/transaction.h"
+#include "primitives/block.h"
+#include "primitives/transaction.h"
 #include "hash.h"
 #include "main.h"
 #include "net.h"
@@ -565,7 +565,7 @@ void static BitcoinMiner(CWallet *pwallet)
             }
         }
     }
-    catch (boost::thread_interrupted)
+    catch (const boost::thread_interrupted&)
     {
         LogPrintf("BitcoinMiner terminated\n");
         throw;
