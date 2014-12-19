@@ -5,10 +5,10 @@
 
 #include "interpreter.h"
 
-#include "core/transaction.h"
+#include "primitives/transaction.h"
 #include "crypto/ripemd160.h"
 #include "crypto/sha1.h"
-#include "crypto/sha2.h"
+#include "crypto/sha256.h"
 #include "eccryptoverify.h"
 #include "pubkey.h"
 #include "script/script.h"
@@ -17,13 +17,6 @@
 using namespace std;
 
 typedef vector<unsigned char> valtype;
-static const valtype vchFalse(0);
-static const valtype vchZero(0);
-static const valtype vchTrue(1, 1);
-static const CScriptNum bnZero(0);
-static const CScriptNum bnOne(1);
-static const CScriptNum bnFalse(0);
-static const CScriptNum bnTrue(1);
 
 namespace {
 
@@ -207,9 +200,9 @@ bool static CheckSignatureEncoding(const valtype &vchSig, unsigned int flags, Sc
     return true;
 }
 
-bool static CheckPubKeyEncoding(const valtype &vchSig, unsigned int flags) {
+bool static CheckPubKeyEncoding(const valtype &vchSig, unsigned int flags, ScriptError* serror) {
     if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 && !IsCompressedOrUncompressedPubKey(vchSig)) {
-        return false;
+        return set_error(serror, SCRIPT_ERR_PUBKEYTYPE);
     }
     return true;
 }
@@ -239,6 +232,14 @@ bool static CheckMinimalPush(const valtype& data, opcodetype opcode) {
 
 bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* serror)
 {
+    static const CScriptNum bnZero(0);
+    static const CScriptNum bnOne(1);
+    static const CScriptNum bnFalse(0);
+    static const CScriptNum bnTrue(1);
+    static const valtype vchFalse(0);
+    static const valtype vchZero(0);
+    static const valtype vchTrue(1, 1);
+
     CScript::const_iterator pc = script.begin();
     CScript::const_iterator pend = script.end();
     CScript::const_iterator pbegincodehash = script.begin();
@@ -792,11 +793,11 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     // Drop the signature, since there's no way for a signature to sign itself
                     scriptCode.FindAndDelete(CScript(vchSig));
 
-                    if (!CheckSignatureEncoding(vchSig, flags, serror)) {
+                    if (!CheckSignatureEncoding(vchSig, flags, serror) || !CheckPubKeyEncoding(vchPubKey, flags, serror)) {
                         //serror is set
                         return false;
                     }
-                    bool fSuccess = CheckPubKeyEncoding(vchPubKey, flags) && checker.CheckSig(vchSig, vchPubKey, scriptCode);
+                    bool fSuccess = checker.CheckSig(vchSig, vchPubKey, scriptCode);
 
                     popstack(stack);
                     popstack(stack);
@@ -855,13 +856,16 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                         valtype& vchSig    = stacktop(-isig);
                         valtype& vchPubKey = stacktop(-ikey);
 
-                        if (!CheckSignatureEncoding(vchSig, flags, serror)) {
+                        // Note how this makes the exact order of pubkey/signature evaluation
+                        // distinguishable by CHECKMULTISIG NOT if the STRICTENC flag is set.
+                        // See the script_(in)valid tests for details.
+                        if (!CheckSignatureEncoding(vchSig, flags, serror) || !CheckPubKeyEncoding(vchPubKey, flags, serror)) {
                             // serror is set
                             return false;
                         }
 
                         // Check signature
-                        bool fOk = CheckPubKeyEncoding(vchPubKey, flags) && checker.CheckSig(vchSig, vchPubKey, scriptCode);
+                        bool fOk = checker.CheckSig(vchSig, vchPubKey, scriptCode);
 
                         if (fOk) {
                             isig++;
@@ -871,7 +875,8 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                         nKeysCount--;
 
                         // If there are more signatures left than keys left,
-                        // then too many signatures have failed
+                        // then too many signatures have failed. Exit early,
+                        // without checking any further signatures.
                         if (nSigsCount > nKeysCount)
                             fSuccess = false;
                     }
