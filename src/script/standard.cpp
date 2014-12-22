@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -34,9 +34,9 @@ const char* GetTxnOutputType(txnouttype t)
     return NULL;
 }
 
-//
-// Return public keys or hashes from scriptPubKey, for 'standard' transaction types.
-//
+/**
+ * Return public keys or hashes from scriptPubKey, for 'standard' transaction types.
+ */
 bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsigned char> >& vSolutionsRet)
 {
     // Templates
