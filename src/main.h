@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -64,8 +64,6 @@ static const unsigned int MAX_P2SH_SIGOPS = 15;
 static const unsigned int MAX_TX_SIGOPS = MAX_BLOCK_SIGOPS/5;
 /** Default for -maxorphantx, maximum number of orphan transactions kept in memory */
 static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
-/** Default for -maxorphanblocks, maximum number of orphan blocks kept in memory */
-static const unsigned int DEFAULT_MAX_ORPHAN_BLOCKS = 750;
 /** The maximum size of a blk?????.dat file (since 0.8) */
 static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 /** The pre-allocation chunk size for blk?????.dat files (since 0.8) */
