@@ -1,11 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "script/sign.h"
 
-#include "core/transaction.h"
+#include "primitives/transaction.h"
 #include "key.h"
 #include "keystore.h"
 #include "script/standard.h"
@@ -46,12 +46,12 @@ bool SignN(const vector<valtype>& multisigdata, const CKeyStore& keystore, uint2
     return nSigned==nRequired;
 }
 
-//
-// Sign scriptPubKey with private keys stored in keystore, given transaction hash and hash type.
-// Signatures are returned in scriptSigRet (or returns false if scriptPubKey can't be signed),
-// unless whichTypeRet is TX_SCRIPTHASH, in which case scriptSigRet is the redemption script.
-// Returns false if scriptPubKey could not be completely satisfied.
-//
+/**
+ * Sign scriptPubKey with private keys stored in keystore, given transaction hash and hash type.
+ * Signatures are returned in scriptSigRet (or returns false if scriptPubKey can't be signed),
+ * unless whichTypeRet is TX_SCRIPTHASH, in which case scriptSigRet is the redemption script.
+ * Returns false if scriptPubKey could not be completely satisfied.
+ */
 bool Solver(const CKeyStore& keystore, const CScript& scriptPubKey, uint256 hash, int nHashType,
                   CScript& scriptSigRet, txnouttype& whichTypeRet)
 {

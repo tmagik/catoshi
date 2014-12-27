@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2014 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "walletmodel.h"
@@ -277,6 +277,10 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
                          CClientUIInterface::MSG_ERROR);
             return TransactionCreationFailed;
         }
+
+        // reject insane fee > 0.1 bitcoin
+        if (nFeeRequired > 10000000)
+            return InsaneFee;
     }
 
     return SendCoinsReturn(OK);

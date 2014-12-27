@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2013 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_QT_OPTIONSDIALOG_H
@@ -46,7 +46,6 @@ private slots:
 
     void showRestartWarning(bool fPersistent = false);
     void clearStatusLabel();
-    void updateDisplayUnit();
     void doProxyIpChecks(QValidatedLineEdit *pUiProxyIp, int nProxyPort);
 
 signals:

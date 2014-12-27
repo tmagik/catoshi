@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2014 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "bitcoinamountfield.h"
@@ -130,6 +130,7 @@ public:
             extra += hint - style()->subControlRect(QStyle::CC_SpinBox, &opt,
                                                     QStyle::SC_SpinBoxEditField, this).size();
             hint += extra;
+            hint.setHeight(h);
 
             opt.rect = rect();
 
@@ -218,6 +219,12 @@ void BitcoinAmountField::clear()
 {
     amount->clear();
     unit->setCurrentIndex(0);
+}
+
+void BitcoinAmountField::setEnabled(bool fEnabled)
+{
+    amount->setEnabled(fEnabled);
+    unit->setEnabled(fEnabled);
 }
 
 bool BitcoinAmountField::validate()

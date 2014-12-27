@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2013 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_QT_COINCONTROLDIALOG_H
@@ -37,7 +37,7 @@ public:
 
     // static because also called from sendcoinsdialog
     static void updateLabels(WalletModel*, QDialog*);
-    static QString getPriorityLabel(const CTxMemPool& pool, double);
+    static QString getPriorityLabel(double dPriority, double mempoolEstimatePriority);
 
     static QList<CAmount> payAmounts;
     static CCoinControl *coinControl;
