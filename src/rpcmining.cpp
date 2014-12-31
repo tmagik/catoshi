@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -288,8 +288,7 @@ Value prioritisetransaction(const Array& params, bool fHelp)
             + HelpExampleRpc("prioritisetransaction", "\"txid\", 0.0, 10000")
         );
 
-    uint256 hash;
-    hash.SetHex(params[0].get_str());
+    uint256 hash = ParseHashStr(params[0].get_str(), "txid");
 
     CAmount nAmount = params[2].get_int64();
 
@@ -674,7 +673,7 @@ Value estimatefee(const Array& params, bool fHelp)
         throw runtime_error(
             "estimatefee nblocks\n"
             "\nEstimates the approximate fee per kilobyte\n"
-            "needed for a transaction to get confirmed\n"
+            "needed for a transaction to begin confirmation\n"
             "within nblocks blocks.\n"
             "\nArguments:\n"
             "1. nblocks     (numeric)\n"
@@ -706,7 +705,7 @@ Value estimatepriority(const Array& params, bool fHelp)
         throw runtime_error(
             "estimatepriority nblocks\n"
             "\nEstimates the approximate priority\n"
-            "a zero-fee transaction needs to get confirmed\n"
+            "a zero-fee transaction needs to begin confirmation\n"
             "within nblocks blocks.\n"
             "\nArguments:\n"
             "1. nblocks     (numeric)\n"
