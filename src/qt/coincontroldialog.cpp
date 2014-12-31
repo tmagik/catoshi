@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2013 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "coincontroldialog.h"
@@ -10,6 +10,7 @@
 #include "guiutil.h"
 #include "init.h"
 #include "optionsmodel.h"
+#include "scicon.h"
 #include "walletmodel.h"
 
 #include "coincontrol.h"
@@ -274,7 +275,7 @@ void CoinControlDialog::lockCoin()
     COutPoint outpt(uint256(contextMenuItem->text(COLUMN_TXHASH).toStdString()), contextMenuItem->text(COLUMN_VOUT_INDEX).toUInt());
     model->lockCoin(outpt);
     contextMenuItem->setDisabled(true);
-    contextMenuItem->setIcon(COLUMN_CHECKBOX, QIcon(":/icons/lock_closed"));
+    contextMenuItem->setIcon(COLUMN_CHECKBOX, SingleColorIcon(":/icons/lock_closed"));
     updateLabelLocked();
 }
 
@@ -776,7 +777,7 @@ void CoinControlDialog::updateView()
                 COutPoint outpt(txhash, out.i);
                 coinControl->UnSelect(outpt); // just to be sure
                 itemOutput->setDisabled(true);
-                itemOutput->setIcon(COLUMN_CHECKBOX, QIcon(":/icons/lock_closed"));
+                itemOutput->setIcon(COLUMN_CHECKBOX, SingleColorIcon(":/icons/lock_closed"));
             }
 
             // set checkbox
