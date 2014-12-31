@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2013 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_ALLOCATORS_H
@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <string.h>
+#include <vector>
 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/once.hpp>
@@ -260,5 +261,8 @@ struct zero_after_free_allocator : public std::allocator<T> {
 
 // This is exactly like std::string, but with a custom allocator.
 typedef std::basic_string<char, std::char_traits<char>, secure_allocator<char> > SecureString;
+
+// Byte-vector that clears its contents before deletion.
+typedef std::vector<char, zero_after_free_allocator<char> > CSerializeData;
 
 #endif // BITCOIN_ALLOCATORS_H
