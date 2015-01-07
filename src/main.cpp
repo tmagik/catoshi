@@ -29,7 +29,6 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/thread.hpp>
 
-using namespace boost;
 using namespace std;
 
 #if defined(NDEBUG)
@@ -1031,6 +1030,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                                       hash.ToString(), nFees, txMinFee),
                              REJECT_INSUFFICIENTFEE, "insufficient fee");
 
+        // Require that free transactions have sufficient priority to be mined in the next block.
+        if (GetBoolArg("-relaypriority", true) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
+        }
+
         // Continuously rate-limit free (really, very-low-fee) transactions
         // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
         // be annoying or make others' transactions take longer to confirm.
@@ -1050,7 +1054,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // At default rate it would take over a month to fill 1GB
             if (dFreeCount >= GetArg("-limitfreerelay", 15)*10*1000)
                 return state.DoS(0, error("AcceptToMemoryPool : free transaction rejected by rate limiter"),
-                                 REJECT_INSUFFICIENTFEE, "insufficient priority");
+                                 REJECT_INSUFFICIENTFEE, "rate limited free transaction");
             LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
             dFreeCount += nSize;
         }
@@ -1883,6 +1887,7 @@ enum FlushStateMode {
 bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode) {
     LOCK(cs_main);
     static int64_t nLastWrite = 0;
+    try {
     if ((mode == FLUSH_STATE_ALWAYS) ||
         ((mode == FLUSH_STATE_PERIODIC || mode == FLUSH_STATE_IF_NEEDED) && pcoinsTip->GetCacheSize() > nCoinCacheSize) ||
         (mode == FLUSH_STATE_PERIODIC && GetTimeMicros() > nLastWrite + DATABASE_WRITE_INTERVAL * 1000000)) {
@@ -1921,6 +1926,9 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode) {
             g_signals.SetBestChain(chainActive.GetLocator());
         }
         nLastWrite = GetTimeMicros();
+    }
+    } catch (const std::runtime_error& e) {
+        return state.Abort(std::string("System error while flushing: ") + e.what());
     }
     return true;
 }
@@ -2789,7 +2797,7 @@ bool AbortNode(const std::string &strMessage, const std::string &userMessage) {
 
 bool CheckDiskSpace(uint64_t nAdditionalBytes)
 {
-    uint64_t nFreeBytesAvailable = filesystem::space(GetDataDir()).available;
+    uint64_t nFreeBytesAvailable = boost::filesystem::space(GetDataDir()).available;
 
     // Check for nMinDiskSpace bytes (currently 50MB)
     if (nFreeBytesAvailable < nMinDiskSpace + nAdditionalBytes)
