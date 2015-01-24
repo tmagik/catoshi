@@ -1,12 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2014 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "miner.h"
 
 #include "amount.h"
-#include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "hash.h"
 #include "main.h"
@@ -279,8 +278,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if (!CheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true))
                 continue;
 
-            CTxUndo txundo;
-            UpdateCoins(tx, state, view, txundo, nHeight);
+            UpdateCoins(tx, state, view, nHeight);
 
             // Added
             pblock->vtx.push_back(tx);
@@ -408,7 +406,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     return CreateNewBlock(scriptPubKey);
 }
 
-bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
+static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 {
     LogPrintf("%s\n", pblock->ToString());
     LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue));
@@ -478,14 +476,14 @@ void static BitcoinMiner(CWallet *pwallet)
             // Search
             //
             int64_t nStart = GetTime();
-            uint256 hashTarget = uint256().SetCompact(pblock->nBits);
+            arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             uint256 hash;
             uint32_t nNonce = 0;
             while (true) {
                 // Check if something found
                 if (ScanHash(pblock, nNonce, &hash))
                 {
-                    if (hash <= hashTarget)
+                    if (UintToArith256(hash) <= hashTarget)
                     {
                         // Found a solution
                         pblock->nNonce = nNonce;
@@ -527,7 +525,7 @@ void static BitcoinMiner(CWallet *pwallet)
             }
         }
     }
-    catch (boost::thread_interrupted)
+    catch (const boost::thread_interrupted&)
     {
         LogPrintf("BitcoinMiner terminated\n");
         throw;
