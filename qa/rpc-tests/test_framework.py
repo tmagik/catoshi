@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -33,8 +33,11 @@ class BitcoinTestFramework(object):
         print("Initializing test directory "+self.options.tmpdir)
         initialize_chain(self.options.tmpdir)
 
+    def setup_nodes(self):
+        return start_nodes(4, self.options.tmpdir)
+
     def setup_network(self, split = False):
-        self.nodes = start_nodes(4, self.options.tmpdir)
+        self.nodes = self.setup_nodes()
 
         # Connect the nodes as a "chain".  This allows us
         # to split the network between nodes 1 and 2 to get
@@ -44,8 +47,8 @@ class BitcoinTestFramework(object):
         # on outward.  This ensures that chains are properly reorganised.
         if not split:
             connect_nodes_bi(self.nodes, 1, 2)
-            sync_blocks(self.nodes[1:2])
-            sync_mempools(self.nodes[1:2])
+            sync_blocks(self.nodes[1:3])
+            sync_mempools(self.nodes[1:3])
 
         connect_nodes_bi(self.nodes, 0, 1)
         connect_nodes_bi(self.nodes, 2, 3)
@@ -63,9 +66,9 @@ class BitcoinTestFramework(object):
 
     def sync_all(self):
         if self.is_network_split:
-            sync_blocks(self.nodes[:1])
+            sync_blocks(self.nodes[:2])
             sync_blocks(self.nodes[2:])
-            sync_mempools(self.nodes[:1])
+            sync_mempools(self.nodes[:2])
             sync_mempools(self.nodes[2:])
         else:
             sync_blocks(self.nodes)

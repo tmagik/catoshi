@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2014 The Bitcoin Core developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "data/tx_invalid.json.h"
@@ -10,6 +10,7 @@
 #include "keystore.h"
 #include "main.h"
 #include "script/script.h"
+#include "script/script_error.h"
 #include "core_io.h"
 
 #include <map>
@@ -23,7 +24,6 @@
 
 using namespace std;
 using namespace json_spirit;
-using namespace boost::algorithm;
 
 // In script_tests.cpp
 extern Array read_json(const std::string& jsondata);
@@ -36,7 +36,9 @@ static std::map<string, unsigned int> mapFlagNames = boost::assign::map_list_of
     (string("LOW_S"), (unsigned int)SCRIPT_VERIFY_LOW_S)
     (string("SIGPUSHONLY"), (unsigned int)SCRIPT_VERIFY_SIGPUSHONLY)
     (string("MINIMALDATA"), (unsigned int)SCRIPT_VERIFY_MINIMALDATA)
-    (string("NULLDUMMY"), (unsigned int)SCRIPT_VERIFY_NULLDUMMY);
+    (string("NULLDUMMY"), (unsigned int)SCRIPT_VERIFY_NULLDUMMY)
+    (string("DISCOURAGE_UPGRADABLE_NOPS"), (unsigned int)SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS)
+    (string("CLEANSTACK"), (unsigned int)SCRIPT_VERIFY_CLEANSTACK);
 
 unsigned int ParseScriptFlags(string strFlags)
 {
@@ -45,7 +47,7 @@ unsigned int ParseScriptFlags(string strFlags)
     }
     unsigned int flags = 0;
     vector<string> words;
-    split(words, strFlags, is_any_of(","));
+    boost::algorithm::split(words, strFlags, boost::algorithm::is_any_of(","));
 
     BOOST_FOREACH(string word, words)
     {
@@ -86,6 +88,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
     // verifyFlags is a comma separated list of script verification flags to apply, or "NONE"
     Array tests = read_json(std::string(json_tests::tx_valid, json_tests::tx_valid + sizeof(json_tests::tx_valid)));
 
+    ScriptError err;
     BOOST_FOREACH(Value& tv, tests)
     {
         Array test = tv.get_array();
@@ -115,7 +118,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
                     break;
                 }
 
-                mapprevOutScriptPubKeys[COutPoint(uint256(vinput[0].get_str()), vinput[1].get_int())] = ParseScript(vinput[2].get_str());
+                mapprevOutScriptPubKeys[COutPoint(uint256S(vinput[0].get_str()), vinput[1].get_int())] = ParseScript(vinput[2].get_str());
             }
             if (!fValid)
             {
@@ -142,8 +145,9 @@ BOOST_AUTO_TEST_CASE(tx_valid)
 
                 unsigned int verify_flags = ParseScriptFlags(test[2].get_str());
                 BOOST_CHECK_MESSAGE(VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
-                                                 verify_flags, SignatureChecker(tx, i)),
+                                                 verify_flags, TransactionSignatureChecker(&tx, i), &err),
                                     strTest);
+                BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_OK, ScriptErrorString(err));
             }
         }
     }
@@ -160,6 +164,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
     // verifyFlags is a comma separated list of script verification flags to apply, or "NONE"
     Array tests = read_json(std::string(json_tests::tx_invalid, json_tests::tx_invalid + sizeof(json_tests::tx_invalid)));
 
+    ScriptError err;
     BOOST_FOREACH(Value& tv, tests)
     {
         Array test = tv.get_array();
@@ -189,7 +194,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
                     break;
                 }
 
-                mapprevOutScriptPubKeys[COutPoint(uint256(vinput[0].get_str()), vinput[1].get_int())] = ParseScript(vinput[2].get_str());
+                mapprevOutScriptPubKeys[COutPoint(uint256S(vinput[0].get_str()), vinput[1].get_int())] = ParseScript(vinput[2].get_str());
             }
             if (!fValid)
             {
@@ -215,10 +220,10 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
 
                 unsigned int verify_flags = ParseScriptFlags(test[2].get_str());
                 fValid = VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
-                                      verify_flags, SignatureChecker(tx, i));
+                                      verify_flags, TransactionSignatureChecker(&tx, i), &err);
             }
-
             BOOST_CHECK_MESSAGE(!fValid, strTest);
+            BOOST_CHECK_MESSAGE(err != SCRIPT_ERR_OK, ScriptErrorString(err));
         }
     }
 }
