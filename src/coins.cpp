@@ -1,5 +1,5 @@
-// Copyright (c) 2012-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2012-2014 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "coins.h"
@@ -8,9 +8,11 @@
 
 #include <assert.h>
 
-// calculate number of bytes for the bitmask, and its number of non-zero bytes
-// each bit in the bitmask represents the availability of one output, but the
-// availabilities of the first two outputs are encoded separately
+/**
+ * calculate number of bytes for the bitmask, and its number of non-zero bytes
+ * each bit in the bitmask represents the availability of one output, but the
+ * availabilities of the first two outputs are encoded separately
+ */
 void CCoins::CalcMaskSize(unsigned int &nBytes, unsigned int &nNonzeroBytes) const {
     unsigned int nLastUsedByte = 0;
     for (unsigned int b = 0; 2+b*8 < vout.size(); b++) {
@@ -29,32 +31,18 @@ void CCoins::CalcMaskSize(unsigned int &nBytes, unsigned int &nNonzeroBytes) con
     nBytes += nLastUsedByte;
 }
 
-bool CCoins::Spend(const COutPoint &out, CTxInUndo &undo) {
-    if (out.n >= vout.size())
+bool CCoins::Spend(uint32_t nPos) 
+{
+    if (nPos >= vout.size() || vout[nPos].IsNull())
         return false;
-    if (vout[out.n].IsNull())
-        return false;
-    undo = CTxInUndo(vout[out.n]);
-    vout[out.n].SetNull();
+    vout[nPos].SetNull();
     Cleanup();
-    if (vout.size() == 0) {
-        undo.nHeight = nHeight;
-        undo.fCoinBase = fCoinBase;
-        undo.nVersion = this->nVersion;
-    }
     return true;
 }
 
-bool CCoins::Spend(int nPos) {
-    CTxInUndo undo;
-    COutPoint out(0, nPos);
-    return Spend(out, undo);
-}
-
-
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
-uint256 CCoinsView::GetBestBlock() const { return uint256(0); }
+uint256 CCoinsView::GetBestBlock() const { return uint256(); }
 bool CCoinsView::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
@@ -69,7 +57,7 @@ bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStat
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
 
-CCoinsViewCache::CCoinsViewCache(CCoinsView *baseIn) : CCoinsViewBacked(baseIn), hasModifier(false), hashBlock(0) { }
+CCoinsViewCache::CCoinsViewCache(CCoinsView *baseIn) : CCoinsViewBacked(baseIn), hasModifier(false) { }
 
 CCoinsViewCache::~CCoinsViewCache()
 {
@@ -104,7 +92,6 @@ bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
 
 CCoinsModifier CCoinsViewCache::ModifyCoins(const uint256 &txid) {
     assert(!hasModifier);
-    hasModifier = true;
     std::pair<CCoinsMap::iterator, bool> ret = cacheCoins.insert(std::make_pair(txid, CCoinsCacheEntry()));
     if (ret.second) {
         if (!base->GetCoins(txid, ret.first->second.coins)) {
@@ -133,14 +120,14 @@ const CCoins* CCoinsViewCache::AccessCoins(const uint256 &txid) const {
 bool CCoinsViewCache::HaveCoins(const uint256 &txid) const {
     CCoinsMap::const_iterator it = FetchCoins(txid);
     // We're using vtx.empty() instead of IsPruned here for performance reasons,
-    // as we only care about the case where an transaction was replaced entirely
+    // as we only care about the case where a transaction was replaced entirely
     // in a reorganization (which wipes vout entirely, as opposed to spending
     // which just cleans individual outputs).
     return (it != cacheCoins.end() && !it->second.coins.vout.empty());
 }
 
 uint256 CCoinsViewCache::GetBestBlock() const {
-    if (hashBlock == uint256(0))
+    if (hashBlock.IsNull())
         hashBlock = base->GetBestBlock();
     return hashBlock;
 }
@@ -245,7 +232,10 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
     return tx.ComputePriority(dResult);
 }
 
-CCoinsModifier::CCoinsModifier(CCoinsViewCache& cache_, CCoinsMap::iterator it_) : cache(cache_), it(it_) {}
+CCoinsModifier::CCoinsModifier(CCoinsViewCache& cache_, CCoinsMap::iterator it_) : cache(cache_), it(it_) {
+    assert(!cache.hasModifier);
+    cache.hasModifier = true;
+}
 
 CCoinsModifier::~CCoinsModifier()
 {
