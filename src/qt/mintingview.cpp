@@ -120,7 +120,11 @@ void MintingView::setModel(WalletModel *model)
 
         mintingView->horizontalHeader()->resizeSection(
                 MintingTableModel::Address, 420);
+#if QT_VERSION >= 0x050000
+        mintingView->horizontalHeader()->setSectionResizeMode(
+#else
         mintingView->horizontalHeader()->setResizeMode(
+#endif
                 MintingTableModel::TxHash, QHeaderView::Stretch);
         mintingView->horizontalHeader()->resizeSection(
                 MintingTableModel::Age, 120);

@@ -136,8 +136,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer)
 bool RecvLine(SOCKET hSocket, string& strLine)
 {
     strLine = "";
-    loop
-    {
+    while(true){
         char c;
         int nBytes = recv(hSocket, &c, 1, 0);
         if (nBytes > 0)
@@ -300,8 +299,7 @@ bool GetMyExternalIP2(const CService& addrConnect, const char* pszGet, const cha
     {
         if (strLine.empty()) // HTTP response is separated from headers by blank line
         {
-            loop
-            {
+            while(true){
                 if (!RecvLine(hSocket, strLine))
                 {
                     closesocket(hSocket);
@@ -650,8 +648,7 @@ void ThreadSocketHandler2(void* parg)
     list<CNode*> vNodesDisconnected;
     unsigned int nPrevNodeCount = 0;
 
-    loop
-    {
+    while(true){
         //
         // Disconnect nodes
         //
@@ -1063,7 +1060,7 @@ void ThreadMapPort2(void* parg)
         else
             printf("UPnP Port Mapping successful.\n");
         int i = 1;
-        loop {
+        while(true){
             if (fShutdown || !fUseUPnP)
             {
                 r = UPNP_DeletePortMapping(urls.controlURL, data.first.servicetype, port, "TCP", 0);
@@ -1098,7 +1095,7 @@ void ThreadMapPort2(void* parg)
         freeUPNPDevlist(devlist); devlist = 0;
         if (r != 0)
             FreeUPNPUrls(&urls);
-        loop {
+        while(true){
             if (fShutdown || !fUseUPnP)
                 return;
             Sleep(2000);
@@ -1317,8 +1314,7 @@ void ThreadOpenConnections2(void* parg)
 
     // Initiate network connections
     int64 nStart = GetTime();
-    loop
-    {
+    while(true){
         ProcessOneShot();
 
         vnThreadsRunning[THREAD_OPENCONNECTIONS]--;
@@ -1376,8 +1372,7 @@ void ThreadOpenConnections2(void* parg)
         int64 nANow = GetAdjustedTime();
 
         int nTries = 0;
-        loop
-        {
+        while(true){
             // use an nUnkBias between 10 (no outgoing connections) and 90 (8 outgoing connections)
             CAddress addr = addrman.Select(10 + min(nOutbound,8)*10);
 
@@ -1467,8 +1462,7 @@ void ThreadOpenAddedConnections2(void* parg)
             }
         }
     }
-    loop
-    {
+    while(true){
         vector<vector<CService> > vservConnectAddresses = vservAddressesToAdd;
         // Attempt to connect to each IP for each addnode entry until at least one is successful per addnode entry
         // (keeping in mind that addnode entries can have many IPs if fNameLookup)
