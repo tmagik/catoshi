@@ -55,6 +55,7 @@ static const int64 CENT = 10000;
 #define snprintf my_snprintf
 
 #ifndef PRI64d
+//#warning defining PRI64d
 #if defined(_MSC_VER) || defined(__MSVCRT__)
 #define PRI64d  "I64d"
 #define PRI64u  "I64u"
@@ -397,7 +398,7 @@ public:
 
 inline std::string i64tostr(int64 n)
 {
-    return strprintf("%"PRI64d, n);
+    return strprintf("%" PRI64d, n);
 }
 
 inline std::string itostr(int n)
