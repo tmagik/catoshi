@@ -78,7 +78,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     rpcConsole(0)
 {
     resize(850, 550);
-    setWindowTitle(tr("Peerunity Wallet"));
+    setWindowTitle(tr("Blunity Wallet"));
 #ifndef Q_WS_MAC
     setWindowIcon(QIcon(":icons/peerunity_icon"));
 #else
@@ -262,17 +262,17 @@ void BitcoinGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("&About Peerunity"), this);
+    aboutAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("&About Blunity"), this);
     aboutAction->setToolTip(tr("Show information about Peercoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(tr("About &Qt"), this);
     aboutQtAction->setToolTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
-    optionsAction->setToolTip(tr("Modify configuration options for Peerunity"));
+    optionsAction->setToolTip(tr("Modify configuration options for Blunity"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    toggleHideAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("Show/Hide &Peerunity"), this);
-    toggleHideAction->setToolTip(tr("Show or hide the Peerunity window"));
+    toggleHideAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("Show/Hide &Blunity"), this);
+    toggleHideAction->setToolTip(tr("Show or hide the Blunity window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet"), this);
@@ -426,7 +426,7 @@ void BitcoinGUI::createTrayIcon()
     trayIcon = new QSystemTrayIcon(this);
     trayIconMenu = new QMenu(this);
     trayIcon->setContextMenu(trayIconMenu);
-    trayIcon->setToolTip(tr("Peerunity client"));
+    trayIcon->setToolTip(tr("Blunity client"));
     trayIcon->setIcon(QIcon(":/icons/peerunity_tooltip"));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
             this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
