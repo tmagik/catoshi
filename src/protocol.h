@@ -15,10 +15,17 @@
 #include <string>
 #include "uint256.h"
 
+#ifdef PPCOIN
 #define PPCOIN_PORT  9901
 #define RPC_PORT     9902
 #define TESTNET_PORT 9903
 #define TESTNET_RPC_PORT 9904
+#else /* Bluecoin */
+#define BLUECOIN_PORT 27104
+#define RPC_PORT 27105
+#define TESTNET_PORT 37104
+#define TESTNET_RPC_PORT 37105
+#endif
 
 extern bool fTestNet;
 
@@ -26,7 +33,7 @@ void GetMessageStart(unsigned char pchMessageStart[], bool fPersistent = false);
 
 static inline unsigned short GetDefaultPort(const bool testnet = fTestNet)
 {
-    return testnet ? TESTNET_PORT : PPCOIN_PORT;
+    return testnet ? TESTNET_PORT : BLUECOIN_PORT;
 }
 
 

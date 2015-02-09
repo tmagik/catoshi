@@ -1,7 +1,10 @@
 // Copyright (c) 2012 The Bitcoin developers
 // Copyright (c) 2014 The Peerunity developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include <string>
 
 #include "version.h"
@@ -14,7 +17,7 @@
 // the list of ancient coinage, from oldest known to more recent. 
 // You can find ideas for future client names, here: http://en.wikipedia.org/wiki/List_of_historical_currencies
 
-const std::string CLIENT_NAME("Satoshi");
+const std::string CLIENT_NAME("Catoshi/Blu2");
 
 // Client version number
 #define CLIENT_VERSION_SUFFIX   ""
@@ -55,9 +58,9 @@ const std::string CLIENT_NAME("Satoshi");
 
 #ifndef BUILD_DESC
 #    ifdef GIT_COMMIT_ID
-#        define BUILD_DESC BUILD_DESC_FROM_COMMIT(PEERUNITY_VERSION_MAJOR, PEERUNITY_VERSION_MINOR, PEERUNITY_VERSION_REVISION, PEERUNITY_VERSION_BUILD, GIT_COMMIT_ID)
+#        define BUILD_DESC BUILD_DESC_FROM_COMMIT(CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, CLIENT_VERSION_REVISION, CLIENT_VERSION_BUILD, GIT_COMMIT_ID)
 #    else
-#        define BUILD_DESC BUILD_DESC_FROM_UNKNOWN(PEERUNITY_VERSION_MAJOR, PEERUNITY_VERSION_MINOR, PEERUNITY_VERSION_REVISION, PEERUNITY_VERSION_BUILD)
+#        define BUILD_DESC BUILD_DESC_FROM_UNKNOWN(CLIENT_VERSION_MAJOR, CLIENT_VERSION_MINOR, CLIENT_VERSION_REVISION, CLIENT_VERSION_BUILD)
 #    endif
 #endif
 
