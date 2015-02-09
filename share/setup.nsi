@@ -5,12 +5,12 @@ SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.1.2.0
-!define COMPANY "Peerunity project"
-!define URL http://github.com/peerunity/peerunity/
+!define VERSION 1.2.1
+!define COMPANY "BlueCoin project"
+!define URL http://
 
 # MUI Symbol Definitions
-!define MUI_ICON "../share/pixmaps/peerunity.ico"
+!define MUI_ICON "../share/pixmaps/bluecoin.ico"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "../share/pixmaps/nsis-wizard.bmp"
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
@@ -19,8 +19,8 @@ SetCompressor /SOLID lzma
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT HKLM
 !define MUI_STARTMENUPAGE_REGISTRY_KEY ${REGKEY}
 !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME StartMenuGroup
-!define MUI_STARTMENUPAGE_DEFAULTFOLDER Peerunity
-!define MUI_FINISHPAGE_RUN $INSTDIR\Peerunity.exe
+!define MUI_STARTMENUPAGE_DEFAULTFOLDER bluecoin
+!define MUI_FINISHPAGE_RUN $INSTDIR\bluecoin-qt.exe
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "../share/pixmaps/nsis-wizard.bmp"
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
@@ -48,18 +48,14 @@ Var StartMenuGroup
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile Peerunity-${VERSION}-win-setup.exe
-!if "" == "64"
-InstallDir $PROGRAMFILES64\Peerunity
-!else
-InstallDir $PROGRAMFILES\Peerunity
-!endif
+OutFile bluecoin-1.2.1-win32-setup.exe
+InstallDir $PROGRAMFILES\BlueCoin
 CRCCheck on
 XPStyle on
 BrandingText " "
 ShowInstDetails show
-VIProductVersion ${VERSION}.0
-VIAddVersionKey ProductName Peerunity
+VIProductVersion 1.2.1.0
+VIAddVersionKey ProductName BlueCoin
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
 VIAddVersionKey CompanyWebsite "${URL}"
@@ -73,21 +69,19 @@ ShowUninstDetails show
 Section -Main SEC0000
     SetOutPath $INSTDIR
     SetOverwrite on
-    File ../release/Peerunity.exe
+    File ../release/bluecoin-qt.exe
     File /oname=license.txt ../COPYING
     File /oname=readme.txt ../doc/README_windows.txt
     SetOutPath $INSTDIR\daemon
-    File ../release/peerunityd.exe
-#    SetOutPath $INSTDIR\doc
-#    File /r ../doc\*.*
-#    SetOutPath $INSTDIR\src
-#    File /r /x *.exe /x *.o ../src\*.*
+    File ../src/bluecoind.exe
+    SetOutPath $INSTDIR\src
+    File /r /x *.exe /x *.o ../src\*.*
     SetOutPath $INSTDIR
     WriteRegStr HKCU "${REGKEY}\Components" Main 1
 
-    # Remove old wxwidgets-based-bitcoin executable and locales:
-    #Delete /REBOOTOK $INSTDIR\bitcoin.exe
-    #RMDir /r /REBOOTOK $INSTDIR\locale
+    # Remove old wxwidgets-based-BlueCoin executable and locales:
+    Delete /REBOOTOK $INSTDIR\bluecoin.exe
+    RMDir /r /REBOOTOK $INSTDIR\locale
 SectionEnd
 
 Section -post SEC0001
@@ -107,6 +101,12 @@ Section -post SEC0001
     WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" UninstallString $INSTDIR\uninstall.exe
     WriteRegDWORD HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" NoModify 1
     WriteRegDWORD HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" NoRepair 1
+
+    # BlueCoin: URI handling disabled for 0.6.0
+        WriteRegStr HKCR "BlueCoin" "URL Protocol" ""
+        WriteRegStr HKCR "BlueCoin" "" "URL:BlueCoin"
+        WriteRegStr HKCR "BlueCoin\DefaultIcon" "" $INSTDIR\bluecoin-qt.exe
+        WriteRegStr HKCR "BlueCoin\shell\open\command" "" '"$INSTDIR\bluecoin-qt.exe" "$$1"'
 SectionEnd
 
 # Macro for selecting uninstaller sections
@@ -124,7 +124,7 @@ done${UNSECTION_ID}:
 
 # Uninstaller sections
 Section /o -un.Main UNSEC0000
-    Delete /REBOOTOK $INSTDIR\peerunity.exe
+    Delete /REBOOTOK $INSTDIR\bluecoin-qt.exe
     Delete /REBOOTOK $INSTDIR\license.txt
     Delete /REBOOTOK $INSTDIR\readme.txt
     RMDir /r /REBOOTOK $INSTDIR\daemon
@@ -137,7 +137,7 @@ Section -un.post UNSEC0001
     DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)"
     Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\Uninstall $(^Name).lnk"
     Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\$(^Name).lnk"
-    Delete /REBOOTOK "$SMSTARTUP\Peerunity.lnk"
+    Delete /REBOOTOK "$SMSTARTUP\$(^Name).lnk"
     Delete /REBOOTOK $INSTDIR\uninstall.exe
     Delete /REBOOTOK $INSTDIR\debug.log
     Delete /REBOOTOK $INSTDIR\db.log
@@ -145,7 +145,7 @@ Section -un.post UNSEC0001
     DeleteRegValue HKCU "${REGKEY}" Path
     DeleteRegKey /IfEmpty HKCU "${REGKEY}\Components"
     DeleteRegKey /IfEmpty HKCU "${REGKEY}"
-    DeleteRegKey HKCR "peerunity"
+    DeleteRegKey HKCR "BlueCoin"
     RmDir /REBOOTOK $SMPROGRAMS\$StartMenuGroup
     RmDir /REBOOTOK $INSTDIR
     Push $R0

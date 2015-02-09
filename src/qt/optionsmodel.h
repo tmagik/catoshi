@@ -47,6 +47,7 @@ public:
     int getDisplayUnit();
     bool getDisplayAddresses();
     bool getCoinControlFeatures();
+    QString getLanguage() { return language; }
 
 private:
     int nDisplayUnit;
@@ -54,6 +55,7 @@ private:
     bool fMinimizeToTray;
     bool fMinimizeOnClose;
     bool fCoinControlFeatures;
+    QString language;
 
 signals:
     void displayUnitChanged(int unit);

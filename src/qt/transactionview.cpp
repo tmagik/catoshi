@@ -11,7 +11,6 @@
 #include "editaddressdialog.h"
 #include "optionsmodel.h"
 #include "guiutil.h"
-#include "wallet.h"
 
 #include <QScrollBar>
 #include <QComboBox>
@@ -25,6 +24,7 @@
 #include <QMessageBox>
 #include <QPoint>
 #include <QMenu>
+#include <QApplication>
 #include <QClipboard>
 #include <QLabel>
 #include <QDateTimeEdit>
@@ -38,7 +38,7 @@ TransactionView::TransactionView(QWidget *parent) :
 
     QHBoxLayout *hlayout = new QHBoxLayout();
     hlayout->setContentsMargins(0,0,0,0);
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     hlayout->setSpacing(5);
     hlayout->addSpacing(26);
 #else
@@ -47,7 +47,7 @@ TransactionView::TransactionView(QWidget *parent) :
 #endif
 
     dateWidget = new QComboBox(this);
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     dateWidget->setFixedWidth(121);
 #else
     dateWidget->setFixedWidth(120);
@@ -62,7 +62,7 @@ TransactionView::TransactionView(QWidget *parent) :
     hlayout->addWidget(dateWidget);
 
     typeWidget = new QComboBox(this);
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     typeWidget->setFixedWidth(121);
 #else
     typeWidget->setFixedWidth(120);
@@ -75,22 +75,24 @@ TransactionView::TransactionView(QWidget *parent) :
                                   TransactionFilterProxy::TYPE(TransactionRecord::SendToOther));
     typeWidget->addItem(tr("To yourself"), TransactionFilterProxy::TYPE(TransactionRecord::SendToSelf));
     typeWidget->addItem(tr("Mined"), TransactionFilterProxy::TYPE(TransactionRecord::Generated));
-    typeWidget->addItem(tr("Mint by stake"), TransactionFilterProxy::TYPE(TransactionRecord::StakeMint));
+    typeWidget->addItem(tr("Minted"), TransactionFilterProxy::TYPE(TransactionRecord::StakeMint));
     typeWidget->addItem(tr("Other"), TransactionFilterProxy::TYPE(TransactionRecord::Other));
 
     hlayout->addWidget(typeWidget);
 
     addressWidget = new QLineEdit(this);
 #if QT_VERSION >= 0x040700
+    /* Do not move this to the XML file, Qt before 4.7 will choke on it */
     addressWidget->setPlaceholderText(tr("Enter address or label to search"));
 #endif
     hlayout->addWidget(addressWidget);
 
     amountWidget = new QLineEdit(this);
 #if QT_VERSION >= 0x040700
+    /* Do not move this to the XML file, Qt before 4.7 will choke on it */
     amountWidget->setPlaceholderText(tr("Min amount"));
 #endif
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     amountWidget->setFixedWidth(97);
 #else
     amountWidget->setFixedWidth(100);
@@ -109,7 +111,7 @@ TransactionView::TransactionView(QWidget *parent) :
     vlayout->setSpacing(0);
     int width = view->verticalScrollBar()->sizeHint().width();
     // Cover scroll bar width with spacing
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     hlayout->addSpacing(width+2);
 #else
     hlayout->addSpacing(width);
@@ -166,6 +168,8 @@ void TransactionView::setModel(WalletModel *model)
         transactionProxyModel = new TransactionFilterProxy(this);
         transactionProxyModel->setSourceModel(model->getTransactionTableModel());
         transactionProxyModel->setDynamicSortFilter(true);
+        transactionProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+        transactionProxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
 
         transactionProxyModel->setSortRole(Qt::EditRole);
 
@@ -213,7 +217,7 @@ void TransactionView::chooseDate(int idx)
                 TransactionFilterProxy::MAX_DATE);
         break;
     case ThisWeek: {
-        // Find last monday
+        // Find last Monday
         QDate startOfWeek = current.addDays(-(current.dayOfWeek()-1));
         transactionProxyModel->setDateRange(
                 QDateTime(startOfWeek),
@@ -444,4 +448,14 @@ void TransactionView::dateRangeChanged()
     transactionProxyModel->setDateRange(
             QDateTime(dateFrom->date()),
             QDateTime(dateTo->date()).addDays(1));
+}
+
+void TransactionView::focusTransaction(const QModelIndex &idx)
+{
+    if(!transactionProxyModel)
+        return;
+    QModelIndex targetIdx = transactionProxyModel->mapFromSource(idx);
+    transactionView->scrollTo(targetIdx);
+    transactionView->setCurrentIndex(targetIdx);
+    transactionView->setFocus();
 }
