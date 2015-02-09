@@ -10,7 +10,7 @@
 #include "util.h"
 #include "sync.h"
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(ANDROID)
 #include <sys/fcntl.h>
 #endif
 #if defined(ANDROID)
