@@ -17,6 +17,7 @@ enum DBErrors
 {
     DB_LOAD_OK,
     DB_CORRUPT,
+    DB_NONCRITICAL_ERROR,
     DB_TOO_NEW,
     DB_LOAD_FAIL,
     DB_NEED_REWRITE
@@ -115,10 +116,10 @@ public:
         return Read(std::string("bestblock"), locator);
     }
 
-    bool ReadDefaultKey(std::vector<unsigned char>& vchPubKey)
+    bool WriteOrderPosNext(int64 nOrderPosNext)
     {
-        vchPubKey.clear();
-        return Read(std::string("defaultkey"), vchPubKey);
+        nWalletDBUpdated++;
+        return Write(std::string("orderposnext"), nOrderPosNext);
     }
 
     bool WriteDefaultKey(const CPubKey& vchPubKey)
@@ -170,11 +171,17 @@ public:
 
     bool ReadAccount(const std::string& strAccount, CAccount& account);
     bool WriteAccount(const std::string& strAccount, const CAccount& account);
+private:
+    bool WriteAccountingEntry(const uint64 nAccEntryNum, const CAccountingEntry& acentry);
+public:
     bool WriteAccountingEntry(const CAccountingEntry& acentry);
     int64 GetAccountCreditDebit(const std::string& strAccount);
     void ListAccountCreditDebit(const std::string& strAccount, std::list<CAccountingEntry>& acentries);
 
-    int LoadWallet(CWallet* pwallet);
+    DBErrors ReorderTransactions(CWallet*);
+    DBErrors LoadWallet(CWallet* pwallet);
+    static bool Recover(CDBEnv& dbenv, std::string filename, bool fOnlyKeys);
+    static bool Recover(CDBEnv& dbenv, std::string filename);
 };
 
 #endif // BITCOIN_WALLETDB_H

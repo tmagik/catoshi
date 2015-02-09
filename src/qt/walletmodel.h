@@ -18,6 +18,10 @@ class COutput;
 class COutPoint;
 class uint256;
 class CCoinControl;
+ 
+QT_BEGIN_NAMESPACE
+class QTimer;
+QT_END_NAMESPACE
 
 class SendCoinsRecipient
 {
@@ -33,6 +37,7 @@ class WalletModel : public QObject
     Q_OBJECT
 public:
     explicit WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *parent = 0);
+    ~WalletModel();
 
     enum StatusCode // Returned by sendCoins
     {
@@ -63,6 +68,7 @@ public:
     qint64 getStake() const;
     qint64 getNewMint() const;
     qint64 getUnconfirmedBalance() const;
+    qint64 getImmatureBalance() const;
     int getNumTransactions() const;
     EncryptionStatus getEncryptionStatus() const;
 
@@ -141,12 +147,31 @@ private:
     qint64 cachedBalance;
     qint64 cachedStake;
     qint64 cachedUnconfirmedBalance;
+    qint64 cachedImmatureBalance;
     qint64 cachedNumTransactions;
     EncryptionStatus cachedEncryptionStatus;
+    int cachedNumBlocks;
+
+    QTimer *pollTimer;
+
+    void subscribeToCoreSignals();
+    void unsubscribeFromCoreSignals();
+    void checkBalanceChanged();
+
+
+public slots:
+    /* Wallet status might have changed */
+    void updateStatus();
+    /* New transaction, or transaction changed status */
+    void updateTransaction(const QString &hash, int status);
+    /* New, updated or removed address book entry */
+    void updateAddressBook(const QString &address, const QString &label, bool isMine, int status);
+    /* Current, immature or unconfirmed balance might have changed - emit 'balanceChanged' if so */
+    void pollBalanceChanged();
 
 signals:
     // Signal that balance in wallet changed
-    void balanceChanged(qint64 balance, qint64 stake, qint64 unconfirmedBalance);
+    void balanceChanged(qint64 balance, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance);
 
     // Number of transactions in wallet changed
     void numTransactionsChanged(int count);
@@ -161,10 +186,6 @@ signals:
 
     // Asynchronous error notification
     void error(const QString &title, const QString &message, bool modal);
-
-public slots:
-    void update();
-    void updateAddressList();
 };
 
 
