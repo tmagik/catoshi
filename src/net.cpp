@@ -61,7 +61,7 @@ static bool vfLimited[NET_MAX] = {};
 static CNode* pnodeLocalHost = NULL;
 CAddress addrSeenByPeer(CService("0.0.0.0", 0), nLocalServices);
 uint64 nLocalHostNonce = 0;
-array<int, THREAD_MAX> vnThreadsRunning;
+boost::array<int, THREAD_MAX> vnThreadsRunning;
 static std::vector<SOCKET> vhListenSocket;
 CAddrMan addrman;
 
@@ -1782,8 +1782,8 @@ void static Discover()
     if (!fDiscover)
         return;
 
-#ifdef WIN32
-    // Get local host IP
+#if defined(WIN32) || defined(ANDROID) // TODO FIXTHIS, https://github.com/kmackay/android-ifaddrs
+    // Get local host ip
     char pszHostName[1000] = "";
     if (gethostname(pszHostName, sizeof(pszHostName)) != SOCKET_ERROR)
     {
