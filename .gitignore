@@ -31,7 +31,7 @@ dist
 *.app
 *.dmg
 peerunity
-bluecoin
+blunity
 src/peerunityd
-src/bluecoind
+src/blunityd
 android/deps
