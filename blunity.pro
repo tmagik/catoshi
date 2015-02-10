@@ -1,5 +1,5 @@
 TEMPLATE = app
-TARGET = bluecoin
+TARGET = blunity
 VERSION = 1.2.1
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE USE_IPV6 BOOST_NO_SCOPED_ENUMS BOOST_NO_CXX11_SCOPED_ENUMS
@@ -323,7 +323,7 @@ SOURCES += src/qt/test/test_main.cpp \
 HEADERS += src/qt/test/uritests.h
 DEPENDPATH += src/qt/test
 QT += testlib
-TARGET = bluecoin-qt_test
+TARGET = blunity_test
 DEFINES += BITCOIN_QT_TEST
 }
 
@@ -408,7 +408,7 @@ macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm
 macx:LIBS += -framework Foundation -framework ApplicationServices -framework AppKit
 macx:DEFINES += MAC_OSX MSG_NOSIGNAL=0
 macx:ICON = src/qt/res/icons/bitcoin.icns
-macx:TARGET = "bluecoin-qt"
+macx:TARGET = "blunity"
 macx:QMAKE_CFLAGS_THREAD += -pthread
 macx:QMAKE_LFLAGS_THREAD += -pthread
 macx:QMAKE_CXXFLAGS_THREAD += -pthread

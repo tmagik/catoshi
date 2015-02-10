@@ -80,7 +80,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     resize(850, 550);
     setWindowTitle(tr("Blunity Wallet"));
 #ifndef Q_WS_MAC
-    setWindowIcon(QIcon(":icons/peerunity_icon"));
+    setWindowIcon(QIcon(":icons/blunity_icon"));
 #else
     setUnifiedTitleAndToolBarOnMac(true);
     QApplication::setAttribute(Qt::AA_DontShowIconsInMenus);
@@ -226,7 +226,7 @@ void BitcoinGUI::createActions()
     tabGroup->addAction(receiveCoinsAction);
 
     sendCoinsAction = new QAction(QIcon(":/icons/send"), tr("&Send coins"), this);
-    sendCoinsAction->setToolTip(tr("Send coins to a Peercoin address"));
+    sendCoinsAction->setToolTip(tr("Send coins to a Bluecoin address"));
     sendCoinsAction->setCheckable(true);
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
     tabGroup->addAction(sendCoinsAction);
@@ -262,8 +262,8 @@ void BitcoinGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("&About Blunity"), this);
-    aboutAction->setToolTip(tr("Show information about Peercoin"));
+    aboutAction = new QAction(QIcon(":/icons/blunity_tooltip"), tr("&About Blunity"), this);
+    aboutAction->setToolTip(tr("Show information about Bluecoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(tr("About &Qt"), this);
     aboutQtAction->setToolTip(tr("Show information about Qt"));
@@ -271,7 +271,7 @@ void BitcoinGUI::createActions()
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
     optionsAction->setToolTip(tr("Modify configuration options for Blunity"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    toggleHideAction = new QAction(QIcon(":/icons/peerunity_tooltip"), tr("Show/Hide &Blunity"), this);
+    toggleHideAction = new QAction(QIcon(":/icons/blunity_tooltip"), tr("Show/Hide &Blunity"), this);
     toggleHideAction->setToolTip(tr("Show or hide the Blunity window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
@@ -363,14 +363,14 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
             QString title_testnet = windowTitle() + QString(" ") + tr("[testnet]");
             setWindowTitle(title_testnet);
 #ifndef Q_WS_MAC
-            setWindowIcon(QIcon(":icons/peerunity_icon"));
+            setWindowIcon(QIcon(":icons/blunity_icon"));
 #else
-            MacDockIconHandler::instance()->setIcon(QIcon(":icons/peerunity_icon"));
+            MacDockIconHandler::instance()->setIcon(QIcon(":icons/blunity_icon"));
 #endif
             if(trayIcon)
             {
                 trayIcon->setToolTip(title_testnet);
-                trayIcon->setIcon(QIcon(":/icons/peerunity_tooltip"));
+                trayIcon->setIcon(QIcon(":/icons/blunity_tooltip"));
             }
         }
 
@@ -427,7 +427,7 @@ void BitcoinGUI::createTrayIcon()
     trayIconMenu = new QMenu(this);
     trayIcon->setContextMenu(trayIconMenu);
     trayIcon->setToolTip(tr("Blunity client"));
-    trayIcon->setIcon(QIcon(":/icons/peerunity_tooltip"));
+    trayIcon->setIcon(QIcon(":/icons/blunity_tooltip"));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
             this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
     trayIcon->show();
@@ -519,7 +519,7 @@ void BitcoinGUI::setNumConnections(int count)
     default: icon = ":/icons/connect_4"; break;
     }
     labelConnectionsIcon->setPixmap(QIcon(icon).pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to Peercoin network", "", count));
+    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to Bluecoin network", "", count));
 }
 
 void BitcoinGUI::setNumBlocks(int count)

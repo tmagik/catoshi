@@ -17,7 +17,7 @@
 // the list of ancient coinage, from oldest known to more recent. 
 // You can find ideas for future client names, here: http://en.wikipedia.org/wiki/List_of_historical_currencies
 
-const std::string CLIENT_NAME("Catoshi/Blu2");
+const std::string CLIENT_NAME("Catoshi/Blu");
 
 // Client version number
 #define CLIENT_VERSION_SUFFIX   ""
