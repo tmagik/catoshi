@@ -355,6 +355,7 @@ OTHER_FILES += \
 isEmpty(BOOST_LIB_SUFFIX) {
     macx:BOOST_LIB_SUFFIX = -mt
     windows:BOOST_LIB_SUFFIX = -mgw44-mt-1_43
+    android:BOOST_LIB_SUFFIX = -gcc-mt-1_53
 }
 
 isEmpty(BOOST_THREAD_LIB_SUFFIX) {
