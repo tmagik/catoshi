@@ -3,10 +3,10 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "net.h"
-#include "bitcoinrpc.h"
-#include "wallet.h"
-#include "db.h"
-#include "walletdb.h"
+#include "codecoinrpc.h"
+//#include "wallet.h"
+//#include "db.h"
+//#include "walletdb.h"
 #ifdef ENABLE_ALERTS
 #include "alert.h"
 #endif
@@ -54,16 +54,23 @@ Value getpeerinfo(const Array& params, bool fHelp)
         Object obj;
 
         obj.push_back(Pair("addr", stats.addrName));
-        obj.push_back(Pair("services", strprintf("%08"PRI64x, stats.nServices)));
+        obj.push_back(Pair("services", strprintf("%08" PRIx64, stats.nServices)));
         obj.push_back(Pair("lastsend", (boost::int64_t)stats.nLastSend));
         obj.push_back(Pair("lastrecv", (boost::int64_t)stats.nLastRecv));
+        obj.push_back(Pair("bytessent", (boost::int64_t)stats.nSendBytes));
+        obj.push_back(Pair("bytesrecv", (boost::int64_t)stats.nRecvBytes));
+        obj.push_back(Pair("blocksrequested", (boost::int64_t)stats.nBlocksRequested));
         obj.push_back(Pair("conntime", (boost::int64_t)stats.nTimeConnected));
         obj.push_back(Pair("version", stats.nVersion));
-        obj.push_back(Pair("subver", stats.strSubVer));
+        // Use the sanitized form of subver here, to avoid tricksy remote peers from
+        // corrupting or modifiying the JSON output by putting special characters in
+        // their ver message.
+        obj.push_back(Pair("subver", stats.cleanSubVer));
         obj.push_back(Pair("inbound", stats.fInbound));
-        obj.push_back(Pair("releasetime", (boost::int64_t)stats.nReleaseTime));
         obj.push_back(Pair("startingheight", stats.nStartingHeight));
         obj.push_back(Pair("banscore", stats.nMisbehavior));
+        if (stats.fSyncNode)
+            obj.push_back(Pair("syncnode", true));
 
         ret.push_back(obj);
     }
@@ -205,10 +212,10 @@ Value getaddednodeinfo(const Array& params, bool fHelp)
     return ret;
 }
 
+#ifdef ENABLE_ALERTS
 extern CCriticalSection cs_mapAlerts;
 extern map<uint256, CAlert> mapAlerts;
 
-#ifdef ENABLE_ALERTS 
 // ppcoin: send alert.  
 // There is a known deadlock situation with ThreadMessageHandler
 // ThreadMessageHandler: holds cs_vSend and acquiring cs_main in SendMessages()
