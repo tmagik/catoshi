@@ -1,7 +1,12 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2011-2013 The PPCoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2013 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 #include <boost/assign/list_of.hpp> // for 'map_list_of()'
 #include <boost/foreach.hpp>
@@ -10,53 +15,81 @@
 
 #include "db.h"
 #include "main.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 namespace Checkpoints
 {
-    typedef std::map<int, uint256> MapCheckpoints;   // hardened checkpoints
+	typedef std::map<int, uint256> MapCheckpoints;
 
-    //
-    // What makes a good checkpoint block?
-    // + Is surrounded by blocks with reasonable timestamps
-    //   (no blocks before with a timestamp after, none after with
-    //    timestamp before)
-    // + Contains no strange transactions
-    //
-    static MapCheckpoints mapCheckpoints =
-        boost::assign::map_list_of
-        ( 0, hashGenesisBlockOfficial )
-        ( 2,     uint256("0x00000ffe4373ba8013484359b185f28dae34a9bdc788df8c477ccf874504a21d") )
-        ( 900,   uint256("0x000000000175196ff80c69b0dd26e6424ce50774f7a65186527e65d97e298e3f") )
-		( 14080, uint256("0x00000000173a75885985dc7d578039e3ce113a6a9139c1da33e78f79476d259b") )
-		( 32319, uint256("0x0000000006ac60facc596e5ad402840c08973f4ccd65832eee899a475975dc26") )
-		( 34600, uint256("0x0000000003a4843cbde6ba933de819cb5e3946d88f271ae5a65d29e6d6fb5be1") )
-		;
+	// How many times we expect transactions after the last checkpoint to
+	// be slower. This number is a compromise, as it can't be accurate for
+	// every system. When reindexing from a fast disk with a slow CPU, it
+	// can be up to 20, while when downloading from a slow network with a
+	// fast multicore CPU, it won't be much higher than 1.
+	static const double fSigcheckVerificationFactor = 5.0;
 
-    static MapCheckpoints mapCheckpointsTestnet =
-        boost::assign::map_list_of
-        ( 0, hashGenesisBlockTestNet )
-        ;
+	const CCheckpointData &Checkpoints() {
+		/* provided by COIN_brand.cpp */
+		assert(data.nTimeLastCheckpoint > 1);
+		return data;
+	}
 
-    bool CheckHardened(int nHeight, const uint256& hash)
-    {
-        MapCheckpoints& checkpoints = (fTestNet ? mapCheckpointsTestnet : mapCheckpoints);
+	bool CheckHardened(int nHeight, const uint256& hash)
+	{
+#ifdef OPTIONAL_CHECKPOINTS
+		//if (fTestNet) return true;
+		if (!GetBoolArg("-checkpoints", true))
+		return true;
+#endif
 
-        MapCheckpoints::const_iterator i = checkpoints.find(nHeight);
-        if (i == checkpoints.end()) return true;
-        return hash == i->second;
-    }
+		const MapCheckpoints& checkpoints = *Checkpoints().mapCheckpoints;
+
+		MapCheckpoints::const_iterator i = checkpoints.find(nHeight);
+		if (i == checkpoints.end()) return true;
+		return hash == i->second;
+	}
+
+	// Guess how far we are in the verification process at the given block index
+	double GuessVerificationProgress(CBlockIndex *pindex) {
+	if (pindex==NULL)
+		return 0.0;
+
+		int64_t nNow = time(NULL);
+
+		double fWorkBefore = 0.0; // Amount of work done before pindex
+		double fWorkAfter = 0.0;  // Amount of work left after pindex (estimated)
+		// Work is defined as: 1.0 per transaction before the last checkoint, and
+		// fSigcheckVerificationFactor per transaction after.
+
+		const CCheckpointData &data = Checkpoints();
+
+		if (pindex->nChainTx <= data.nTransactionsLastCheckpoint) {
+			double nCheapBefore = pindex->nChainTx;
+			double nCheapAfter = data.nTransactionsLastCheckpoint - pindex->nChainTx;
+			double nExpensiveAfter = (nNow - data.nTimeLastCheckpoint)/86400.0*data.fTransactionsPerDay;
+			fWorkBefore = nCheapBefore;
+			fWorkAfter = nCheapAfter + nExpensiveAfter*fSigcheckVerificationFactor;
+		} else {
+			double nCheapBefore = data.nTransactionsLastCheckpoint;
+			double nExpensiveBefore = pindex->nChainTx - data.nTransactionsLastCheckpoint;
+			double nExpensiveAfter = (nNow - pindex->nTime)/86400.0*data.fTransactionsPerDay;
+			fWorkBefore = nCheapBefore + nExpensiveBefore*fSigcheckVerificationFactor;
+			fWorkAfter = nExpensiveAfter*fSigcheckVerificationFactor;
+		}
+
+		return fWorkBefore / (fWorkBefore + fWorkAfter);
+	}
 
     int GetTotalBlocksEstimate()
     {
-        MapCheckpoints& checkpoints = (fTestNet ? mapCheckpointsTestnet : mapCheckpoints);
+        const MapCheckpoints& checkpoints = *Checkpoints().mapCheckpoints;
 
         return checkpoints.rbegin()->first;
     }
 
     CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex)
     {
-        MapCheckpoints& checkpoints = (fTestNet ? mapCheckpointsTestnet : mapCheckpoints);
+        const MapCheckpoints& checkpoints = *Checkpoints().mapCheckpoints;
 
         BOOST_REVERSE_FOREACH(const MapCheckpoints::value_type& i, checkpoints)
         {
@@ -68,6 +101,7 @@ namespace Checkpoints
         return NULL;
     }
 
+#if defined(SYNC_CHECKPOINTS)
     // ppcoin: synchronized checkpoint (centrally broadcasted)
     uint256 hashSyncCheckpoint = 0;
     uint256 hashPendingCheckpoint = 0;
@@ -438,4 +472,5 @@ bool CSyncCheckpoint::ProcessSyncCheckpoint(CNode* pfrom)
     Checkpoints::checkpointMessagePending.SetNull();
     printf("ProcessSyncCheckpoint: sync-checkpoint at %s\n", hashCheckpoint.ToString().c_str());
     return true;
+#endif /* SYNC_CHECKPOINTS */
 }

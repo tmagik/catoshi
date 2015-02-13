@@ -3,7 +3,7 @@
 
 #include <QFrame>
 
-#include "uint256.h"
+#include "uintBIG.h"
 
 
 class CTxIn;
@@ -24,7 +24,7 @@ class MultisigInputEntry : public QFrame
     void setModel(WalletModel *model);
     bool validate();
     CTxIn getInput();
-    int64 getAmount();
+    int64_t getAmount();
     QString getRedeemScript();
     void setTransactionId(QString transactionId);
     void setTransactionOutputIndex(int index);

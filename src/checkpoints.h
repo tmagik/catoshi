@@ -1,11 +1,16 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2011-2013 The PPCoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef BITCOIN_CHECKPOINT_H
-#define  BITCOIN_CHECKPOINT_H
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef CODECOIN_CHECKPOINT_H
+#define CODECOIN_CHECKPOINT_H
 
 #include <map>
+#include <boost/assign/list_of.hpp>  // for 'map_list_of()'
 #include "net.h"
 #include "util.h"
 
@@ -29,6 +34,22 @@ namespace Checkpoints
     // Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
     CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex);
 
+	double GuessVerificationProgress(CBlockIndex *pindex);
+
+	typedef std::map<int, uint256> MapCheckpoints;
+
+	struct CCheckpointData {
+		const MapCheckpoints *mapCheckpoints;
+		int64_t nTimeLastCheckpoint;
+		int64_t nTransactionsLastCheckpoint;
+		double fTransactionsPerDay;
+	};
+
+	extern const CCheckpointData data;
+
+#if !defined(SYNC_CHECKPOINTS)
+}
+#else /* SYNC_CHECKPOINTS */
     extern uint256 hashSyncCheckpoint;
     extern CSyncCheckpoint checkpointMessage;
     extern uint256 hashInvalidCheckpoint;
@@ -137,5 +158,6 @@ public:
     bool CheckSignature();
     bool ProcessSyncCheckpoint(CNode* pfrom);
 };
+#endif /* SYNC_CHECKPOINTS */
 
 #endif

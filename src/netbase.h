@@ -19,13 +19,14 @@ extern int nConnectTimeout;
 
 enum Network
 {
-    NET_UNROUTABLE,
-    NET_IPV4,
-    NET_IPV6,
-    NET_TOR,
-    NET_I2P,
-
-    NET_MAX,
+	NET_UNROUTABLE,
+	NET_IPV4,
+	NET_IPV6,
+	NET_TOR,
+	NET_I2P,
+	NET_BLU,	/* placeholder */
+			/* add new networks here so we don't conflict */	
+	NET_MAX,
 };
 
 extern int nConnectTimeout;
@@ -67,7 +68,7 @@ class CNetAddr
         std::string ToString() const;
         std::string ToStringIP() const;
         unsigned int GetByte(int n) const;
-        uint64 GetHash() const;
+        uint64_t GetHash() const;
         bool GetInAddr(struct in_addr* pipv4Addr) const;
         std::vector<unsigned char> GetGroup() const;
         int GetReachabilityFrom(const CNetAddr *paddrPartner = NULL) const;
