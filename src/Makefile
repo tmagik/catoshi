@@ -159,8 +159,7 @@ OBJS= $(OBJDIR)/$(COIN_BRAND).o \
     $(OBJDIR)/txdb.o
 
 
-ifeq ($(COIN_BRAND),uro)
-OBJS += \
+X11_OBJS = \
     $(OBJDIR)/cubehash.o \
     $(OBJDIR)/luffa.o \
     $(OBJDIR)/aes_helper.o \
@@ -173,7 +172,17 @@ OBJS += \
     $(OBJDIR)/jh.o \
     $(OBJDIR)/keccak.o \
     $(OBJDIR)/skein.o
+
+ifeq ($(COIN_BRAND),uro)
+OBJS += $(X11_OBJS)
 endif
+ifeq ($(COIN_BRAND),givecoin)
+OBJS += $(X11_OBJS)
+endif
+ifeq ($(COIN_BRAND),bluecoin)
+OBJS += $(X11_OBJS)
+endif
+
 
 
 ifdef USE_SSE2
