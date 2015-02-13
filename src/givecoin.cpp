@@ -20,16 +20,17 @@
 using namespace std;
 using namespace boost;
 
-uint256 hashGenesisBlock = 0;			// TODO: objectize this for multicoin support
-
+/* TODO: make this part of a decent C++ object with proper constructors */
+uint256 hashGenesisBlock = 0;		
 const string strMessageMagic = "Givecoin Signed Message:\n";
+unsigned char pchMessageStart[4];
 
 /* stake stuff TODO: */
-static CBigNum bnProofOfWorkLimit(~uint256(0) >> 20);
-static CBigNum bnProofOfStakeLimit(~uint256(0) >> 20);
+CBigNum bnProofOfWorkLimit(~uint256(0) >> 20);
+CBigNum bnProofOfStakeLimit(~uint256(0) >> 20);
 
-static CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 20);
-static CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 20);
+//CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 20);
+//CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 20);
 
 unsigned int nStakeMinAge = 60 * 60 * 24 * 2;	// minimum age for coin age: 2d
 unsigned int nStakeMaxAge = 60 * 60 * 24 * 100;	// stake age of full weight: -1
@@ -63,17 +64,17 @@ const char *strTestNetDNSSeed[][2] = {
     {NULL, NULL}
 };
 
-int64_t static GetBlockValue(int nHeight, int64_t nFees)
+int64_t GetBlockValue(CBlockIndex *block, int64_t nFees)
 {
     int64_t nSubsidy = 0;
-    if (nHeight <= 5) {    // For Each 5 blocks will have 0.5M coins
+    if (block->nHeight <= 5) {    // For Each 5 blocks will have 0.5M coins
        nSubsidy = 5000000 * COIN;
     }
     else {
        nSubsidy = 1000 * COIN;
     }
     // Subsidy is cut in half every 250,000 blocks, which will occur approximately every .5 year
-    nSubsidy >>= (nHeight / 250000); // Givecoin: 250k blocks in ~.5 years
+    nSubsidy >>= (block->nHeight / 250000); // Givecoin: 250k blocks in ~.5 years
     //
     if (nSubsidy < COIN) nSubsidy = COIN;  // Minimum Number of Coin = 1
     return nSubsidy + nFees;
@@ -106,6 +107,11 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
     if (bnResult > bnProofOfWorkLimit)
         bnResult = bnProofOfWorkLimit;
     return bnResult.GetCompact();
+}
+
+bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock)
+{
+	return true;	
 }
 
 unsigned int static GetNextWorkRequired_V1(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
@@ -279,6 +285,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         return GetNextWorkRequired_V2(pindexLast, pblock);
 }
 
+
 bool LoadBlockIndex()
 {
     if (fTestNet)
@@ -304,7 +311,6 @@ bool LoadBlockIndex()
 
     return true;
 }
-
 
 bool InitBlockIndex() {
     // Check whether we're already initialized

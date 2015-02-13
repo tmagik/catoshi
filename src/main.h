@@ -130,7 +130,7 @@ void RegisterWallet(CWallet* pwalletIn);
 /** Unregister a wallet from core */
 void UnregisterWallet(CWallet* pwalletIn);
 /** Push an updated transaction to all registered wallets */
-void SyncWithWallets(const uint256 &hash, const CTransaction& tx, const CBlock* pblock = NULL, bool fUpdate = false);
+void SyncWithWallets(const uint256 &hash, const CTransaction& tx, const CBlock* pblock = NULL, bool fUpdate = false, bool fConnect = true);
 /** Process an incoming block */
 bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp = NULL);
 /** Check whether enough disk space is available for an incoming block */
