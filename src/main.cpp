@@ -28,8 +28,6 @@ using namespace boost;
 // Global state
 //
 
-extern CBigNum bnProofOfWorkLimit; // in codecoin.cpp
-
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
 
@@ -627,12 +625,14 @@ bool CTransaction::CheckTransaction(CValidationState &state) const
 }
 
 int64_t CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
-							  enum GetMinFee_mode mode) const
+		enum GetMinFee_mode mode, unsigned int optnBytes) const
 {
 	// Base fee is either nMinTxFee or nMinRelayTxFee
 	int64_t nBaseFee = (mode == GMF_RELAY) ? nMinRelayTxFee : nMinTxFee;
 
-	unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
+#warning "hack for coincontroldialog.cpp that needs nBytes" 
+	unsigned int nBytes = max(optnBytes,
+		::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION));
 	unsigned int nNewBlockSize = nBlockSize + nBytes;
 	int64_t nMinFee = (1 + (int64_t)nBytes / 1000) * nBaseFee;
 
@@ -1114,14 +1114,19 @@ int generateMTRandom(unsigned int s, int range)
 	return dist(gen);
 }
 
+#endif
 // ppcoin: find last block index up to pindex
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake)
 {
+#if !defined(PPCOINSTAKE)
+	/* better to assert than look for things that don't exist? */
+	assert(fProofOfStake == false);
+	return NULL;
+#endif
 	while (pindex && pindex->pprev && (pindex->IsProofOfStake() != fProofOfStake))
 		pindex = pindex->pprev;
 	return pindex;
 }
-#endif
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits)
 {

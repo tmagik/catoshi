@@ -9,6 +9,11 @@
 
 #include "walletdb.h"
 #include "wallet.h"
+/* hack from http://www.robertnitsch.de/notes/cpp/cpp11_boost_filesystem_undefined_reference_copy_file */
+/* http://www.ridgesolutions.ie/index.php/2013/05/30/boost-link-error-undefined-reference-to-boostfilesystemdetailcopy_file/*/
+/* also seems to need to exist in codecoin.pro for qt */
+#define BOOST_NO_SCOPED_ENUMS
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/version.hpp>
 #include <boost/filesystem.hpp>
 

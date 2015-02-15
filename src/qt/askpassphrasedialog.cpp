@@ -3,6 +3,7 @@
 
 #include "guiconstants.h"
 #include "walletmodel.h"
+#include "codecoin.h"
 
 #include <QMessageBox>
 #include <QPushButton>
@@ -114,7 +115,7 @@ void AskPassphraseDialog::accept()
                 if(model->setWalletEncrypted(true, newpass1))
                 {
                     QMessageBox::warning(this, tr("Wallet encrypted"),
-                                         tr("Blunity will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your BlueCoins from being stolen by malware infecting your computer."));
+                                         tr(BRAND " will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your " BRAND_upper "s from being stolen by malware infecting your computer."));
                     QApplication::quit();
                 }
                 else

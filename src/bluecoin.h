@@ -42,5 +42,8 @@ static const int64 nMaxClockDrift = 2 * 60 * 60;        // two hours
 #define BRAND "GiveCoin"
 #define BRAND_upper "GiveCoin"
 #define BRAND_lower "givecoin"
+#define BRAND_SYM "ß"
+#define BRAND_CODE "BLU"
+
 
 #endif

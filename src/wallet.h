@@ -566,8 +566,7 @@ public:
         }
     }
 
-#if defined(BRAND_bluecoin) || defined(BRAND_givestake)
-    void MarkUnspent(unsigned int nOut)
+void MarkUnspent(unsigned int nOut)
     {
         if (nOut >= vout.size())
             throw std::runtime_error("CWalletTx::MarkUnspent() : nOut out of range");
@@ -578,7 +577,6 @@ public:
             fAvailableCreditCached = false;
         }
     }
-#endif
 
     bool IsSpent(unsigned int nOut) const
     {

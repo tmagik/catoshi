@@ -50,7 +50,9 @@ qint64 WalletModel::getUnconfirmedBalance() const
 
 qint64 WalletModel::getStake() const
 {
-    return wallet->GetStake();
+#warning fixeme
+    return 0;
+    //return wallet->GetStake();
 }
 
 qint64 WalletModel::getImmatureBalance() const
@@ -151,7 +153,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         }
         setAddress.insert(rcp.address);
 
-        if(rcp.amount < MIN_TXOUT_AMOUNT)
+        if(rcp.amount < CTransaction::nMinTxFee)
         {
             return InvalidAmount;
         }
@@ -164,7 +166,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
     }
 
     // we do not use getBalance() here, because some coins could be locked or coin control could be active
-    int64 nBalance = 0;
+    qint64 nBalance = 0;
     std::vector<COutput> vCoins;
     wallet->AvailableCoins(vCoins, true, coinControl);
     BOOST_FOREACH(const COutput& out, vCoins)
@@ -184,7 +186,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         LOCK2(cs_main, wallet->cs_wallet);
 
         // Sendmany
-        std::vector<std::pair<CScript, int64> > vecSend;
+        std::vector<std::pair<CScript, int64_t> > vecSend;
         foreach(const SendCoinsRecipient &rcp, recipients)
         {
             CScript scriptPubKey;
@@ -194,8 +196,9 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
 
         CWalletTx wtx;
         CReserveKey keyChange(wallet);
-        int64 nFeeRequired = 0;
-        bool fCreated = wallet->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, coinControl);
+        int64_t nFeeRequired = 0;
+        std::string strFailReason;
+        bool fCreated = wallet->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, strFailReason, coinControl);
 
         if(!fCreated)
         {
@@ -205,7 +208,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
             }
             return TransactionCreationFailed;
         }
-        if(!uiInterface.ThreadSafeAskFee(nFeeRequired, tr("Sending...").toStdString()))
+        if(!uiInterface.ThreadSafeAskFee(nFeeRequired))
         {
             return Aborted;
         }

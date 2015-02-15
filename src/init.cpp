@@ -198,7 +198,7 @@ bool AppInit(int argc, char* argv[])
             std::string strUsage = _(BRAND_upper " version") + " " + FormatFullVersion() + "\n\n" +
                 _("Usage:") + "\n" +
                   "  " BRAND_lower "d [options]                     " + "\n" +
-                  "  " BRAND_lower "d [options] <command> [params]  " + _("Send command to -server or bluecoind") + "\n" +
+                  "  " BRAND_lower "d [options] <command> [params]  " + _("Send command to -server or " BRAND_lower "d") + "\n" +
                   "  " BRAND_lower "d [options] help                " + _("List commands") + "\n" +
                   "  " BRAND_lower "d [options] help <command>      " + _("Get help for a command") + "\n";
 

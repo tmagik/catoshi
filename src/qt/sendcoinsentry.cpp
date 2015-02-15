@@ -6,6 +6,7 @@
 #include "walletmodel.h"
 #include "optionsmodel.h"
 #include "addresstablemodel.h"
+#include "codecoin.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -22,7 +23,7 @@ SendCoinsEntry::SendCoinsEntry(QWidget *parent) :
 #endif
 
 #if QT_VERSION >= 0x040700
-    ui->payTo->setPlaceholderText(tr("Enter a BlueCoin address"));
+    ui->payTo->setPlaceholderText(tr("Enter a " BRAND_upper " address"));
     ui->addAsLabel->setPlaceholderText(tr("Enter a label for this address to add it to your address book"));
 #endif
     setFocusPolicy(Qt::TabFocus);

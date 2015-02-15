@@ -43,10 +43,10 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
         strHTML.reserve(4000);
         strHTML += "<html><font face='verdana, arial, helvetica, sans-serif'>";
 
-        int64 nTime = wtx.GetTxTime();
-        int64 nCredit = wtx.GetCredit();
-        int64 nDebit = wtx.GetDebit();
-        int64 nNet = nCredit - nDebit;
+        qint64 nTime = wtx.GetTxTime();
+        qint64 nCredit = wtx.GetCredit();
+        qint64 nDebit = wtx.GetDebit();
+        qint64 nNet = nCredit - nDebit;
 
         strHTML += tr("<b>Status:</b> ") + FormatTxStatus(wtx);
         int nRequests = wtx.GetRequestCount();
@@ -130,7 +130,7 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
             //
             // Coinbase
             //
-            int64 nUnmatured = 0;
+            qint64 nUnmatured = 0;
             BOOST_FOREACH(const CTxOut& txout, wtx.vout)
                 nUnmatured += wallet->GetCredit(txout);
             strHTML += tr("<b>Credit:</b> ");
@@ -189,13 +189,13 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
                 if (fAllToMe)
                 {
                     // Payment to self
-                    int64 nChange = wtx.GetChange();
-                    int64 nValue = nCredit - nChange;
+                    qint64 nChange = wtx.GetChange();
+                    qint64 nValue = nCredit - nChange;
                     strHTML += tr("<b>Debit:</b> ") + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, -nValue) + "<br>";
                     strHTML += tr("<b>Credit:</b> ") + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, nValue) + "<br>";
                 }
 
-                int64 nTxFee = nDebit - wtx.GetValueOut();
+                qint64 nTxFee = nDebit - wtx.GetValueOut();
                 if (nTxFee > 0)
                     strHTML += tr("<b>Transaction fee:</b> ") + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC,-nTxFee) + "<br>";
             }
@@ -251,7 +251,7 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
             strHTML += "<br><b>Transaction:</b><br>";
             strHTML += GUIUtil::HtmlEscape(wtx.ToString(), true);
 
-            CTxDB txdb("r"); // To fetch source txouts
+            //CTxDB txdb("r"); // To fetch source txouts
 
             strHTML += "<br><b>Inputs:</b>";
             strHTML += "<ul>";
@@ -263,6 +263,8 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
                     COutPoint prevout = txin.prevout;
 
                     CTransaction prev;
+#warning update
+                    /*
                     if(txdb.ReadDiskTx(prevout.hash, prev))
                     {
                         if (prevout.n < prev.vout.size())
@@ -280,6 +282,7 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
                             strHTML = strHTML + " IsMine=" + (wallet->IsMine(vout) ? "true" : "false") + "</li>";
                         }
                     }
+                    */
                 }
             }
             strHTML += "</ul>";

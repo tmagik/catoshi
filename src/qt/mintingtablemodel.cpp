@@ -237,7 +237,7 @@ MintingTableModel::~MintingTableModel()
 void MintingTableModel::update()
 {
     QList<uint256> updated;
-
+#if defined(PPCOINSTAKE)
     // Check if there are changes to wallet map
     {
         TRY_LOCK(wallet->cs_wallet, lockWallet);
@@ -260,7 +260,9 @@ void MintingTableModel::update()
             wallet->vMintingWalletUpdated.clear();
         }
     }
-
+#else
+    qDebug("MintingTableModel::update called on PoW-only coin");
+#endif
     if(!updated.empty())
     {
         priv->updateWallet(updated);
@@ -344,18 +346,18 @@ QVariant MintingTableModel::data(const QModelIndex &index, int role) const
         case TxHash:
             return formatTxHash(rec);
         case Age:
-            return rec->getAge();
+            return (qint64)rec->getAge();
         case CoinDay:
-            return rec->coinAge;
+            return (qint64)rec->coinAge;
         case Balance:
-            return rec->nValue;
+            return (qint64)rec->nValue;
         case MintProbability:
             return getDayToMint(rec);
         }
         break;
       case Qt::BackgroundColorRole:
         int minAge = nStakeMinAge / 60 / 60 / 24;
-        int maxAge = STAKE_MAX_AGE / 60 / 60 / 24;
+        int maxAge = nStakeMaxAge / 60 / 60 / 24;
         if(rec->getAge() < minAge)
         {
             return COLOR_MINT_YOUNG;
@@ -427,7 +429,7 @@ QString MintingTableModel::formatTxCoinDay(const KernelRecord *wtx) const
 
 QString MintingTableModel::formatTxAge(const KernelRecord *wtx) const
 {
-    int64 nAge = wtx->getAge();
+    qint64 nAge = wtx->getAge();
     return QString::number(nAge);
 }
 
