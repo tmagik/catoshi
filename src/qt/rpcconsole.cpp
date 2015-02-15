@@ -2,8 +2,9 @@
 #include "ui_rpcconsole.h"
 
 #include "clientmodel.h"
-#include "bitcoinrpc.h"
+#include "codecoinrpc.h"
 #include "guiutil.h"
+#include "codecoin.h"
 
 #include <QTime>
 #include <QTimer>
@@ -303,7 +304,7 @@ void RPCConsole::clear()
                 "b { color: #006060; } "
                 );
 
-    message(CMD_REPLY, tr("Welcome to the Blunity RPC console.<br>"
+    message(CMD_REPLY, tr("Welcome to the " BRAND " RPC console.<br>"
                           "Use up and down arrows to navigate history, and <b>Ctrl-L</b> to clear screen.<br>"
                           "Type <b>help</b> for an overview of available commands."), true);
 }

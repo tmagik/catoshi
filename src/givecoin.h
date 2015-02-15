@@ -30,9 +30,14 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 /** really only used in rpcmining.cpp **/
 static const int RETARGET_INTERVAL = 15;
 
-#define BRAND "GiveCoin"
+extern const unsigned int nStakeMinAge;
+extern const unsigned int nStakeMaxAge;
+extern const unsigned int nMinTxOutAmount; // set to = CTransaction::nMinTxFee;
+
+#define BRAND "Givecoin"
 #define BRAND_upper "GiveCoin"
 #define BRAND_lower "givecoin"
 #define BRAND_domain "givecoin.org"
+#define BRAND_CODE "GIVE"
 
 #endif

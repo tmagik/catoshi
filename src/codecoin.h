@@ -4,6 +4,16 @@
 #ifndef CODECOIN_codecoin_H
 #define CODECOIN_codecoin_H
 
+#include "bignum.h"
+#include <string>
+
+/* TODO: make this a class */
+extern const std::string strMessageMagic;
+extern const CBigNum bnProofOfWorkLimit;
+extern const CBigNum bnProofOfStakeLimit;
+extern const unsigned int nStakeMinAge;
+extern const unsigned int nStakeMaxAge;
+
 #ifdef BRAND_solarcoin
 #include "solarcoin.h"
 #elif BRAND_catcoin
@@ -16,6 +26,10 @@
 #include "givecoin.h"
 #else
 #error "No BRAND_*COIN defined!!"
+#endif
+
+#ifndef BRAND_SYM
+#define BRAND_SYM BRAND_CODE
 #endif
 
 #endif

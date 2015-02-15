@@ -438,10 +438,10 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
     }
 
     QString sPriorityLabel      = "";
-    int64 nAmount               = 0;
-    int64 nPayFee               = 0;
-    int64 nAfterFee             = 0;
-    int64 nChange               = 0;
+    qint64 nAmount               = 0;
+    qint64 nPayFee               = 0;
+    qint64 nAfterFee             = 0;
+    qint64 nChange               = 0;
     unsigned int nBytes         = 0;
     unsigned int nBytesInputs   = 0;
     double dPriority            = 0;
@@ -498,19 +498,21 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
             // if sub-cent change is required, the fee must be raised to at least MIN_TX_FEE
             // or until nChange becomes zero
             // NOTE: this depends on the exact behaviour of GetMinFee
-            if (nPayFee < MIN_TX_FEE && nChange > 0 && nChange < CENT)
+            if (nPayFee < CTransaction::nMinTxFee && nChange > 0 && nChange < CENT)
             {
-                int64 nMoveToFee = min(nChange, MIN_TX_FEE - nPayFee);
+                int64_t nMoveToFee = min(nChange, CTransaction::nMinTxFee - nPayFee);
                 nChange -= nMoveToFee;
                 nPayFee += nMoveToFee;
             }
 
+#if defined(PPCOINSTAKE)
             // ppcoin: sub-cent change is moved to fee
             if (nChange > 0 && nChange < MIN_TXOUT_AMOUNT)
             {
                 nPayFee += nChange;
                 nChange = 0;
             }
+#endif /* PPCOINSTAKE */
 
             if (nChange > 0)
             {
@@ -527,14 +529,14 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
             sPriorityLabel = CoinControlDialog::getPriorityLabel(dPriority);
 
             // Fee
-            int64 nFee = nTransactionFee * (1 + (int64)nBytes / 1000);
+            qint64 nFee = nTransactionFee * (1 + (int64_t)nBytes / 1000);
 
             // Min Fee
-            int64 nMinFee = txDummy.GetMinFee(1, false, GMF_SEND, nBytes);
+            qint64 nMinFee = txDummy.GetMinFee(1, false, GMF_SEND, nBytes);
 
-            if (nPayFee < max(nFee, nMinFee))
+            if (nPayFee < max(nFee, (qint64)nMinFee))
             {
-                nPayFee = max(nFee, nMinFee);
+                nPayFee = max(nFee, (qint64)nMinFee);
                 continue;
             }
 
@@ -643,7 +645,7 @@ void CoinControlDialog::updateView()
             itemWalletAddress->setText(COLUMN_ADDRESS, sWalletAddress);
         }
 
-        int64 nSum = 0;
+        qint64 nSum = 0;
         double dPrioritySum = 0;
         int nChildren = 0;
         int nInputSum = 0;
@@ -695,7 +697,7 @@ void CoinControlDialog::updateView()
 
             // amount
             itemOutput->setText(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, out.tx->vout[out.i].nValue));
-            itemOutput->setData(COLUMN_AMOUNT_INT64, Qt::DisplayRole, out.tx->vout[out.i].nValue);
+            itemOutput->setData(COLUMN_AMOUNT_INT64, Qt::DisplayRole, (qint64)out.tx->vout[out.i].nValue);
 
             // date
             itemOutput->setText(COLUMN_DATE, QDateTime::fromTime_t(out.tx->GetTxTime()).toUTC().toString("yy-MM-dd hh:mm"));
@@ -711,14 +713,14 @@ void CoinControlDialog::updateView()
             itemOutput->setData(COLUMN_CONFIRMATIONS, Qt::DisplayRole, out.nDepth);
 
             // coin age
-            int nDayWeight = (min((GetAdjustedTime() - out.tx->GetTxTime()), (int64) STAKE_MAX_AGE) - nStakeMinAge) / 86400;
-            uint64 coinAge = max(out.tx->vout[out.i].nValue * nDayWeight / COIN, (int64) 0);
+            int nDayWeight = (min((GetAdjustedTime() - out.tx->GetTxTime()), (int64_t)nStakeMaxAge) - nStakeMinAge) / 86400;
+            quint64 coinAge = max((qint64)out.tx->vout[out.i].nValue * nDayWeight / COIN, (qint64) 0);
             itemOutput->setData(COLUMN_COINAGE, Qt::DisplayRole, coinAge);
 
             // priority
             double dPriority = ((double)out.tx->vout[out.i].nValue  / (nInputSize + 78)) * (out.nDepth+1); // 78 = 2 * 34 + 10
             itemOutput->setText(COLUMN_PRIORITY, CoinControlDialog::getPriorityLabel(dPriority));
-            itemOutput->setData(COLUMN_PRIORITY_INT64, Qt::DisplayRole, (int64)dPriority);
+            itemOutput->setData(COLUMN_PRIORITY_INT64, Qt::DisplayRole, (qint64)dPriority);
             dPrioritySum += (double)out.tx->vout[out.i].nValue  * (out.nDepth+1);
             nInputSum    += nInputSize;
 
@@ -751,7 +753,7 @@ void CoinControlDialog::updateView()
             itemWalletAddress->setText(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, nSum));
             itemWalletAddress->setData(COLUMN_AMOUNT_INT64, Qt::DisplayRole, nSum);
             itemWalletAddress->setText(COLUMN_PRIORITY, CoinControlDialog::getPriorityLabel(dPrioritySum));
-            itemWalletAddress->setData(COLUMN_PRIORITY_INT64, Qt::DisplayRole, (int64)dPrioritySum);
+            itemWalletAddress->setData(COLUMN_PRIORITY_INT64, Qt::DisplayRole, (qint64)dPrioritySum);
         }
     }
 

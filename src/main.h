@@ -79,8 +79,6 @@ extern std::map<uint256, CBlockIndex*> mapBlockIndex;
 extern uint256 hashGenesisBlock;
 extern CBlockIndex* pindexGenesisBlock;
 extern int nBestHeight;
-extern CBigNum bnBestChainTrust;
-extern CBigNum bnBestInvalidTrust;
 extern uint256 hashBestChain;
 extern CBlockIndex* pindexBest;
 extern unsigned int nTransactionsUpdated;
@@ -192,6 +190,7 @@ bool IsInitialBlockDownload();
 std::string GetWarnings(std::string strFor);
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock, bool fAllowSlow = false);
+const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake);
 /** Connect/disconnect blocks until pindexNew is the new tip of the active block chain */
 bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew);
 /** Find the best known block, and make it the tip of the block chain */
@@ -697,7 +696,7 @@ public:
 // Apply the effects of this transaction on the UTXO set represented by view
 void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash);
 
-	int64_t GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const;
+	int64_t GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK, unsigned int nBytes=0) const;
 
 	friend bool operator==(const CTransaction& a, const CTransaction& b)
 	{
@@ -1918,8 +1917,8 @@ public:
 		pnext = NULL;
 		nHeight = 0;
 		nFile = 0;
-	nDataPos = 0;
-	nUndoPos = 0;
+		nDataPos = 0;
+		nUndoPos = 0;
 #if defined(BRAND_bluecoin)
 		bnChainTrust = 0;
 		nMint = 0;
@@ -1931,11 +1930,11 @@ public:
 		prevoutStake.SetNull();
 		nStakeTime = 0;
 #else /* not optimal, clean later? */
-	nChainWork = 0;
+		nChainWork = 0;
 #endif
-	nTx = 0;
-	nChainTx = 0;
-	nStatus = 0;
+		nTx = 0;
+		nChainTx = 0;
+		nStatus = 0;
 
 		nVersion	   = 0;
 		hashMerkleRoot = 0;
@@ -2056,7 +2055,7 @@ public:
 		return dDiff;
 	}
 
-#if defined(BRAND_bluecoin)
+#if defined(PPCOINSTAKE)
 	CBigNum GetBlockTrust() const;
 #else
 	CBigNum GetBlockWork() const
@@ -2120,7 +2119,7 @@ public:
 	static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart,
 								unsigned int nRequired, unsigned int nToCheck);
 
-#if defined(BRAND_bluecoin) || defined(BRAND_givestake)
+#if defined(PPCOINSTAKE)
 	bool IsProofOfWork() const
 	{
 		return !(nFlags & BLOCK_PROOF_OF_STAKE);
@@ -2173,7 +2172,10 @@ public:
 			hashMerkleRoot.ToString().substr(0,10).c_str(),
 			GetBlockHash().ToString().substr(0,20).c_str());
 	}
-#endif
+#else
+	inline bool IsProofOfWork() const { return true; };
+	inline bool IsProofOfStake() const { return false; };	
+
 	std::string ToString() const
 	{
 		return strprintf("CBlockIndex(pprev=%p, pnext=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
@@ -2181,7 +2183,7 @@ public:
 			hashMerkleRoot.ToString().c_str(),
 			GetBlockHash().ToString().c_str());
 	}
-
+#endif
 	void print() const
 	{
 		printf("%s\n", ToString().c_str());

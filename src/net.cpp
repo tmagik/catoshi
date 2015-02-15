@@ -1650,7 +1650,7 @@ void static Discover()
     if (!fDiscover)
         return;
 
-#ifdef WIN32
+#if defined(WIN32) || defined(ANDROID)
     // Get local host IP
     char pszHostName[1000] = "";
     if (gethostname(pszHostName, sizeof(pszHostName)) != SOCKET_ERROR)

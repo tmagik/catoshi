@@ -160,13 +160,14 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
                 return QVariant(9050);
         }
         case Fee:
-            return QVariant(nTransactionFee);
+            return QVariant((qint64)nTransactionFee);
         case DisplayUnit:
             return QVariant(nDisplayUnit);
         case DisplayAddresses:
             return QVariant(bDisplayAddresses);
-        case DetachDatabases:
-            return QVariant(bitdb.GetDetach());
+        #warning cleanup
+        /*case DetachDatabases:
+            return QVariant(bitdb.GetDetach());*/
         case CoinControlFeatures:
             return QVariant(fCoinControlFeatures);
         default:
@@ -192,9 +193,8 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             settings.setValue("fMinimizeToTray", fMinimizeToTray);
             break;
         case MapPortUPnP:
-            fUseUPnP = value.toBool();
-            settings.setValue("fUseUPnP", fUseUPnP);
-            MapPort();
+            settings.setValue("fUseUPnP", value.toBool());
+            MapPort(value.toBool());
             break;
         case MinimizeOnClose:
             fMinimizeOnClose = value.toBool();
@@ -227,7 +227,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         break;
         case Fee: {
             nTransactionFee = value.toLongLong();
-            settings.setValue("nTransactionFee", nTransactionFee);
+            settings.setValue("nTransactionFee", (qint64)nTransactionFee);
             emit transactionFeeChanged(nTransactionFee);
             }
             break;
@@ -243,12 +243,14 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             settings.setValue("bDisplayAddresses", bDisplayAddresses);
             }
             break;
+        #warning deprecated
+        /*
         case DetachDatabases: {
             bool fDetachDB = value.toBool();
             bitdb.SetDetach(fDetachDB);
             settings.setValue("detachDB", fDetachDB);
             }
-            break;
+            break;*/
         case CoinControlFeatures: {
             fCoinControlFeatures = value.toBool();
             settings.setValue("fCoinControlFeatures", fCoinControlFeatures);

@@ -5,6 +5,16 @@
  * The Bitcoin Developers 2011-2012
  * The PPCoin Developers 2011-2013
  */
+/*
+ * Copyright (c) 2009-2012 The *coin developers
+ * where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+ * Previously distributed under the MIT/X11 software license, see the
+ * file COPYING or http://www.opensource.org/licenses/mit-license.php.
+ * Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+ * Distributed under the Affero GNU General public license version 3
+ * file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+ */
+
 #include "codecoingui.h"
 #include "transactiontablemodel.h"
 #include "addressbookpage.h"
@@ -78,7 +88,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     rpcConsole(0)
 {
     resize(850, 550);
-    setWindowTitle(tr("Blunity Wallet"));
+    setWindowTitle(tr("" BRAND " Wallet"));
 #ifndef Q_WS_MAC
     setWindowIcon(QIcon(":icons/blunity_icon"));
 #else
@@ -226,7 +236,7 @@ void BitcoinGUI::createActions()
     tabGroup->addAction(receiveCoinsAction);
 
     sendCoinsAction = new QAction(QIcon(":/icons/send"), tr("&Send coins"), this);
-    sendCoinsAction->setToolTip(tr("Send coins to a BlueCoin address"));
+    sendCoinsAction->setToolTip(tr("Send coins to a " BRAND_upper " address"));
     sendCoinsAction->setCheckable(true);
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
     tabGroup->addAction(sendCoinsAction);
@@ -262,17 +272,17 @@ void BitcoinGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/blunity_tooltip"), tr("&About Blunity"), this);
-    aboutAction->setToolTip(tr("Show information about BlueCoin"));
+    aboutAction = new QAction(QIcon(":/icons/blunity_tooltip"), tr("&About " BRAND ""), this);
+    aboutAction->setToolTip(tr("Show information about " BRAND_upper ""));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(tr("About &Qt"), this);
     aboutQtAction->setToolTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
-    optionsAction->setToolTip(tr("Modify configuration options for Blunity"));
+    optionsAction->setToolTip(tr("Modify configuration options for " BRAND ""));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    toggleHideAction = new QAction(QIcon(":/icons/blunity_tooltip"), tr("Show/Hide &Blunity"), this);
-    toggleHideAction->setToolTip(tr("Show or hide the Blunity window"));
+    toggleHideAction = new QAction(QIcon(":/icons/blunity_tooltip"), tr("Show/Hide &" BRAND ""), this);
+    toggleHideAction->setToolTip(tr("Show or hide the " BRAND " window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet"), this);
@@ -289,9 +299,9 @@ void BitcoinGUI::createActions()
     openRPCConsoleAction->setToolTip(tr("Open debugging and diagnostic console"));
 
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
-    connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutClicked()));
     connect(aboutQtAction, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
+    connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
     connect(toggleHideAction, SIGNAL(triggered()), this, SLOT(toggleHidden()));
     connect(encryptWalletAction, SIGNAL(triggered(bool)), this, SLOT(encryptWallet(bool)));
     connect(unlockForMintingAction, SIGNAL(triggered(bool)), this, SLOT(unlockForMinting(bool)));
@@ -301,7 +311,7 @@ void BitcoinGUI::createActions()
 
 void BitcoinGUI::createMenuBar()
 {
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     // Create a decoupled menu bar on Mac which stays even if the window is closed
     appMenuBar = new QMenuBar();
 #else
@@ -358,31 +368,36 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
     this->clientModel = clientModel;
     if(clientModel)
     {
+        // Replace some strings and icons, when using the testnet
         if(clientModel->isTestNet())
         {
-            QString title_testnet = windowTitle() + QString(" ") + tr("[testnet]");
-            setWindowTitle(title_testnet);
-#ifndef Q_WS_MAC
-            setWindowIcon(QIcon(":icons/blunity_icon"));
+            setWindowTitle(windowTitle() + QString(" ") + tr("[testnet]"));
+#ifndef Q_OS_MAC
+            QApplication::setWindowIcon(QIcon(":icons/bitcoin_testnet"));
+            setWindowIcon(QIcon(":icons/bitcoin_testnet"));
 #else
-            MacDockIconHandler::instance()->setIcon(QIcon(":icons/blunity_icon"));
+            MacDockIconHandler::instance()->setIcon(QIcon(":icons/bitcoin_testnet"));
 #endif
             if(trayIcon)
             {
-                trayIcon->setToolTip(title_testnet);
-                trayIcon->setIcon(QIcon(":/icons/blunity_tooltip"));
+                // Just attach " [testnet]" to the existing tooltip
+                trayIcon->setToolTip(trayIcon->toolTip() + QString(" ") + tr("[testnet]"));
+                trayIcon->setIcon(QIcon(":/icons/toolbar_testnet"));
             }
+
+            toggleHideAction->setIcon(QIcon(":/icons/toolbar_testnet"));
+            aboutAction->setIcon(QIcon(":/icons/toolbar_testnet"));
         }
 
         // Keep up to date with client
         setNumConnections(clientModel->getNumConnections());
         connect(clientModel, SIGNAL(numConnectionsChanged(int)), this, SLOT(setNumConnections(int)));
 
-        setNumBlocks(clientModel->getNumBlocks());
-        connect(clientModel, SIGNAL(numBlocksChanged(int)), this, SLOT(setNumBlocks(int)));
+        setNumBlocks(clientModel->getNumBlocks(), clientModel->getNumBlocksOfPeers());
+        connect(clientModel, SIGNAL(numBlocksChanged(int,int)), this, SLOT(setNumBlocks(int,int)));
 
-        // Report errors from network/worker thread
-        connect(clientModel, SIGNAL(error(QString,QString, bool)), this, SLOT(error(QString,QString,bool)));
+        // Receive and report messages from network/worker thread
+        connect(clientModel, SIGNAL(message(QString,QString,unsigned int)), this, SLOT(message(QString,QString,unsigned int)));
 
         rpcConsole->setClientModel(clientModel);
     }
@@ -426,8 +441,8 @@ void BitcoinGUI::createTrayIcon()
     trayIcon = new QSystemTrayIcon(this);
     trayIconMenu = new QMenu(this);
     trayIcon->setContextMenu(trayIconMenu);
-    trayIcon->setToolTip(tr("Blunity client"));
-    trayIcon->setIcon(QIcon(":/icons/blunity_tooltip"));
+    trayIcon->setToolTip(tr(BRAND_upper " client"));
+    trayIcon->setIcon(QIcon(":/icons/toolbar"));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
             this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
     trayIcon->show();
@@ -436,6 +451,7 @@ void BitcoinGUI::createTrayIcon()
     MacDockIconHandler *dockIconHandler = MacDockIconHandler::instance();
     trayIconMenu = dockIconHandler->dockMenu();
     dockIconHandler->setMainWindow((QMainWindow *)this);
+    trayIconMenu = dockIconHandler->dockMenu();
 #endif
 
     // Configuration of the tray icon (or dock icon) icon menu
@@ -458,12 +474,12 @@ void BitcoinGUI::createTrayIcon()
     notificator = new Notificator(tr("p-qt"), trayIcon);
 }
 
-#ifndef Q_WS_MAC
+#ifndef Q_OS_MAC
 void BitcoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if(reason == QSystemTrayIcon::Trigger)
     {
-        // Click on system tray icon triggers "show/hide bitcoin"
+        // Click on system tray icon triggers show/hide of the main window
         toggleHideAction->trigger();
     }
 }
@@ -519,118 +535,152 @@ void BitcoinGUI::setNumConnections(int count)
     default: icon = ":/icons/connect_4"; break;
     }
     labelConnectionsIcon->setPixmap(QIcon(icon).pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to BlueCoin network", "", count));
+    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to " BRAND_upper " network", "", count));
 }
 
-void BitcoinGUI::setNumBlocks(int count)
+void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
 {
-    // don't show / hide progressBar and it's label if we have no connection(s) to the network
-    if (!clientModel || clientModel->getNumConnections() == 0)
-    {
-        progressBarLabel->setVisible(false);
-        progressBar->setVisible(false);
+    // Prevent orphan statusbar messages (e.g. hover Quit in main menu, wait until chain-sync starts -> garbelled text)
+    statusBar()->clearMessage();
 
-        return;
+    // Acquire current block source
+    enum BlockSource blockSource = clientModel->getBlockSource();
+    switch (blockSource) {
+        case BLOCK_SOURCE_NETWORK:
+            progressBarLabel->setText(tr("Synchronizing with network..."));
+            break;
+        case BLOCK_SOURCE_DISK:
+            progressBarLabel->setText(tr("Importing blocks from disk..."));
+            break;
+        case BLOCK_SOURCE_REINDEX:
+            progressBarLabel->setText(tr("Reindexing blocks on disk..."));
+            break;
+        case BLOCK_SOURCE_NONE:
+            // Case: not Importing, not Reindexing and no network connection
+            progressBarLabel->setText(tr("No block source available..."));
+            break;
     }
 
-    int nTotalBlocks = clientModel->getNumBlocksOfPeers();
     QString tooltip;
+
+    QDateTime lastBlockDate = clientModel->getLastBlockDate();
+    QDateTime currentDate = QDateTime::currentDateTime();
+    int secs = lastBlockDate.secsTo(currentDate);
 
     if(count < nTotalBlocks)
     {
-        int nRemainingBlocks = nTotalBlocks - count;
-        float nPercentageDone = count / (nTotalBlocks * 0.01f);
-
-        if (clientModel->getStatusBarWarnings() == "")
-        {
-            progressBarLabel->setText(tr("Synchronizing with network..."));
-            progressBarLabel->setVisible(true);
-            progressBar->setFormat(tr("~%n block(s) remaining", "", nRemainingBlocks));
-            progressBar->setMaximum(nTotalBlocks);
-            progressBar->setValue(count);
-            progressBar->setVisible(true);
+        tooltip = tr("Processed %1 of %2 (estimated) blocks of transaction history.").arg(count).arg(nTotalBlocks);
         }
         else
         {
-            progressBarLabel->setText(clientModel->getStatusBarWarnings());
-            progressBarLabel->setVisible(true);
-            progressBar->setVisible(false);
+        tooltip = tr("Processed %1 blocks of transaction history.").arg(count);
         }
-        tooltip = tr("Downloaded %1 of %2 blocks of transaction history (%3% done).").arg(count).arg(nTotalBlocks).arg(nPercentageDone, 0, 'f', 2);
-    }
-    else
-    {
-        if (clientModel->getStatusBarWarnings() == "")
-            progressBarLabel->setVisible(false);
-        else
-        {
-            progressBarLabel->setText(clientModel->getStatusBarWarnings());
-            progressBarLabel->setVisible(true);
-        }
-        progressBar->setVisible(false);
-        tooltip = tr("Downloaded %1 blocks of transaction history.").arg(count);
-    }
-
-    QDateTime now = QDateTime::currentDateTime();
-    QDateTime lastBlockDate = clientModel->getLastBlockDate();
-    int secs = lastBlockDate.secsTo(now);
-    QString text;
-
-    // Represent time from last generated block in human readable text
-    if(secs <= 0)
-    {
-        // Fully up to date. Leave text empty.
-    }
-    else if(secs < 60)
-    {
-        text = tr("%n second(s) ago","",secs);
-    }
-    else if(secs < 60*60)
-    {
-        text = tr("%n minute(s) ago","",secs/60);
-    }
-    else if(secs < 24*60*60)
-    {
-        text = tr("%n hour(s) ago","",secs/(60*60));
-    }
-    else
-    {
-        text = tr("%n day(s) ago","",secs/(60*60*24));
-    }
 
     // Set icon state: spinning if catching up, tick otherwise
     if(secs < 90*60 && count >= nTotalBlocks)
     {
-        tooltip = tr("Up to date") + QString(".\n") + tooltip;
+        tooltip = tr("Up to date") + QString(".<br>") + tooltip;
         labelBlocksIcon->setPixmap(QIcon(":/icons/synced").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
+
+        overviewPage->showOutOfSyncWarning(false);
+
+            progressBarLabel->setVisible(false);
+        progressBar->setVisible(false);
+    }
+        else
+        {
+    // Represent time from last generated block in human readable text
+        QString timeBehindText;
+        if(secs < 48*60*60)
+    {
+            timeBehindText = tr("%n hour(s)","",secs/(60*60));
+    }
+        else if(secs < 14*24*60*60)
+    {
+            timeBehindText = tr("%n day(s)","",secs/(24*60*60));
     }
     else
     {
-        tooltip = tr("Catching up...") + QString("\n") + tooltip;
-        labelBlocksIcon->setMovie(syncIconMovie);
-        syncIconMovie->start();
+            timeBehindText = tr("%n week(s)","",secs/(7*24*60*60));
     }
 
-    if(!text.isEmpty())
-    {
-        tooltip += QString("\n");
-        tooltip += tr("Last received block was generated %1.").arg(text);
+        progressBarLabel->setVisible(true);
+        progressBar->setFormat(tr("%1 behind").arg(timeBehindText));
+        progressBar->setMaximum(1000000000);
+        progressBar->setValue(clientModel->getVerificationProgress() * 1000000000.0 + 0.5);
+        progressBar->setVisible(true);
+
+        tooltip = tr("Catching up...") + QString("<br>") + tooltip;
+        labelBlocksIcon->setMovie(syncIconMovie);
+        if(count != prevBlocks)
+            syncIconMovie->jumpToNextFrame();
+        prevBlocks = count;
+
+        overviewPage->showOutOfSyncWarning(true);
+
+        tooltip += QString("<br>");
+        tooltip += tr("Last received block was generated %1 ago.").arg(timeBehindText);
+        tooltip += QString("<br>");
+        tooltip += tr("Transactions after this will not yet be visible.");
     }
+
+    // Don't word-wrap this (fixed-width) tooltip
+    tooltip = QString("<nobr>") + tooltip + QString("</nobr>");
 
     labelBlocksIcon->setToolTip(tooltip);
     progressBarLabel->setToolTip(tooltip);
     progressBar->setToolTip(tooltip);
 }
 
-void BitcoinGUI::error(const QString &title, const QString &message, bool modal)
+void BitcoinGUI::message(const QString &title, const QString &message, unsigned int style, bool *ret)
 {
-    // Report errors from network/worker thread
-    if(modal)
-    {
-        QMessageBox::critical(this, title, message, QMessageBox::Ok, QMessageBox::Ok);
-    } else {
-        notificator->notify(Notificator::Critical, title, message);
+    QString strTitle = tr(BRAND_upper); // default title
+    // Default to information icon
+    int nMBoxIcon = QMessageBox::Information;
+    int nNotifyIcon = Notificator::Information;
+
+    // Override title based on style
+    QString msgType;
+    switch (style) {
+    case CClientUIInterface::MSG_ERROR:
+        msgType = tr("Error");
+        break;
+    case CClientUIInterface::MSG_WARNING:
+        msgType = tr("Warning");
+        break;
+    case CClientUIInterface::MSG_INFORMATION:
+        msgType = tr("Information");
+        break;
+    default:
+        msgType = title; // Use supplied title
     }
+    if (!msgType.isEmpty())
+        strTitle += " - " + msgType;
+
+    // Check for error/warning icon
+    if (style & CClientUIInterface::ICON_ERROR) {
+        nMBoxIcon = QMessageBox::Critical;
+        nNotifyIcon = Notificator::Critical;
+    }
+    else if (style & CClientUIInterface::ICON_WARNING) {
+        nMBoxIcon = QMessageBox::Warning;
+        nNotifyIcon = Notificator::Warning;
+    }
+
+    // Display message
+    if (style & CClientUIInterface::MODAL) {
+        // Check for buttons, use OK as default, if none was supplied
+        QMessageBox::StandardButton buttons;
+        if (!(buttons = (QMessageBox::StandardButton)(style & CClientUIInterface::BTN_MASK)))
+            buttons = QMessageBox::Ok;
+
+        QMessageBox mBox((QMessageBox::Icon)nMBoxIcon, strTitle, message, buttons);
+        int r = mBox.exec();
+        if (ret != NULL)
+            *ret = r == QMessageBox::Ok;
+    }
+    else
+        notificator->notify((Notificator::Class)nNotifyIcon, strTitle, message);
 }
 
 void BitcoinGUI::changeEvent(QEvent *e)
