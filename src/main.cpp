@@ -2860,8 +2860,11 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
 
 bool LoadBlockIndexDB()
 {
+	printf("LoadBlockIndexDB(): entered\n", nLastBlockFile);
 	if (!pblocktree->LoadBlockIndexGuts())
 			return false;
+	
+	printf("LoadBlockIndexDB(): pblocktree->LoadBlockIndexGuts() done\n", nLastBlockFile);
 
 	boost::this_thread::interruption_point();
 
