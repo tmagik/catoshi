@@ -145,7 +145,7 @@ LIBS += $$PWD/src/leveldb/libleveldb.a $$PWD/src/leveldb/libmemenv.a
     #genleveldb.commands = cd $$PWD/src/leveldb && CC=$$QMAKE_CC CXX=$$QMAKE_CXX TARGET_OS=OS_WINDOWS_CROSSCOMPILE $(MAKE) OPT=\"$$QMAKE_CXXFLAGS $$QMAKE_CXXFLAGS_RELEASE\" libleveldb.a libmemenv.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libleveldb.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libmemenv.a
 
     #something like this..
-    #android:genleveldb.commands = cd $$PWD/src/leveldb && make CC=arm-linux-androideabi-cc CXX=arm-linux-androideabi-c++ TARGET_OS=OS_ANDROID_CROSSCOMPILE
+    #android:genleveldb.commands = cd $$PWD/src/leveldb && 'make CC=arm-linux-androideabi-cc CXX=arm-linux-androideabi-c++ TARGET_OS=OS_ANDROID_CROSSCOMPILE'in
 }
 genleveldb.target = $$PWD/src/leveldb/libleveldb.a
 genleveldb.depends = FORCE
@@ -533,3 +533,14 @@ contains(RELEASE, 1) {
 }
 
 system($$QMAKE_LRELEASE -silent $$TRANSLATIONS)
+
+#DISTFILES += \
+#    android/gradle/wrapper/gradle-wrapper.jar \
+#    android/AndroidManifest.xml \
+#    android/gradlew.bat \
+#    android/res/values/libs.xml \
+#    android/build.gradle \
+#    android/gradle/wrapper/gradle-wrapper.properties \
+#    android/gradlew
+
+#ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android

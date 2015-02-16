@@ -260,8 +260,8 @@ void MintingTableModel::update()
             wallet->vMintingWalletUpdated.clear();
         }
     }
-#else
-    qDebug("MintingTableModel::update called on PoW-only coin");
+//#else
+//    qDebug("MintingTableModel::update called on PoW-only coin");
 #endif
     if(!updated.empty())
     {
