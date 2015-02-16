@@ -90,7 +90,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     resize(850, 550);
     setWindowTitle(tr("" BRAND " Wallet"));
 #ifndef Q_WS_MAC
-    setWindowIcon(QIcon(":icons/blunity_icon"));
+    setWindowIcon(QIcon(":icons/bitcoin"));
 #else
     setUnifiedTitleAndToolBarOnMac(true);
     QApplication::setAttribute(Qt::AA_DontShowIconsInMenus);
@@ -272,16 +272,16 @@ void BitcoinGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/blunity_tooltip"), tr("&About " BRAND ""), this);
+    aboutAction = new QAction(QIcon(":/icons/bitcoin"), tr("&About " BRAND ""), this);
     aboutAction->setToolTip(tr("Show information about " BRAND_upper ""));
     aboutAction->setMenuRole(QAction::AboutRole);
-    aboutQtAction = new QAction(tr("About &Qt"), this);
+    aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
     aboutQtAction->setToolTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
     optionsAction->setToolTip(tr("Modify configuration options for " BRAND ""));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    toggleHideAction = new QAction(QIcon(":/icons/blunity_tooltip"), tr("Show/Hide &" BRAND ""), this);
+    toggleHideAction = new QAction(QIcon(":/icons/bitcoin"), tr("Show / &Hide " BRAND ""), this);
     toggleHideAction->setToolTip(tr("Show or hide the " BRAND " window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
