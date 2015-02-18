@@ -32,4 +32,14 @@ extern const unsigned int nStakeMaxAge;
 #define BRAND_SYM BRAND_CODE
 #endif
 
+/* main.h do we always CheckProofOfWork in CheckIndex */
+/* Litecoin does not do so for performance reasons */
+#if defined(BRAND_bluecoin) || defined(BRAND_uro) || defined(BRAND_givestake)
+#define CHECKINDEX_SLOW
+#endif
+
+#if defined(HYBRIDSTAKE)
+#define PPCOINSTAKE
+#endif
+
 #endif

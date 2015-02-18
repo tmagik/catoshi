@@ -507,7 +507,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
 
 #if defined(PPCOINSTAKE)
             // ppcoin: sub-cent change is moved to fee
-            if (nChange > 0 && nChange < MIN_TXOUT_AMOUNT)
+            if (nChange > 0 && nChange < CTransaction::nMinTxFee)
             {
                 nPayFee += nChange;
                 nChange = 0;

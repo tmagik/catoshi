@@ -25,14 +25,14 @@ class CSyncCheckpoint;
  */
 namespace Checkpoints
 {
-    // Returns true if block passes checkpoint checks
-    bool CheckHardened(int nHeight, const uint256& hash);
+	// Returns true if block passes checkpoint checks
+	bool CheckHardened(int nHeight, const uint256& hash);
 
-    // Return conservative estimate of total number of blocks, 0 if unknown
-    int GetTotalBlocksEstimate();
+	// Return conservative estimate of total number of blocks, 0 if unknown
+	int GetTotalBlocksEstimate();
 
-    // Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
-    CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex);
+	// Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
+	CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex);
 
 	double GuessVerificationProgress(CBlockIndex *pindex);
 
@@ -48,6 +48,12 @@ namespace Checkpoints
 	extern const CCheckpointData data;
 
 #if !defined(SYNC_CHECKPOINTS)
+	/* always false */
+	inline bool WantedByPendingSyncCheckpoint(uint256 hashBlock){
+		return false;
+	}
+
+	inline void AskForPendingSyncCheckpoint(CNode* pfrom){ return; };
 }
 #else /* SYNC_CHECKPOINTS */
     extern uint256 hashSyncCheckpoint;

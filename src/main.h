@@ -72,6 +72,7 @@ static const int fHaveUPnP = true;
 static const int fHaveUPnP = false;
 #endif
 
+extern int64_t nMaxClockDrift;
 extern CScript COINBASE_FLAGS;
 
 extern CCriticalSection cs_main;
@@ -161,8 +162,9 @@ void ThreadScriptCheck();
 /** Run the miner threads */
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
 /** Generate a new block, without valid proof-of-work */
-CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn);
-CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey);
+/** If called with CWallet argument, assume fProofOfStake=true */
+CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet=NULL);
+CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, CWallet* pwallet=NULL);
 /** Modify the extranonce in a block */
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce);
 /** Do mining precalculation */
@@ -171,26 +173,23 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
 bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey);
 /** Check whether a block hash satisfies the proof-of-work requirement specified by nBits */
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
-#ifdef NOHACK /* codecoin: TODO: which way do we go? */
-int64_t GetProofOfWorkReward(unsigned int nBits);
-int64_t GetProofOfStakeReward(int64_t nCoinAge);
-#else
-//#warning hack
-int64_t GetProofOfWorkReward(int nHeight, int64_t nFees, uint256 prevHash);
-int64_t GetProofOfStakeReward(int64_t nCoinAge, unsigned int nBits, unsigned int nTime, int nHeight);
-#endif
-/** Calculate the minimum amount of work a received block needs, without knowing its direct parent */
-unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime);
-unsigned int ComputeMinStake(unsigned int nBase, int64_t nTime, unsigned int nBlockTime);
 /** Get the number of active peers */
 int GetNumBlocksOfPeers();
 /** Check whether we are doing an initial block download (synchronizing from disk or network) */
 bool IsInitialBlockDownload();
 /** Format a string that describes several potential problems detected by the core */
 std::string GetWarnings(std::string strFor);
+#if defined(PPCOINSTAKE)
+uint256 WantedByOrphan(const CBlock* pblockOrphan);
+const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake);
+#ifdef TESTING
+void CodecoinMiner(CWallet *pwallet, bool fProofOfStake, bool fGenerateSingleBlock = false, CBlockIndex* parent = NULL);
+#else
+void CodecoinMiner(CWallet *pwallet, bool fProofOfStake);
+#endif
+#endif
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock, bool fAllowSlow = false);
-const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake);
 /** Connect/disconnect blocks until pindexNew is the new tip of the active block chain */
 bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew);
 /** Find the best known block, and make it the tip of the block chain */
@@ -437,6 +436,12 @@ public:
 		return (nValue == -1);
 	}
 
+	void SetEmpty()
+	{
+		nValue = 0;
+		scriptPubKey.clear();
+	}
+
 	bool IsEmpty() const
 	{
 		return (nValue == 0 && scriptPubKey.empty());
@@ -496,15 +501,15 @@ class CTransaction
 public:
 	static int64_t nMinTxFee;
 	static int64_t nMinRelayTxFee;
-#if !defined(BRAND_solarcoin)
-	static const int CURRENT_VERSION=1;
-#else
+#if defined(BRAND_solarcoin)
 	static const int CURRENT_VERSION=2;
 	static const int LEGACY_VERSION_1=1;
 	std::string strTxComment;
+#else
+	static const int CURRENT_VERSION=1;
 #endif
 	int nVersion;
-#if defined(BRAND_bluecoin)
+#if defined(PPCOINSTAKE)
 	unsigned int nTime;
 #endif
 	std::vector<CTxIn> vin;
@@ -525,7 +530,7 @@ public:
 	(
 		READWRITE(this->nVersion);
 		nVersion = this->nVersion;
-#if defined(BRAND_bluecoin)
+#if defined(PPCOINSTAKE)
 		READWRITE(nTime);
 #endif
 		READWRITE(vin);
@@ -548,6 +553,7 @@ public:
 		strTxComment.clear();
 #elif defined(BRAND_bluecoin)
 		nTime = GetAdjustedTime();
+		nDoS = 0;  // Denial-of-service prevention
 #endif
 	}
 
@@ -609,7 +615,11 @@ public:
 
 	bool IsCoinBase() const
 	{
+#if defined(PPCOINSTAKE)
 		return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+#else
+		return (vin.size() == 1 && vin[0].prevout.IsNull());
+#endif
 	}
 
 #if defined(PPCOINSTAKE)
@@ -620,7 +630,7 @@ public:
 		return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
 	}
 #else
-    inline bool IsCoinStake() const { return false; };
+	inline bool IsCoinStake() const { return false; };
 #endif
 
 	bool IsSeigniorage() const
@@ -629,8 +639,8 @@ public:
 	}
 
 	/* aliases for above */
-    inline bool IsNewCoin() const { return IsSeigniorage(); };
-    inline bool IsGenerated() const { return IsSeigniorage(); };
+	inline bool IsNewCoin() const { return IsSeigniorage(); };
+	inline bool IsGenerated() const { return IsSeigniorage(); };
 
 	/** Check for standard transaction types
 		@return True if all outputs (scriptPubKeys) use only standard transaction forms
@@ -690,7 +700,7 @@ public:
 	{
 		// Large (in bytes) low-priority (new, small-coin) transactions
 		// need a fee.
-		return dPriority > COIN * 576 / 250;
+		return dPriority > MIN_FREE_PRIORITY;
 	}
 
 // Apply the effects of this transaction on the UTXO set represented by view
@@ -701,7 +711,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 	friend bool operator==(const CTransaction& a, const CTransaction& b)
 	{
 		return (a.nVersion	== b.nVersion &&
-#if defined(BRAND_bluecoin)
+#if defined(PPCOINSTAKE)
 				a.nTime		== b.nTime &&
 #endif
 				a.vin		== b.vin &&
@@ -725,18 +735,18 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 	std::string ToString() const
 	{
 		std::string str;
-#if defined(BRAND_bluecoin)
+#if defined(PPCOINSTAKE)
 		str += IsCoinBase()? "Coinbase" : (IsCoinStake()? "Coinstake" : "CTransaction");
 		str += strprintf("(hash=%s, nTime=%d, ver=%d, vin.size=%" PRIszu", vout.size=%" PRIszu", nLockTime=%d)\n",
 			GetHash().ToString().substr(0,10).c_str(),
 			nTime,
 #else
 		str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%" PRIszu", vout.size=%" PRIszu", nLockTime=%u)\n",
+			GetHash().ToString().c_str(),
 #if defined(BRAND_solarcoin)
 #warning "need to implement ToString of txt comment too"
 #endif 
 #endif
-			GetHash().ToString().c_str(),
 			nVersion,
 			vin.size(),
 			vout.size(),
@@ -764,6 +774,9 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 					 unsigned int flags = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC,
 					 std::vector<CScriptCheck> *pvChecks = NULL) const;
 
+#if defined(PPCOINSTAKE)
+	bool GetCoinAge(CValidationState &state, CCoinsViewCache &view, uint64_t& nCoinAge) const;  // ppcoin: get transaction coin age
+#endif
 	// Apply the effects of this transaction on the UTXO set represented by view
 	void UpdateCoins(CValidationState &state, CCoinsViewCache &view, CTxUndo &txundo, int nHeight, const uint256 &txhash) const;
 
@@ -817,18 +830,35 @@ public:
 	unsigned int nHeight; // if the outpoint was the last unspent: its height
 	int nVersion;		  // if the outpoint was the last unspent: its version
 
+#if defined(PPCOINSTAKE)
+    bool fCoinStake;      // ppcoin: if the outpoint was the last unspent: whether it belonged to a coinstake
+    unsigned int nTime;   // ppcoin: if the outpoint was the last unspent: its tx timestamp
+    
+
+    CTxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0), fCoinStake(false), nTime(0) {}
+    CTxInUndo(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0, bool fCoinStakeIn = false, unsigned int nTimeIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn), fCoinStake(fCoinStakeIn), nTime(nTimeIn) { }
+#else
 	CTxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0) {}
 	CTxInUndo(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn) { }
-
+#endif
 	unsigned int GetSerializeSize(int nType, int nVersion) const {
+#if defined(PPCOINSTAKE)
+		return ::GetSerializeSize(VARINT(nHeight*4+(fCoinBase ? 1 : 0)+(fCoinStake ? 2 : 0)), nType, nVersion) +
+		::GetSerializeSize(VARINT(nTime), nType, nVersion) +
+#else
 		return ::GetSerializeSize(VARINT(nHeight*2+(fCoinBase ? 1 : 0)), nType, nVersion) +
+#endif
 			   (nHeight > 0 ? ::GetSerializeSize(VARINT(this->nVersion), nType, nVersion) : 0) +
 			   ::GetSerializeSize(CTxOutCompressor(REF(txout)), nType, nVersion);
 	}
 
 	template<typename Stream>
 	void Serialize(Stream &s, int nType, int nVersion) const {
+#if defined(PPCOINSTAKE)
+		::Serialize(s, VARINT(nHeight*4+(fCoinBase ? 1 : 0) +(fCoinStake ? 2 : 0)), nType, nVersion);
+#else
 		::Serialize(s, VARINT(nHeight*2+(fCoinBase ? 1 : 0)), nType, nVersion);
+#endif
 		if (nHeight > 0)
 			::Serialize(s, VARINT(this->nVersion), nType, nVersion);
 		::Serialize(s, CTxOutCompressor(REF(txout)), nType, nVersion);
@@ -838,8 +868,14 @@ public:
 	void Unserialize(Stream &s, int nType, int nVersion) {
 		unsigned int nCode = 0;
 		::Unserialize(s, VARINT(nCode), nType, nVersion);
-		nHeight = nCode / 2;
 		fCoinBase = nCode & 1;
+#if defined(PPCOINSTAKE)
+		fCoinStake = nCode & 2;
+		::Unserialize(s, VARINT(nTime), nType, nVersion);
+		nHeight = nCode / 4;
+#else
+		nHeight = nCode / 2;
+#endif
 		if (nHeight > 0)
 			::Unserialize(s, VARINT(this->nVersion), nType, nVersion);
 		::Unserialize(s, REF(CTxOutCompressor(REF(txout))), nType, nVersion);
@@ -994,13 +1030,25 @@ public:
 	// version of the CTransaction; accesses to this value should probably check for nHeight as well,
 	// as new tx version will probably only be introduced at certain heights
 	int nVersion;
+#if defined(PPCOINSTAKE)
+	// ppcoin: whether transaction is a coinstake
+	bool fCoinStake;
 
+	// ppcoin: transaction timestamp
+	unsigned int nTime;
+
+	// construct a CCoins from a CTransaction, at a given height
+	CCoins(const CTransaction &tx, int nHeightIn) : fCoinBase(tx.IsCoinBase()), vout(tx.vout), nHeight(nHeightIn), nVersion(tx.nVersion), fCoinStake(tx.IsCoinStake()), nTime(tx.nTime) { }
+
+	// empty constructor
+	CCoins() : fCoinBase(false), vout(0), nHeight(0), nVersion(0), fCoinStake(false), nTime(0) { }
+#else
 	// construct a CCoins from a CTransaction, at a given height
 	CCoins(const CTransaction &tx, int nHeightIn) : fCoinBase(tx.IsCoinBase()), vout(tx.vout), nHeight(nHeightIn), nVersion(tx.nVersion) { }
 
 	// empty constructor
 	CCoins() : fCoinBase(false), vout(0), nHeight(0), nVersion(0) { }
-
+#endif
 	// remove spent outputs at the end of vout
 	void Cleanup() {
 		while (vout.size() > 0 && vout.back().IsNull())
@@ -1014,6 +1062,10 @@ public:
 		to.vout.swap(vout);
 		std::swap(to.nHeight, nHeight);
 		std::swap(to.nVersion, nVersion);
+#if defined(PPCOINSTAKE)
+		std::swap(to.fCoinStake, fCoinStake);
+		std::swap(to.nTime, nTime);
+#endif
 	}
 
 	// equality test
@@ -1021,7 +1073,13 @@ public:
 		 return a.fCoinBase == b.fCoinBase &&
 				a.nHeight == b.nHeight &&
 				a.nVersion == b.nVersion &&
-				a.vout == b.vout;
+				a.vout == b.vout
+#if defined(PPCOINSTAKE)
+				&& a.vout == b.vout &&
+       				a.fCoinStake == b.fCoinStake &&
+				a.nTime == b.nTime
+#endif
+				;
 	}
 	friend bool operator!=(const CCoins &a, const CCoins &b) {
 		return !(a == b);
@@ -1052,6 +1110,12 @@ public:
 		return fCoinBase;
 	}
 
+#if defined(PPCOINSTAKE)
+    bool IsCoinStake() const { // ppcoin: coinstake
+        return fCoinStake;
+    }
+#endif
+
 	unsigned int GetSerializeSize(int nType, int nVersion) const {
 		unsigned int nSize = 0;
 		unsigned int nMaskSize = 0, nMaskCode = 0;
@@ -1072,6 +1136,13 @@ public:
 				nSize += ::GetSerializeSize(CTxOutCompressor(REF(vout[i])), nType, nVersion);
 		// height
 		nSize += ::GetSerializeSize(VARINT(nHeight), nType, nVersion);
+#if defined(PPCOINSTAKE)
+		// ppcoin flags
+		unsigned int nFlag = fCoinStake? 1 : 0;
+		nSize += ::GetSerializeSize(VARINT(nFlag), nType, nVersion);
+		// ppcoin transaction timestamp
+		nSize += ::GetSerializeSize(VARINT(nTime), nType, nVersion);
+#endif
 		return nSize;
 	}
 
@@ -1102,10 +1173,18 @@ public:
 		}
 		// coinbase height
 		::Serialize(s, VARINT(nHeight), nType, nVersion);
+#if defined(PPCOINSTAKE)
+		// ppcoin flags
+		unsigned int nFlag = fCoinStake? 1 : 0;
+		::Serialize(s, VARINT(nFlag), nType, nVersion);
+		// ppcoin transaction timestamp
+		::Serialize(s, VARINT(nTime), nType, nVersion);
+#endif
 	}
 
 	template<typename Stream>
-	void Unserialize(Stream &s, int nType, int nVersion) {
+	void Unserialize(Stream 
+&s, int nType, int nVersion) {
 		unsigned int nCode = 0;
 		// version
 		::Unserialize(s, VARINT(this->nVersion), nType, nVersion);
@@ -1135,6 +1214,14 @@ public:
 		}
 		// coinbase height
 		::Unserialize(s, VARINT(nHeight), nType, nVersion);
+#if defined(PPCOINSTAKE)
+		// ppcoin flags
+		unsigned int nFlag = 0;
+		::Unserialize(s, VARINT(nFlag), nType, nVersion);
+		fCoinStake = nFlag & 1;
+		// ppcoin transaction timestamp
+		::Unserialize(s, VARINT(nTime), nType, nVersion);
+#endif
 		Cleanup();
 	}
 
@@ -1151,6 +1238,10 @@ public:
 			undo.nHeight = nHeight;
 			undo.fCoinBase = fCoinBase;
 			undo.nVersion = this->nVersion;
+#if defined(PPCOINSTAKE)
+			undo.fCoinStake = fCoinStake;  // ppcoin
+			undo.nTime = nTime;            // ppcoin
+#endif
 		}
 		return true;
 	}
@@ -1178,7 +1269,7 @@ public:
 };
 
 /** Closure representing one script verification
- *	Note that this stores references to the spending transaction */
+ *  Note that this stores references to the spending transaction */
 class CScriptCheck
 {
 private:
@@ -1381,7 +1472,7 @@ public:
 	unsigned int nBits;
 	unsigned int nNonce;
 
-#else
+#else /* so where did verison 4 come from anyway */
 	static const int CURRENT_VERSION=4;
 
 	// network and disk
@@ -1474,15 +1565,73 @@ public:
 #endif
 	}
 
+	uint256 GetPoWHash() const
+	{
+#if defined(BRAND_uro) || defined(BRAND_givecoin) || defined(BRAND_bluecoin)
+		return GetHash();
+#else
+		uint256 thash;
+		scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
+		return thash;
+#endif
+	}
+
 	int64_t GetBlockTime() const
 	{
 		return (int64_t)nTime;
 	}
 
 	void UpdateTime(const CBlockIndex* pindexPrev);
+};
+
+class CBlock : public CBlockHeader
+{
+public:
+	// network and disk
+	std::vector<CTransaction> vtx;
 
 #if defined(PPCOINSTAKE)
-	// ppcoin: entropy bit for stake modifier if chosen by modifier
+	// ppcoin: block signature - signed by coin base txout[0]'s owner
+	std::vector<unsigned char> vchBlockSig;
+#endif
+
+	// memory only
+	mutable std::vector<uint256> vMerkleTree;
+
+	CBlock()
+	{
+		SetNull();
+	}
+
+	CBlock(const CBlockHeader &header)
+	{
+		SetNull();
+		*((CBlockHeader*)this) = header;
+	}
+
+	IMPLEMENT_SERIALIZE
+	(
+		READWRITE(*(CBlockHeader*)this);
+		READWRITE(vtx);
+#if defined(PPCOINSTAKE)
+		READWRITE(vchBlockSig);
+#endif
+	)
+
+	void SetNull()
+	{
+		CBlockHeader::SetNull();
+		vtx.clear();
+#if defined(PPCOINSTAKE)
+		vchBlockSig.clear();
+#endif
+		vMerkleTree.clear();
+	}
+
+#if defined(HYBRIDSTAKE)
+	// This is the newer ppcoin 0.4 version.
+#if !defined(PPCOINSTAKE_SLOW)
+	// ?coin: entropy bit for stake modifier if chosen by modifier
 	unsigned int GetStakeEntropyBit(unsigned int nHeight) const
 	{
 		// Take last bit of block hash as entropy bit
@@ -1491,6 +1640,7 @@ public:
 			printf("GetStakeEntropyBit: nHeight=%u hashBlock=%s nEntropyBit=%u\n", nHeight, GetHash().ToString().c_str(), nEntropyBit);
 		return nEntropyBit;
 	}
+#endif /* ! PPCOINSTAKE_SLOW */
 
 	// ppcoin: two types of block: proof-of-work or proof-of-stake
 	bool IsProofOfStake() const
@@ -1513,60 +1663,15 @@ public:
 	{
 		int64_t maxTransactionTime = 0;
 		BOOST_FOREACH(const CTransaction& tx, vtx)
-			maxTransactionTime = std::max(maxTransactionTime, (int64)tx.nTime);
+			maxTransactionTime = std::max(maxTransactionTime, (int64_t)tx.nTime);
 		return maxTransactionTime;
 	}
-#else /* !PPCOINSTAKE */
+#else /* !HYBRIDSTAKE*/
 
 	inline bool IsProofOfStake() const { return false;};
 	inline bool IsProofOfWork() const { return true;};
 
-#endif /* PPCOINSTAKE */
-};
-
-class CBlock : public CBlockHeader
-{
-public:
-	// network and disk
-	std::vector<CTransaction> vtx;
-
-	// memory only
-	mutable std::vector<uint256> vMerkleTree;
-
-	CBlock()
-	{
-		SetNull();
-	}
-
-	CBlock(const CBlockHeader &header)
-	{
-		SetNull();
-		*((CBlockHeader*)this) = header;
-	}
-
-	IMPLEMENT_SERIALIZE
-	(
-		READWRITE(*(CBlockHeader*)this);
-		READWRITE(vtx);
-	)
-
-	void SetNull()
-	{
-		CBlockHeader::SetNull();
-		vtx.clear();
-		vMerkleTree.clear();
-	}
-
-	uint256 GetPoWHash() const
-	{
-#if defined(BRAND_uro) || defined(BRAND_givecoin) || defined(BRAND_bluecoin)
-		return GetHash();
-#else
-		uint256 thash;
-		scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
-		return thash;
-#endif
-	}
+#endif /* HYBRIDSTAKE */
 
 	CBlockHeader GetBlockHeader() const
 	{
@@ -1644,7 +1749,7 @@ public:
 			return error("CBlock::WriteToDisk() : OpenBlockFile failed");
 
 		// Write index header
-#if defined(BRAND_bluecoin) /* TODO check this later */
+#if defined(BRAND_bluecoin) /* Coins that had to switch PCH messages */
 		unsigned char pchMessageStart[4];
 		GetMessageStart(pchMessageStart, true);
 #endif
@@ -1675,10 +1780,6 @@ public:
 		CAutoFile filein = CAutoFile(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
 		if (!filein)
 			return error("CBlock::ReadFromDisk() : OpenBlockFile failed");
-#if defined(BRAND_bluecoin)
-		if (!fReadTransactions)
-			filein.nType |= SER_BLOCKHEADERONLY;
-#endif
 
 		// Read block
 		try {
@@ -1689,13 +1790,8 @@ public:
 		}
 
 		// Check the header
-#if defined (BRAND_bluecoin) || defined(BRAND_givestake)
-		if (fReadTransactions && IsProofOfWork() && !CheckProofOfWork(GetHash(), nBits)){
-#else
-		if (!CheckProofOfWork(GetPoWHash(), nBits)){
-#endif
+		if (IsProofOfWork() && !CheckProofOfWork(GetHash(), nBits))
 			return error("CBlock::ReadFromDisk() : errors in block header");
-		}
 		return true;
 	}
 
@@ -1703,15 +1799,16 @@ public:
 
 	void print() const
 	{
-#if defined(BRAND_bluecoin)
-		printf("CBlock(vchBlockSig=%s, hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%d)\n",
+#if defined(PPCOINSTAKE)
+		printf("CBlock(hash=%s, vchBlockSig=%s, input=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu")\n",
+			GetHash().ToString().c_str(),
 			HexStr(vchBlockSig.begin(), vchBlockSig.end()).c_str(),
 #else
-		printf("CBlock(hash=%s, input=%s, PoW=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu")\n",
-#endif
-			GetHash().ToString().c_str(),
-			HexStr(BEGIN(nVersion),BEGIN(nVersion)+80,false).c_str(),
+		printf("CBlock(hash=%s, input=%s, PoW=%s, input=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu")\n",
+			GetHash().ToString().c_str()
 			GetPoWHash().ToString().c_str(),
+#endif
+			HexStr(BEGIN(nVersion),BEGIN(nVersion)+80,false).c_str(),	
 			nVersion,
 			hashPrevBlock.ToString().c_str(),
 			hashMerkleRoot.ToString().c_str(),
@@ -1750,7 +1847,7 @@ public:
 	// Store block on disk
 	// if dbp is provided, the file is known to already reside on disk
 	bool AcceptBlock(CValidationState &state, CDiskBlockPos *dbp = NULL);
-#if defined(BRAND_bluecoin) || defined(BRAND_givecoin)
+#if defined(PPCOINSTAKE)
 	bool GetCoinAge(uint64_t& nCoinAge) const; // ppcoin: calculate total coin age spent in block
 	bool SignBlock(const CKeyStore& keystore);
 	bool CheckBlockSignature() const;
@@ -1859,27 +1956,6 @@ public:
 	// height of the entry in the chain. The genesis block has height 0
 	int nHeight;
 
-#if defined(BRAND_bluecoin)
-	int64_t nMint;
-	int64_t nMoneySupply;
-
-	unsigned int nFlags;  // ppcoin: block index flags
-	enum  
-	{
-		BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
-		BLOCK_STAKE_ENTROPY  = (1 << 1), // entropy bit for stake modifier
-		BLOCK_STAKE_MODIFIER = (1 << 2), // regenerated stake modifier
-	};
-
-	uint64_t nStakeModifier; // hash modifier for proof-of-stake
-	unsigned int nStakeModifierChecksum; // checksum of index; in-memeory only
-
-	// proof-of-stake specific fields
-	COutPoint prevoutStake;
-	unsigned int nStakeTime;
-	uint256 hashProofOfStake;
-#endif
-
 	// Which # file this block is stored in (blk?????.dat)
 	int nFile;
 
@@ -1891,6 +1967,10 @@ public:
 
 	// (memory only) Total amount of work (expected number of hashes) in the chain up to and including this block
 	uint256 nChainWork;
+#if defined(PPCOINSTAKE)
+	// (memory only) Total amount of trust score (ppcoin proof-of-stake difficulty) in the chain up to and including this block
+	uint256 nChainTrust;
+#endif
 
 	// Number of transactions in this block.
 	// Note: in a potential headers-first mode, this number cannot be relied upon
@@ -1902,6 +1982,25 @@ public:
 	// Verification status of this block. See enum BlockStatus
 	unsigned int nStatus;
 
+#if defined(PPCOINSTAKE)
+	int64_t nMint;
+	int64_t nMoneySupply;
+
+	// ppcoin: proof-of-stake related block index fields
+	unsigned int nFlags;  // ppcoin: block index flags
+	enum  
+	{
+		BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
+		BLOCK_STAKE_ENTROPY  = (1 << 1), // entropy bit for stake modifier
+		BLOCK_STAKE_MODIFIER = (1 << 2), // regenerated stake modifier
+	};
+
+	uint64_t nStakeModifier; // hash modifier for proof-of-stake
+	unsigned int nStakeModifierChecksum; // checksum of index; in-memeory only
+	COutPoint prevoutStake;
+	unsigned int nStakeTime;
+	uint256 hashProofOfStake;
+#endif
 	// block header
 	int nVersion;
 	uint256 hashMerkleRoot;
@@ -1936,24 +2035,24 @@ public:
 		nChainTx = 0;
 		nStatus = 0;
 
-		nVersion	   = 0;
+		nVersion	= 0;
 		hashMerkleRoot = 0;
-		nTime		   = 0;
-		nBits		   = 0;
-		nNonce		   = 0;
+		nTime		= 0;
+		nBits		= 0;
+		nNonce		= 0;
 	}
 
-	CBlockIndex(CBlockHeader& block)
+	CBlockIndex(CBlock& block)
 	{
 		phashBlock = NULL;
 		pprev = NULL;
 		pnext = NULL;
 		nHeight = 0;
-#if defined(BRAND_bluecoin)
-		nFile = nFileIn;
-		nBlockPos = nBlockPosIn;
-		
-		bnChainTrust = 0;
+#if defined(PPCOINSTAKE)
+		nFile = 0;
+		nDataPos = 0;
+		nUndoPos = 0;
+		nChainTrust = 0;
 		nMint = 0;
 		nMoneySupply = 0;
 		nFlags = 0;
@@ -2075,7 +2174,7 @@ public:
 
 	bool CheckIndex() const
 	{
-#if defined(BRAND_bluecoin) || defined(BRAND_uro) || defined(BRAND_givestake)
+#if defined(CHECKINDEX_SLOW)
 		return IsProofOfWork() ? CheckProofOfWork(GetBlockHash(), nBits) : true;
 #else /* litecoin scrypt code */
 		/** Scrypt is used for block proof-of-work, but for purposes of performance the index internally uses sha256.
@@ -2162,8 +2261,8 @@ public:
 
 	std::string ToString() const
 	{
-		return strprintf("CBlockIndex(nprev=%08x, pnext=%08x, nFile=%d, nBlockPos=%-6d nHeight=%d, nMint=%s, nMoneySupply=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016" PRI64x", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
-			pprev, pnext, nFile, nBlockPos, nHeight,
+		return strprintf("CBlockIndex(nprev=%p, pnext=%p,  nHeight=%d, nMint=%s, nMoneySupply=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016" PRIx64", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
+			pprev, pnext, nHeight,
 			FormatMoney(nMint).c_str(), FormatMoney(nMoneySupply).c_str(),
 			GeneratedStakeModifier() ? "MOD" : "-", GetStakeEntropyBit(), IsProofOfStake()? "PoS" : "PoW",
 			nStakeModifier, nStakeModifierChecksum, 
@@ -2193,9 +2292,13 @@ public:
 struct CBlockIndexWorkComparator
 {
 	bool operator()(CBlockIndex *pa, CBlockIndex *pb) {
+#if defined(PPCOINSTAKE)
+		if (pa->nChainTrust > pb->nChainTrust) return false;
+		if (pa->nChainTrust < pb->nChainTrust) return true;
+#else
 		if (pa->nChainWork > pb->nChainWork) return false;
 		if (pa->nChainWork < pb->nChainWork) return true;
-
+#endif
 		if (pa->GetBlockHash() < pb->GetBlockHash()) return false;
 		if (pa->GetBlockHash() > pb->GetBlockHash()) return true;
 
@@ -2210,34 +2313,31 @@ class CDiskBlockIndex : public CBlockIndex
 {
 public:
 	uint256 hashPrev;
-#if defined(CONFIG_bluecoin)
-	uint256 hashNext;
-#endif
 
 	CDiskBlockIndex() {
 		hashPrev = 0;
-#if defined(CONFIG_bluecoin)
-		hashNext = 0;
-#endif
 	}
 
 	explicit CDiskBlockIndex(CBlockIndex* pindex) : CBlockIndex(*pindex) {
 		hashPrev = (pprev ? pprev->GetBlockHash() : 0);
-#if defined(CONFIG_bluecoin)
-		hashNext = (pnext ? pnext->GetBlockHash() : 0);
-#endif
 	}
 
 	IMPLEMENT_SERIALIZE
 	(
 		if (!(nType & SER_GETHASH)){
-#if defined(CONFIG_bluecoin)
-			READWRITE(nVersion);
+			READWRITE(VARINT(nVersion));
+		}
+		READWRITE(VARINT(nHeight));
+		READWRITE(VARINT(nStatus));
+		READWRITE(VARINT(nTx));
+		if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
+			READWRITE(VARINT(nFile));
+		if (nStatus & BLOCK_HAVE_DATA)
+			READWRITE(VARINT(nDataPos));
+		if (nStatus & BLOCK_HAVE_UNDO)
+			READWRITE(VARINT(nUndoPos));
 
-		READWRITE(hashNext);
-		READWRITE(nFile);
-		READWRITE(nBlockPos);
-		READWRITE(nHeight);
+#if defined(PPCOINSTAKE)
 		READWRITE(nMint);
 		READWRITE(nMoneySupply);
 		READWRITE(nFlags);
@@ -2254,20 +2354,8 @@ public:
 			const_cast<CDiskBlockIndex*>(this)->nStakeTime = 0;
 			const_cast<CDiskBlockIndex*>(this)->hashProofOfStake = 0;
 		}
-#else
-				READWRITE(VARINT(nVersion));
-		}
-
-		READWRITE(VARINT(nHeight));
-		READWRITE(VARINT(nStatus));
-		READWRITE(VARINT(nTx));
-		if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
-			READWRITE(VARINT(nFile));
-		if (nStatus & BLOCK_HAVE_DATA)
-			READWRITE(VARINT(nDataPos));
-		if (nStatus & BLOCK_HAVE_UNDO)
-			READWRITE(VARINT(nUndoPos));
 #endif
+
 		// block header
 		READWRITE(this->nVersion);
 		READWRITE(hashPrev);
@@ -2294,16 +2382,9 @@ public:
 	{
 		std::string str = "CDiskBlockIndex(";
 		str += CBlockIndex::ToString();
-#if defined(BRAND_bluecoin) // merging this is getting old. fix later.
-		str += strprintf("\n				hashBlock=%s, hashPrev=%s, hashNext=%s)",
-			GetBlockHash().ToString().c_str(),
-			hashPrev.ToString().substr(0,20).c_str(),
-			hashNext.ToString().substr(0,20).c_str());
-#else
-		str += strprintf("\n				hashBlock=%s, hashPrev=%s)",
-			GetBlockHash().ToString().c_str(),
-			hashPrev.ToString().c_str());
-#endif
+		str += strprintf("\n                hashBlock=%s, hashPrev=%s)",
+		GetBlockHash().ToString().c_str(),
+		hashPrev.ToString().c_str());
 		return str;
 	}
 
@@ -2701,10 +2782,22 @@ bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAdd
 
 /** *coin.cpp functions **/ 
 // FIXME DOXYGEN THIS
-extern int64_t GetBlockValue(CBlockIndex *block, int64_t nFees);
-extern unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, int height);
+extern int64_t GetSeigniorage(const CBlockIndex * pPrev, int64_t nFees, int64_t CoinAge=0);
+int64_t GetProofOfWorkReward(const CBlockIndex* pPrev, int64_t nFees){
+	return GetSeigniorage(pPrev, nFees, 0);
+};
+int64_t GetBlockValue(const CBlockIndex * pPrev, int64_t nFees){
+	return GetSeigniorage(pPrev, nFees, 0);
+}; 
+int64_t GetProofOfStakeReward(int64_t nCoinAge, const CBlockIndex* pPrev=NULL){
+	assert(nCoinAge > 0);
+	return GetSeigniorage(pPrev, 0, nCoinAge);
+};
+extern int64_t GetPoW_seigniorage(CBlockIndex *block, int64_t nFees);
+extern unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, const CBlockHeader* pblock = NULL);
 bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock);
-extern unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock);
+/* takes the last block, and the current block header, returns nbits of trust */
+extern unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock);
 extern bool LoadBlockIndex(); 
 extern bool InitBlockIndex();
 

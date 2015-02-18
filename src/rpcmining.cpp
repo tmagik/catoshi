@@ -107,14 +107,14 @@ Value getestnextdiff(const Array& params, bool fHelp)
 	/* make a fake block so we can fake a timestamp and nbits */
 	CBlockHeader dummyblock;
 	CBlockIndex* dummyindex;
-	uint64_t nextWork = GetNextWorkRequired(pindexBest, &dummyblock);
+	uint64_t nextWork = GetNextTrustRequired(pindexBest, &dummyblock);
 
 	dummyindex = new CBlockIndex;
 	dummyindex->pprev = pindexBest;
 	dummyindex->nHeight = pindexBest->nHeight+1;
 	dummyindex->nTime = timestamp;
 	dummyindex->nBits = nextWork;	/* fill in from above, so we can get the real one*/
-	nextWork = GetNextWorkRequired(dummyindex, &dummyblock);
+	nextWork = GetNextTrustRequired(dummyindex, &dummyblock);
 	delete dummyindex;
 
 	

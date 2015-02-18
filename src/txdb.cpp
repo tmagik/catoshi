@@ -8,7 +8,7 @@
 #include "hash.h"
 #define VERBOSE_LOAD
 #ifdef VERBOSE_LOAD
-#include <QDebug>
+//#include <QDebug>
 #include "ui_interface.h"
 #endif
 
@@ -78,14 +78,14 @@ bool CBlockTreeDB::WriteBlockIndex(const CDiskBlockIndex& blockindex)
 	return Write(make_pair('b', blockindex.GetBlockHash()), blockindex);
 }
 
-bool CBlockTreeDB::ReadBestInvalidWork(CBigNum& bnBestInvalidWork)
+bool CBlockTreeDB::ReadBestInvalidTrust(CBigNum& bnBestInvalidTrust)
 {
-	return Read('I', bnBestInvalidWork);
+	return Read('I', bnBestInvalidTrust);
 }
 
-bool CBlockTreeDB::WriteBestInvalidWork(const CBigNum& bnBestInvalidWork)
+bool CBlockTreeDB::WriteBestInvalidTrust(const CBigNum& bnBestInvalidTrust)
 {
-	return Write('I', bnBestInvalidWork);
+	return Write('I', bnBestInvalidTrust);
 }
 
 bool CBlockTreeDB::WriteBlockFileInfo(int nFile, const CBlockFileInfo &info) {
@@ -228,7 +228,12 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 				pindexNew->nNonce		= diskindex.nNonce;
 				pindexNew->nStatus		= diskindex.nStatus;
 				pindexNew->nTx			= diskindex.nTx;
-//				pindexNew->checked		= false;
+
+				// Watch for genesis block
+				if (pindexGenesisBlock == NULL && diskindex.GetBlockHash() == hashGenesisBlock){
+					pindexGenesisBlock = pindexNew;
+//					printf("LoadDB: got genesis block");
+				}
 
 #ifdef VERBOSE_LOAD
 				count+=1;
@@ -236,21 +241,14 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 					maxfound = pindexNew->nHeight;
 				if ((count % 1000)==0){
 					string mesg = strprintf("LoadDB: count %d/%d\n", count, maxfound);
-					qDebug(mesg.c_str());
+					//qDebug(mesg.c_str());
 					uiInterface.InitMessage(mesg);
 				}
+#else /* original, but slow checks with X11 */
+				if (pindexNew->CheckIndex()){
+					pindexNew->checked == true;
+					return error("LoadBlockIndex() : CheckIndex failed: %s", pindexNew->ToString().c_str());
 #endif
-
-				// Watch for genesis block
-				if (pindexGenesisBlock == NULL && diskindex.GetBlockHash() == hashGenesisBlock){
-					pindexGenesisBlock = pindexNew;
-					printf("LoadDB: got genesis block");
-				}
-
-//				if (pindexNew->CheckIndex()){
-//					pindexNew->checked == true;
-//					return error("LoadBlockIndex() : CheckIndex failed: %s", pindexNew->ToString().c_str());
-
 				pcursor->Next();
 			} else {
 				break; // if shutdown requested or finished loading block index
