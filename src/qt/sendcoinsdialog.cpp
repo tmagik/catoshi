@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2014 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "sendcoinsdialog.h"
@@ -11,6 +11,7 @@
 #include "coincontroldialog.h"
 #include "guiutil.h"
 #include "optionsmodel.h"
+#include "scicon.h"
 #include "sendcoinsentry.h"
 #include "walletmodel.h"
 
@@ -27,7 +28,10 @@
 SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SendCoinsDialog),
-    model(0)
+    clientModel(0),
+    model(0),
+    fNewRecipientAllowed(true),
+    fFeeMinimized(true)
 {
     ui->setupUi(this);
 
@@ -35,6 +39,10 @@ SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
     ui->addButton->setIcon(QIcon());
     ui->clearButton->setIcon(QIcon());
     ui->sendButton->setIcon(QIcon());
+#else
+    ui->addButton->setIcon(SingleColorIcon(":/icons/add"));
+    ui->clearButton->setIcon(SingleColorIcon(":/icons/remove"));
+    ui->sendButton->setIcon(SingleColorIcon(":/icons/send"));
 #endif
 
     GUIUtil::setupAddressWidget(ui->lineEditCoinControlChange, this);
@@ -106,13 +114,15 @@ SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
     ui->checkBoxMinimumFee->setChecked(settings.value("fPayOnlyMinFee").toBool());
     ui->checkBoxFreeTx->setChecked(settings.value("fSendFreeTransactions").toBool());
     minimizeFeeSection(settings.value("fFeeSectionMinimized").toBool());
-
-    fNewRecipientAllowed = true;
 }
 
 void SendCoinsDialog::setClientModel(ClientModel *clientModel)
 {
     this->clientModel = clientModel;
+
+    if (clientModel) {
+        connect(clientModel, SIGNAL(numBlocksChanged(int)), this, SLOT(updateSmartFeeLabel()));
+    }
 }
 
 void SendCoinsDialog::setModel(WalletModel *model)
@@ -143,7 +153,6 @@ void SendCoinsDialog::setModel(WalletModel *model)
         coinControlUpdateLabels();
 
         // fee section
-        connect(clientModel, SIGNAL(numBlocksChanged(int)), this, SLOT(updateSmartFeeLabel()));
         connect(ui->sliderSmartFee, SIGNAL(valueChanged(int)), this, SLOT(updateSmartFeeLabel()));
         connect(ui->sliderSmartFee, SIGNAL(valueChanged(int)), this, SLOT(updateGlobalFeeVariables()));
         connect(ui->sliderSmartFee, SIGNAL(valueChanged(int)), this, SLOT(coinControlUpdateLabels()));
@@ -460,7 +469,7 @@ bool SendCoinsDialog::handlePaymentRequest(const SendCoinsRecipient &rv)
     return true;
 }
 
-void SendCoinsDialog::setBalance(const CAmount& balance, const CAmount& unconfirmedBalance, const CAmount& immatureBalance, 
+void SendCoinsDialog::setBalance(const CAmount& balance, const CAmount& unconfirmedBalance, const CAmount& immatureBalance,
                                  const CAmount& watchBalance, const CAmount& watchUnconfirmedBalance, const CAmount& watchImmatureBalance)
 {
     Q_UNUSED(unconfirmedBalance);
@@ -517,8 +526,12 @@ void SendCoinsDialog::processSendCoinsReturn(const WalletModel::SendCoinsReturn 
         msgParams.first = tr("The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
         msgParams.second = CClientUIInterface::MSG_ERROR;
         break;
-    case WalletModel::InsaneFee:
-        msgParams.first = tr("A fee higher than %1 is considered an insanely high fee.").arg(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), 10000000));
+    case WalletModel::AbsurdFee:
+        msgParams.first = tr("A fee higher than %1 is considered an absurdly high fee.").arg(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), 10000000));
+        break;
+    case WalletModel::PaymentRequestExpired:
+        msgParams.first = tr("Payment request expired!");
+        msgParams.second = CClientUIInterface::MSG_ERROR;
         break;
     // included to prevent a compiler warning.
     case WalletModel::OK:
@@ -627,7 +640,7 @@ void SendCoinsDialog::updateSmartFeeLabel()
     {
         ui->labelSmartFee->setText(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), feeRate.GetFeePerK()) + "/kB");
         ui->labelSmartFee2->hide();
-        ui->labelFeeEstimation->setText(tr("Estimated to begin confirmation within %1 block(s).").arg(nBlocksToConfirm));
+        ui->labelFeeEstimation->setText(tr("Estimated to begin confirmation within %n block(s).", "", nBlocksToConfirm));
     }
 
     updateFeeMinimizedLabel();
@@ -648,19 +661,19 @@ void SendCoinsDialog::coinControlClipboardAmount()
 // Coin Control: copy label "Fee" to clipboard
 void SendCoinsDialog::coinControlClipboardFee()
 {
-    GUIUtil::setClipboard(ui->labelCoinControlFee->text().left(ui->labelCoinControlFee->text().indexOf(" ")).replace("~", ""));
+    GUIUtil::setClipboard(ui->labelCoinControlFee->text().left(ui->labelCoinControlFee->text().indexOf(" ")).replace(ASYMP_UTF8, ""));
 }
 
 // Coin Control: copy label "After fee" to clipboard
 void SendCoinsDialog::coinControlClipboardAfterFee()
 {
-    GUIUtil::setClipboard(ui->labelCoinControlAfterFee->text().left(ui->labelCoinControlAfterFee->text().indexOf(" ")).replace("~", ""));
+    GUIUtil::setClipboard(ui->labelCoinControlAfterFee->text().left(ui->labelCoinControlAfterFee->text().indexOf(" ")).replace(ASYMP_UTF8, ""));
 }
 
 // Coin Control: copy label "Bytes" to clipboard
 void SendCoinsDialog::coinControlClipboardBytes()
 {
-    GUIUtil::setClipboard(ui->labelCoinControlBytes->text().replace("~", ""));
+    GUIUtil::setClipboard(ui->labelCoinControlBytes->text().replace(ASYMP_UTF8, ""));
 }
 
 // Coin Control: copy label "Priority" to clipboard
@@ -678,7 +691,7 @@ void SendCoinsDialog::coinControlClipboardLowOutput()
 // Coin Control: copy label "Change" to clipboard
 void SendCoinsDialog::coinControlClipboardChange()
 {
-    GUIUtil::setClipboard(ui->labelCoinControlChange->text().left(ui->labelCoinControlChange->text().indexOf(" ")).replace("~", ""));
+    GUIUtil::setClipboard(ui->labelCoinControlChange->text().left(ui->labelCoinControlChange->text().indexOf(" ")).replace(ASYMP_UTF8, ""));
 }
 
 // Coin Control: settings menu - coin control enabled/disabled by user
