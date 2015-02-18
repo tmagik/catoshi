@@ -1,10 +1,11 @@
-// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "key.h"
 
-#include "crypto/sha2.h"
+#include "arith_uint256.h"
+#include "crypto/hmac_sha512.h"
 #include "eccryptoverify.h"
 #include "pubkey.h"
 #include "random.h"
@@ -33,6 +34,7 @@ bool CKey::Check(const unsigned char *vch) {
 }
 
 void CKey::MakeNewKey(bool fCompressedIn) {
+    RandAddSeedPerfmon();
     do {
         GetRandBytes(vch, sizeof(vch));
     } while (!Check(vch));
@@ -71,17 +73,26 @@ CPubKey CKey::GetPubKey() const {
     return result;
 }
 
-bool CKey::Sign(const uint256 &hash, std::vector<unsigned char>& vchSig) const {
+extern "C"
+{
+static int secp256k1_nonce_function_test_case(unsigned char *nonce32, const unsigned char *msg32, const unsigned char *key32, unsigned int attempt, const void *data)
+{
+    const uint32_t *test_case = static_cast<const uint32_t*>(data);
+    uint256 nonce;
+    secp256k1_nonce_function_rfc6979(nonce.begin(), msg32, key32, attempt, NULL);
+    nonce = ArithToUint256(UintToArith256(nonce) + *test_case);
+    memcpy(nonce32, nonce.begin(), 32);
+    return 1;
+}
+}
+
+bool CKey::Sign(const uint256 &hash, std::vector<unsigned char>& vchSig, uint32_t test_case) const {
     if (!fValid)
         return false;
     vchSig.resize(72);
     int nSigLen = 72;
-    CKey nonce;
-    do {
-        nonce.MakeNewKey(true);
-        if (secp256k1_ecdsa_sign((const unsigned char*)&hash, 32, (unsigned char*)&vchSig[0], &nSigLen, begin(), nonce.begin()))
-            break;
-    } while(true);
+    int ret = secp256k1_ecdsa_sign(hash.begin(), (unsigned char*)&vchSig[0], &nSigLen, begin(), test_case == 0 ? secp256k1_nonce_function_rfc6979 : secp256k1_nonce_function_test_case, test_case == 0 ? NULL : &test_case);
+    assert(ret);
     vchSig.resize(nSigLen);
     return true;
 }
@@ -94,7 +105,7 @@ bool CKey::VerifyPubKey(const CPubKey& pubkey) const {
     std::string str = "Bitcoin key verification\n";
     GetRandBytes(rnd, sizeof(rnd));
     uint256 hash;
-    CHash256().Write((unsigned char*)str.data(), str.size()).Write(rnd, sizeof(rnd)).Finalize((unsigned char*)&hash);
+    CHash256().Write((unsigned char*)str.data(), str.size()).Write(rnd, sizeof(rnd)).Finalize(hash.begin());
     std::vector<unsigned char> vchSig;
     Sign(hash, vchSig);
     return pubkey.Verify(hash, vchSig);
@@ -105,12 +116,8 @@ bool CKey::SignCompact(const uint256 &hash, std::vector<unsigned char>& vchSig) 
         return false;
     vchSig.resize(65);
     int rec = -1;
-    CKey nonce;
-    do {
-        nonce.MakeNewKey(true);
-        if (secp256k1_ecdsa_sign_compact((const unsigned char*)&hash, 32, &vchSig[1], begin(), nonce.begin(), &rec))
-            break;
-    } while(true);
+    int ret = secp256k1_ecdsa_sign_compact(hash.begin(), &vchSig[1], begin(), secp256k1_nonce_function_rfc6979, NULL, &rec);
+    assert(ret);
     assert(rec != -1);
     vchSig[0] = 27 + rec + (fCompressed ? 4 : 0);
     return true;
