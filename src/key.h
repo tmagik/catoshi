@@ -1,15 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2013 The Bitcoin developers
 // where * = (Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
-// Distributed under the Affero GNU General public license version 3
-// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef CODECOIN_KEY_H
 #define CODECOIN_KEY_H
 
-#include <stdexcept>
 #include <vector>
 
 #include "allocators.h"
@@ -17,23 +13,6 @@
 #include "uintBIG.h"
 #include "hash.h"
 
-#include <openssl/ec.h> // for EC_KEY definition
-
-// secp160k1
-// const unsigned int PRIVATE_KEY_SIZE = 192;
-// const unsigned int PUBLIC_KEY_SIZE  = 41;
-// const unsigned int SIGNATURE_SIZE   = 48;
-//
-// secp192k1
-// const unsigned int PRIVATE_KEY_SIZE = 222;
-// const unsigned int PUBLIC_KEY_SIZE  = 49;
-// const unsigned int SIGNATURE_SIZE   = 57;
-//
-// secp224k1
-// const unsigned int PRIVATE_KEY_SIZE = 250;
-// const unsigned int PUBLIC_KEY_SIZE  = 57;
-// const unsigned int SIGNATURE_SIZE   = 66;
-//
 // secp256k1:
 // const unsigned int PRIVATE_KEY_SIZE = 279;
 // const unsigned int PUBLIC_KEY_SIZE  = 65;
@@ -41,12 +20,6 @@
 //
 // see www.keylength.com
 // script supports up to 75 for single byte push
-
-class key_error : public std::runtime_error
-{
-public:
-    explicit key_error(const std::string& str) : std::runtime_error(str) {}
-};
 
 /** A reference to a CKey: the Hash160 of its serialized public key */
 class CKeyID : public uint160
@@ -195,8 +168,10 @@ public:
 // secure_allocator is defined in allocators.h
 // CPrivKey is a serialized private key, with all parameters included (279 bytes)
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CPrivKey;
+// TODO: #if defined(PPCOINSTAKE)
 // CSecret is a serialization of just the secret parameter (32 bytes)
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CSecret;
+// #endif
 
 /** An encapsulated private key. */
 class CKey {
@@ -271,6 +246,11 @@ public:
     // Compute the public key from a private key.
     // This is expensive.
     CPubKey GetPubKey() const;
+
+//TODO: #if defined(PPCOINSTAKE) 
+    bool SetPubKey(const CPubKey& vchPubKey);
+    bool Verify(uint256 hash, const std::vector<unsigned char>& vchSig);
+// #endif
 
     // Create a DER-serialized signature.
     bool Sign(const uint256 &hash, std::vector<unsigned char>& vchSig) const;

@@ -77,6 +77,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
 
 extern bool fDiscover;
 extern uint64_t nLocalServices;
+extern CAddress addrSeenByPeer;
 extern uint64_t nLocalHostNonce;
 extern CAddrMan addrman;
 extern int nMaxConnections;
@@ -641,9 +642,13 @@ public:
 };
 
 
-
+/* shouldn't these be part of the actual CTransaction/CBlock class */
 class CTransaction;
 void RelayTransaction(const CTransaction& tx, const uint256& hash);
 void RelayTransaction(const CTransaction& tx, const uint256& hash, const CDataStream& ss);
+
+class CBlock;
+void RelayBlock(const CBlock& tx, const uint256& hash);
+void RelayBlock(const CBlock& tx, const uint256& hash, const CDataStream& ss);
 
 #endif

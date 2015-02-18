@@ -18,6 +18,8 @@ static const int64_t CENT = 1000000;
 static const int64_t DUST_SOFT_LIMIT = 100000; // 0.001 GIVE
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */
 static const int64_t DUST_HARD_LIMIT = 1000;   // 0.00001 GIVE mininput
+/** Minimum criteria for AllowFree */
+static const int64_t MIN_FREE_PRIORITY = COIN * 576/250;
 /** No amount larger than this (in catoshi) is valid */
 static const int64_t MAX_MONEY = 500000000 * COIN;
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
@@ -39,5 +41,7 @@ extern const unsigned int nMinTxOutAmount; // set to = CTransaction::nMinTxFee;
 #define BRAND_lower "givecoin"
 #define BRAND_domain "givecoin.org"
 #define BRAND_CODE "GIVE"
+
+#define HYBRIDSTAKE
 
 #endif

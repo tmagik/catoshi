@@ -36,6 +36,7 @@ const unsigned int nStakeMinAge = 60 * 60 * 24 * 2;	// minimum age for coin age:
 const unsigned int nStakeMaxAge = 60 * 60 * 24 * 100;	// stake age of full weight: -1
 const unsigned int nStakeTargetSpacing = 90;			// 60 sec block spacing
 const unsigned int nStakeTargetSpacing2 = 60;			// 90 sec block spacing
+const int64_t nMaxClockDrive = 2 * 60 * 60; 		// two hours
 
 //int nCoinbaseMaturity = 350; // old from bluecoin
 /* end stake stuff */
@@ -64,20 +65,44 @@ const char *strTestNetDNSSeed[][2] = {
 	{NULL, NULL}
 };
 
-int64_t GetBlockValue(CBlockIndex *block, int64_t nFees)
+// ppcoin: miner's coin stake is rewarded based on coin age spent (coin-days)
+int64_t static PPcoinStakeReward(int64_t nCoinAge)
 {
-	int64_t nSubsidy = 0;
-	if (block->nHeight <= 5) {	  // For Each 5 blocks will have 0.5M coins
-	   nSubsidy = 5000000 * COIN;
+    static int64_t nRewardCoinYear = CENT;  // creation amount per coin-year
+    int64_t nSubsidy = nCoinAge * 33 / (365 * 33 + 8) * nRewardCoinYear;
+    if (fDebug && GetBoolArg("-printcreation"))
+        printf("GetProofOfStakeReward(): create=%s nCoinAge=%" PRId64"\n", FormatMoney(nSubsidy).c_str(), nCoinAge);
+    return nSubsidy;
+}
+
+// Givecoin original block reward
+int64_t static GivecoinBlockValue_v1(int nHeight, int64_t nFees)
+{
+    int64_t nSubsidy = 0;
+    if (nHeight <= 5) {    // For Each 5 blocks will have 0.5M coins
+       nSubsidy = 5000000 * COIN;
+    }
+    else {
+       nSubsidy = 1000 * COIN;
+    }
+    // Subsidy is cut in half every 250,000 blocks, which will occur approximately every .5 year
+    nSubsidy >>= (nHeight / 250000); // Givecoin: 250k blocks in ~.5 years
+    //
+    if (nSubsidy < COIN) nSubsidy = COIN;  // Minimum Number of Coin = 1
+    return nSubsidy + nFees;
+}
+
+/*
+ * Get the allow Seigniorage (money creation, or reward) of the current
+ * block. If CoinAge is > 0, this is a proof of stake block.
+ */
+int64_t GetSeigniorage(CBlockIndex *block, int64_t nFees, int64_t CoinAge)
+{
+	if(CoinAge == 0){
+		return GivecoinBlockValue_v1(block->nHeight, nFees);
+	} else {
+		return PPcoinStakeReward(CoinAge);
 	}
-	else {
-	   nSubsidy = 1000 * COIN;
-	}
-	// Subsidy is cut in half every 250,000 blocks, which will occur approximately every .5 year
-	nSubsidy >>= (block->nHeight / 250000); // Givecoin: 250k blocks in ~.5 years
-	//
-	if (nSubsidy < COIN) nSubsidy = COIN;  // Minimum Number of Coin = 1
-	return nSubsidy + nFees;
 }
 
 static const int64_t nTargetTimespan = 10 * 60;		// Givecoin: Difficulty adjusted every 10 mintues
