@@ -625,15 +625,16 @@ bool AppInit2(boost::thread_group& threadGroup)
         if (nNewTimeout > 0 && nNewTimeout < 600000)
             nConnectTimeout = nNewTimeout;
     }
-
+#if defined(ENABLE_MAXFUTURE)
 	if (mapArgs.count("-maxfuture"))
 	{
-		int nNewFuture = GetArg("-maxfuture", 30);
+		int nNewFuture = GetArg("-maxfuture", -1);
 		if (nNewFuture > 0 && nNewFuture < 6000){
-			nMaxFutureTime = nNewFuture;
-			InitWarning(strprintf(_("maxfuture (nMaxFutureTime) set to %d"), nMaxFutureTime));
+			nMaxFuture = nNewFuture;
+			InitWarning(strprintf(_("maxfuture (nMaxFuture) set to %d"), nMaxFutureTime));
 		}
 	}
+#endif
 
 	// Fee-per-kilobyte amount considered the same as "free"
 	// If you are mining, be careful setting this:

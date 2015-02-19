@@ -397,3 +397,18 @@ bool CPubKey::Decompress() {
     key.GetPubKey(*this, false);
     return true;
 }
+
+bool CKey::SetPubKey(const CPubKey& pubkey)
+{
+    CECKey key;
+    if (!key.SetPubKey(pubkey))
+        return false;
+    printf("CKey::SetPubKey: DO SOMETHING\n");
+    return false;
+}
+
+bool CKey::Verify(uint256 hash, const std::vector<unsigned char>& vchSig)
+{
+    CECKey key;
+    return key.Verify(hash, vchSig);
+}

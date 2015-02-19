@@ -22,7 +22,7 @@ extern const unsigned int nStakeMaxAge;
 #include "kittycoin.h"
 #elif BRAND_uro
 #include "uro.h"
-#elif BRAND_givecoin
+#elif defined(BRAND_givecoin) || defined(BRAND_givestake)
 #include "givecoin.h"
 #else
 #error "No BRAND_*COIN defined!!"
@@ -36,10 +36,6 @@ extern const unsigned int nStakeMaxAge;
 /* Litecoin does not do so for performance reasons */
 #if defined(BRAND_bluecoin) || defined(BRAND_uro) || defined(BRAND_givestake)
 #define CHECKINDEX_SLOW
-#endif
-
-#if defined(HYBRIDSTAKE)
-#define PPCOINSTAKE
 #endif
 
 #endif
