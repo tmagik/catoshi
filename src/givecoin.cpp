@@ -32,11 +32,13 @@ const CBigNum bnProofOfStakeLimit(~uint256(0) >> 20);
 //CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 20);
 //CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 20);
 
+/* TODO: move to givecoin.h once finalized */
 const unsigned int nStakeMinAge = 60 * 60 * 24 * 2;	// minimum age for coin age: 2d
-const unsigned int nStakeMaxAge = 60 * 60 * 24 * 100;	// stake age of full weight: -1
-const unsigned int nStakeTargetSpacing = 90;			// 60 sec block spacing
-const unsigned int nStakeTargetSpacing2 = 60;			// 90 sec block spacing
-const int64_t nMaxClockDrive = 2 * 60 * 60; 		// two hours
+const unsigned int nStakeMaxAge = 60 * 60 * 24 * 30;	// stake age of full weight: -1
+const unsigned int nStakeTargetSpacing = 90;		// 60 sec block spacing
+const unsigned int nStakeTargetSpacing2 = 60;		// 90 sec block spacing
+const unsigned int nMaxClockDrift = 45 * 60; 		// 45 minutes
+const int nCutoff_Pos_Block = 170860;
 
 //int nCoinbaseMaturity = 350; // old from bluecoin
 /* end stake stuff */
@@ -96,7 +98,7 @@ int64_t static GivecoinBlockValue_v1(int nHeight, int64_t nFees)
  * Get the allow Seigniorage (money creation, or reward) of the current
  * block. If CoinAge is > 0, this is a proof of stake block.
  */
-int64_t GetSeigniorage(CBlockIndex *block, int64_t nFees, int64_t CoinAge)
+int64_t GetSeigniorage(const CBlockIndex *block, int64_t nFees, int64_t CoinAge)
 {
 	if(CoinAge == 0){
 		return GivecoinBlockValue_v1(block->nHeight, nFees);
@@ -113,7 +115,7 @@ static const int64_t nInterval = nTargetTimespan / nTargetSpacing;	// 10 block r
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
 //
-unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
+unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, const CBlockHeader* pblock)
 {
 	// Testnet has min-difficulty blocks
 	// after nTargetSpacing*2 time between blocks:
@@ -295,17 +297,17 @@ unsigned int static GetNextWorkRequired_V2(const CBlockIndex* pindexLast, const 
 		return KimotoGravityWell(pindexLast, pblock, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
 }
 
-unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
+unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
 		int DiffMode = 1;
 		if (fTestNet) {
-			 if (pindexLast->nHeight+1 >=	50) { DiffMode = 2; }
+			if    (pindexLast->nHeight+1 >=    50) { DiffMode = 2; }
 		}
 		else {
-			 if		 (pindexLast->nHeight+1 >= 34804) { DiffMode = 1; }
-			 else if (pindexLast->nHeight+1 >=	 200) { DiffMode = 2; }
+			if    (pindexLast->nHeight+1 >= 34804) { DiffMode = 1; }
+			else if (pindexLast->nHeight+1 >= 200) { DiffMode = 2; }
 		}
-		if		(DiffMode == 1) { return GetNextWorkRequired_V1(pindexLast, pblock); }
+		if      (DiffMode == 1) { return GetNextWorkRequired_V1(pindexLast, pblock); }
 		else if (DiffMode == 2) { return GetNextWorkRequired_V2(pindexLast, pblock); }
 		return GetNextWorkRequired_V2(pindexLast, pblock);
 }

@@ -72,7 +72,6 @@ static const int fHaveUPnP = true;
 static const int fHaveUPnP = false;
 #endif
 
-extern int64_t nMaxClockDrift;
 extern CScript COINBASE_FLAGS;
 
 extern CCriticalSection cs_main;
@@ -104,8 +103,10 @@ extern unsigned int nCoinCacheSize;
 extern int64_t nTransactionFee;
 extern int64_t nMinimumInputValue;
 
+#if defined(ENABLE_MAXFUTURE)
 // Maximum future timestamp we will accept in ProcessBlock
 extern int64_t nMaxFutureTime;
+#endif
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64_t nMinDiskSpace = 52428800;
@@ -1628,7 +1629,7 @@ public:
 		vMerkleTree.clear();
 	}
 
-#if defined(HYBRIDSTAKE)
+#if defined(PPCOINSTAKE)
 	// This is the newer ppcoin 0.4 version.
 #if !defined(PPCOINSTAKE_SLOW)
 	// ?coin: entropy bit for stake modifier if chosen by modifier
@@ -1666,12 +1667,12 @@ public:
 			maxTransactionTime = std::max(maxTransactionTime, (int64_t)tx.nTime);
 		return maxTransactionTime;
 	}
-#else /* !HYBRIDSTAKE*/
+#else /* !PPCOINSTAKE */
 
 	inline bool IsProofOfStake() const { return false;};
 	inline bool IsProofOfWork() const { return true;};
 
-#endif /* HYBRIDSTAKE */
+#endif /* PPCOINSTAKE */
 
 	CBlockHeader GetBlockHeader() const
 	{
@@ -2157,7 +2158,7 @@ public:
 #if defined(PPCOINSTAKE)
 	CBigNum GetBlockTrust() const;
 #else
-	CBigNum GetBlockWork() const
+	CBigNum GetBlockTrust() const
 	{
 		CBigNum bnTarget;
 		bnTarget.SetCompact(nBits);
@@ -2783,13 +2784,13 @@ bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAdd
 /** *coin.cpp functions **/ 
 // FIXME DOXYGEN THIS
 extern int64_t GetSeigniorage(const CBlockIndex * pPrev, int64_t nFees, int64_t CoinAge=0);
-int64_t GetProofOfWorkReward(const CBlockIndex* pPrev, int64_t nFees){
+inline static int64_t GetProofOfWorkReward(const CBlockIndex* pPrev, int64_t nFees){
 	return GetSeigniorage(pPrev, nFees, 0);
 };
-int64_t GetBlockValue(const CBlockIndex * pPrev, int64_t nFees){
+inline static int64_t GetBlockValue(const CBlockIndex * pPrev, int64_t nFees){
 	return GetSeigniorage(pPrev, nFees, 0);
 }; 
-int64_t GetProofOfStakeReward(int64_t nCoinAge, const CBlockIndex* pPrev=NULL){
+inline static int64_t GetProofOfStakeReward(int64_t nCoinAge, const CBlockIndex* pPrev=NULL){
 	assert(nCoinAge > 0);
 	return GetSeigniorage(pPrev, 0, nCoinAge);
 };

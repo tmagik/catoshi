@@ -80,7 +80,6 @@ int64_t nHPSTimerStart = 0;
 // Settings
 int64_t nTransactionFee = 0;
 int64_t nMinimumInputValue = DUST_HARD_LIMIT;
-int64_t nMaxFutureTime = 30;
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -2176,7 +2175,7 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 	if (fCheckPOW && !CheckProofOfWork(GetPoWHash(), nBits))
 		return state.DoS(50, error("CheckBlock() : proof of work failed"));
 
-	// Check timestamp
+	// Check timestamp TODO: should this use nMaxClockDrift, or something else?
 	if (GetBlockTime() > GetAdjustedTime() + nMaxClockDrift)
 		return state.Invalid(error("CheckBlock() : block timestamp too far in the future"));
 
@@ -2278,18 +2277,23 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 			return state.DoS(10, error("AcceptBlock() : prev block not found"));
 		pindexPrev = (*mi).second;
 		nHeight = pindexPrev->nHeight+1;
+#if defined(CUTOFF_POW_BLOCK) /* TODO: move this to coin-specific CBlock derived class */
+		if (nHeight > CUTOFF_POW_BLOCK && IsProofOfWork)
+			return state.DoS(100, error("AcceptBlock(height=%d) : No proof-of-work allowed anymore",
+				nHeight));
+#endif
+#if defined(CUTOFF_POS_BLOCK)
+		if (nHeight < CUTOFF_POS_BLOCK && IsProofOfStake())
+			return state.DoS(100, error("AcceptBlock(height=%d) : No proof-of-stake allowed yet",
+				nHeight));
+#endif
 
-#if defined(PPCOINSTAKE)
 		// Check proof-of-work or proof-of-stake
 		if (nBits != GetNextTrustRequired(pindexPrev, this)){
 			return state.DoS(100, error("AcceptBlock(height=%d) : incorrect proof-of-%s",
 				nHeight, IsProofOfStake()? "stake" : "work"));
 		}
-#else
-		// Check proof of work   <- codecoin: TODO: deprecated, remove 
-		if (nBits != GetNextTrustRequired(pindexPrev, this))
-			return state.DoS(100, error("AcceptBlock(height=%d) : incorrect proof of work", nHeight));
-#endif
+
 		// Check timestamp against prev
 		if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
 			return state.Invalid(error("AcceptBlock() : block's timestamp is too early"));
@@ -2335,12 +2339,11 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 			}
 		}
 	}
-
-#if defined(FROM_PEERUNITY)
 	// Check that the block chain matches the known block chain up to a hardened checkpoint
 	if (!Checkpoints::CheckHardened(nHeight, hash))
-		return DoS(100, error("AcceptBlock() : rejected by hardened checkpoint lockin at %d", nHeight));
+		return state.DoS(100, error("AcceptBlock() : rejected by hardened checkpoint lockin at %d", nHeight));
 
+#if defined(SYNC_CHECKPOINTS)
 	// ppcoin: check that the block satisfies synchronized checkpoint
 	if (!Checkpoints::CheckSync(hash, pindexPrev))
 	{
@@ -2353,7 +2356,8 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 			strMiscWarning = _("WARNING: syncronized checkpoint violation detected, but skipped!");
 		}
 	}
-
+#endif
+#if defined(FROM_PEERUNITY)
 	// Reject block.nVersion < 3 blocks since 95% threshold on mainNet and always on testNet:
 	if (nVersion < 3 && ((!fTestNet && nHeight > 14060) || (fTestNet && nHeight > 0)))
 		return error("CheckBlock() : rejected nVersion < 3 block");
@@ -2362,7 +2366,7 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 	CScript expect = CScript() << nHeight;
 	if (!std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
 		return DoS(100, error("AcceptBlock() : block height mismatch in coinbase"));
-#endif /* PPCOINSTAKE */
+#endif /* FROM_PEERUNITY */
 
 	// Write block to history file
 	try {
@@ -2399,7 +2403,7 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 	return true;
 }
 
-#if defined(FROM_PEERUNITY)
+#if defined(PPCOINSTAKE)
 CBigNum CBlockIndex::GetBlockTrust() const
 {
 	CBigNum bnTarget;
@@ -2488,7 +2492,7 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 	if (pblock->IsProofOfStake())
 	{
 		uint256 hashProofOfStake = 0;
-		if (!CheckProofOfStake(pblock->vtx[1], pblock->nBits, hashProofOfStake))
+        if (!CheckProofOfStake(state, pblock->vtx[1], pblock->nBits, hashProofOfStake))
 		{
 			printf("WARNING: ProcessBlock(): check proof-of-stake failed for block %s\n", hash.ToString().c_str());
 			return false; // do not error here as we expect this during initial block download
@@ -2528,8 +2532,9 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 		Checkpoints::AskForPendingSyncCheckpoint(pfrom);
 #endif
 
-	/* allow up to nMaxFutureTime seconds in the future to accommodate inaccurate clocks" */
-	if (pblock->GetBlockTime() > GetAdjustedTime() + nMaxFutureTime){
+	/* allow up to nMaxClockDrift seconds in the future to accommodate inaccurate clocks" */
+	/* TODO: do we need this check in two places? */
+	if (pblock->GetBlockTime() > GetAdjustedTime() + nMaxClockDrift){
 		return state.DoS(10, error("ProcessBlock(): block timestamp %" PRId64" is %" PRId64 "s in the future",
 			pblock->GetBlockTime(), pblock->GetBlockTime()-GetAdjustedTime()));
 	}

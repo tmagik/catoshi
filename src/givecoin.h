@@ -34,7 +34,12 @@ static const int RETARGET_INTERVAL = 15;
 
 extern const unsigned int nStakeMinAge;
 extern const unsigned int nStakeMaxAge;
-extern const unsigned int nMinTxOutAmount; // set to = CTransaction::nMinTxFee;
+extern const unsigned int nStakeTargetSpacing;
+extern const unsigned int nMaxClockDrift;
+//extern const unsigned int nMinTxOutAmount; // set to = CTransaction::nMinTxFee;
+
+#define CUTOFF_POS_BLOCK nCutoff_Pos_Block
+extern const int CUTOFF_POS_BLOCK;
 
 #define BRAND "Givecoin"
 #define BRAND_upper "GiveCoin"
@@ -42,6 +47,6 @@ extern const unsigned int nMinTxOutAmount; // set to = CTransaction::nMinTxFee;
 #define BRAND_domain "givecoin.org"
 #define BRAND_CODE "GIVE"
 
-#define HYBRIDSTAKE
+//#define PPCOINSTAKE
 
 #endif
