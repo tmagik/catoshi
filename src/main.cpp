@@ -2197,7 +2197,8 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 		return error("CheckBlock() : coinbase output not empty for proof-of-stake block");
 
 	// Check coinbase timestamp
-	if (GetBlockTime() > (int64_t)vtx[0].nTime + nMaxClockDrift)
+	if ((vtx[0].nVersion > CTransaction::LEGACY_VERSION_1) && 
+		GetBlockTime() > (int64_t)vtx[0].nTime + nMaxClockDrift)
 		return state.DoS(50, error("CheckBlock() : coinbase timestamp is too early"));
 	// Check coinstake timestamp
 	if (IsProofOfStake() && !CheckCoinStakeTimestamp(GetBlockTime(), (int64_t)vtx[1].nTime))
@@ -5023,6 +5024,9 @@ void CodecoinMiner(CWallet *pwallet, bool fProofOfStake)
 		}
 		strMintWarning = "";
 
+		/* If proof of stake, tell CreateNewBlock by passing in pwallet */
+		auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey, 
+			fProofOfStake ? pwallet : NULL));
 #else
 		auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
 #endif
@@ -5031,10 +5035,6 @@ void CodecoinMiner(CWallet *pwallet, bool fProofOfStake)
 		//
 		unsigned int nTransactionsUpdatedLast = nTransactionsUpdated;
 		CBlockIndex* pindexPrev = pindexBest;
-
-		/* If proof of stake, tell CreateNewBlock by passing in pwallet */
-		auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey, 
-			fProofOfStake ? pwallet : NULL));
 		
 		if (!pblocktemplate.get())
 			return;

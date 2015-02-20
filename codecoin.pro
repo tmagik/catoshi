@@ -11,16 +11,16 @@ CONFIG += thread
 #
 android:DEFINES += BOOST_NO_SCOPED_ENUMS BOOST_NO_CXX11_SCOPED_ENUMS
 
-COIN_brand=givestake
+COIN_brand=givecoin
 # use: qmake "COIN_brand=givecoin"
 contains(COIN_brand, givecoin) {
     message(Building for Givecoin)
     DEFINES += BRAND_givecoin
     TARGET = givecoin
 } else {
-contains(COIN_brand, givestake) {
+contains(COIN_brand, givestake) { # for testing, for now
     DEFINES += BRAND_givecoin PPCOINSTAKE
-    TARGET = givecoin
+    TARGET = givestake
 } else {
 contains(COIN_brand, bluecoin) {
     DEFINES += BRAND_bluecoin
