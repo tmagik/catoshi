@@ -362,6 +362,8 @@ bool InitBlockIndex() {
 
 		const char* pszTimestamp = "CNN 03/Mar/20a14 Ukraine crisis: UN Security Council meets";
 		CTransaction txNew;
+		txNew.nVersion = CTransaction::LEGACY_VERSION_1;
+		printf("txNew version: %d\n", txNew.nVersion);
 		txNew.vin.resize(1);
 		txNew.vout.resize(1);
 		txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
@@ -417,8 +419,9 @@ bool InitBlockIndex() {
 		printf("%s\n", hash.ToString().c_str());
 		printf("%s\n", hashGenesisBlock.ToString().c_str());
 		printf("%s\n", block.hashMerkleRoot.ToString().c_str());
-		assert(block.hashMerkleRoot == uint256("0xdc43fdf63088ee667d957a39f87b217822b9e3d31805b008124c4e821079a43c"));
 		block.print();
+		assert(block.hashMerkleRoot == uint256("0xdc43fdf63088ee667d957a39f87b217822b9e3d31805b008124c4e821079a43c"));
+		//block.print();
 		assert(hash == hashGenesisBlock);
 
 		// Start new block file

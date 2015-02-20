@@ -125,6 +125,10 @@ xCXXFLAGS=-O2 -pthread -Wall -Wextra -Wformat -Wformat-security -Wno-unused-para
 # adds some defaults in front. Unfortunately, LDFLAGS=... $(LDFLAGS) does not work.
 xLDFLAGS=$(LDHARDENING) $(LDFLAGS)
 
+STAKE_OBJS = \
+    $(OBJDIR)/kernel.o \
+    $(OBJDIR)/kernelrecord.o
+
 OBJS= $(OBJDIR)/$(COIN_BRAND).o \
     leveldb/libleveldb.a \
     $(OBJDIR)/version.o \
@@ -177,10 +181,10 @@ ifeq ($(COIN_BRAND),uro)
 OBJS += $(X11_OBJS)
 endif
 ifeq ($(COIN_BRAND),givecoin)
-OBJS += $(X11_OBJS)
+OBJS += $(X11_OBJS) $(STAKE_OBJS)
 endif
 ifeq ($(COIN_BRAND),bluecoin)
-OBJS += $(X11_OBJS)
+OBJS += $(X11_OBJS) $(STAKE_OBJS)
 endif
 
 

@@ -47,6 +47,6 @@ extern const int CUTOFF_POS_BLOCK;
 #define BRAND_domain "givecoin.org"
 #define BRAND_CODE "GIVE"
 
-//#define PPCOINSTAKE
+#define PPCOINSTAKE
 
 #endif

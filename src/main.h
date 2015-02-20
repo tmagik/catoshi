@@ -502,10 +502,12 @@ class CTransaction
 public:
 	static int64_t nMinTxFee;
 	static int64_t nMinRelayTxFee;
-#if defined(BRAND_solarcoin)
+#if defined(BRAND_solarcoin) || defined(BRAND_givecoin)
 	static const int CURRENT_VERSION=2;
 	static const int LEGACY_VERSION_1=1;
-	std::string strTxComment;
+#if defined(BRAND_solarcoin)
+	std::string strTxComment;				/* should this be in givecoin?? */
+#endif
 #else
 	static const int CURRENT_VERSION=1;
 #endif
@@ -532,7 +534,9 @@ public:
 		READWRITE(this->nVersion);
 		nVersion = this->nVersion;
 #if defined(PPCOINSTAKE)
-		READWRITE(nTime);
+		if(this->nVersion > LEGACY_VERSION_1) { 
+			READWRITE(nTime);
+		}
 #endif
 		READWRITE(vin);
 		READWRITE(vout);
@@ -1077,7 +1081,7 @@ public:
 				a.vout == b.vout
 #if defined(PPCOINSTAKE)
 				&& a.vout == b.vout &&
-       				a.fCoinStake == b.fCoinStake &&
+				a.fCoinStake == b.fCoinStake &&
 				a.nTime == b.nTime
 #endif
 				;
@@ -1801,14 +1805,14 @@ public:
 	void print() const
 	{
 #if defined(PPCOINSTAKE)
-		printf("CBlock(hash=%s, vchBlockSig=%s, input=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu")\n",
+		printf("CBlock(hash=%s, vchBlockSig=%s, PoW=%s, input=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu")\n",
 			GetHash().ToString().c_str(),
 			HexStr(vchBlockSig.begin(), vchBlockSig.end()).c_str(),
 #else
-		printf("CBlock(hash=%s, input=%s, PoW=%s, input=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu")\n",
-			GetHash().ToString().c_str()
-			GetPoWHash().ToString().c_str(),
+		printf("CBlock(hash=%s, PoW=%s, input=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu")\n",
+			GetHash().ToString().c_str(),
 #endif
+			GetPoWHash().ToString().c_str(),
 			HexStr(BEGIN(nVersion),BEGIN(nVersion)+80,false).c_str(),	
 			nVersion,
 			hashPrevBlock.ToString().c_str(),
@@ -1966,12 +1970,21 @@ public:
 	// Byte offset within rev?????.dat where this block's undo data is stored
 	unsigned int nUndoPos;
 
-	// (memory only) Total amount of work (expected number of hashes) in the chain up to and including this block
-	uint256 nChainWork;
-#if defined(PPCOINSTAKE)
-	// (memory only) Total amount of trust score (ppcoin proof-of-stake difficulty) in the chain up to and including this block
+	/* (memory only) Total amount of trust score in the chain up to and including this block
+	 * For proof-of-work only coins, this is approximately equivalent to the number of hashes
+	 * applied towards finding proof-of-work.
+	 * For proof-of-stake only coins, this is (mostly) the coin-age consumed by staking, with
+	 * some multipliers to get something that looks like the old Proof-of-Work 'nChainWork'.
+	 * For hybrid coins, this is (at least conceptually) PoW-hashes + PoS-CoinAge*multiplier
+	 * HERE THERE BE DRAGONS (or at least hackers and stealth-switchpools)
+	 * The dragons in the details centers around assumptions about the ratio of PoS CoinAge
+	 * with PoS Hashes can go all over the place and change by orders of magnitude when ASIC
+	 * hashpower shows up.
+	 * There are further issues with the 'nothing-at-stake' attacks, and all of this makes
+	 * Proof-of-stake a much more complicated and potentially ambiguous consensus system.
+	 * Hybrid systems, with a properly functioning stake/hash trust multiplier can mitigate
+	 * some of the ambiguity by requiring a consensus between miners and stakers. */
 	uint256 nChainTrust;
-#endif
 
 	// Number of transactions in this block.
 	// Note: in a potential headers-first mode, this number cannot be relied upon
@@ -2019,8 +2032,8 @@ public:
 		nFile = 0;
 		nDataPos = 0;
 		nUndoPos = 0;
-#if defined(BRAND_bluecoin)
-		bnChainTrust = 0;
+		nChainTrust = 0;
+#if defined(PPCOINSTAKE)
 		nMint = 0;
 		nMoneySupply = 0;
 		nFlags = 0;
@@ -2029,8 +2042,6 @@ public:
 		hashProofOfStake = 0;
 		prevoutStake.SetNull();
 		nStakeTime = 0;
-#else /* not optimal, clean later? */
-		nChainWork = 0;
 #endif
 		nTx = 0;
 		nChainTx = 0;
@@ -2049,11 +2060,11 @@ public:
 		pprev = NULL;
 		pnext = NULL;
 		nHeight = 0;
-#if defined(PPCOINSTAKE)
 		nFile = 0;
 		nDataPos = 0;
 		nUndoPos = 0;
 		nChainTrust = 0;
+#if defined(PPCOINSTAKE)
 		nMint = 0;
 		nMoneySupply = 0;
 		nFlags = 0;
@@ -2072,10 +2083,6 @@ public:
 			nStakeTime = 0;
 		}
 #else
-		nFile = 0;
-		nDataPos = 0;
-		nUndoPos = 0;
-		nChainWork = 0;
 		nTx = 0;
 		nChainTx = 0;
 		nStatus = 0;
@@ -2293,13 +2300,8 @@ public:
 struct CBlockIndexWorkComparator
 {
 	bool operator()(CBlockIndex *pa, CBlockIndex *pb) {
-#if defined(PPCOINSTAKE)
 		if (pa->nChainTrust > pb->nChainTrust) return false;
 		if (pa->nChainTrust < pb->nChainTrust) return true;
-#else
-		if (pa->nChainWork > pb->nChainWork) return false;
-		if (pa->nChainWork < pb->nChainWork) return true;
-#endif
 		if (pa->GetBlockHash() < pb->GetBlockHash()) return false;
 		if (pa->GetBlockHash() > pb->GetBlockHash()) return true;
 
