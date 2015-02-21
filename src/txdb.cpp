@@ -240,7 +240,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 				if (pindexNew->nHeight > maxfound)
 					maxfound = pindexNew->nHeight;
 				if ((count % 1000)==0){
-					string mesg = strprintf("LoadDB: count %d/%d\n", count, maxfound);
+					string mesg = strprintf("LoadDB: count %d/%d", count, maxfound);
 					//qDebug(mesg.c_str());
 					uiInterface.InitMessage(mesg);
 				}

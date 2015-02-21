@@ -620,7 +620,8 @@ public:
 
 	bool IsCoinBase() const
 	{
-#if defined(PPCOINSTAKE)
+		/* givecoin nHeight=168521 fails this test. Might break staking */
+#if defined(PPCOINSTAKE) && !defined(BRAND_givecoin)
 		return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
 #else
 		return (vin.size() == 1 && vin[0].prevout.IsNull());
@@ -1467,7 +1468,9 @@ class CBlockHeader
 {
 public:
 	// header
-#if !defined(BRAND_bluecoin) // sorta backwards here..
+#if defined(BRAND_givecoin)
+/* Optionally overload lowest bit of nVersion as the 'proof-of-work' indicator,
+   instead of overloading the vtx'es */
 	static const int CURRENT_VERSION=2;
 	static const int CURRENT_VERSION_PoW = CURRENT_VERSION | 1;
 	static const int CURRENT_VERSION_PoS = CURRENT_VERSION;
