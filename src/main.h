@@ -1469,6 +1469,13 @@ public:
 	// header
 #if !defined(BRAND_bluecoin) // sorta backwards here..
 	static const int CURRENT_VERSION=2;
+	static const int CURRENT_VERSION_PoW = CURRENT_VERSION | 1;
+	static const int CURRENT_VERSION_PoS = CURRENT_VERSION;
+#elif defined(BRAND_bluecoin)
+	static const int CURRENT_VERSION=4;
+#else
+	static const int CURRENT_VERSION=2;
+#endif
 
 	int nVersion;
 	uint256 hashPrevBlock;
@@ -1476,23 +1483,6 @@ public:
 	unsigned int nTime;
 	unsigned int nBits;
 	unsigned int nNonce;
-
-#else /* so where did verison 4 come from anyway */
-	static const int CURRENT_VERSION=4;
-
-	// network and disk
-	std::vector<CTransaction> vtx;
-
-	// ppcoin: block signature - signed by coin base txout[0]'s owner
-	std::vector<unsigned char> vchBlockSig;
-
-	// memory only
-	mutable std::vector<uint256> vMerkleTree;
-
-	// Denial-of-service detection:
-	mutable int nDoS;
-	bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
-#endif
 
 	CBlockHeader()
 	{
@@ -1619,7 +1609,10 @@ public:
 		READWRITE(*(CBlockHeader*)this);
 		READWRITE(vtx);
 #if defined(PPCOINSTAKE)
-		READWRITE(vchBlockSig);
+#if defined(BRAND_givecoin)
+		if ((this->nVersion | 0x1) == 1) /* overload bit 0 of version as PoS indicator */
+#endif
+			READWRITE(vchBlockSig);
 #endif
 	)
 
@@ -1650,6 +1643,10 @@ public:
 	// ppcoin: two types of block: proof-of-work or proof-of-stake
 	bool IsProofOfStake() const
 	{
+#if defined(BRAND_givecoin)	/* bit 0==0 is proof-of-work */
+		if ((nVersion | 1) == 0)
+			return false;
+#endif
 		return (vtx.size() > 1 && vtx[1].IsCoinStake());
 	}
 

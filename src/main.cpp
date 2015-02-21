@@ -1385,6 +1385,9 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 			return state.DoS(100, error("CheckInputs() : %s nTxFee < 0", GetHash().ToString().c_str()));
 #if defined(PPCOINSTAKE)
 			// ppcoin: enforce transaction fees for every block
+#if defined(BRAND_givecoin)
+			if (nSpendHeight >= CUTOFF_POS_BLOCK)
+#endif
 			if (nTxFee < GetMinFee())
 				return state.DoS(100, error("CheckInputs() : %s not paying required fee=%s, paid=%s", GetHash().ToString().c_str(), FormatMoney(GetMinFee()).c_str(), FormatMoney(nTxFee).c_str()));
 #endif
@@ -2222,7 +2225,11 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 			return error("CheckBlock() : CheckTransaction failed");
 #if defined(PPCOINSTAKE)
         // ppcoin: check transaction timestamp
+#if defined(BRAND_givecoin)
+        if (IsProofOfStake() && GetBlockTime() < (int64_t)tx.nTime)
+#else
         if (GetBlockTime() < (int64_t)tx.nTime)
+#endif
             return state.DoS(50, error("CheckBlock() : block timestamp earlier than transaction timestamp"));
 #endif
 	}
@@ -2256,7 +2263,11 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 #if defined(PPCOINSTAKE)
 	// ppcoin: check block signature
 	// Only check block signature if check merkle root, c.f. commit 3cd01fdf
+#if defined(BRAND_givecoin)
+	if (fCheckMerkleRoot && IsProofOfStake() && !CheckBlockSignature())
+#else 
 	if (fCheckMerkleRoot && !CheckBlockSignature())
+#endif
 		return state.DoS(100, error("CheckBlock() : bad block signature"));
 #endif
 	return true;
@@ -2651,6 +2662,9 @@ bool CBlock::CheckBlockSignature() const
     vector<vector<unsigned char> > vSolutions;
     txnouttype whichType;
     const CTxOut& txout = IsProofOfStake()? vtx[1].vout[1] : vtx[0].vout[0];
+
+    /* temporary */
+    assert(IsProofOfWork());
 
     if (!Solver(txout.scriptPubKey, whichType, vSolutions))
         return false;
@@ -3928,6 +3942,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
 	else if (strCommand == "block" && !fImporting && !fReindex) // Ignore blocks received while importing
 	{
+		//printf("raw block sz %d:\n%s\n", vRecv.size(), HexStr(vRecv.begin(), vRecv.end()).c_str());
 		CBlock block;
 		vRecv >> block;
 
