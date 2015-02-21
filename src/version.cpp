@@ -7,6 +7,7 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include <string>
 
+#include "codecoin.h"
 #include "version.h"
 
 // Name of client reported in the 'version' message. Report the same name
@@ -17,10 +18,10 @@
 // the list of ancient coinage, from oldest known to more recent. 
 // You can find ideas for future client names, here: http://en.wikipedia.org/wiki/List_of_historical_currencies
 
-const std::string CLIENT_NAME("Catoshi/Blu");
+const std::string CLIENT_NAME("Catoshi/" BRAND_CODE);
 
 // Client version number
-#define CLIENT_VERSION_SUFFIX   ""
+#define CLIENT_VERSION_SUFFIX   "Hekte"
 
 
 // The following part of the code determines the CLIENT_BUILD variable.
