@@ -38,7 +38,7 @@ const unsigned int nStakeMaxAge = 60 * 60 * 24 * 30;	// stake age of full weight
 const unsigned int nStakeTargetSpacing = 90;		// 60 sec block spacing
 const unsigned int nStakeTargetSpacing2 = 60;		// 90 sec block spacing
 const unsigned int nMaxClockDrift = 45 * 60; 		// 45 minutes
-const int nCutoff_Pos_Block = 170860;
+const int nCutoff_Pos_Block = 171000;
 
 //int nCoinbaseMaturity = 350; // old from bluecoin
 /* end stake stuff */
