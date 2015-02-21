@@ -502,14 +502,16 @@ class CTransaction
 public:
 	static int64_t nMinTxFee;
 	static int64_t nMinRelayTxFee;
-#if defined(BRAND_solarcoin) || defined(BRAND_givecoin)
-	static const int CURRENT_VERSION=2;
-	static const int LEGACY_VERSION_1=1;
-#if defined(BRAND_solarcoin)
-	std::string strTxComment;				/* should this be in givecoin?? */
-#endif
+#if defined(BRAND_givecoin)
+	/* for now we leave VERSION_nTime at 3, and generate version 1 blocks to be compatible when mining */
+	static const int CURRENT_VERSION = 1, VERSION_nTime = 3;
+	static const int LEGACY_VERSION=2;	/* work around bogus v2 ctx in block 168521 */
+#elif defined(BRAND_solarcoin) 
+	static const int CURRENT_VERSION_1 = 3, VERSION_nTime = 2;
+	static const int LEGACY_VERSION_1 = 1;
+	std::string strTxComment;
 #else
-	static const int CURRENT_VERSION=1;
+	static const int CURRENT_VERSION = VERSION_nTime = 1;
 #endif
 	int nVersion;
 #if defined(PPCOINSTAKE)
@@ -519,11 +521,6 @@ public:
 	std::vector<CTxOut> vout;
 	unsigned int nLockTime;
 
-#if defined(BRAND_bluecoin)
-	// Denial-of-service detection:
-	mutable int nDoS;
-	bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
-#endif
 	CTransaction()
 	{
 		SetNull();
@@ -534,7 +531,7 @@ public:
 		READWRITE(this->nVersion);
 		nVersion = this->nVersion;
 #if defined(PPCOINSTAKE)
-		if(this->nVersion > LEGACY_VERSION_1) { 
+		if(this->nVersion > LEGACY_VERSION) { 
 			READWRITE(nTime);
 		}
 #endif
@@ -620,8 +617,7 @@ public:
 
 	bool IsCoinBase() const
 	{
-		/* givecoin nHeight=168521 fails this test. Might break staking */
-#if defined(PPCOINSTAKE) && !defined(BRAND_givecoin)
+#if defined(PPCOINSTAKE)
 		return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
 #else
 		return (vin.size() == 1 && vin[0].prevout.IsNull());
@@ -1472,8 +1468,8 @@ public:
 /* Optionally overload lowest bit of nVersion as the 'proof-of-work' indicator,
    instead of overloading the vtx'es */
 	static const int CURRENT_VERSION=2;
-	static const int CURRENT_VERSION_PoW = CURRENT_VERSION | 1;
-	static const int CURRENT_VERSION_PoS = CURRENT_VERSION;
+	static const int CURRENT_VERSION_PoW = CURRENT_VERSION;
+	static const int CURRENT_VERSION_PoS = CURRENT_VERSION | 1;
 #elif defined(BRAND_bluecoin)
 	static const int CURRENT_VERSION=4;
 #else
@@ -1647,8 +1643,10 @@ public:
 	bool IsProofOfStake() const
 	{
 #if defined(BRAND_givecoin)	/* bit 0==0 is proof-of-work */
-		if ((nVersion | 1) == 0)
+		if ((nVersion | 0x1L) == 0)
 			return false;
+#else
+#error "givecoin not set"
 #endif
 		return (vtx.size() > 1 && vtx[1].IsCoinStake());
 	}

@@ -2209,9 +2209,12 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 		return error("CheckBlock() : coinbase output not empty for proof-of-stake block");
 
 	// Check coinbase timestamp
-	if ((vtx[0].nVersion > CTransaction::LEGACY_VERSION_1) && 
-		GetBlockTime() > (int64_t)vtx[0].nTime + nMaxClockDrift)
+	if ((vtx[0].nVersion >= CTransaction::VERSION_nTime) && 
+		GetBlockTime() > (int64_t)vtx[0].nTime + nMaxClockDrift){
+		printf("Checkblock: blocktime: %d\n", GetBlockTime());
+		print();
 		return state.DoS(50, error("CheckBlock() : coinbase timestamp is too early"));
+	}
 	// Check coinstake timestamp
 	if (IsProofOfStake() && !CheckCoinStakeTimestamp(GetBlockTime(), (int64_t)vtx[1].nTime))
 		return state.DoS(50, error("CheckBlock() : coinstake timestamp violation nTimeBlock=%" PRIu64" nTimeTx=%u", GetBlockTime(), vtx[1].nTime));
@@ -4594,7 +4597,7 @@ public:
 };
 
 // CreateNewBlock:
-//	 fProofOfStake: try (best effort) to make a proof-of-stake block
+//	 pwallet (if not null): try (best effort) to make a proof-of-stake block
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 {
 	// Create new block
@@ -4651,7 +4654,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 		int64_t nSearchTime = txCoinStake.nTime; // search to current time
 		if (nSearchTime > nLastCoinStakeSearchTime)
 		{
-			// printf(">>> OK1\n");
+			printf(">>> OK1\n");
 			if (pwallet->CreateCoinStake(*pwallet, pblock->nBits, nSearchTime-nLastCoinStakeSearchTime, txCoinStake))
 			{
 				if (txCoinStake.nTime >= max(pindexPrev->GetMedianTimePast()+1, pindexPrev->GetBlockTime() - nMaxClockDrift))
@@ -4667,6 +4670,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 		}
 	}
 
+#if defined(BRAND_givecoin)
+	pblock->nVersion = CBlockHeader::CURRENT_VERSION_PoS;
+#endif
 	pblock->nBits = GetNextTrustRequired(pindexPrev, pblock);
 #endif /* PPCOINSTAKE */
 
@@ -4868,8 +4874,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 
 		nLastBlockTx = nBlockTx;
 		nLastBlockSize = nBlockSize;
-		// kinda verbose for PPCOINSTAKE, but leave it for testing
-		printf("CreateNewBlock(): total size %" PRIu64"\n", nBlockSize);
 #ifdef PPCOINSTAKE
 		if (fDebug && GetBoolArg("-printpriority"))
 			printf("CreateNewBlock(): total size %" PRIu64"\n", nBlockSize);
@@ -4882,15 +4886,16 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 		// Fill in header
 		pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
 #if defined(PPCOINSTAKE)
-		if (pblock->IsProofOfStake())
-			pblock->nTime	   = pblock->vtx[1].nTime; //same as coinstake timestamp
-		pblock->nTime		   = max(pindexPrev->GetMedianTimePast()+1, pblock->GetMaxTransactionTime());
-		pblock->nTime		   = max(pblock->GetBlockTime(), pindexPrev->GetBlockTime() - nMaxClockDrift);
+		if (pblock->IsProofOfStake()){
+			pblock->nTime = pblock->vtx[1].nTime; //same as coinstake timestamp
+			pblock->nTime = max(pindexPrev->GetMedianTimePast()+1, pblock->GetMaxTransactionTime());
+			pblock->nTime = max(pblock->GetBlockTime(), pindexPrev->GetBlockTime() - nMaxClockDrift);
+		}
 		if (pblock->IsProofOfWork())
 #endif /* hackity if ^^ */
 			pblock->UpdateTime(pindexPrev);
-		pblock->nBits		   = GetNextTrustRequired(pindexPrev, pblock);
-		pblock->nNonce		   = 0;
+		pblock->nBits  = GetNextTrustRequired(pindexPrev, pblock);
+		pblock->nNonce = 0;
 		pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
 		pblocktemplate->vTxSigOps[0] = pblock->vtx[0].GetLegacySigOpCount();
 
@@ -4898,6 +4903,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 		indexDummy.pprev = pindexPrev;
 		indexDummy.nHeight = pindexPrev->nHeight + 1;
 		pblock->vtx[0].vout[0].nValue = GetBlockValue(&indexDummy, nFees);
+		pblock->vtx[0].nTime = pblock->nTime;   /* set coinbase timestamp */
 
 		CCoinsViewCache viewNew(*pcoinsTip, true);
 		CValidationState state;
@@ -5223,15 +5229,25 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 		minerThreads = NULL;
 	}
 
-	if (nThreads == 0 || !fGenerate)
+	if (nThreads == 0)
 		return;
+
+	if (fGenerate || pwallet)
+		minerThreads = new boost::thread_group();
+#if defined(PPCOINSTAKE)
+	if (pwallet){
+		/* generate a stake thread */
+		minerThreads->create_thread(boost::bind(&CodecoinMiner, pwallet, true));
+	}
+#endif	
 
 #if defined(BRAND_uro)
 	return;
 #else
-	minerThreads = new boost::thread_group();
-	for (int i = 0; i < nThreads; i++)
-		minerThreads->create_thread(boost::bind(&CodecoinMiner, pwallet, false));
+	if (fGenerate)
+		for (int i = 0; i < nThreads; i++)
+			minerThreads->create_thread(boost::bind(&CodecoinMiner, pwallet, false));
+
 #endif
 }
 
