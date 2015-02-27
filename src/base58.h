@@ -294,6 +294,11 @@ public:
 		SCRIPT_ADDRESS = 88,
 		PUBKEY_ADDRESS_TEST = 23,
 		SCRIPT_ADDRESS_TEST = 83,
+#elif defined(BRAND_hamburger)
+	PUBKEY_ADDRESS = 100, // h, what else?
+	SCRIPT_ADDRESS = 63,  // S
+	PUBKEY_ADDRESS_TEST = 40, // H, what else?
+	SCRIPT_ADDRESS_TEST = 125,  // s
 #endif
     };
 
