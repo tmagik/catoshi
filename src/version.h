@@ -43,6 +43,7 @@ static const int PROTOCOL_VERSION = 70013;
 static const int MIN_PEER_PROTO_VERSION = 70012;
 #else
 static const int PROTOCOL_VERSION = 70002;
+static const int MIN_PEER_PROTO_VERSION = 70002;
 #endif
 
 

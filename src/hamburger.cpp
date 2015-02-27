@@ -5,7 +5,8 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "givecoin.h"
+//#include "coins/hamburger.h"
+#include "hamburger.h"
 #include "checkpoints.h"
 #include "db.h"
 #include "txdb.h"
@@ -22,7 +23,7 @@ using namespace boost;
 
 /* TODO: make this part of a decent C++ object with proper constructors */
 uint256 hashGenesisBlock = 0;		
-const string strMessageMagic = "Givecoin Signed Message:\n";
+const string strMessageMagic = "Hamburger Signed Message:\n";
 unsigned char pchMessageStart[4];
 
 /* stake stuff TODO: */
@@ -32,7 +33,7 @@ const CBigNum bnProofOfStakeLimit(~uint256(0) >> 20);
 //CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 20);
 //CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 20);
 
-/* TODO: move to givecoin.h once finalized */
+/* TODO: move to hamburger.h once finalized */
 const unsigned int nStakeMinAge = 60 * 60 * 24 * 2;	// minimum age for coin age: 2d
 const unsigned int nStakeMaxAge = 60 * 60 * 24 * 30;	// stake age of full weight: -1
 const unsigned int nStakeTargetSpacing = 90;		// 60 sec block spacing
@@ -51,20 +52,16 @@ const int nCutoff_Pos_Block = 10;
 // The second name should resolve to a list of seed addresses.
 // FIXME use a single string and/or objectify this
 /*
-  Givecoin policy for getting on this list:
+  hamburger policy for getting on this list:
   TODO: come up with a policy
  */
 const char *strMainNetDNSSeed[][2] = 
 {
-   // {"weminemnc.com", "dnsseed.weminemnc.com"},
-   {"testrelay.com", "givecoin.no-ip.biz"},
-   {"primarySEED.com", "5.250.177.28"},
-   {"givecoinSecondarySeed.com", "66.172.12.54"},
+   {"hamburger.7el.us", "hamburger.7el.us"},
    {NULL, NULL}
 };
 
 const char *strTestNetDNSSeed[][2] = {
-	//{"Givecointools.com", "testnet-seed.Givecointools.com"},
 	//{"weminemnc.com", "testnet-seed.weminemnc.com"},
 	{NULL, NULL}
 };
@@ -109,8 +106,8 @@ int64_t GetSeigniorage(const CBlockIndex *block, int64_t nFees, int64_t CoinAge)
 	}
 }
 
-static const int64_t nTargetTimespan = 10 * 60;		// Givecoin: Difficulty adjusted every 10 mintues
-static const int64_t nTargetSpacing =	1 * 60;		// Givecoin: Every Minute
+static const int64_t nTargetTimespan = 10 * 60;	// hamburger: Difficulty adjusted every 10 mintues
+static const int64_t nTargetSpacing =	1 * 60;	// hamburger: Every Minute
 static const int64_t nInterval = nTargetTimespan / nTargetSpacing;	// 10 block readjustment
 
 //
@@ -323,13 +320,13 @@ bool LoadBlockIndex()
 		pchMessageStart[1] = 0xc1;
 		pchMessageStart[2] = 0xb7;
 		pchMessageStart[3] = 0xdc;
-		hashGenesisBlock = uint256("0x00000279dba2a8c40c2cd690f160f127a2a7edb8194f0d4e7605f212adf294bc");
+		hashGenesisBlock = uint256("0000093faa831b139595fcd1a2d4e9a937d46171d00ecda9c9fb2ec906a552d6");
 	} else {
 		pchMessageStart[0] = 0xd1;
 		pchMessageStart[1] = 0xd2;
 		pchMessageStart[2] = 0xd3;
 		pchMessageStart[3] = 0xdb;
-		hashGenesisBlock = uint256("0x00000279dba2a8c40c2cd690f160f127a2a7edb8194f0d4e7605f212adf294bc");
+		hashGenesisBlock = uint256("0000093faa831b139595fcd1a2d4e9a937d46171d00ecda9c9fb2ec906a552d6");
 	}
 
 	//
@@ -362,28 +359,28 @@ bool InitBlockIndex() {
 		 // 2014-03-09 22:00:10 block.GetHash = f092eda63502ff8b19f584c56fc6ed32a9e265b798831690ea9aaf44cc74f7f0
 		 // Genesis block
 
-		const char* pszTimestamp = "CNN 03/Mar/20a14 Ukraine crisis: UN Security Council meets";
+		const char* pszTimestamp = "NYtimes Feb 25: Germany Sells Five-Year Debt at Negative Yield";
 		CTransaction txNew;
 		txNew.nVersion = 1;
 		printf("txNew version: %d\n", txNew.nVersion);
 		txNew.vin.resize(1);
 		txNew.vout.resize(1);
 		txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
-		txNew.vout[0].nValue = 1000 * COIN;
-		txNew.vout[0].scriptPubKey = CScript() << ParseHex("040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9") << OP_CHECKSIG;
+		txNew.vout[0].nValue = 5000000 * COIN;
+		txNew.vout[0].scriptPubKey = CScript() << ParseHex("03908c4bd37de5f0d99d8402b6ec80c298296f0891bc3e7298b0620f402576adc5") << OP_CHECKSIG;
 		CBlock block;
 		block.vtx.push_back(txNew);
 		block.hashPrevBlock = 0;
 		block.hashMerkleRoot = block.BuildMerkleTree();
 		block.nVersion = 1;
-		block.nTime    = 1393884829;
+		block.nTime    = 1425050286;
 		block.nBits    = bnProofOfWorkLimit.GetCompact();
-		block.nNonce   = 2090389678;
+		block.nNonce   = 2090530095;
 
 		if (fTestNet)
 		{
-			block.nTime    = 1393884829;
-			block.nNonce   = 2090389678; // hack, same
+			printf("Silly user, there's not testnet here");
+			assert(!fTestNet);
 		}
 
 
@@ -420,7 +417,7 @@ bool InitBlockIndex() {
 		printf("%s\n", hashGenesisBlock.ToString().c_str());
 		printf("%s\n", block.hashMerkleRoot.ToString().c_str());
 		block.print();
-		assert(block.hashMerkleRoot == uint256("0xdc43fdf63088ee667d957a39f87b217822b9e3d31805b008124c4e821079a43c"));
+		assert(block.hashMerkleRoot == uint256("183732b7df12d37a9f227faf4f83f60dc2206e642d48f6d56daee40631326a8d"));
 		//block.print();
 		assert(hash == hashGenesisBlock);
 
@@ -435,6 +432,12 @@ bool InitBlockIndex() {
 				return error("LoadBlockIndex() : writing genesis block to disk failed");
 			if (!block.AddToBlockIndex(state, blockPos))
 				return error("LoadBlockIndex() : genesis block not accepted");
+        		// connect genesis block so we can spend the foundation grant
+			CCoinsView dummy;
+			CCoinsViewCache view(dummy);
+			if (!block.ConnectBlock(state, pindexGenesisBlock, view))
+				return(error("LoadBlockIndex() : could not connect genesis block"));
+
 		} catch(std::runtime_error &e) {
 			return error("LoadBlockIndex() : failed to initialize block database: %s", e.what());
 		}

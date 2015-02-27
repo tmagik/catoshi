@@ -23,7 +23,7 @@ USE_SSE2:=1
 
 LINK:=$(CXX)
 
-COIN_BRAND:=givecoin
+COIN_BRAND:=hamburger
 
 DEFS=-DBOOST_SPIRIT_THREADSAFE -D_FILE_OFFSET_BITS=64 -DBRAND_$(COIN_BRAND)
 
@@ -182,6 +182,9 @@ OBJS += $(X11_OBJS)
 endif
 ifeq ($(COIN_BRAND),givecoin)
 OBJS += $(X11_OBJS) $(STAKE_OBJS)
+endif
+ifeq ($(COIN_BRAND),hamburger)
+OBJS += $(STAKE_OBJS)
 endif
 ifeq ($(COIN_BRAND),bluecoin)
 OBJS += $(X11_OBJS) $(STAKE_OBJS)

@@ -502,7 +502,7 @@ class CTransaction
 public:
 	static int64_t nMinTxFee;
 	static int64_t nMinRelayTxFee;
-#if defined(BRAND_givecoin)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
 	/* for now we leave VERSION_nTime at 3, and generate version 1 blocks to be compatible when mining */
 	static const int CURRENT_VERSION = 1, VERSION_nTime = 3;
 	static const int LEGACY_VERSION=2;	/* work around bogus v2 ctx in block 168521 */
@@ -1464,7 +1464,7 @@ class CBlockHeader
 {
 public:
 	// header
-#if defined(BRAND_givecoin)
+#if defined(BRAND_givecoin) | defined(BRAND_hamburger)
 /* Optionally overload lowest bit of nVersion as the 'proof-of-work' indicator,
    instead of overloading the vtx'es */
 	static const int CURRENT_VERSION=2;
@@ -1608,7 +1608,7 @@ public:
 		READWRITE(*(CBlockHeader*)this);
 		READWRITE(vtx);
 #if defined(PPCOINSTAKE)
-#if defined(BRAND_givecoin)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
 		if ((this->nVersion | 0x1) == 1) /* overload bit 0 of version as PoS indicator */
 #endif
 			READWRITE(vchBlockSig);
@@ -1642,7 +1642,7 @@ public:
 	// ppcoin: two types of block: proof-of-work or proof-of-stake
 	bool IsProofOfStake() const
 	{
-#if defined(BRAND_givecoin)	/* bit 0==0 is proof-of-work */
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger)	/* bit 0==0 is proof-of-work */
 		if ((nVersion | 0x1L) == 0)
 			return false;
 #else

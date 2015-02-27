@@ -24,6 +24,8 @@ extern const unsigned int nStakeMaxAge;
 #include "uro.h"
 #elif defined(BRAND_givecoin) || defined(BRAND_givestake)
 #include "givecoin.h"
+#elif defined(BRAND_hamburger)
+#include "hamburger.h"
 #else
 #error "No BRAND_*COIN defined!!"
 #endif
