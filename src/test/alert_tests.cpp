@@ -1,5 +1,5 @@
 // Copyright (c) 2013 The Bitcoin Core developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 //
@@ -14,6 +14,8 @@
 #include "streams.h"
 #include "util.h"
 #include "utilstrencodings.h"
+
+#include "test/test_bitcoin.h"
 
 #include <fstream>
 
@@ -78,7 +80,7 @@
 }
 #endif
 
-struct ReadAlerts
+struct ReadAlerts : public TestingSetup
 {
     ReadAlerts()
     {
@@ -92,7 +94,7 @@ struct ReadAlerts
                 alerts.push_back(alert);
             }
         }
-        catch (std::exception) { }
+        catch (const std::exception&) { }
     }
     ~ReadAlerts() { }
 
