@@ -1467,6 +1467,7 @@ public:
 #if defined(BRAND_givecoin) | defined(BRAND_hamburger)
 /* Optionally overload lowest bit of nVersion as the 'proof-of-work' indicator,
    instead of overloading the vtx'es */
+	static const int VERSION_STAKE_START=2;
 	static const int CURRENT_VERSION=2;
 	static const int CURRENT_VERSION_PoW = CURRENT_VERSION;
 	static const int CURRENT_VERSION_PoS = CURRENT_VERSION | 1;
@@ -1536,7 +1537,7 @@ public:
 
 	uint256 GetHash() const
 	{
-#if defined(BRAND_uro) || defined(BRAND_givecoin)
+#if defined(BRAND_uro) || defined(BRAND_givecoin) 
 		return Hash11(BEGIN(nVersion), END(nNonce));
 #elif defined(BRAND_bluecoin)
 		if (nTime < X11_CUTOFF_TIME)
@@ -1642,9 +1643,17 @@ public:
 	// ppcoin: two types of block: proof-of-work or proof-of-stake
 	bool IsProofOfStake() const
 	{
-#if defined(BRAND_givecoin) || defined(BRAND_hamburger)	/* bit 0==0 is proof-of-work */
-		if ((nVersion | 0x1L) == 0)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
+		/* Before you try to be clever here, read the assembly code, because
+		   the compiler is smarter and more deterministic than you are */
+
+		if (nVersion < VERSION_STAKE_START)
 			return false;
+
+		if ((nVersion & 0x1L) == 1)
+			return true;	/* bit 0==1 is proof-of-stake */
+		else
+			return false;	/* bit 0==0 is proof-of-work */
 #else
 #error "givecoin not set"
 #endif
@@ -1792,8 +1801,8 @@ public:
 			return error("%s() : deserialize or I/O error", __PRETTY_FUNCTION__);
 		}
 
-		// Check the header
-		if (IsProofOfWork() && !CheckProofOfWork(GetHash(), nBits))
+		// Check the header  TODO: *this is slow*
+		if (IsProofOfWork() && !CheckProofOfWork(GetPoWHash(), nBits))
 			return error("CBlock::ReadFromDisk() : errors in block header");
 		return true;
 	}

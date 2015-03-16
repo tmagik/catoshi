@@ -2275,7 +2275,7 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 #if defined(PPCOINSTAKE)
 	// ppcoin: check block signature
 	// Only check block signature if check merkle root, c.f. commit 3cd01fdf
-#if defined(BRAND_givecoin)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
 	if (fCheckMerkleRoot && IsProofOfStake() && !CheckBlockSignature())
 #else 
 	if (fCheckMerkleRoot && !CheckBlockSignature())
@@ -4990,11 +4990,7 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
 
 bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 {
-#if defined(BRAND_bluecoin) /* or maybe other X11 stuff? */
-	uint256 hash = pblock->GetHash();
-#else
 	uint256 hash = pblock->GetPoWHash();
-#endif
 	uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
 
 	if (hash > hashTarget && pblock->IsProofOfWork())
