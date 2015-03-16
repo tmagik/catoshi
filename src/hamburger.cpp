@@ -326,7 +326,7 @@ bool LoadBlockIndex()
 		pchMessageStart[1] = 0xd2;
 		pchMessageStart[2] = 0xd3;
 		pchMessageStart[3] = 0xdb;
-		hashGenesisBlock = uint256("0000093faa831b139595fcd1a2d4e9a937d46171d00ecda9c9fb2ec906a552d6");
+		hashGenesisBlock = uint256("48fbec404c7c044167ae077d319e96b07be7db105585206192c340e107796766");
 	}
 
 	//
@@ -351,14 +351,6 @@ bool InitBlockIndex() {
 	// Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
 	if (!fReindex) {
 
-
-
-		 // Genesis Block:
-		 // block.nTime = 1393884829
-		 // 2014-03-09 22:00:10 block.nNonce = 2088083604
-		 // 2014-03-09 22:00:10 block.GetHash = f092eda63502ff8b19f584c56fc6ed32a9e265b798831690ea9aaf44cc74f7f0
-		 // Genesis block
-
 		const char* pszTimestamp = "NYtimes Feb 25: Germany Sells Five-Year Debt at Negative Yield";
 		CTransaction txNew;
 		txNew.nVersion = 1;
@@ -373,9 +365,9 @@ bool InitBlockIndex() {
 		block.hashPrevBlock = 0;
 		block.hashMerkleRoot = block.BuildMerkleTree();
 		block.nVersion = 1;
-		block.nTime    = 1425050286;
+		block.nTime    = 1426459536;
 		block.nBits    = bnProofOfWorkLimit.GetCompact();
-		block.nNonce   = 2090530095;
+		block.nNonce   = 2090773291;
 
 		if (fTestNet)
 		{
@@ -393,8 +385,8 @@ bool InitBlockIndex() {
 			uint256 hashTarget = CBigNum().SetCompact(block.nBits).getuint256();
 			// char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
 
-		while(true){
-				hash = block.GetHash();
+			while(true){
+				hash = block.GetPoWHash();
 				if (hash <= hashTarget)
 					break;
 				if ((block.nNonce & 0xFFF) == 0)
@@ -411,6 +403,7 @@ bool InitBlockIndex() {
 			printf("block.nTime = %u \n", block.nTime);
 			printf("block.nNonce = %u \n", block.nNonce);
 			printf("block.GetHash = %s\n", block.GetHash().ToString().c_str());
+			printf("block.GetPoWHash = %s\n", block.GetPoWHash().ToString().c_str());
 		}
 
 		printf("%s\n", hash.ToString().c_str());
