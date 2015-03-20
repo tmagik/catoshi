@@ -1,5 +1,5 @@
-// Copyright (c) 2009-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2013 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_NETBASE_H
@@ -162,7 +162,7 @@ class CService : public CNetAddr
         inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
             READWRITE(FLATDATA(ip));
             unsigned short portN = htons(port);
-            READWRITE(portN);
+            READWRITE(FLATDATA(portN));
             if (ser_action.ForRead())
                  port = ntohs(portN);
         }
