@@ -31,8 +31,8 @@ define fetch_file
 endef
 
 define int_get_build_recipe_hash
-$(eval $(1)_all_file_checksums:=$(shell $(build_SHA256SUM) $(meta_depends) packages/$(1).mk $(addprefix $(PATCHES_PATH)/$(1)/,$($(1)_patches))))
-$(eval $(1)_recipe_hash:=$(shell echo -n "$($(1)_all_file_checksums)" | cut -d" " -f1 | $(build_SHA256SUM)))
+$(eval $(1)_all_file_checksums:=$(shell $(build_SHA256SUM) $(meta_depends) packages/$(1).mk $(addprefix $(PATCHES_PATH)/$(1)/,$($(1)_patches)) | cut -d" " -f1))
+$(eval $(1)_recipe_hash:=$(shell echo -n "$($(1)_all_file_checksums)" | $(build_SHA256SUM) | cut -d" " -f1))
 endef
 
 define int_get_build_id
@@ -205,7 +205,7 @@ endef
 # These functions create the build targets for each package. They must be
 # broken down into small steps so that each part is done for all packages
 # before moving on to the next step. Otherwise, a package's info
-# (build-id for example) would only be avilable to another package if it
+# (build-id for example) would only be available to another package if it
 # happened to be computed already.
 
 #set the type for host/build packages.
