@@ -253,8 +253,8 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifi
                     pindex->GetBlockHash().ToString().c_str(), pindex->nHeight, hashBlockFrom.ToString().c_str());
             else
             {
-				// printf(">> nStakeModifierTime = %"PRI64d", pindexFrom->GetBlockTime() = %"PRI64d", nStakeModifierSelectionInterval = %"PRI64d"\n",
-				// 	nStakeModifierTime, pindexFrom->GetBlockTime(), nStakeModifierSelectionInterval);
+                printf(">> nStakeModifierTime = %" PRId64 ", pindexFrom->GetBlockTime() = %" PRId64 ", nStakeModifierSelectionInterval = %" PRId64"\n",
+                    nStakeModifierTime, pindexFrom->GetBlockTime(), nStakeModifierSelectionInterval);
                 return false;
             }
         }
@@ -439,11 +439,16 @@ unsigned int GetStakeModifierChecksum(const CBlockIndex* pindex)
 // Check stake modifier hard checkpoints
 bool CheckStakeModifierCheckpoints(int nHeight, unsigned int nStakeModifierChecksum)
 {
+#if 1
+#warning "disabled CheckStakeModifierCheckpoints"
+    return true;
+#else
     if (fTestNet) return true; // Testnet has no checkpoints
     if (mapStakeModifierCheckpoints.count(nHeight))
     {
         return nStakeModifierChecksum == mapStakeModifierCheckpoints[nHeight];
     }
     return true;
+#endif
 }
 #endif

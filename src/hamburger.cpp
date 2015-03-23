@@ -34,8 +34,8 @@ const CBigNum bnProofOfStakeLimit(~uint256(0) >> 20);
 //CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 20);
 
 /* TODO: move to hamburger.h once finalized */
-const unsigned int nStakeMinAge = 60 * 60 * 24 * 2;	// minimum age for coin age: 2d
-const unsigned int nStakeMaxAge = 60 * 60 * 24 * 30;	// stake age of full weight: -1
+const unsigned int nStakeMinAge = 60 * 60 * 12;		// minimum age for coin age: 12h
+const unsigned int nStakeMaxAge = 60 * 60 * 24 * 7;	// stake age of full weight: 7d
 const unsigned int nStakeTargetSpacing = 90;		// 60 sec block spacing
 const unsigned int nStakeTargetSpacing2 = 60;		// 90 sec block spacing
 const unsigned int nMaxClockDrift = 45 * 60; 		// 45 minutes
@@ -448,15 +448,15 @@ namespace Checkpoints
 	// + Contains no strange transactions
 	static MapCheckpoints mapCheckpoints =
 		boost::assign::map_list_of
-		(	0,	uint256("00000279dba2a8c40c2cd690f160f127a2a7edb8194f0d4e7605f212adf294bc"))
-		(	171000,	uint256("000000000084b49eb538d85b00a40438b99f749124b68ed7719ed27d0abb3447"))
+		(	0,	uint256("48fbec404c7c044167ae077d319e96b07be7db105585206192c340e107796766"))
+		(	2,	uint256("6475f5fde71158860fa84f4f549744b662507aa07120f5f283946f1ac91e2fa7"))
 		;
 	const CCheckpointData data = {
 		&mapCheckpoints,
-		1424439826, // * UNIX timestamp of last checkpoint block
-		219689,	// * total number of transactions between genesis and last checkpoint
+		1426479192, // * UNIX timestamp of last checkpoint block
+		3,	// * total number of transactions between genesis and last checkpoint
 					//	 (the tx=... number in the SetBestChain debug.log lines)
-		1000.0	   // * estimated number of transactions per day after checkpoint
+		960.0	   // * estimated number of transactions per day after checkpoint
 	};
 
 	static MapCheckpoints mapCheckpointsTestnet = 
