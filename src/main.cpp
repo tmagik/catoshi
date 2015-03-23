@@ -2237,11 +2237,7 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 			return error("CheckBlock() : CheckTransaction failed");
 #if defined(PPCOINSTAKE)
         // ppcoin: check transaction timestamp
-#if defined(BRAND_givecoin)
-        if (IsProofOfStake() && GetBlockTime() < (int64_t)tx.nTime)
-#else
-        if (GetBlockTime() < (int64_t)tx.nTime)
-#endif
+        if (IsProofOfStake() && (GetBlockTime() < (int64_t)tx.nTime))
             return state.DoS(50, error("CheckBlock() : block timestamp earlier than transaction timestamp"));
 #endif
 	}
