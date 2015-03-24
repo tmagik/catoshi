@@ -12,8 +12,8 @@
 #include "ui_interface.h"
 #include "util.h"
 #ifdef ENABLE_WALLET
-#include "db.h"
-#include "wallet.h"
+#include "wallet/db.h"
+#include "wallet/wallet.h"
 #endif
 
 #include <boost/filesystem.hpp>
@@ -26,11 +26,17 @@ CWallet* pwalletMain;
 extern bool fPrintToConsole;
 extern void noui_connect();
 
-TestingSetup::TestingSetup()
+BasicTestingSetup::BasicTestingSetup()
 {
         fPrintToDebugLog = false; // don't want to write to debug.log file
-        SelectParams(CBaseChainParams::UNITTEST);
-        noui_connect();
+        SelectParams(CBaseChainParams::MAIN);
+}
+BasicTestingSetup::~BasicTestingSetup()
+{
+}
+
+TestingSetup::TestingSetup()
+{
 #ifdef ENABLE_WALLET
         bitdb.MakeMock();
 #endif
