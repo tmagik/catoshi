@@ -30,7 +30,7 @@ extern const std::string CLIENT_DATE;
 
 // grantcoin version - intended for display purpose ONLY
 #define GRANTCOIN_VERSION_MAJOR       0
-#define GRANTCOIN_VERSION_MINOR       4
+#define GRANTCOIN_VERSION_MINOR       1
 #define GRANTCOIN_VERSION_REVISION    0
 #define GRANTCOIN_VERSION_BUILD       0
 
