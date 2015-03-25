@@ -1630,12 +1630,14 @@ public:
 	// This is the newer ppcoin 0.4 version.
 #if !defined(PPCOINSTAKE_SLOW)
 	// ?coin: entropy bit for stake modifier if chosen by modifier
-	unsigned int GetStakeEntropyBit(unsigned int nHeight) const
+	//unsigned int GetStakeEntropyBit(unsigned int nHeight) const
+	unsigned int GetStakeEntropyBit() const
 	{
 		// Take last bit of block hash as entropy bit
 		unsigned int nEntropyBit = ((GetHash().Get64()) & 1llu);
 		if (fDebug && GetBoolArg("-printstakemodifier"))
-			printf("GetStakeEntropyBit: nHeight=%u hashBlock=%s nEntropyBit=%u\n", nHeight, GetHash().ToString().c_str(), nEntropyBit);
+			//printf("GetStakeEntropyBit: nHeight=%u hashBlock=%s nEntropyBit=%u\n", nHeight, GetHash().ToString().c_str(), nEntropyBit);
+			printf("GetStakeEntropyBit: hashBlock=%s nEntropyBit=%u\n", GetHash().ToString().c_str(), nEntropyBit);
 		return nEntropyBit;
 	}
 #endif /* ! PPCOINSTAKE_SLOW */
@@ -1863,7 +1865,9 @@ public:
 	bool GetCoinAge(uint64_t& nCoinAge) const; // ppcoin: calculate total coin age spent in block
 	bool SignBlock(const CKeyStore& keystore);
 	bool CheckBlockSignature() const;
+#if defined(PPCOINSTAKE_SLOW)
 	unsigned int GetStakeEntropyBit() const; // ppcoin: entropy bit for stake modifier if chosen by modifier
+#endif
 #endif
 };
 

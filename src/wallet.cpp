@@ -1497,6 +1497,8 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         }
 
         static int nMaxStakeSearchInterval = 60;
+
+        printf(">> block.GetBlockTime() = %" PRId64 ", nStakeMinAge = %d, txNew.nTime = %d\n", header.GetBlockTime(), nStakeMinAge,txNew.nTime); 
         if (header.GetBlockTime() + nStakeMinAge > txNew.nTime - nMaxStakeSearchInterval)
             continue; // only count coins meeting min age requirement
 

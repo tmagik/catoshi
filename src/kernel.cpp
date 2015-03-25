@@ -48,8 +48,16 @@ static bool GetLastStakeModifier(const CBlockIndex* pindex, uint64_t& nStakeModi
         return error("GetLastStakeModifier: null pindex");
     while (pindex && pindex->pprev && !pindex->GeneratedStakeModifier())
         pindex = pindex->pprev;
-    if (!pindex->GeneratedStakeModifier())
+    if (!pindex->GeneratedStakeModifier()){
+#if defined(STAKE_EXISTS)
         return error("GetLastStakeModifier: no generation at genesis block");
+#else
+	printf("WARNING: GetLastStakeModifier: no generation at genesis block, assuming 0\n");
+	nStakeModifier = 0;
+        nModifierTime = pindex->GetBlockTime();
+        return true;
+#endif
+    }
     nStakeModifier = pindex->nStakeModifier;
     nModifierTime = pindex->GetBlockTime();
     return true;
@@ -138,11 +146,15 @@ static bool SelectBlockFromCandidates(
 // blocks.
 bool ComputeNextStakeModifier(const CBlockIndex* pindexPrev, uint64_t& nStakeModifier, bool& fGeneratedStakeModifier)
 {
+    printf("ComputeNextStakeModifier: enter\n");
     nStakeModifier = 0;
     fGeneratedStakeModifier = false;
     if (!pindexPrev)
     {
         fGeneratedStakeModifier = true;
+	if (fDebug){
+		printf("ComputeNextStakeModifier nHeight=%d returned %d\n", 0, nStakeModifier);
+	}
         return true;  // genesis block's modifier is 0
     }
     // First find current stake modifier and its generation block time
@@ -253,8 +265,8 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifi
                     pindex->GetBlockHash().ToString().c_str(), pindex->nHeight, hashBlockFrom.ToString().c_str());
             else
             {
-                printf(">> nStakeModifierTime = %" PRId64 ", pindexFrom->GetBlockTime() = %" PRId64 ", nStakeModifierSelectionInterval = %" PRId64"\n",
-                    nStakeModifierTime, pindexFrom->GetBlockTime(), nStakeModifierSelectionInterval);
+                //printf(">> nStakeModifierTime = %" PRId64 ", pindexFrom->GetBlockTime() = %" PRId64 ", nStakeModifierSelectionInterval = %" PRId64"\n",
+                //    nStakeModifierTime, pindexFrom->GetBlockTime(), nStakeModifierSelectionInterval);
                 return false;
             }
         }
@@ -309,7 +321,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     // to secure the network when proof-of-stake difficulty is low
     int64_t nTimeWeight = min((int64_t)nTimeTx - txPrev.nTime, (int64_t)nStakeMaxAge) - nStakeMinAge;
     CBigNum bnCoinDayWeight = CBigNum(nValueIn) * nTimeWeight / COIN / (24 * 60 * 60);
-    printf(">>> CheckStakeKernelHash: nTimeWeight = %" PRId64"\n", nTimeWeight);
+    //printf(">>> CheckStakeKernelHash: nTimeWeight = %" PRId64"\n", nTimeWeight);
     // Calculate hash
     CDataStream ss(SER_GETHASH, 0);
     uint64_t nStakeModifier = 0;
@@ -318,8 +330,8 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
 
     if (!GetKernelStakeModifier(blockFrom.GetHash(), nStakeModifier, nStakeModifierHeight, nStakeModifierTime, fPrintProofOfStake))
 	{
-		printf(">>> CheckStakeKernelHash: GetKernelStakeModifier return false\n");
-        return false;
+		//printf(">>> CheckStakeKernelHash: GetKernelStakeModifier return false\n");
+		return false;
 	}
 	printf(">>> CheckStakeKernelHash: passed GetKernelStakeModifier\n");
     ss << nStakeModifier;
