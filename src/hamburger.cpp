@@ -425,6 +425,7 @@ bool InitBlockIndex() {
 				return error("LoadBlockIndex() : writing genesis block to disk failed");
 			if (!block.AddToBlockIndex(state, blockPos))
 				return error("LoadBlockIndex() : genesis block not accepted");
+
         		// connect genesis block so we can spend the foundation grant
 			CCoinsView dummy;
 			CCoinsViewCache view(dummy);
@@ -449,7 +450,7 @@ namespace Checkpoints
 	static MapCheckpoints mapCheckpoints =
 		boost::assign::map_list_of
 		(	0,	uint256("48fbec404c7c044167ae077d319e96b07be7db105585206192c340e107796766"))
-		(	2,	uint256("6475f5fde71158860fa84f4f549744b662507aa07120f5f283946f1ac91e2fa7"))
+	//	(	2,	uint256("6475f5fde71158860fa84f4f549744b662507aa07120f5f283946f1ac91e2fa7"))
 		;
 	const CCheckpointData data = {
 		&mapCheckpoints,
