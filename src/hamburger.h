@@ -28,7 +28,7 @@ inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MO
 static const int COINBASE_MATURITY = 100;
 
 /** Minimum block time spacing (hard limit) **/
-static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
+static const int64_t MINIMUM_BLOCK_SPACING = 15;	// Absolute minimum spacing
 
 /** really only used in rpcmining.cpp **/
 static const int RETARGET_INTERVAL = 15;

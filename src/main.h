@@ -76,6 +76,9 @@ extern CScript COINBASE_FLAGS;
 
 extern CCriticalSection cs_main;
 extern std::map<uint256, CBlockIndex*> mapBlockIndex;
+#if defined(PPCOINSTAKE)
+extern std::set<std::pair<COutPoint, unsigned int> > setStakeSeen;
+#endif
 extern uint256 hashGenesisBlock;
 extern CBlockIndex* pindexGenesisBlock;
 extern int nBestHeight;
@@ -502,11 +505,14 @@ class CTransaction
 public:
 	static int64_t nMinTxFee;
 	static int64_t nMinRelayTxFee;
-#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
+#if defined(BRAND_givecoin) //|| defined(BRAND_hamburger)
 	/* for now we leave VERSION_nTime at 3, and generate version 1 blocks to be compatible when mining */
 	static const int CURRENT_VERSION = 1, VERSION_nTime = 3;
 	static const int LEGACY_VERSION=2;	/* work around bogus v2 ctx in block 168521 */
-#elif defined(BRAND_solarcoin) 
+#elif defined(BRAND_hamburger)
+	static const int CURRENT_VERSION = 2, VERSION_nTime = 2;
+	static const int LEGACY_VERSION=1;
+#elif defined(BRAND_solarcoin)
 	static const int CURRENT_VERSION_1 = 3, VERSION_nTime = 2;
 	static const int LEGACY_VERSION_1 = 1;
 	std::string strTxComment;
@@ -553,9 +559,8 @@ public:
 		nLockTime = 0;
 #if defined(BRAND_solarcoin)
 		strTxComment.clear();
-#elif defined(BRAND_bluecoin)
+#elif defined(PPCOINSTAKE)
 		nTime = GetAdjustedTime();
-		nDoS = 0;  // Denial-of-service prevention
 #endif
 	}
 
@@ -1522,12 +1527,6 @@ public:
 		nTime = 0;
 		nBits = 0;
 		nNonce = 0;
-#if defined(BRAND_bluecoin)
-		vtx.clear();
-		vchBlockSig.clear();
-		vMerkleTree.clear();
-		nDoS = 0;
-#endif
 	}
 
 	bool IsNull() const

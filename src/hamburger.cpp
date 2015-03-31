@@ -27,18 +27,17 @@ const string strMessageMagic = "Hamburger Signed Message:\n";
 unsigned char pchMessageStart[4];
 
 /* stake stuff TODO: */
-const CBigNum bnProofOfWorkLimit(~uint256(0) >> 20);
-const CBigNum bnProofOfStakeLimit(~uint256(0) >> 20);
+const CBigNum bnProofOfWorkLimit(~uint256(0) >> 16);
+const CBigNum bnProofOfStakeLimit(~uint256(0) >> 16);
 
 //CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 20);
 //CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 20);
 
 /* TODO: move to hamburger.h once finalized */
-const unsigned int nStakeMinAge = 60 * 60 * 12;		// minimum age for coin age: 12h
+const unsigned int nStakeMinAge = 60 * 60 * 1;		// minimum age for coin age: 1h
 const unsigned int nStakeMaxAge = 60 * 60 * 24 * 7;	// stake age of full weight: 7d
-const unsigned int nStakeTargetSpacing = 90;		// 60 sec block spacing
-const unsigned int nStakeTargetSpacing2 = 60;		// 90 sec block spacing
-const unsigned int nMaxClockDrift = 45 * 60; 		// 45 minutes
+const unsigned int nStakeTargetSpacing = 20;		// 20 sec block spacing
+const unsigned int nMaxClockDrift = 60 * 60 * 3; 		// 3 hours (way too big)
 #warning for test only
 //const int nCutoff_Pos_Block = 250000;
 const int nCutoff_Pos_Block = 10;

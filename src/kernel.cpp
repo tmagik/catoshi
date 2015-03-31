@@ -49,14 +49,7 @@ static bool GetLastStakeModifier(const CBlockIndex* pindex, uint64_t& nStakeModi
     while (pindex && pindex->pprev && !pindex->GeneratedStakeModifier())
         pindex = pindex->pprev;
     if (!pindex->GeneratedStakeModifier()){
-#if defined(STAKE_EXISTS)
         return error("GetLastStakeModifier: no generation at genesis block");
-#else
-	printf("WARNING: GetLastStakeModifier: no generation at genesis block, assuming 0\n");
-	nStakeModifier = 0;
-        nModifierTime = pindex->GetBlockTime();
-        return true;
-#endif
     }
     nStakeModifier = pindex->nStakeModifier;
     nModifierTime = pindex->GetBlockTime();
@@ -153,7 +146,7 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexPrev, uint64_t& nStakeMod
     {
         fGeneratedStakeModifier = true;
 	if (fDebug){
-		printf("ComputeNextStakeModifier nHeight=%d returned %d\n", 0, nStakeModifier);
+		printf("ComputeNextStakeModifier nHeight=%d returned %" PRId64 "\n", 0, nStakeModifier);
 	}
         return true;  // genesis block's modifier is 0
     }
@@ -265,8 +258,10 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifi
                     pindex->GetBlockHash().ToString().c_str(), pindex->nHeight, hashBlockFrom.ToString().c_str());
             else
             {
-                //printf(">> nStakeModifierTime = %" PRId64 ", pindexFrom->GetBlockTime() = %" PRId64 ", nStakeModifierSelectionInterval = %" PRId64"\n",
-                //    nStakeModifierTime, pindexFrom->GetBlockTime(), nStakeModifierSelectionInterval);
+                if (fDebug && GetBoolArg("-printstakemodifierfalse"))
+			printf(">> nStakeModifierTime = %" PRId64 ", pindexFrom->GetBlockTime() = %" PRId64
+				", nStakeModifierSelectionInterval = %" PRId64"\n",
+				nStakeModifierTime, pindexFrom->GetBlockTime(), nStakeModifierSelectionInterval);
                 return false;
             }
         }
@@ -321,7 +316,9 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     // to secure the network when proof-of-stake difficulty is low
     int64_t nTimeWeight = min((int64_t)nTimeTx - txPrev.nTime, (int64_t)nStakeMaxAge) - nStakeMinAge;
     CBigNum bnCoinDayWeight = CBigNum(nValueIn) * nTimeWeight / COIN / (24 * 60 * 60);
-    //printf(">>> CheckStakeKernelHash: nTimeWeight = %" PRId64"\n", nTimeWeight);
+    if(fDebug && GetBoolArg("-printstakehashtime"))
+        printf(">>> CheckStakeKernelHash: nTimeTx = %d, txPrev.nTime = %d, nTimeWeight = %" PRId64"\n",
+		nTimeTx, txPrev.nTime, nTimeWeight);
     // Calculate hash
     CDataStream ss(SER_GETHASH, 0);
     uint64_t nStakeModifier = 0;
@@ -329,11 +326,14 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     int64_t nStakeModifierTime = 0;
 
     if (!GetKernelStakeModifier(blockFrom.GetHash(), nStakeModifier, nStakeModifierHeight, nStakeModifierTime, fPrintProofOfStake))
+	if(!(fDebug && GetBoolArg("-ignoremodifier")))
 	{
-		//printf(">>> CheckStakeKernelHash: GetKernelStakeModifier return false\n");
+		if (fDebug && GetBoolArg("-printmodifierfalse"))
+			printf(">>> CheckStakeKernelHash: GetKernelStakeModifier return false\n");
 		return false;
 	}
-	printf(">>> CheckStakeKernelHash: passed GetKernelStakeModifier\n");
+//    if (fDebug)
+//	printf(">>> CheckStakeKernelHash: passed GetKernelStakeModifier\n");
     ss << nStakeModifier;
 
     ss << nTimeBlockFrom << nTxPrevOffset << txPrev.nTime << prevout.n << nTimeTx;
@@ -355,9 +355,13 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     // Now check if proof-of-stake hash meets target protocol
     if (CBigNum(hashProofOfStake) > bnCoinDayWeight * bnTargetPerCoinDay)
     {
-		// printf(">>> bnCoinDayWeight = %s, bnTargetPerCoinDay=%s\n", 
-		//	bnCoinDayWeight.ToString().c_str(), bnTargetPerCoinDay.ToString().c_str()); 
-		// printf(">>> CheckStakeKernelHash - hashProofOfStake too much\n");
+#if 0 // extra debug
+	if(fDebug){
+		printf(">>> StakeHashProof=%x, target=%x\n", 
+			CBigNum(hashProofOfStake).GetCompact(),
+			(bnCoinDayWeight *  bnTargetPerCoinDay).GetCompact()); 
+	}
+#endif
         return false;
     }
 
