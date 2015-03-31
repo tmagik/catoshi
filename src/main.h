@@ -1644,7 +1644,7 @@ public:
 	// ppcoin: two types of block: proof-of-work or proof-of-stake
 	bool IsProofOfStake() const
 	{
-#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
+#if 0 //defined(BRAND_givecoin) || defined(BRAND_hamburger)
 		/* Before you try to be clever here, read the assembly code, because
 		   the compiler is smarter and more deterministic than you are */
 
@@ -1655,8 +1655,8 @@ public:
 			return true;	/* bit 0==1 is proof-of-stake */
 		else
 			return false;	/* bit 0==0 is proof-of-work */
-#else
-#error "givecoin not set"
+//#else
+//#error "givecoin not set"
 #endif
 		return (vtx.size() > 1 && vtx[1].IsCoinStake());
 	}
