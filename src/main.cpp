@@ -2011,12 +2011,8 @@ bool CBlock::AddToBlockIndex(CValidationState &state, const CDiskBlockPos &pos)
 	// Construct new block index object
 	CBlockIndex* pindexNew = new CBlockIndex(*this);
 	assert(pindexNew);
-#if 0 && defined(PPCOINSTAKE)
-	pindexNew->phashBlock = &hash;  /* this is a bit of a hack, we set it to something else later */
-#else
 	map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
 	pindexNew->phashBlock = &((*mi).first);
-#endif
 	map<uint256, CBlockIndex*>::iterator miPrev = mapBlockIndex.find(hashPrevBlock);
 	if (miPrev != mapBlockIndex.end())
 	{
@@ -2055,11 +2051,8 @@ bool CBlock::AddToBlockIndex(CValidationState &state, const CDiskBlockPos &pos)
 	if (!CheckStakeModifierCheckpoints(pindexNew->nHeight, pindexNew->nStakeModifierChecksum))
 		return error("AddToBlockIndex() : Rejected by stake modifier checkpoint height=%d, modifier=0x%016" PRIx64, pindexNew->nHeight, nStakeModifier);
 
-	// Add to mapBlockIndex
-//	map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
 	if (pindexNew->IsProofOfStake())
 		setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
-//	pindexNew->phashBlock = &((*mi).first);
 #endif
 
 	if (!pblocktree->WriteBlockIndex(CDiskBlockIndex(pindexNew)))
