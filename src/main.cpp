@@ -2208,9 +2208,15 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 			return error("CheckBlock() : 15 August maxlocks violation");
 	}
 #endif
-	// Check proof of work matches claimed amount
-	if (fCheckPOW && !CheckProofOfWork(GetPoWHash(), nBits))
+	// Check that proof of work matches claimed amount
+	// TODO: examine why would we need fCheckPOW
+	if (fCheckPOW && IsProofOfWork() && !CheckProofOfWork(GetPoWHash(), nBits))
 		return state.DoS(50, error("CheckBlock() : proof of work failed"));
+
+#if !defined(PPCOINSTAKE)
+	if (IsProofOfWork())
+		return state.DoS(100, error("CheckBlock() : IsProofOfWork check failed on PoW-only chain"));
+#endif
 
 	// Check timestamp TODO: should this use nMaxClockDrift, or something else?
 	if (GetBlockTime() > GetAdjustedTime() + nMaxClockDrift)
@@ -2705,8 +2711,10 @@ bool CBlock::CheckBlockSignature() const
     txnouttype whichType;
     const CTxOut& txout = IsProofOfStake()? vtx[1].vout[1] : vtx[0].vout[0];
 
-    /* temporary */
-    assert(IsProofOfWork());
+	if (fDebug && GetBoolArg("-ignoreblocksig")){
+		printf("WARNING: block signature ignored, need key.cpp fixed\n");
+		return true;
+	}
 
     if (!Solver(txout.scriptPubKey, whichType, vSolutions))
         return false;
@@ -4694,16 +4702,21 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 					pblock->vtx[0].vout[0].SetEmpty();
 					pblock->vtx[0].nTime = txCoinStake.nTime;
 					pblock->vtx.push_back(txCoinStake);
+				} else {
+					printf("WARNING: coinstake nTime=%" PRId64 " with prev block=%d\n", 
+						txCoinStake.nTime, pindexPrev->GetBlockTime());
+					pblock->vtx.push_back(txCoinStake);
 				}
 			}
 			nLastCoinStakeSearchInterval = nSearchTime - nLastCoinStakeSearchTime;
 			nLastCoinStakeSearchTime = nSearchTime;
 		}
+
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
+		pblock->nVersion = CBlockHeader::CURRENT_VERSION_PoS;
+#endif
 	}
 
-#if defined(BRAND_givecoin) || defined(BRAND_hambuger)
-	pblock->nVersion = CBlockHeader::CURRENT_VERSION_PoS;
-#endif
 	pblock->nBits = GetNextTrustRequired(pindexPrev, pblock);
 #endif /* PPCOINSTAKE */
 
@@ -4925,16 +4938,21 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 		if (pblock->IsProofOfWork())
 #endif /* hackity if ^^ */
 			pblock->UpdateTime(pindexPrev);
-		pblock->nBits  = GetNextTrustRequired(pindexPrev, pblock);
-		pblock->nNonce = 0;
 		pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
 		pblocktemplate->vTxSigOps[0] = pblock->vtx[0].GetLegacySigOpCount();
+		pblock->nBits  = GetNextTrustRequired(pindexPrev, pblock);
+		pblock->nNonce = 0;
 
 		CBlockIndex indexDummy(*pblock);
 		indexDummy.pprev = pindexPrev;
 		indexDummy.nHeight = pindexPrev->nHeight + 1;
-		pblock->vtx[0].vout[0].nValue = GetBlockValue(&indexDummy, nFees);
-		pblock->vtx[0].nTime = pblock->nTime;   /* set coinbase timestamp */
+		if (pblock->IsProofOfWork()){
+			pblock->vtx[0].vout[0].nValue = GetBlockValue(&indexDummy, nFees);
+			pblock->vtx[0].nTime = pblock->nTime;   /* set coinbase timestamp */
+		}
+		
+		if (fDebug)
+			pblock->print();
 
 		CCoinsViewCache viewNew(*pcoinsTip, true);
 		CValidationState state;

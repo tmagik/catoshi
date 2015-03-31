@@ -403,8 +403,8 @@ bool CKey::SetPubKey(const CPubKey& pubkey)
     CECKey key;
     if (!key.SetPubKey(pubkey))
         return false;
-    printf("CKey::SetPubKey: DO SOMETHING\n");
-    return false;
+    printf("CKey::SetPubKey: DO SOMETHING?\n");
+    return true;
 }
 
 bool CKey::Verify(uint256 hash, const std::vector<unsigned char>& vchSig)
