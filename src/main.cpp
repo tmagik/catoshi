@@ -4684,7 +4684,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 		int64_t nSearchTime = txCoinStake.nTime; // search to current time
 		if (nSearchTime > nLastCoinStakeSearchTime)
 		{
-			printf(">>> OK1\n");
+			if (fDebug && GetBoolArg("-printstakeOK"))
+				printf(">>> OK1\n");
 			if (pwallet->CreateCoinStake(*pwallet, pblock->nBits, nSearchTime-nLastCoinStakeSearchTime, txCoinStake))
 			{
 				if (txCoinStake.nTime >= max(pindexPrev->GetMedianTimePast()+1, pindexPrev->GetBlockTime() - nMaxClockDrift))
@@ -4700,7 +4701,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 		}
 	}
 
-#if defined(BRAND_givecoin)
+#if defined(BRAND_givecoin) || defined(BRAND_hambuger)
 	pblock->nVersion = CBlockHeader::CURRENT_VERSION_PoS;
 #endif
 	pblock->nBits = GetNextTrustRequired(pindexPrev, pblock);

@@ -1498,7 +1498,8 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
 
         static int nMaxStakeSearchInterval = 60;
 
-        printf(">> block.GetBlockTime() = %" PRId64 ", nStakeMinAge = %d, txNew.nTime = %d\n", header.GetBlockTime(), nStakeMinAge,txNew.nTime); 
+	if (fDebug && GetBoolArg("-printblockstaketime"))
+		printf(">> block.GetBlockTime() = %" PRId64 ", nStakeMinAge = %d, txNew.nTime = %d\n", header.GetBlockTime(), nStakeMinAge,txNew.nTime); 
         if (header.GetBlockTime() + nStakeMinAge > txNew.nTime - nMaxStakeSearchInterval)
             continue; // only count coins meeting min age requirement
 
@@ -1509,6 +1510,13 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
             // Search nSearchInterval seconds back up to nMaxStakeSearchInterval
             uint256 hashProofOfStake = 0;
             COutPoint prevoutStake = COutPoint(pcoin.first->GetHash(), pcoin.second);
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger) /* coins that change CTransaction version */
+            if (pcoin.first->nVersion < pcoin.first->VERSION_nTime)
+		break;
+#endif
+#warning debug
+            if (fDebug && GetBoolArg("-printbeforestakecheck"))
+		pcoin.first->print();
             if (CheckStakeKernelHash(nBits, header, postx.nTxOffset + sizeof(CBlockHeader), *pcoin.first, prevoutStake, txNew.nTime - n, hashProofOfStake))
             {
                 // Found a kernel

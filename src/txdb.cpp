@@ -215,6 +215,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 				ssValue >> diskindex;
 
 				// Construct block index object
+				// TODO: document why this needs to be duplicated here, if there
+				// is a reason, or re-factor and replace this maintenance mess with:
+				// ssValue >> pindexNew;
 				CBlockIndex* pindexNew = InsertBlockIndex(diskindex.GetBlockHash());
 				pindexNew->pprev		= InsertBlockIndex(diskindex.hashPrev);
 				pindexNew->nHeight		= diskindex.nHeight;
@@ -228,6 +231,22 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 				pindexNew->nNonce		= diskindex.nNonce;
 				pindexNew->nStatus		= diskindex.nStatus;
 				pindexNew->nTx			= diskindex.nTx;
+#if defined(PPCOINSTAKE)
+				pindexNew->nMint          = diskindex.nMint;
+				pindexNew->nMoneySupply   = diskindex.nMoneySupply;
+#if 1
+				printf("load nHeight=%d moneysupply=%" PRId64 "\n", pindexNew->nHeight, pindexNew->nMoneySupply);
+#endif
+				pindexNew->nFlags         = diskindex.nFlags;
+				pindexNew->nStakeModifier = diskindex.nStakeModifier;
+				pindexNew->prevoutStake   = diskindex.prevoutStake;
+				pindexNew->nStakeTime     = diskindex.nStakeTime;
+				pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
+
+				// NovaCoin: build setStakeSeen
+				if (pindexNew->IsProofOfStake())
+					setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
+#endif
 
 				// Watch for genesis block
 				if (pindexGenesisBlock == NULL && diskindex.GetBlockHash() == hashGenesisBlock){
