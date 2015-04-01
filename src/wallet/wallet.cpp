@@ -8,6 +8,7 @@
 #include "base58.h"
 #include "checkpoints.h"
 #include "coincontrol.h"
+#include "main.h"
 #include "net.h"
 #include "script/script.h"
 #include "script/sign.h"
@@ -345,7 +346,7 @@ void CWallet::Flush(bool shutdown)
     bitdb.Flush(shutdown);
 }
 
-bool CWallet::Verify(const string walletFile, string& warningString, string& errorString)
+bool CWallet::Verify(const string& walletFile, string& warningString, string& errorString)
 {
     if (!bitdb.Open(GetDataDir()))
     {
@@ -817,6 +818,18 @@ CAmount CWallet::GetDebit(const CTxIn &txin, const isminefilter& filter) const
     return 0;
 }
 
+isminetype CWallet::IsMine(const CTxOut& txout) const
+{
+    return ::IsMine(*this, txout.scriptPubKey);
+}
+
+CAmount CWallet::GetCredit(const CTxOut& txout, const isminefilter& filter) const
+{
+    if (!MoneyRange(txout.nValue))
+        throw std::runtime_error("CWallet::GetCredit(): value out of range");
+    return ((IsMine(txout) & filter) ? txout.nValue : 0);
+}
+
 bool CWallet::IsChange(const CTxOut& txout) const
 {
     // TODO: fix handling of 'change' outputs. The assumption is that any
@@ -837,6 +850,62 @@ bool CWallet::IsChange(const CTxOut& txout) const
             return true;
     }
     return false;
+}
+
+CAmount CWallet::GetChange(const CTxOut& txout) const
+{
+    if (!MoneyRange(txout.nValue))
+        throw std::runtime_error("CWallet::GetChange(): value out of range");
+    return (IsChange(txout) ? txout.nValue : 0);
+}
+
+bool CWallet::IsMine(const CTransaction& tx) const
+{
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+        if (IsMine(txout))
+            return true;
+    return false;
+}
+
+bool CWallet::IsFromMe(const CTransaction& tx) const
+{
+    return (GetDebit(tx, ISMINE_ALL) > 0);
+}
+
+CAmount CWallet::GetDebit(const CTransaction& tx, const isminefilter& filter) const
+{
+    CAmount nDebit = 0;
+    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+    {
+        nDebit += GetDebit(txin, filter);
+        if (!MoneyRange(nDebit))
+            throw std::runtime_error("CWallet::GetDebit(): value out of range");
+    }
+    return nDebit;
+}
+
+CAmount CWallet::GetCredit(const CTransaction& tx, const isminefilter& filter) const
+{
+    CAmount nCredit = 0;
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
+        nCredit += GetCredit(txout, filter);
+        if (!MoneyRange(nCredit))
+            throw std::runtime_error("CWallet::GetCredit(): value out of range");
+    }
+    return nCredit;
+}
+
+CAmount CWallet::GetChange(const CTransaction& tx) const
+{
+    CAmount nChange = 0;
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
+        nChange += GetChange(txout);
+        if (!MoneyRange(nChange))
+            throw std::runtime_error("CWallet::GetChange(): value out of range");
+    }
+    return nChange;
 }
 
 int64_t CWalletTx::GetTxTime() const
@@ -1045,15 +1114,17 @@ void CWallet::ReacceptWalletTransactions()
     }
 }
 
-void CWalletTx::RelayWalletTransaction()
+bool CWalletTx::RelayWalletTransaction()
 {
     if (!IsCoinBase())
     {
         if (GetDepthInMainChain() == 0) {
             LogPrintf("Relaying wtx %s\n", GetHash().ToString());
             RelayTransaction((CTransaction)*this);
+            return true;
         }
     }
+    return false;
 }
 
 set<uint256> CWalletTx::GetConflicts() const
@@ -1255,7 +1326,31 @@ bool CWalletTx::IsTrusted() const
     return true;
 }
 
-void CWallet::ResendWalletTransactions()
+std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
+{
+    std::vector<uint256> result;
+
+    LOCK(cs_wallet);
+    // Sort them in chronological order
+    multimap<unsigned int, CWalletTx*> mapSorted;
+    BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, mapWallet)
+    {
+        CWalletTx& wtx = item.second;
+        // Don't rebroadcast if newer than nTime:
+        if (wtx.nTimeReceived > nTime)
+            continue;
+        mapSorted.insert(make_pair(wtx.nTimeReceived, &wtx));
+    }
+    BOOST_FOREACH(PAIRTYPE(const unsigned int, CWalletTx*)& item, mapSorted)
+    {
+        CWalletTx& wtx = *item.second;
+        if (wtx.RelayWalletTransaction())
+            result.push_back(wtx.GetHash());
+    }
+    return result;
+}
+
+void CWallet::ResendWalletTransactions(int64_t nBestBlockTime)
 {
     // Do this infrequently and randomly to avoid giving away
     // that these are our transactions.
@@ -1267,30 +1362,15 @@ void CWallet::ResendWalletTransactions()
         return;
 
     // Only do it if there's been a new block since last time
-    if (nTimeBestReceived < nLastResend)
+    if (nBestBlockTime < nLastResend)
         return;
     nLastResend = GetTime();
 
-    // Rebroadcast any of our txes that aren't in a block yet
-    LogPrintf("ResendWalletTransactions()\n");
-    {
-        LOCK(cs_wallet);
-        // Sort them in chronological order
-        multimap<unsigned int, CWalletTx*> mapSorted;
-        BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, mapWallet)
-        {
-            CWalletTx& wtx = item.second;
-            // Don't rebroadcast until it's had plenty of time that
-            // it should have gotten in already by now.
-            if (nTimeBestReceived - (int64_t)wtx.nTimeReceived > 5 * 60)
-                mapSorted.insert(make_pair(wtx.nTimeReceived, &wtx));
-        }
-        BOOST_FOREACH(PAIRTYPE(const unsigned int, CWalletTx*)& item, mapSorted)
-        {
-            CWalletTx& wtx = *item.second;
-            wtx.RelayWalletTransaction();
-        }
-    }
+    // Rebroadcast unconfirmed txes older than 5 minutes before the last
+    // block was found:
+    std::vector<uint256> relayed = ResendWalletTransactionsBefore(nBestBlockTime-5*60);
+    if (!relayed.empty())
+        LogPrintf("%s: rebroadcast %u unconfirmed transactions\n", __func__, relayed.size());
 }
 
 /** @} */ // end of mapWallet
