@@ -109,7 +109,7 @@ def initialize_chain(test_dir):
             for peer in range(4):
                 for j in range(25):
                     set_node_times(rpcs, block_time)
-                    rpcs[peer].setgenerate(True, 1)
+                    rpcs[peer].generate(1)
                     block_time += 10*60
                 # Must sync before next peer starts generating blocks
                 sync_blocks(rpcs)
@@ -158,7 +158,7 @@ def _rpchost_to_args(rpchost):
         rv += ['-rpcport=' + rpcport]
     return rv
 
-def start_node(i, dirname, extra_args=None, rpchost=None):
+def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None):
     """
     Start a bitcoind and return RPC connection to it
     """
@@ -172,7 +172,10 @@ def start_node(i, dirname, extra_args=None, rpchost=None):
                           ["-rpcwait", "getblockcount"], stdout=devnull)
     devnull.close()
     url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
-    proxy = AuthServiceProxy(url)
+    if timewait is not None:
+        proxy = AuthServiceProxy(url, timeout=timewait)
+    else:
+        proxy = AuthServiceProxy(url)
     proxy.url = url # store URL on proxy for info
     return proxy
 

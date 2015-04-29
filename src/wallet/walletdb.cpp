@@ -6,6 +6,7 @@
 #include "wallet/walletdb.h"
 
 #include "base58.h"
+#include "main.h"
 #include "protocol.h"
 #include "serialize.h"
 #include "sync.h"
@@ -891,7 +892,7 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
 //
 // Try to (very carefully!) recover wallet.dat if there is a problem.
 //
-bool CWalletDB::Recover(CDBEnv& dbenv, std::string filename, bool fOnlyKeys)
+bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKeys)
 {
     // Recovery procedure:
     // move wallet.dat to wallet.timestamp.bak
@@ -968,7 +969,7 @@ bool CWalletDB::Recover(CDBEnv& dbenv, std::string filename, bool fOnlyKeys)
     return fSuccess;
 }
 
-bool CWalletDB::Recover(CDBEnv& dbenv, std::string filename)
+bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename)
 {
     return CWalletDB::Recover(dbenv, filename, false);
 }
