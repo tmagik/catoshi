@@ -7,6 +7,11 @@
 #include "config/bitcoin-config.h"
 #endif
 
+#if (defined(__FreeBSD__) || defined(__OpenBSD__))
+#include <pthread.h>
+#include <pthread_np.h>
+#endif
+
 #include "util.h"
 
 #include "chainparamsbase.h"
@@ -707,10 +712,7 @@ void RenameThread(const char* name)
 #if defined(PR_SET_NAME)
     // Only the first 15 characters are used (16 - NUL terminator)
     ::prctl(PR_SET_NAME, name, 0, 0, 0);
-#elif 0 && (defined(__FreeBSD__) || defined(__OpenBSD__))
-    // TODO: This is currently disabled because it needs to be verified to work
-    //       on FreeBSD or OpenBSD first. When verified the '0 &&' part can be
-    //       removed.
+#elif (defined(__FreeBSD__) || defined(__OpenBSD__))
     pthread_set_name_np(pthread_self(), name);
 
 #elif defined(MAC_OSX)
@@ -723,18 +725,19 @@ void RenameThread(const char* name)
 
 void SetupEnvironment()
 {
-#ifndef WIN32
-    try
-    {
-#if BOOST_FILESYSTEM_VERSION == 3
-            boost::filesystem::path::codecvt(); // Raises runtime error if current locale is invalid
-#else // boost filesystem v2
-            std::locale();                      // Raises runtime error if current locale is invalid
-#endif
+    std::locale loc("C");
+    // On most POSIX systems (e.g. Linux, but not BSD) the environment's locale
+    // may be invalid, in which case the "C" locale is used as fallback.
+#if !defined(WIN32) && !defined(MAC_OSX) && !defined(__FreeBSD__) && !defined(__OpenBSD__)
+    try {
+        loc = std::locale(""); // Raises a runtime error if current locale is invalid
     } catch (const std::runtime_error&) {
-        setenv("LC_ALL", "C", 1); // Force C locale
+        setenv("LC_ALL", "C", 1);
     }
 #endif
+    // The path locale is lazy initialized and to avoid deinitialization errors 
+    // in multithreading environments, it is set explicitly by the main thread.
+    boost::filesystem::path::imbue(loc);
 }
 
 void SetThreadPriority(int nPriority)
