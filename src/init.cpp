@@ -52,7 +52,7 @@ bool fFeeEstimatesInitialized = false;
 
 #ifdef WIN32
 // Win32 LevelDB doesn't use filedescriptors, and the ones used for
-// accessing block files, don't count towards to fd_set size limit
+// accessing block files don't count towards the fd_set size limit
 // anyway.
 #define MIN_CORE_FILEDESCRIPTORS 0
 #else
@@ -68,7 +68,7 @@ enum BindFlags {
 };
 
 static const char* FEE_ESTIMATES_FILENAME="fee_estimates.dat";
-CClientUIInterface uiInterface;
+CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -194,6 +194,7 @@ void Shutdown()
     delete pwalletMain;
     pwalletMain = NULL;
 #endif
+    ECC_Stop();
     LogPrintf("%s: done\n", __func__);
 }
 
@@ -275,7 +276,10 @@ std::string HelpMessage(HelpMessageMode mode)
 #ifndef WIN32
     strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), "bitcoind.pid"));
 #endif
-    strUsage += HelpMessageOpt("-reindex", _("Rebuild block chain index from current blk000??.dat files") + " " + _("on startup"));
+    strUsage += HelpMessageOpt("-prune=<n>", strprintf(_("Reduce storage requirements by pruning (deleting) old blocks. This mode disables wallet support and is incompatible with -txindex. "
+            "Warning: Reverting this setting requires re-downloading the entire blockchain. "
+            "(default: 0 = disable pruning blocks, >%u = target size in MiB to use for block files)"), MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
+
 #if !defined(WIN32)
     strUsage += HelpMessageOpt("-sysperms", _("Create new files with system default permissions, instead of umask 077 (only effective with disabled wallet functionality)"));
 #endif
@@ -329,7 +333,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-sendfreetransactions", strprintf(_("Send transactions as zero-fee transactions if possible (default: %u)"), 0));
     strUsage += HelpMessageOpt("-spendzeroconfchange", strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), 1));
     strUsage += HelpMessageOpt("-txconfirmtarget=<n>", strprintf(_("If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks (default: %u)"), 1));
-    strUsage += HelpMessageOpt("-maxtxfee=<amt>", strprintf(_("Maximum total fees to use in a single wallet transaction, setting too low may abort large transactions (default: %s)"),
+    strUsage += HelpMessageOpt("-maxtxfee=<amt>", strprintf(_("Maximum total fees to use in a single wallet transaction; setting this too low may abort large transactions (default: %s)"),
         FormatMoney(maxTxFee)));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format") + " " + _("on startup"));
     strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file (within data directory)") + " " + strprintf(_("(default: %s)"), "wallet.dat"));
@@ -352,7 +356,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-flushwallet", strprintf(_("Run a thread to flush wallet periodically (default: %u)"), 1));
         strUsage += HelpMessageOpt("-stopafterblockimport", strprintf(_("Stop running after importing blocks from disk (default: %u)"), 0));
     }
-    string debugCategories = "addrman, alert, bench, coindb, db, lock, rand, rpc, selectcoins, mempool, net, proxy"; // Don't translate these and qt below
+    string debugCategories = "addrman, alert, bench, coindb, db, lock, rand, rpc, selectcoins, mempool, net, proxy, prune"; // Don't translate these and qt below
     if (mode == HMM_BITCOIN_QT)
         debugCategories += ", qt";
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
@@ -458,10 +462,33 @@ struct CImportingNow
     }
 };
 
+
+// If we're using -prune with -reindex, then delete block files that will be ignored by the
+// reindex.  Since reindexing works by starting at block file 0 and looping until a blockfile
+// is missing, and since pruning works by deleting the oldest block file first, just check
+// for block file 0, and if it doesn't exist, delete all the block files in the
+// directory (since they won't be read by the reindex but will take up disk space).
+void DeleteAllBlockFiles()
+{
+    if (boost::filesystem::exists(GetBlockPosFilename(CDiskBlockPos(0, 0), "blk")))
+        return;
+
+    LogPrintf("Removing all blk?????.dat and rev?????.dat files for -reindex with -prune\n");
+    boost::filesystem::path blocksdir = GetDataDir() / "blocks";
+    for (boost::filesystem::directory_iterator it(blocksdir); it != boost::filesystem::directory_iterator(); it++) {
+        if (is_regular_file(*it)) {
+            if ((it->path().filename().string().length() == 12) &&
+                (it->path().filename().string().substr(8,4) == ".dat") &&
+                ((it->path().filename().string().substr(0,3) == "blk") ||
+                 (it->path().filename().string().substr(0,3) == "rev")))
+                boost::filesystem::remove(it->path());
+        }
+    }
+}
+
 void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
 {
     RenameThread("bitcoin-loadblk");
-
     // -reindex
     if (fReindex) {
         CImportingNow imp;
@@ -674,6 +701,21 @@ bool AppInit2(boost::thread_group& threadGroup)
     if (nFD - MIN_CORE_FILEDESCRIPTORS < nMaxConnections)
         nMaxConnections = nFD - MIN_CORE_FILEDESCRIPTORS;
 
+    // if using block pruning, then disable txindex
+    // also disable the wallet (for now, until SPV support is implemented in wallet)
+    if (GetArg("-prune", 0)) {
+        if (GetBoolArg("-txindex", false))
+            return InitError(_("Prune mode is incompatible with -txindex."));
+#ifdef ENABLE_WALLET
+        if (!GetBoolArg("-disablewallet", false)) {
+            if (SoftSetBoolArg("-disablewallet", true))
+                LogPrintf("%s : parameter interaction: -prune -> setting -disablewallet=1\n", __func__);
+            else
+                return InitError(_("Can't run with a wallet in prune mode."));
+        }
+#endif
+    }
+
     // ********************************************************* Step 3: parameter-to-internal-flags
 
     fDebug = !mapMultiArgs["-debug"].empty();
@@ -698,7 +740,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     // Checkmempool and checkblockindex default to true in regtest mode
     mempool.setSanityCheck(GetBoolArg("-checkmempool", chainparams.DefaultConsistencyChecks()));
     fCheckBlockIndex = GetBoolArg("-checkblockindex", chainparams.DefaultConsistencyChecks());
-    Checkpoints::fEnabled = GetBoolArg("-checkpoints", true);
+    fCheckpointsEnabled = GetBoolArg("-checkpoints", true);
 
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = GetArg("-par", DEFAULT_SCRIPTCHECK_THREADS);
@@ -710,6 +752,21 @@ bool AppInit2(boost::thread_group& threadGroup)
         nScriptCheckThreads = MAX_SCRIPTCHECK_THREADS;
 
     fServer = GetBoolArg("-server", false);
+
+    // block pruning; get the amount of disk space (in MB) to allot for block & undo files
+    int64_t nSignedPruneTarget = GetArg("-prune", 0) * 1024 * 1024;
+    if (nSignedPruneTarget < 0) {
+        return InitError(_("Prune cannot be configured with a negative value."));
+    }
+    nPruneTarget = (uint64_t) nSignedPruneTarget;
+    if (nPruneTarget) {
+        if (nPruneTarget < MIN_DISK_SPACE_FOR_BLOCK_FILES) {
+            return InitError(strprintf(_("Prune configured below the minimum of %d MB.  Please use a higher number."), MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
+        }
+        LogPrintf("Prune configured to target %uMiB on disk for block and undo files.\n", nPruneTarget / 1024 / 1024);
+        fPruneMode = true;
+    }
+
 #ifdef ENABLE_WALLET
     bool fDisableWallet = GetBoolArg("-disablewallet", false);
 #endif
@@ -787,6 +844,9 @@ bool AppInit2(boost::thread_group& threadGroup)
     nMaxDatacarrierBytes = GetArg("-datacarriersize", nMaxDatacarrierBytes);
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
+
+    // Initialize elliptic curve code
+    ECC_Start();
 
     // Sanity check
     if (!InitSanityCheck())
@@ -1030,8 +1090,12 @@ bool AppInit2(boost::thread_group& threadGroup)
                 pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
                 pcoinsTip = new CCoinsViewCache(pcoinscatcher);
 
-                if (fReindex)
+                if (fReindex) {
                     pblocktree->WriteReindexing(true);
+                    //If we're reindexing in prune mode, wipe away all our block and undo data files
+                    if (fPruneMode)
+                        DeleteAllBlockFiles();
+                }
 
                 if (!LoadBlockIndex()) {
                     strLoadError = _("Error loading block database");
@@ -1055,7 +1119,18 @@ bool AppInit2(boost::thread_group& threadGroup)
                     break;
                 }
 
+                // Check for changed -prune state.  What we are concerned about is a user who has pruned blocks
+                // in the past, but is now trying to run unpruned.
+                if (fHavePruned && !fPruneMode) {
+                    strLoadError = _("You need to rebuild the database using -reindex to go back to unpruned mode.  This will redownload the entire blockchain");
+                    break;
+                }
+
                 uiInterface.InitMessage(_("Verifying blocks..."));
+                if (fHavePruned && GetArg("-checkblocks", 288) > MIN_BLOCKS_TO_KEEP) {
+                    LogPrintf("Prune: pruned datadir may not have more than %d blocks; -checkblocks=%d may fail\n",
+                        MIN_BLOCKS_TO_KEEP, GetArg("-checkblocks", 288));
+                }
                 if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3),
                               GetArg("-checkblocks", 288))) {
                     strLoadError = _("Corrupted block database detected");
@@ -1105,6 +1180,15 @@ bool AppInit2(boost::thread_group& threadGroup)
     if (!est_filein.IsNull())
         mempool.ReadFeeEstimates(est_filein);
     fFeeEstimatesInitialized = true;
+
+    // if prune mode, unset NODE_NETWORK and prune block files
+    if (fPruneMode) {
+        LogPrintf("Unsetting NODE_NETWORK on prune mode\n");
+        nLocalServices &= ~NODE_NETWORK;
+        if (!fReindex) {
+            PruneAndFlush();
+        }
+    }
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET
@@ -1251,6 +1335,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     if (mapArgs.count("-blocknotify"))
         uiInterface.NotifyBlockTip.connect(BlockNotifyCallback);
 
+    uiInterface.InitMessage(_("Activating best chain..."));
     // scan for better chains in the block chain database, that are not yet connected in the active best chain
     CValidationState state;
     if (!ActivateBestChain(state))
