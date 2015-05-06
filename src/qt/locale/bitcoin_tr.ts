@@ -1,9 +1,9 @@
-<TS language="tr" version="2.0">
+<TS language="tr" version="2.1">
 <context>
     <name>AddressBookPage</name>
     <message>
-        <source>Double-click to edit address or label</source>
-        <translation>Adresi ya da etiketi düzenlemek için çift tıklayınız</translation>
+        <source>Right-click to edit address or label</source>
+        <translation>Adresi ya da etiketi düzenlemek için sağ düğme ile tıklayınız.</translation>
     </message>
     <message>
         <source>Create a new address</source>
@@ -27,7 +27,7 @@
     </message>
     <message>
         <source>&amp;Copy Address</source>
-        <translation>Adresi &amp;kopyala</translation>
+        <translation>&amp;Adresi Kopyala</translation>
     </message>
     <message>
         <source>Delete the currently selected address from the list</source>
@@ -59,7 +59,7 @@
     </message>
     <message>
         <source>Sending addresses</source>
-        <translation>Yollama adresleri</translation>
+        <translation>&amp;Gönderme adresleri...</translation>
     </message>
     <message>
         <source>Receiving addresses</source>
@@ -156,10 +156,6 @@
         <translation>Parolayı değiştir</translation>
     </message>
     <message>
-        <source>Enter the old and new passphrase to the wallet.</source>
-        <translation>Cüzdan için eski ve yeni parolaları giriniz.</translation>
-    </message>
-    <message>
         <source>Confirm wallet encryption</source>
         <translation>Cüzdan şifrelenmesini teyit eder</translation>
     </message>
@@ -186,10 +182,6 @@
     <message>
         <source>Enter the new passphrase to the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
         <translation>Cüzdan için yeni parolayı giriniz.&lt;br/&gt;Lütfen &lt;b&gt;on ya da daha fazla rastgele karakter&lt;/b&gt; veya &lt;b&gt;sekiz ya da daha fazla kelime&lt;/b&gt; içeren bir parola kullanınız.</translation>
-    </message>
-    <message>
-        <source>Bitcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>Şifreleme işlemini tamamlamak için Bitcoin şimdi kapanacaktır. Cüzdanınızı şifrelemenin, Bitcoinlerinizin bilgisayara bulaşan kötücül bir yazılım tarafından çalınmaya karşı tamamen koruyamayacağını unutmayınız.</translation>
     </message>
     <message>
         <source>Wallet encryption failed</source>
@@ -309,10 +301,6 @@
     <message>
         <source>Send coins to a Bitcoin address</source>
         <translation>Bir Bitcoin adresine Bitcoin yolla</translation>
-    </message>
-    <message>
-        <source>Modify configuration options for Bitcoin</source>
-        <translation>Bitcoin seçeneklerinin yapılandırmasını değiştir</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -478,10 +466,6 @@
         <source>Up to date</source>
         <translation>Güncel</translation>
     </message>
-    <message numerus="yes">
-        <source>Processed %n blocks of transaction history.</source>
-        <translation><numerusform>Muamele tarihçesinden %n blok işlendi</numerusform><numerusform>Muamele tarihçesinden %n blok işlendi</numerusform></translation>
-    </message>
     <message>
         <source>Catching up...</source>
         <translation>Aralık kapatılıyor...</translation>
@@ -493,18 +477,6 @@
     <message>
         <source>Incoming transaction</source>
         <translation>Gelen muamele</translation>
-    </message>
-    <message>
-        <source>Date: %1
-Amount: %2
-Type: %3
-Address: %4
-</source>
-        <translation>Tarih: %1
-Meblağ: %2
-Tür: %3
-Adres: %4
-</translation>
     </message>
     <message>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;unlocked&lt;/b&gt;</source>
@@ -709,10 +681,6 @@ Adres: %4
         <translation>hayır</translation>
     </message>
     <message>
-        <source>This label turns red, if the transaction size is greater than 1000 bytes.</source>
-        <translation>Eğer muamele boyutu 1000 bayttan büyükse bu etkiket kırmızı olur.</translation>
-    </message>
-    <message>
         <source>This means a fee of at least %1 per kB is required.</source>
         <translation>Bu, kB başına en az %1 ücret gerektiği anlamnına gelir.</translation>
     </message>
@@ -723,14 +691,6 @@ Adres: %4
     <message>
         <source>Transactions with higher priority are more likely to get included into a block.</source>
         <translation>Yüksek öncelikli muamelelerin bir bloğa dahil olmaları daha olasıdır.</translation>
-    </message>
-    <message>
-        <source>This label turns red, if the priority is smaller than "medium".</source>
-        <translation>Eğer öncelik "ortadan" düşükse bu etiket kırmızı olur.</translation>
-    </message>
-    <message>
-        <source>This label turns red, if any recipient receives an amount smaller than %1.</source>
-        <translation>Eğer herhangi bir alıcı %1'den düşük bir meblağ alırsa bu etiket kırmızı olur.</translation>
     </message>
     <message>
         <source>(no label)</source>
@@ -853,30 +813,6 @@ Adres: %4
         <source>command-line options</source>
         <translation>komut satırı seçenekleri</translation>
     </message>
-    <message>
-        <source>UI options</source>
-        <translation>Kullanıcı arayüzü seçenekleri</translation>
-    </message>
-    <message>
-        <source>Set language, for example "de_DE" (default: system locale)</source>
-        <translation>Lisan belirt, mesela "de_De" (varsayılan: sistem dili)</translation>
-    </message>
-    <message>
-        <source>Start minimized</source>
-        <translation>Küçültülmüş olarak başlat</translation>
-    </message>
-    <message>
-        <source>Set SSL root certificates for payment request (default: -system-)</source>
-        <translation>Ödeme talebi için SSL kök sertifikalarını belirle (varsayılan: -system-)</translation>
-    </message>
-    <message>
-        <source>Show splash screen on startup (default: 1)</source>
-        <translation>Başlatıldığında başlangıç ekranını göster (varsayılan: 1)</translation>
-    </message>
-    <message>
-        <source>Choose data directory on startup (default: 0)</source>
-        <translation>Başlangıçta veri klasörü seç (varsayılan: 0)</translation>
-    </message>
 </context>
 <context>
     <name>Intro</name>
@@ -957,14 +893,6 @@ Adres: %4
     <message>
         <source>&amp;Main</source>
         <translation>&amp;Esas ayarlar</translation>
-    </message>
-    <message>
-        <source>Automatically start Bitcoin after logging in to the system.</source>
-        <translation>Sistemde oturum açıldığında Bitcoin'i otomatik olarak başlat.</translation>
-    </message>
-    <message>
-        <source>&amp;Start Bitcoin on system login</source>
-        <translation>Bitcoin'i sistem oturumuyla &amp;başlat</translation>
     </message>
     <message>
         <source>Size of &amp;database cache</source>
@@ -1079,10 +1007,6 @@ Adres: %4
         <translation>İşlem çubuğu yerine sistem çekmecesine &amp;küçült</translation>
     </message>
     <message>
-        <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Quit in the menu.</source>
-        <translation>Pencere kapatıldığında uygulamadan çıkmak yerine uygulamayı küçültür. Bu seçenek etkinleştirildiğinde, uygulama sadece menüden çıkış seçildiğinde kapanacaktır.</translation>
-    </message>
-    <message>
         <source>M&amp;inimize on close</source>
         <translation>Kapatma sırasında k&amp;üçült</translation>
     </message>
@@ -1093,10 +1017,6 @@ Adres: %4
     <message>
         <source>User Interface &amp;language:</source>
         <translation>Kullanıcı arayüzü &amp;lisanı:</translation>
-    </message>
-    <message>
-        <source>The user interface language can be set here. This setting will take effect after restarting Bitcoin.</source>
-        <translation>Kullanıcı arayüzünün dili burada belirtilebilir. Bu ayar Bitcoin tekrar başlatıldığında etkinleşecektir.</translation>
     </message>
     <message>
         <source>&amp;Unit to show amounts in:</source>
@@ -1133,10 +1053,6 @@ Adres: %4
     <message>
         <source>Client restart required to activate changes.</source>
         <translation>Değişikliklerin uygulanması için istemcinin yeniden başlatılması lazımdır.</translation>
-    </message>
-    <message>
-        <source>Client will be shutdown, do you want to proceed?</source>
-        <translation>İstemci kapanacaktır, devam etmek istiyor musunuz?</translation>
     </message>
     <message>
         <source>This change would require a client restart.</source>
@@ -1245,10 +1161,6 @@ Adres: %4
         <translation>Ödeme talebi şebekesi istemci şebekesine denk gelmiyor.</translation>
     </message>
     <message>
-        <source>Payment request has expired.</source>
-        <translation>Ödeme talebinin ömrü doldu.</translation>
-    </message>
-    <message>
         <source>Payment request is not initialized.</source>
         <translation>Ödeme talebi başlatılmamış.</translation>
     </message>
@@ -1289,6 +1201,10 @@ Adres: %4
         <translation>%1 öğesinden iade</translation>
     </message>
     <message>
+        <source>Payment request DoS protection</source>
+        <translation>Ödeme talebi DoS koruması</translation>
+    </message>
+    <message>
         <source>Error communicating with %1: %2</source>
         <translation>%1 ile iletişimde hata: %2</translation>
     </message>
@@ -1314,10 +1230,6 @@ Adres: %4
     <message>
         <source>User Agent</source>
         <translation>Kullanıcı Yazılımı</translation>
-    </message>
-    <message>
-        <source>Address/Hostname</source>
-        <translation>Adres/Makine ismi</translation>
     </message>
     <message>
         <source>Ping Time</source>
@@ -1349,14 +1261,6 @@ Adres: %4
     <message>
         <source>%1 s</source>
         <translation>%1 s</translation>
-    </message>
-    <message>
-        <source>NETWORK</source>
-        <translation>ŞEBEKE</translation>
-    </message>
-    <message>
-        <source>UNKNOWN</source>
-        <translation>BİLİNMİYOR</translation>
     </message>
     <message>
         <source>None</source>
@@ -1557,16 +1461,8 @@ Adres: %4
         <translation>Hata ayıklama kütük dosyası</translation>
     </message>
     <message>
-        <source>Open the Bitcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
-        <translation>Güncel veri klasöründen Bitcoin hata ayıklama kütük dosyasını açar. Büyük kütük dosyaları için bu birkaç saniye alabilir.</translation>
-    </message>
-    <message>
         <source>Clear console</source>
         <translation>Konsolu temizle</translation>
-    </message>
-    <message>
-        <source>Welcome to the Bitcoin RPC console.</source>
-        <translation>Bitcoin RPC konsoluna hoş geldiniz.</translation>
     </message>
     <message>
         <source>Use up and down arrows to navigate history, and &lt;b&gt;Ctrl-L&lt;/b&gt; to clear screen.</source>
@@ -1857,14 +1753,6 @@ Adres: %4
         <translation>ücret-ayarlarını-küçült</translation>
     </message>
     <message>
-        <source>Minimize</source>
-        <translation>Küçült</translation>
-    </message>
-    <message>
-        <source>If the custom fee is set to 1000 satoshis and the transaction is only 250 bytes, then "per kilobyte" only pays 250 satoshis in fee, while "at least" pays 1000 satoshis. For transactions bigger than a kilobyte both pay by kilobyte.</source>
-        <translation>Eğer özel ücret 1000 satoşi olarak ayarlandıysa ve muamele sadece 250 baytsa, "kilobayt başı" ücret olarak sadece 250 satoşi öder ve "asgari" 1000 satoşi öder. Bir kilobayttan yüksek muameleler için ikisi de kilobayt başı ödeme yapar.</translation>
-    </message>
-    <message>
         <source>per kilobyte</source>
         <translation>kilobayt başı</translation>
     </message>
@@ -1993,10 +1881,6 @@ Adres: %4
         <translation>veya</translation>
     </message>
     <message>
-        <source>The recipient address is not valid, please recheck.</source>
-        <translation>Alıcı adresi geçerli değildir, lütfen denetleyiniz.</translation>
-    </message>
-    <message>
         <source>The amount to pay must be larger than 0.</source>
         <translation>Ödeyeceğiniz tutarın sıfırdan yüksek olması gerekir.</translation>
     </message>
@@ -2009,10 +1893,6 @@ Adres: %4
         <translation>Toplam, %1 muamele ücreti ilâve edildiğinde bakiyenizi geçmektedir.</translation>
     </message>
     <message>
-        <source>Duplicate address found, can only send to each address once per send operation.</source>
-        <translation>Çift adres bulundu, belli bir gönderi sırasında her adrese sadece tek bir gönderide bulunulabilir.</translation>
-    </message>
-    <message>
         <source>Transaction creation failed!</source>
         <translation>Muamelenin oluşturulması başarısız oldu!</translation>
     </message>
@@ -2021,16 +1901,8 @@ Adres: %4
         <translation>Muamele reddedildi! Cüzdanınızdaki madenî paraların bazıları zaten harcanmış olduğunda bu meydana gelebilir. Örneğin wallet.dat dosyasının bir kopyasını kullandıysanız ve kopyada para harcandığında ancak burada harcandığı işaretlenmediğinde.</translation>
     </message>
     <message>
-        <source>A fee higher than %1 is considered an insanely high fee.</source>
-        <translation>%1 tutarından yüksek ücret delicesine aşırı yüksek bir ücret olarak kabul edilir.</translation>
-    </message>
-    <message>
         <source>Pay only the minimum fee of %1</source>
         <translation>Sadece asgari ücret olan %1 tutarını öde</translation>
-    </message>
-    <message>
-        <source>Estimated to begin confirmation within %1 block(s).</source>
-        <translation>Tahmini olarak %1 blok içinde teyide başlanacaktır.</translation>
     </message>
     <message>
         <source>Warning: Invalid Bitcoin address</source>
@@ -2108,20 +1980,12 @@ Adres: %4
         <translation>Mesaj:</translation>
     </message>
     <message>
-        <source>This is a verified payment request.</source>
-        <translation>Bu, teyit edilmiş bir ödeme talebidir.</translation>
-    </message>
-    <message>
         <source>Enter a label for this address to add it to the list of used addresses</source>
         <translation>Kullanılmış adres listesine eklemek için bu adrese bir etiket girin</translation>
     </message>
     <message>
         <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Bitcoin network.</source>
         <translation>Bitcoin: URI'siyle ilişkili ve bilginiz için muameleyle saklanacak bir mesaj. Not: Bu mesaj Bitcoin şebekesi üzerinden gönderilmeyecektir.</translation>
-    </message>
-    <message>
-        <source>This is an unverified payment request.</source>
-        <translation>Bu, teyit edilmemiş bir ödeme talebidir.</translation>
     </message>
     <message>
         <source>Pay To:</source>
@@ -2152,10 +2016,6 @@ Adres: %4
     <message>
         <source>&amp;Sign Message</source>
         <translation>Mesaj &amp;imzala</translation>
-    </message>
-    <message>
-        <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation>Bir adresin sizin olduğunu ispatlamak için adresinizle mesaj imzalayabilirsiniz. Oltalama saldırılarının kimliğinizi imzanızla elde etmeyi deneyebilecekleri için belirsiz hiçbir şey imzalamamaya dikkat ediniz. Sadece ayrıntılı açıklaması olan ve tümüne katıldığınız ifadeleri imzalayınız.</translation>
     </message>
     <message>
         <source>The Bitcoin address to sign the message with</source>
@@ -2208,10 +2068,6 @@ Adres: %4
     <message>
         <source>&amp;Verify Message</source>
         <translation>Mesaj &amp;kontrol et</translation>
-    </message>
-    <message>
-        <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
-        <translation>İmza için kullanılan adresi, mesajı (satır sonları, boşluklar, sekmeler vs. karakterleri tam olarak kopyaladığınızdan emin olunuz) ve imzayı aşağıda giriniz. Bir ortadaki adam saldırısı tarafından kandırılmaya mâni olmak için imzadan, imzalı mesajın içeriğini aşan bir anlam çıkarmamaya dikkat ediniz.</translation>
     </message>
     <message>
         <source>The Bitcoin address the message was signed with</source>
@@ -2477,10 +2333,6 @@ Adres: %4
         <translation>Tür</translation>
     </message>
     <message>
-        <source>Address</source>
-        <translation>Adres</translation>
-    </message>
-    <message>
         <source>Immature (%1 confirmations, will be available after %2)</source>
         <translation>Olgunlaşmamış (%1 teyit, %2 teyit ardından kullanılabilir olacaktır)</translation>
     </message>
@@ -2507,6 +2359,10 @@ Adres: %4
     <message>
         <source>Offline</source>
         <translation>Çevrim dışı</translation>
+    </message>
+    <message>
+        <source>Label</source>
+        <translation>Etiket</translation>
     </message>
     <message>
         <source>Unconfirmed</source>
@@ -2563,10 +2419,6 @@ Adres: %4
     <message>
         <source>Whether or not a watch-only address is involved in this transaction.</source>
         <translation>Bu muamelede sadece izlenen bir adresin bulunup bulunmadığı.</translation>
-    </message>
-    <message>
-        <source>Destination address of transaction.</source>
-        <translation>Muamelenin alıcı adresi.</translation>
     </message>
     <message>
         <source>Amount removed from or added to balance.</source>
@@ -2807,30 +2659,6 @@ Adres: %4
         <translation>Dışarıdan gelen bağlantıları kabul et (varsayılan: -proxy veya -connect yoksa 1)</translation>
     </message>
     <message>
-        <source>%s, you must set a rpcpassword in the configuration file:
-%s
-It is recommended you use the following random password:
-rpcuser=bitcoinrpc
-rpcpassword=%s
-(you do not need to remember this password)
-The username and password MUST NOT be the same.
-If the file does not exist, create it with owner-readable-only file permissions.
-It is also recommended to set alertnotify so you are notified of problems;
-for example: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
-</source>
-        <translation>%s, şu yapılandırma dosyasında rpc parolası belirtmeniz gerekir:
-%s
-Aşağıdaki rastgele oluşturulan parolayı kullanmanız tavsiye edilir:
-rpcuser=bitcoinrpc
-rpcpassword=%s
-(bu parolayı hatırlamanız gerekli değildir)
-Kullanıcı ismi ile parolanın FARKLI olmaları gerekir.
-Dosya mevcut değilse, sadece sahibi için okumayla sınırlı izin ile oluşturunuz.
-Sorunlar hakkında bildiri almak için alertnotify unsurunu ayarlamanız tavsiye edilir;
-mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
-</translation>
-    </message>
-    <message>
         <source>Bind to given address and always listen on it. Use [host]:port notation for IPv6</source>
         <translation>Belirtilen adrese bağlan ve daima ondan dinle. IPv6 için [makine]:port yazımını kullanınız</translation>
     </message>
@@ -2845,14 +2673,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
     <message>
         <source>Enter regression test mode, which uses a special chain in which blocks can be solved instantly.</source>
         <translation>Blokların anında çözülebileceği özel bir zincir kullanan regresyon deneme kipine gir.</translation>
-    </message>
-    <message>
-        <source>Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
-        <translation>Hata: Muamele reddedildi! Cüzdanınızdaki madenî paraların bazıları zaten harcanmış olduğunda bu meydana gelebilir. Örneğin wallet.dat dosyasının bir kopyasını kullandıysanız ve kopyada para harcandığında ancak burada harcandığı işaretlenmediğinde.</translation>
-    </message>
-    <message>
-        <source>Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!</source>
-        <translation>Hata: Muamelenin meblağı, karmaşıklığı ya da yakın geçmişte alınan fonların kullanılması nedeniyle bu muamele en az %s tutarında ücret gerektirmektedir!</translation>
     </message>
     <message>
         <source>Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)</source>
@@ -2931,10 +2751,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>Hata ayıklama/deneme seçenekleri:</translation>
     </message>
     <message>
-        <source>Discover own IP address (default: 1 when listening and no -externalip)</source>
-        <translation>Kendi IP adresini keşfet (varsayılan: dinlenildiğinde ve -externalip yoksa 1)</translation>
-    </message>
-    <message>
         <source>Do not load the wallet and disable wallet RPC calls</source>
         <translation>Cüzdanı yükleme ve cüzdan RPC çağrılarını devre dışı bırak</translation>
     </message>
@@ -2967,10 +2783,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>Hata: Disk alanı düşük!</translation>
     </message>
     <message>
-        <source>Error: Wallet locked, unable to create transaction!</source>
-        <translation>Hata: Cüzdan kilitli, muamele oluşturulamadı!</translation>
-    </message>
-    <message>
         <source>Failed to listen on any port. Use -listen=0 if you want this.</source>
         <translation>Herhangi bir portun dinlenmesi başarısız oldu. Bunu istiyorsanız -listen=0 seçeneğini kullanınız.</translation>
     </message>
@@ -2997,10 +2809,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
     <message>
         <source>Only connect to nodes in network &lt;net&gt; (ipv4, ipv6 or onion)</source>
         <translation>Sadece &lt;net&gt; şebekesindeki düğümlere bağlan (ipv4, ipv6 veya onion)</translation>
-    </message>
-    <message>
-        <source>Rebuild block chain index from current blk000??.dat files</source>
-        <translation>Blok zinciri indeksini güncel blk000??.dat dosyalarından tekrar inşa et</translation>
     </message>
     <message>
         <source>Set database cache size in megabytes (%d to %d, default: %d)</source>
@@ -3067,10 +2875,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>%s veri dizininde kilit elde edilemedi. Bitcoin Çekirdeği muhtemelen hâlihazırda çalışmaktadır.</translation>
     </message>
     <message>
-        <source>Continuously rate-limit free transactions to &lt;n&gt;*1000 bytes per minute (default:%u)</source>
-        <translation>Devamlı olarak ücretsiz muameleleri dakikada &lt;n&gt;*1000 bayt olarak sınırla (varsayılan: %u)</translation>
-    </message>
-    <message>
         <source>Create new files with system default permissions, instead of umask 077 (only effective with disabled wallet functionality)</source>
         <translation>Yeni dosyaları umask 077 yerine varsayılan izinlerle oluştur (sadece devre dışı cüzdan işlevselliği ile etkilidir)</translation>
     </message>
@@ -3095,6 +2899,14 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>Kb başına BTC olarak bundan düşük ücretler muamele oluşturulması için sıfır değerinde ücret olarak kabul edilir (varsayılan: %s)</translation>
     </message>
     <message>
+        <source>If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks (default: %u)</source>
+        <translation>Eğer paytxfee ayarlanmadıysa kafi derecede ücret ekleyin ki muameleler teyite vasati n blok içinde başlasın (varsayılan: %u)</translation>
+    </message>
+    <message>
+        <source>Invalid amount for -maxtxfee=&lt;amount&gt;: '%s' (must be at least the minrelay fee of %s to prevent stuck transactions)</source>
+        <translation>-maxtxfee=&lt;tutar&gt; için geçersiz tutar: '%s' (Sıkışmış muameleleri önlemek için en az %s değerinde asgari aktarım ücretine eşit olmalıdır)</translation>
+    </message>
+    <message>
         <source>Maximum size of data in data carrier transactions we relay and mine (default: %u)</source>
         <translation>Aktardığımız ve oluşturduğumuz veri taşıyıcı muamelelerindeki azami veri boyutu (varsayılan: %u)</translation>
     </message>
@@ -3115,6 +2927,34 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>Bu ürün OpenSSL projesi tarafından OpenSSL araç takımı (http://www.openssl.org/) için geliştirilen yazılımlar, Eric Young (eay@cryptsoft.com) tarafından hazırlanmış şifreleme yazılımları ve Thomas Bernard tarafından programlanmış UPnP yazılımı içerir.</translation>
     </message>
     <message>
+        <source>To use bitcoind, or the -server option to bitcoin-qt, you must set an rpcpassword in the configuration file:
+%s
+It is recommended you use the following random password:
+rpcuser=bitcoinrpc
+rpcpassword=%s
+(you do not need to remember this password)
+The username and password MUST NOT be the same.
+If the file does not exist, create it with owner-readable-only file permissions.
+It is also recommended to set alertnotify so you are notified of problems;
+for example: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
+</source>
+        <translation>bitcoind ya da bitcoin-qt ile -server seçeneğini kullanmak için yapılandırma dosyasında bir rpc parolası belirtmeniz gerekir:
+%s
+Aşağıdaki rastgele oluşturulan parolayı kullanmanız tavsiye edilir:
+rpcuser=bitcoinrpc
+rpcpassword=%s
+(bu parolayı hatırlamanız gerekli değildir)
+Kullanıcı ismi ile parolanın FARKLI olmaları gerekir.
+Dosya mevcut değilse, sadece sahibi için okumayla sınırlı izin ile oluşturunuz.
+Sorunlar hakkında bildiri almak için alertnotify unsurunu ayarlamanız tavsiye edilir;
+mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
+</translation>
+    </message>
+    <message>
+        <source>Warning: -maxtxfee is set very high! Fees this large could be paid on a single transaction.</source>
+        <translation>İkaz: -maxtxfee çok yüksek bir değere ayarlanmış! Bu denli yüksek ücretler tek bir muamelede ödenebilir.</translation>
+    </message>
+    <message>
         <source>Warning: Please check that your computer's date and time are correct! If your clock is wrong Bitcoin Core will not work properly.</source>
         <translation>Uyarı: Lütfen bilgisayarınızın saat ve tarihinin doğru olduğunu kontol ediniz! Saatinizde gecikme varsa Bitcoin Çekirdeği doğru şekilde çalışamaz.</translation>
     </message>
@@ -3123,8 +2963,16 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>Beyaz listeye alınan eşler DoS yasaklamasına uğramazlar ve muameleleri zaten mempool'da olsalar da daima aktarılır, bu mesela bir geçit için kullanışlıdır</translation>
     </message>
     <message>
+        <source>Accept public REST requests (default: %u)</source>
+        <translation>Herkese açık REST taleplerini kabul et (varsayılan: %u)</translation>
+    </message>
+    <message>
         <source>Cannot resolve -whitebind address: '%s'</source>
         <translation>-whitebind adresi çözümlenemedi: '%s'</translation>
+    </message>
+    <message>
+        <source>Choose data directory on startup (default: 0)</source>
+        <translation>Başlangıçta veri klasörü seç (varsayılan: 0)</translation>
     </message>
     <message>
         <source>Connect through SOCKS5 proxy</source>
@@ -3159,6 +3007,10 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>Başlatma sınaması başarısız oldu. Bitcoin Çekirdeği kapatılıyor.</translation>
     </message>
     <message>
+        <source>Invalid amount for -maxtxfee=&lt;amount&gt;: '%s'</source>
+        <translation>-maxtxfee=&lt;tutar&gt; için geçersiz tutar: '%s'</translation>
+    </message>
+    <message>
         <source>Invalid amount for -minrelaytxfee=&lt;amount&gt;: '%s'</source>
         <translation>-minrelaytxfee=&lt;amount&gt; için geçersiz meblağ: '%s'</translation>
     </message>
@@ -3175,10 +3027,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>-whitelist: '%s' unsurunda geçersiz bir ağ maskesi belirtildi</translation>
     </message>
     <message>
-        <source>Keep at most &lt;n&gt; unconnectable blocks in memory (default: %u)</source>
-        <translation>Hafızada en çok &lt;n&gt; bağlanılamaz blok tut (varsaylan: %u)</translation>
-    </message>
-    <message>
         <source>Keep at most &lt;n&gt; unconnectable transactions in memory (default: %u)</source>
         <translation>Hafızada en çok &lt;n&gt; bağlanılamaz muamele tut (varsayılan: %u)</translation>
     </message>
@@ -3189,10 +3037,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
     <message>
         <source>Node relay options:</source>
         <translation>Düğüm röle seçenekleri:</translation>
-    </message>
-    <message>
-        <source>Print block on startup, if found in block index</source>
-        <translation>Başlangıçta bloğu göster, blok indeksinde bulunduysa</translation>
     </message>
     <message>
         <source>RPC SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
@@ -3219,8 +3063,20 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>Muameleleri mümkünse ücretsiz olarak gönder (varsayılan: %u)</translation>
     </message>
     <message>
+        <source>Set SSL root certificates for payment request (default: -system-)</source>
+        <translation>Ödeme talebi için SSL kök sertifikalarını belirle (varsayılan: -system-)</translation>
+    </message>
+    <message>
+        <source>Set language, for example "de_DE" (default: system locale)</source>
+        <translation>Lisan belirt, mesela "de_De" (varsayılan: sistem dili)</translation>
+    </message>
+    <message>
         <source>Show all debugging options (usage: --help -help-debug)</source>
         <translation>Tüm hata ayıklama seçeneklerini göster (kullanımı: --help -help-debug)</translation>
+    </message>
+    <message>
+        <source>Show splash screen on startup (default: 1)</source>
+        <translation>Başlatıldığında başlangıç ekranını göster (varsayılan: 1)</translation>
     </message>
     <message>
         <source>Shrink debug.log file on client startup (default: 1 when no -debug)</source>
@@ -3229,6 +3085,10 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
     <message>
         <source>Signing transaction failed</source>
         <translation>Muamelenin imzalanması başarısız oldu</translation>
+    </message>
+    <message>
+        <source>Start minimized</source>
+        <translation>Küçültülmüş olarak başlat</translation>
     </message>
     <message>
         <source>This is experimental software.</source>
@@ -3241,6 +3101,10 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
     <message>
         <source>Transaction amounts must be positive</source>
         <translation>Muamele tutarının pozitif olması lazımdır</translation>
+    </message>
+    <message>
+        <source>Transaction too large for fee policy</source>
+        <translation>Ücret politikası için çok büyük muamele</translation>
     </message>
     <message>
         <source>Transaction too large</source>
@@ -3265,10 +3129,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
     <message>
         <source>Warning</source>
         <translation>Uyarı</translation>
-    </message>
-    <message>
-        <source>Warning: This version is obsolete, upgrade required!</source>
-        <translation>Uyarı: Bu sürüm çok eskidir, güncellemeniz gerekir!</translation>
     </message>
     <message>
         <source>Warning: Unsupported argument -benchmark ignored, use -debug=bench.</source>
@@ -3337,10 +3197,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
     <message>
         <source>How thorough the block verification of -checkblocks is (0-4, default: %u)</source>
         <translation>-checkblocks'un blok kontrolünün ne kadar kapsamlı olacağı (0 ilâ 4, varsayılan: %u)</translation>
-    </message>
-    <message>
-        <source>If paytxfee is not set, include enough fee so transactions are confirmed on average within n blocks (default: %u)</source>
-        <translation>Eğer paytxfee ayarlanmadıysa, kafi derecede ücret ekleyin ki muameleler vasati n blok içinde teyit edilsin (varsayılan: %u)</translation>
     </message>
     <message>
         <source>Log transaction priority and fee per kB when mining blocks (default: %u)</source>
@@ -3435,10 +3291,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>Hata ayıklama verilerinin önüne zaman damgası ekle (varsayılan: %u)</translation>
     </message>
     <message>
-        <source>Print block tree on startup (default: %u)</source>
-        <translation>Başlangıçta blok ağacını göster (varsayılan: %u)</translation>
-    </message>
-    <message>
         <source>Relay and mine data carrier transactions (default: %u)</source>
         <translation>Veri taşıyıcı muameleleri oluştur ve aktar (varsayılan: %u)</translation>
     </message>
@@ -3515,10 +3367,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
         <translation>-paytxfee=&lt;meblağ&gt; için geçersiz meblağ: '%s'</translation>
     </message>
     <message>
-        <source>Invalid amount</source>
-        <translation>Geçersiz meblağ</translation>
-    </message>
-    <message>
         <source>Insufficient funds</source>
         <translation>Yetersiz bakiye</translation>
     </message>
@@ -3549,10 +3397,6 @@ mesela: alertnotify=echo %%s | mail -s "Bitcoin Alert" admin@foo.com
     <message>
         <source>Done loading</source>
         <translation>Yükleme tamamlandı</translation>
-    </message>
-    <message>
-        <source>To use the %s option</source>
-        <translation>%s seçeneğini kullanmak için</translation>
     </message>
     <message>
         <source>Error</source>
