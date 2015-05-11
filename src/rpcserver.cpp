@@ -293,6 +293,8 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "getmempoolinfo",         &getmempoolinfo,         true  },
     { "blockchain",         "getrawmempool",          &getrawmempool,          true  },
     { "blockchain",         "gettxout",               &gettxout,               true  },
+    { "blockchain",         "gettxoutproof",          &gettxoutproof,          true  },
+    { "blockchain",         "verifytxoutproof",       &verifytxoutproof,       true  },
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true  },
     { "blockchain",         "verifychain",            &verifychain,            true  },
 
@@ -910,8 +912,8 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
     {
         LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", conn->peer_address_to_string());
         /* Deter brute-forcing
-           If this results in a DoS the user really
-           shouldn't have their RPC port exposed. */
+           We don't support exposing the RPC port, so this shouldn't result
+           in a DoS. */
         MilliSleep(250);
 
         conn->stream() << HTTPError(HTTP_UNAUTHORIZED, false) << std::flush;
@@ -992,7 +994,7 @@ void ServiceConnection(AcceptedConnection *conn)
 
         // Process via HTTP REST API
         } else if (strURI.substr(0, 6) == "/rest/" && GetBoolArg("-rest", false)) {
-            if (!HTTPReq_REST(conn, strURI, mapHeaders, fRun))
+            if (!HTTPReq_REST(conn, strURI, strRequest, mapHeaders, fRun))
                 break;
 
         } else {

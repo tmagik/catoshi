@@ -1,4 +1,4 @@
-<TS language="ky" version="2.0">
+<TS language="ky" version="2.1">
 <context>
     <name>AddressBookPage</name>
     <message>
@@ -291,10 +291,6 @@
     <message>
         <source>Date</source>
         <translation>Дата</translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation>Дарек</translation>
     </message>
     </context>
 <context>
