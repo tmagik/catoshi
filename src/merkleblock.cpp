@@ -37,6 +37,29 @@ CMerkleBlock::CMerkleBlock(const CBlock& block, CBloomFilter& filter)
     txn = CPartialMerkleTree(vHashes, vMatch);
 }
 
+CMerkleBlock::CMerkleBlock(const CBlock& block, const std::set<uint256>& txids)
+{
+    header = block.GetBlockHeader();
+
+    vector<bool> vMatch;
+    vector<uint256> vHashes;
+
+    vMatch.reserve(block.vtx.size());
+    vHashes.reserve(block.vtx.size());
+
+    for (unsigned int i = 0; i < block.vtx.size(); i++)
+    {
+        const uint256& hash = block.vtx[i].GetHash();
+        if (txids.count(hash))
+            vMatch.push_back(true);
+        else
+            vMatch.push_back(false);
+        vHashes.push_back(hash);
+    }
+
+    txn = CPartialMerkleTree(vHashes, vMatch);
+}
+
 uint256 CPartialMerkleTree::CalcHash(int height, unsigned int pos, const std::vector<uint256> &vTxid) {
     if (height == 0) {
         // hash at height 0 is the txids themself
@@ -96,8 +119,8 @@ uint256 CPartialMerkleTree::TraverseAndExtract(int height, unsigned int pos, uns
         if (pos*2+1 < CalcTreeWidth(height-1)) {
             right = TraverseAndExtract(height-1, pos*2+1, nBitsUsed, nHashUsed, vMatch);
             if (right == left) {
-                // If the left and right branch should never be identical as the transaction
-                // hashes covered by them must be unique.
+                // The left and right branches should never be identical, as the transaction
+                // hashes covered by them must each be unique.
                 fBad = true;
             }
         } else {

@@ -1,10 +1,6 @@
-<TS language="be_BY" version="2.0">
+<TS language="be_BY" version="2.1">
 <context>
     <name>AddressBookPage</name>
-    <message>
-        <source>Double-click to edit address or label</source>
-        <translation>Двайны клік для рэдагавання адрасу ці пазнакі</translation>
-    </message>
     <message>
         <source>Create a new address</source>
         <translation>Стварыць новы адрас</translation>
@@ -132,10 +128,6 @@
         <translation>Змяніць пароль</translation>
     </message>
     <message>
-        <source>Enter the old and new passphrase to the wallet.</source>
-        <translation>Увядзіце стары і новы пароль да гаманца.</translation>
-    </message>
-    <message>
         <source>Confirm wallet encryption</source>
         <translation>Пацвердзіце шыфраванне гаманца</translation>
     </message>
@@ -156,10 +148,6 @@
         <translation>Гаманец зашыфраваны</translation>
     </message>
     <message>
-        <source>Bitcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>Bitcoin зачыняецца дзеля завяршэння працэсса шыфравання. Памятайце, што шыфраванне гаманца цалкам абараняе вашыя сродкі ад скрадання шкоднымі праграмамі якія могуць пранікнуць у ваш камп'ютар.</translation>
-    </message>
-    <message>
         <source>Wallet encryption failed</source>
         <translation>Шыфраванне гаманца няўдалае</translation>
     </message>
@@ -177,7 +165,7 @@
     </message>
     <message>
         <source>The passphrase entered for the wallet decryption was incorrect.</source>
-        <translation>Уведзена пароль  дзеля расшыфравання гаманца памылковы</translation>
+        <translation>Уведзены пароль  для расшыфравання гаманца памылковы</translation>
     </message>
     <message>
         <source>Wallet decryption failed</source>
@@ -294,10 +282,6 @@
         <source>&amp;Help</source>
         <translation>Дапамога</translation>
     </message>
-    <message numerus="yes">
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n актыўнае злучэнне з Bitcoin-сецівам</numerusform><numerusform>%n актыўных злучэнняў з Bitcoin-сецівам</numerusform></translation>
-    </message>
     <message>
         <source>Error</source>
         <translation>Памылка</translation>
@@ -317,18 +301,6 @@
     <message>
         <source>Incoming transaction</source>
         <translation>Прынятыя транзакцыі</translation>
-    </message>
-    <message>
-        <source>Date: %1
-Amount: %2
-Type: %3
-Address: %4
-</source>
-        <translation>Дата: %1
-Колькасць: %2
-Тып: %3
-Адрас: %4
-</translation>
     </message>
     <message>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;unlocked&lt;/b&gt;</source>
@@ -689,10 +661,6 @@ Address: %4
         <translation>Тып</translation>
     </message>
     <message>
-        <source>Address</source>
-        <translation>Адрас</translation>
-    </message>
-    <message>
         <source>Confirmed (%1 confirmations)</source>
         <translation>Пацверджана (%1 пацверджанняў)</translation>
     </message>
@@ -703,6 +671,10 @@ Address: %4
     <message>
         <source>Generated but not accepted</source>
         <translation>Згенеравана, але не прынята</translation>
+    </message>
+    <message>
+        <source>Label</source>
+        <translation>Пазнака</translation>
     </message>
     <message>
         <source>Received with</source>
@@ -739,10 +711,6 @@ Address: %4
     <message>
         <source>Type of transaction.</source>
         <translation>Тып транзакцыі</translation>
-    </message>
-    <message>
-        <source>Destination address of transaction.</source>
-        <translation>Адрас прызначэння транзакцыі.</translation>
     </message>
     <message>
         <source>Amount removed from or added to balance.</source>
@@ -953,10 +921,6 @@ Address: %4
     <message>
         <source>Error loading wallet.dat</source>
         <translation>Памылка загрузкі wallet.dat</translation>
-    </message>
-    <message>
-        <source>Invalid amount</source>
-        <translation>Памылковая колькасць</translation>
     </message>
     <message>
         <source>Insufficient funds</source>
