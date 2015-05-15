@@ -102,6 +102,7 @@ BITCOIN_CORE_H = \
   leveldbwrapper.h \
   limitedmap.h \
   main.h \
+  memusage.h \
   merkleblock.h \
   miner.h \
   mruset.h \
@@ -118,6 +119,7 @@ BITCOIN_CORE_H = \
   rpcclient.h \
   rpcprotocol.h \
   rpcserver.h \
+  scheduler.h \
   script/interpreter.h \
   script/script.h \
   script/script_error.h \
@@ -259,6 +261,7 @@ libbitcoin_common_a_SOURCES = \
   primitives/transaction.cpp \
   protocol.cpp \
   pubkey.cpp \
+  scheduler.cpp \
   script/interpreter.cpp \
   script/script.cpp \
   script/script_error.cpp \
