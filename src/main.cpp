@@ -28,6 +28,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
 
 using namespace std;
@@ -153,8 +154,8 @@ namespace {
         uint256 hash;
         CBlockIndex *pindex;  //! Optional.
         int64_t nTime;  //! Time of "getdata" request in microseconds.
-        int nValidatedQueuedBefore;  //! Number of blocks queued with validated headers (globally) at the time this one is requested.
         bool fValidatedHeaders;  //! Whether this block has validated headers at the time of request.
+        int64_t nTimeDisconnect; //! The timeout for this block request (for disconnecting a slow peer)
     };
     map<uint256, pair<NodeId, list<QueuedBlock>::iterator> > mapBlocksInFlight;
 
@@ -215,6 +216,7 @@ struct CNodeState {
     int64_t nStallingSince;
     list<QueuedBlock> vBlocksInFlight;
     int nBlocksInFlight;
+    int nBlocksInFlightValidHeaders;
     //! Whether we consider this a preferred download peer.
     bool fPreferredDownload;
 
@@ -228,6 +230,7 @@ struct CNodeState {
         fSyncStarted = false;
         nStallingSince = 0;
         nBlocksInFlight = 0;
+        nBlocksInFlightValidHeaders = 0;
         fPreferredDownload = false;
     }
 };
@@ -257,6 +260,12 @@ void UpdatePreferredDownload(CNode* node, CNodeState* state)
     state->fPreferredDownload = (!node->fInbound || node->fWhitelisted) && !node->fOneShot && !node->fClient;
 
     nPreferredDownload += state->fPreferredDownload;
+}
+
+// Returns time at which to timeout block request (nTime in microseconds)
+int64_t GetBlockTimeout(int64_t nTime, int nValidatedQueuedBefore)
+{
+    return nTime + 500000 * Params().GetConsensus().nPowTargetSpacing * (4 + nValidatedQueuedBefore);
 }
 
 void InitializeNode(NodeId nodeid, const CNode *pnode) {
@@ -291,6 +300,7 @@ void MarkBlockAsReceived(const uint256& hash) {
     if (itInFlight != mapBlocksInFlight.end()) {
         CNodeState *state = State(itInFlight->second.first);
         nQueuedValidatedHeaders -= itInFlight->second.second->fValidatedHeaders;
+        state->nBlocksInFlightValidHeaders -= itInFlight->second.second->fValidatedHeaders;
         state->vBlocksInFlight.erase(itInFlight->second.second);
         state->nBlocksInFlight--;
         state->nStallingSince = 0;
@@ -306,10 +316,12 @@ void MarkBlockAsInFlight(NodeId nodeid, const uint256& hash, CBlockIndex *pindex
     // Make sure it's not listed somewhere already.
     MarkBlockAsReceived(hash);
 
-    QueuedBlock newentry = {hash, pindex, GetTimeMicros(), nQueuedValidatedHeaders, pindex != NULL};
+    int64_t nNow = GetTimeMicros();
+    QueuedBlock newentry = {hash, pindex, nNow, pindex != NULL, GetBlockTimeout(nNow, nQueuedValidatedHeaders)};
     nQueuedValidatedHeaders += newentry.fValidatedHeaders;
     list<QueuedBlock>::iterator it = state->vBlocksInFlight.insert(state->vBlocksInFlight.end(), newentry);
     state->nBlocksInFlight++;
+    state->nBlocksInFlightValidHeaders += newentry.fValidatedHeaders;
     mapBlocksInFlight[hash] = std::make_pair(nodeid, it);
 }
 
@@ -1683,6 +1695,64 @@ static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
 void ThreadScriptCheck() {
     RenameThread("bitcoin-scriptch");
     scriptcheckqueue.Thread();
+}
+
+//
+// Called periodically asynchronously; alerts if it smells like
+// we're being fed a bad chain (blocks being generated much
+// too slowly or too quickly).
+//
+void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const CChain& chain, int64_t nPowTargetSpacing)
+{
+    if (initialDownloadCheck()) return;
+
+    static int64_t lastAlertTime = 0;
+    int64_t now = GetAdjustedTime();
+    if (lastAlertTime > now-60*60*24) return; // Alert at most once per day
+
+    const int SPAN_HOURS=4;
+    const int SPAN_SECONDS=SPAN_HOURS*60*60;
+    int BLOCKS_EXPECTED = SPAN_SECONDS / nPowTargetSpacing;
+
+    boost::math::poisson_distribution<double> poisson(BLOCKS_EXPECTED);
+
+    std::string strWarning;
+    int64_t startTime = GetAdjustedTime()-SPAN_SECONDS;
+
+    LOCK(cs);
+    int h = chain.Height();
+    while (h > 0 && chain[h]->GetBlockTime() >= startTime)
+        --h;
+    int nBlocks = chain.Height()-h;
+
+    // How likely is it to find that many by chance?
+    double p = boost::math::pdf(poisson, nBlocks);
+
+    LogPrint("partitioncheck", "%s : Found %d blocks in the last %d hours\n", __func__, nBlocks, SPAN_HOURS);
+    LogPrint("partitioncheck", "%s : likelihood: %g\n", __func__, p);
+
+    // Aim for one false-positive about every fifty years of normal running:
+    const int FIFTY_YEARS = 50*365*24*60*60;
+    double alertThreshold = 1.0 / (FIFTY_YEARS / SPAN_SECONDS);
+
+    if (p <= alertThreshold && nBlocks < BLOCKS_EXPECTED)
+    {
+        // Many fewer blocks than expected: alert!
+        strWarning = strprintf(_("WARNING: check your network connection, %d blocks received in the last %d hours (%d expected)"),
+                               nBlocks, SPAN_HOURS, BLOCKS_EXPECTED);
+    }
+    else if (p <= alertThreshold && nBlocks > BLOCKS_EXPECTED)
+    {
+        // Many more blocks than expected: alert!
+        strWarning = strprintf(_("WARNING: abnormally high number of blocks generated, %d blocks received in the last %d hours (%d expected)"),
+                               nBlocks, SPAN_HOURS, BLOCKS_EXPECTED);
+    }
+    if (!strWarning.empty())
+    {
+        strMiscWarning = strWarning;
+        CAlert::Notify(strWarning, true);
+        lastAlertTime = now;
+    }
 }
 
 static int64_t nTimeVerify = 0;
@@ -4956,9 +5026,22 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         // timeout. We compensate for in-flight blocks to prevent killing off peers due to our own downstream link
         // being saturated. We only count validated in-flight blocks so peers can't advertise non-existing block hashes
         // to unreasonably increase our timeout.
-        if (!pto->fDisconnect && state.vBlocksInFlight.size() > 0 && state.vBlocksInFlight.front().nTime < nNow - 500000 * consensusParams.nPowTargetSpacing * (4 + state.vBlocksInFlight.front().nValidatedQueuedBefore)) {
-            LogPrintf("Timeout downloading block %s from peer=%d, disconnecting\n", state.vBlocksInFlight.front().hash.ToString(), pto->id);
-            pto->fDisconnect = true;
+        // We also compare the block download timeout originally calculated against the time at which we'd disconnect
+        // if we assumed the block were being requested now (ignoring blocks we've requested from this peer, since we're
+        // only looking at this peer's oldest request).  This way a large queue in the past doesn't result in a
+        // permanently large window for this block to be delivered (ie if the number of blocks in flight is decreasing
+        // more quickly than once every 5 minutes, then we'll shorten the download window for this block).
+        if (!pto->fDisconnect && state.vBlocksInFlight.size() > 0) {
+            QueuedBlock &queuedBlock = state.vBlocksInFlight.front();
+            int64_t nTimeoutIfRequestedNow = GetBlockTimeout(nNow, nQueuedValidatedHeaders - state.nBlocksInFlightValidHeaders);
+            if (queuedBlock.nTimeDisconnect > nTimeoutIfRequestedNow) {
+                LogPrint("net", "Reducing block download timeout for peer=%d block=%s, orig=%d new=%d\n", pto->id, queuedBlock.hash.ToString(), queuedBlock.nTimeDisconnect, nTimeoutIfRequestedNow);
+                queuedBlock.nTimeDisconnect = nTimeoutIfRequestedNow;
+            }
+            if (queuedBlock.nTimeDisconnect < nNow) {
+                LogPrintf("Timeout downloading block %s from peer=%d, disconnecting\n", queuedBlock.hash.ToString(), pto->id);
+                pto->fDisconnect = true;
+            }
         }
 
         //
