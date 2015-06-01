@@ -1,11 +1,138 @@
 (note: this is a temporary file, to be added-to by anybody, and moved to
 release-notes at release time)
 
+Notable changes
+===============
+
+Block file pruning
+----------------------
+
+This release supports running a fully validating node without maintaining a copy 
+of the raw block and undo data on disk. To recap, there are four types of data 
+related to the blockchain in the bitcoin system: the raw blocks as received over 
+the network (blk???.dat), the undo data (rev???.dat), the block index and the 
+UTXO set (both LevelDB databases). The databases are built from the raw data.
+
+Block pruning allows Bitcoin Core to delete the raw block and undo data once 
+it's been validated and used to build the databases. At that point, the raw data 
+is used only to relay blocks to other nodes, to handle reorganizations, to look 
+up old transactions (if -txindex is enabled or via the RPC/REST interfaces), or 
+for rescanning the wallet. The block index continues to hold the metadata about 
+all blocks in the blockchain.
+
+The user specifies how much space to allot for block & undo files. The minimum 
+allowed is 550MB. Note that this is in addition to whatever is required for the 
+block index and UTXO databases. The minimum was chosen so that Bitcoin Core will 
+be able to maintain at least 288 blocks on disk (two days worth of blocks at 10 
+minutes per block). In rare instances it is possible that the amount of space 
+used will exceed the pruning target in order to keep the required last 288 
+blocks on disk.
+
+Block pruning works during initial sync in the same way as during steady state, 
+by deleting block files "as you go" whenever disk space is allocated. Thus, if 
+the user specifies 550MB, once that level is reached the program will begin 
+deleting the oldest block and undo files, while continuing to download the 
+blockchain.
+
+For now, block pruning disables block relay.  In the future, nodes with block 
+pruning will at a minimum relay "new" blocks, meaning blocks that extend their 
+active chain. 
+
+Block pruning is currently incompatible with running a wallet due to the fact 
+that block data is used for rescanning the wallet and importing keys or 
+addresses (which require a rescan.) However, running the wallet with block 
+pruning will be supported in the near future, subject to those limitations.
+
+Block pruning is also incompatible with -txindex and will automatically disable 
+it.
+
+Once you have pruned blocks, going back to unpruned state requires 
+re-downloading the entire blockchain. To do this, re-start the node with 
+-reindex. Note also that any problem that would cause a user to reindex (e.g., 
+disk corruption) will cause a pruned node to redownload the entire blockchain. 
+Finally, note that when a pruned node reindexes, it will delete any blk???.dat 
+and rev???.dat files in the data directory prior to restarting the download.
+
+To enable block pruning on the command line:
+
+- `-prune=N`: where N is the number of MB to allot for raw block & undo data.
+
+Modified RPC calls:
+
+- `getblockchaininfo` now includes whether we are in pruned mode or not.
+- `getblock` will check if the block's data has been pruned and if so, return an 
+error.
+- `getrawtransaction` will no longer be able to locate a transaction that has a 
+UTXO but where its block file has been pruned. 
+
+Pruning is disabled by default.
+
+Big endian support
+--------------------
+
+Experimental support for big-endian CPU architectures was added in this
+release. This has been tested on at least MIPS and PPC hosts. The build
+system will automatically detect the endianness of the target.
+
+Memory usage optimization
+--------------------------
+
+There have been many changes in this release to reduce the default memory usage
+of a node, among which:
+
+- Accurate UTXO cache size accounting (#6102); this makes the option `-dbcache`
+  precise, where is did a gross underestimation of memory usage before
+- Reduce size of per-peer data structure (#6064 and others); this increases the
+  number of connections that can be supported with the same amount of memory
+- Reduce the number of threads (#5964, #5679); lowers the amount of (esp.
+  virtual) memory needed
+
+Privacy: Disable wallet transaction broadcast
+----------------------------------------------
+
+This release adds an option `-walletbroadcast=0` to prevent automatic
+transaction broadcast and rebroadcast (#5951). This option allows separating
+transaction submission from the node functionality.
+
+Making use of this, third-party scripts can be written to take care of
+transaction (re)broadcast:
+
+- Send the transaction as normal, either through RPC or the GUI
+- Retrieve the transaction data through RPC using `gettransaction` (NOT
+  `getrawtransaction`). The `hex` field of the result will contain the raw
+  hexadecimal representation of the transaction
+- The transaction can then be broadcasted through arbitrary mechanisms
+  supported by the script
+
+One such application is selective Tor usage, where the node runs on the normal
+internet but transactions are broadcasted over Tor.
+
+Privacy: Stream isolation for Tor
+----------------------------------
+
+This release adds functionality to create a new circuit for every peer
+connection, when the software is used with Tor. The new option,
+`-proxyrandomize`, is on by default.
+
+When enabled, every outgoing connection will (potentially) go through a
+different exit node. That significantly reduces the chance to get unlucky and
+pick a single exit node that is either malicious, or widely banned from the P2P
+network. This improves connection reliability as well as privacy, especially
+for the initial connections.
+
+**Important note:** If a non-Tor SOCKS5 proxy is configured that supports
+authentication, but doesn't require it, this change may cause it to reject
+connections. A user and password is sent where they weren't before. This setup
+is exceedingly rare, but in this case `-proxyrandomize=0` can be passed to
+disable the behavior.
+
 0.11.0 Change log
 =================
 
 Detailed release notes follow. This overview includes changes that affect
-behavior, not code moves, refactors or string updates.
+behavior, not code moves, refactors and string updates. For convenience in locating
+the code changes and accompanying discussion, both the pull request and
+git merge commit are mentioned.
 
 ### RPC and REST
 - #5461 `5f7279a` signrawtransaction: validate private key
@@ -23,7 +150,7 @@ behavior, not code moves, refactors or string updates.
 - #5199 `6364408` Add RPC call `gettxoutproof` to generate and verify merkle blocks
 - #5418 `16341cc` Report missing inputs in sendrawtransaction
 - #5937 `40f5e8d` show script verification errors in signrawtransaction result
-- #5420 `1fd2d39` [REST] getutxos REST command (based on Bip64)
+- #5420 `1fd2d39` getutxos REST command (based on Bip64)
 
 ### Configuration and command-line options
 - #5636 `a353ad4` Add option `-allowselfsignedrootcertificate` to allow self signed root certs (for testing payment requests)
@@ -56,7 +183,7 @@ behavior, not code moves, refactors or string updates.
 - #5507 `844ace9` Prevent DOS attacks on in-flight data structures
 - #5770 `32a8b6a` Sanitize command strings before logging them
 - #5859 `dd4ffce` Add correct bool combiner for net signals
-- #5876 `8e4fd0c` Add a NODE_GETUTXO service bit and document NODE_NETWORK.
+- #5876 `8e4fd0c` Add a NODE_GETUTXO service bit and document NODE_NETWORK
 - #6028 `b9311fb` Move nLastTry from CAddress to CAddrInfo
 - #5662 `5048465` Change download logic to allow calling getdata on inbound peers
 - #5971 `18d2832` replace absolute sleep with conditional wait
@@ -85,7 +212,7 @@ behavior, not code moves, refactors or string updates.
 
 ### Wallet
 - #2340 `811c71d` Discourage fee sniping with nLockTime
-- #5485 `d01bcc4` Enforce minRelayTxFee on wallet created tx and add a maxtxfee option.
+- #5485 `d01bcc4` Enforce minRelayTxFee on wallet created tx and add a maxtxfee option
 - #5508 `9a5cabf` Add RandAddSeedPerfmon to MakeNewKey
 - #4805 `8204e19` Do not flush the wallet in AddToWalletIfInvolvingMe(..)
 - #5319 `93b7544` Clean up wallet encryption code
