@@ -2,8 +2,9 @@ TEMPLATE = app
 TARGET = grantcoin-qt
 VERSION = 0.6.3.0
 INCLUDEPATH += src src/json src/qt
-DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE
+DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE BOOST_NO_SCOPED_ENUMS BOOST_NO_CXX11_SCOPED_ENUMS
 CONFIG += no_include_pwd
+QT += widgets core gui
 
 # for boost 1.37, add -mt to the boost libraries 
 # use: qmake BOOST_LIB_SUFFIX=-mt
@@ -41,7 +42,8 @@ contains(USE_QRCODE, 1) {
 # use: qmake "USE_UPNP=1" ( enabled by default; default)
 #  or: qmake "USE_UPNP=0" (disabled by default)
 #  or: qmake "USE_UPNP=-" (not supported)
-# miniupnpc (http://miniupnp.free.fr/files/) must be installed for support
+# miniupnpc (http://minioupnp.free.fr/files/) must be installed for support
+!android {
 contains(USE_UPNP, -) {
     message(Building without UPNP support)
 } else {
@@ -53,6 +55,7 @@ contains(USE_UPNP, -) {
     INCLUDEPATH += $$MINIUPNPC_INCLUDE_PATH
     LIBS += $$join(MINIUPNPC_LIB_PATH,,-L,) -lminiupnpc
     win32:LIBS += -liphlpapi
+}
 }
 
 # use: qmake "USE_DBUS=1"
@@ -289,6 +292,7 @@ isEmpty(BOOST_THREAD_LIB_SUFFIX) {
 
 isEmpty(BDB_LIB_PATH) {
     macx:BDB_LIB_PATH = /opt/local/lib/db48
+    android:BDB_LIB_PATH = android/deps/lib
 }
 
 isEmpty(BDB_LIB_SUFFIX) {
@@ -297,6 +301,7 @@ isEmpty(BDB_LIB_SUFFIX) {
 
 isEmpty(BDB_INCLUDE_PATH) {
     macx:BDB_INCLUDE_PATH = /opt/local/include/db48
+    android:BDB_INCLUDE_PATH = android/deps/include
 }
 
 isEmpty(BOOST_LIB_PATH) {
@@ -322,7 +327,7 @@ windows:!contains(MINGW_THREAD_BUGFIX, 0) {
     QMAKE_LIBS_QT_ENTRY = -lmingwthrd $$QMAKE_LIBS_QT_ENTRY
 }
 
-!windows:!mac {
+!windows:!mac:!android {
     DEFINES += LINUX
     LIBS += -lrt
 }
@@ -350,3 +355,7 @@ contains(RELEASE, 1) {
 }
 
 system($$QMAKE_LRELEASE -silent $$_PRO_FILE_)
+
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_EXTRA_LIBS = /home/tmagik/src/grant/android/deps/lib/libdb_cxx-5.3.so
+}

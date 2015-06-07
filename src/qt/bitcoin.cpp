@@ -3,6 +3,13 @@
  * The PPCoin Developers 2013
  * The Grantcoin Developers 2015
  */
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifdef ANDROID
+#include <netdb.h>
+#include <endian.h>
+#endif
 #include "bitcoingui.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
@@ -159,9 +166,11 @@ int main(int argc, char *argv[])
     }
 #endif
 
+#if QT_VERSION < 0x050000 // removed in qt5
     // Internal string conversion is all UTF-8
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
     QTextCodec::setCodecForCStrings(QTextCodec::codecForTr());
+#endif
 
     Q_INIT_RESOURCE(bitcoin);
     QApplication app(argc, argv);

@@ -6,8 +6,12 @@
 #include "netbase.h"
 #include "util.h"
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(ANDROID)
 #include <sys/fcntl.h>
+#endif
+#if defined(ANDROID)
+#include <linux/in.h>
+#include <linux/in6.h>
 #endif
 
 #include "strlcpy.h"

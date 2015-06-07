@@ -91,7 +91,12 @@ void SendCoinsDialog::on_sendButton_clicked()
     QStringList formatted;
     foreach(const SendCoinsRecipient &rcp, recipients)
     {
-        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount), Qt::escape(rcp.label), rcp.address));
+        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount),
+#if QT_VERSION >= 0x050000
+            QString(rcp.label).toHtmlEscaped(), rcp.address));
+#else
+            Qt::escape(rcp.label), rcp.address));
+#endif
     }
 
     fNewRecipientAllowed = false;
