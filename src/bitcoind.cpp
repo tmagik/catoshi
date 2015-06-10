@@ -8,7 +8,7 @@
 #include "init.h"
 #include "main.h"
 #include "noui.h"
-#include "ui_interface.h"
+#include "scheduler.h"
 #include "util.h"
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -56,6 +56,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 bool AppInit(int argc, char* argv[])
 {
     boost::thread_group threadGroup;
+    CScheduler scheduler;
 
     bool fRet = false;
 
@@ -143,7 +144,7 @@ bool AppInit(int argc, char* argv[])
 #endif
         SoftSetBoolArg("-server", true);
 
-        fRet = AppInit2(threadGroup);
+        fRet = AppInit2(threadGroup, scheduler);
     }
     catch (const std::exception& e) {
         PrintExceptionContinue(&e, "AppInit()");
