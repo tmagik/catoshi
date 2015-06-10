@@ -44,7 +44,7 @@ Release Process
 
  Register and download the Apple SDK: (see OSX Readme for details)
  
- https://developer.apple.com/downloads/download.action?path=Developer_Tools/xcode_6.1.1/xcode_6.1.1.dmg
+ https://developer.apple.com/devcenter/download.action?path=/Developer_Tools/xcode_6.1.1/xcode_6.1.1.dmg
  
  Using a Mac, create a tarball for the 10.9 SDK and copy it to the inputs directory:
  
@@ -164,4 +164,4 @@ Note: check that SHA256SUMS itself doesn't end up in SHA256SUMS, which is a spur
 
 - Add release notes for the new version to the directory `doc/release-notes` in git master
 
-- Celebrate 
+- Celebrate
