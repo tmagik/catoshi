@@ -138,6 +138,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         LOCK2(cs_main, mempool.cs);
         CBlockIndex* pindexPrev = chainActive.Tip();
         const int nHeight = pindexPrev->nHeight + 1;
+        pblock->nTime = GetAdjustedTime();
         CCoinsViewCache view(pcoinsTip);
 
         // Priority order to process transactions
@@ -152,7 +153,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
              mi != mempool.mapTx.end(); ++mi)
         {
             const CTransaction& tx = mi->second.GetTx();
-            if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight))
+            if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, pblock->nTime))
                 continue;
 
             COrphan* porphan = NULL;
@@ -433,7 +434,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 
     // Process this block the same as if we had received it from another node
     CValidationState state;
-    if (!ProcessNewBlock(state, NULL, pblock))
+    if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
         return error("BitcoinMiner: ProcessNewBlock, block not accepted");
 
     return true;

@@ -264,9 +264,9 @@ void UpdatePreferredDownload(CNode* node, CNodeState* state)
 }
 
 // Returns time at which to timeout block request (nTime in microseconds)
-int64_t GetBlockTimeout(int64_t nTime, int nValidatedQueuedBefore)
+int64_t GetBlockTimeout(int64_t nTime, int nValidatedQueuedBefore, const Consensus::Params &consensusParams)
 {
-    return nTime + 500000 * Params().GetConsensus().nPowTargetSpacing * (4 + nValidatedQueuedBefore);
+    return nTime + 500000 * consensusParams.nPowTargetSpacing * (4 + nValidatedQueuedBefore);
 }
 
 void InitializeNode(NodeId nodeid, const CNode *pnode) {
@@ -296,7 +296,8 @@ void FinalizeNode(NodeId nodeid) {
 }
 
 // Requires cs_main.
-void MarkBlockAsReceived(const uint256& hash) {
+// Returns a bool indicating whether we requested this block.
+bool MarkBlockAsReceived(const uint256& hash) {
     map<uint256, pair<NodeId, list<QueuedBlock>::iterator> >::iterator itInFlight = mapBlocksInFlight.find(hash);
     if (itInFlight != mapBlocksInFlight.end()) {
         CNodeState *state = State(itInFlight->second.first);
@@ -306,11 +307,13 @@ void MarkBlockAsReceived(const uint256& hash) {
         state->nBlocksInFlight--;
         state->nStallingSince = 0;
         mapBlocksInFlight.erase(itInFlight);
+        return true;
     }
+    return false;
 }
 
 // Requires cs_main.
-void MarkBlockAsInFlight(NodeId nodeid, const uint256& hash, CBlockIndex *pindex = NULL) {
+void MarkBlockAsInFlight(NodeId nodeid, const uint256& hash, const Consensus::Params& consensusParams, CBlockIndex *pindex = NULL) {
     CNodeState *state = State(nodeid);
     assert(state != NULL);
 
@@ -318,7 +321,7 @@ void MarkBlockAsInFlight(NodeId nodeid, const uint256& hash, CBlockIndex *pindex
     MarkBlockAsReceived(hash);
 
     int64_t nNow = GetTimeMicros();
-    QueuedBlock newentry = {hash, pindex, nNow, pindex != NULL, GetBlockTimeout(nNow, nQueuedValidatedHeaders)};
+    QueuedBlock newentry = {hash, pindex, nNow, pindex != NULL, GetBlockTimeout(nNow, nQueuedValidatedHeaders, consensusParams)};
     nQueuedValidatedHeaders += newentry.fValidatedHeaders;
     list<QueuedBlock>::iterator it = state->vBlocksInFlight.insert(state->vBlocksInFlight.end(), newentry);
     state->nBlocksInFlight++;
@@ -671,14 +674,8 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 {
-    AssertLockHeld(cs_main);
-    // Time based nLockTime implemented in 0.1.6
     if (tx.nLockTime == 0)
         return true;
-    if (nBlockHeight == 0)
-        nBlockHeight = chainActive.Height();
-    if (nBlockTime == 0)
-        nBlockTime = GetAdjustedTime();
     if ((int64_t)tx.nLockTime < ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD ? (int64_t)nBlockHeight : nBlockTime))
         return true;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -687,10 +684,16 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     return true;
 }
 
+bool CheckFinalTx(const CTransaction &tx)
+{
+    AssertLockHeld(cs_main);
+    return IsFinalTx(tx, chainActive.Height() + 1, GetAdjustedTime());
+}
+
 /**
  * Check transaction inputs to mitigate two
  * potential denial-of-service attacks:
- * 
+ *
  * 1. scriptSigs with extra data stuffed into them,
  *    not consumed by scriptPubKey (or P2SH script)
  * 2. P2SH scripts with a crazy number of expensive
@@ -903,21 +906,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
     // be mined yet.
-    //
-    // However, IsFinalTx() is confusing... Without arguments, it uses
-    // chainActive.Height() to evaluate nLockTime; when a block is accepted,
-    // chainActive.Height() is set to the value of nHeight in the block.
-    // However, when IsFinalTx() is called within CBlock::AcceptBlock(), the
-    // height of the block *being* evaluated is what is used. Thus if we want
-    // to know if a transaction can be part of the *next* block, we need to
-    // call IsFinalTx() with one more than chainActive.Height().
-    //
-    // Timestamps on the other hand don't get any special treatment, because we
-    // can't know what timestamp the next block will have, and there aren't
-    // timestamp applications where it matters.
-    if (!IsFinalTx(tx, chainActive.Height() + 1))
-        return state.DoS(0,
-                         error("AcceptToMemoryPool: non-final"),
+    if (!CheckFinalTx(tx))
+        return state.DoS(0, error("AcceptToMemoryPool: non-final"),
                          REJECT_NONSTANDARD, "non-final");
 
     // is it already in the memory pool?
@@ -2158,7 +2148,7 @@ static int64_t nTimeFlush = 0;
 static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 
-/** 
+/**
  * Connect a new block to chainActive. pblock is either NULL or a pointer to a CBlock
  * corresponding to pindexNew, to bypass loading it again from disk.
  */
@@ -2839,7 +2829,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     return true;
 }
 
-bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, CDiskBlockPos* dbp)
+bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, bool fRequested, CDiskBlockPos* dbp)
 {
     const CChainParams& chainparams = Params();
     AssertLockHeld(cs_main);
@@ -2849,13 +2839,18 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     if (!AcceptBlockHeader(block, state, &pindex))
         return false;
 
-    // If we're pruning, ensure that we don't allow a peer to dump a copy
-    // of old blocks.  But we might need blocks that are not on the main chain
-    // to handle a reorg, even if we've processed once.
-    if (pindex->nStatus & BLOCK_HAVE_DATA || chainActive.Contains(pindex)) {
-        // TODO: deal better with duplicate blocks.
-        // return state.DoS(20, error("AcceptBlock(): already have block %d %s", pindex->nHeight, pindex->GetBlockHash().ToString()), REJECT_DUPLICATE, "duplicate");
-        return true;
+    // Try to process all requested blocks that we don't have, but only
+    // process an unrequested block if it's new and has enough work to
+    // advance our tip.
+    bool fAlreadyHave = pindex->nStatus & BLOCK_HAVE_DATA;
+    bool fHasMoreWork = (chainActive.Tip() ? pindex->nChainWork > chainActive.Tip()->nChainWork : true);
+
+    // TODO: deal better with return value and error conditions for duplicate
+    // and unrequested blocks.
+    if (fAlreadyHave) return true;
+    if (!fRequested) {  // If we didn't ask for it:
+        if (pindex->nTx != 0) return true;  // This is a previously-processed block that was pruned
+        if (!fHasMoreWork) return true;     // Don't process less-work chains
     }
 
     if ((!CheckBlock(block, state)) || !ContextualCheckBlock(block, state, pindex->pprev)) {
@@ -2904,21 +2899,22 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 }
 
 
-bool ProcessNewBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp)
+bool ProcessNewBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
     bool checked = CheckBlock(*pblock, state);
 
     {
         LOCK(cs_main);
-        MarkBlockAsReceived(pblock->GetHash());
+        bool fRequested = MarkBlockAsReceived(pblock->GetHash());
+        fRequested |= fForceProcessing;
         if (!checked) {
             return error("%s: CheckBlock FAILED", __func__);
         }
 
         // Store to disk
         CBlockIndex *pindex = NULL;
-        bool ret = AcceptBlock(*pblock, state, &pindex, dbp);
+        bool ret = AcceptBlock(*pblock, state, &pindex, fRequested, dbp);
         if (pindex && pfrom) {
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
         }
@@ -3466,7 +3462,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                 // process in case the block isn't known yet
                 if (mapBlockIndex.count(hash) == 0 || (mapBlockIndex[hash]->nStatus & BLOCK_HAVE_DATA) == 0) {
                     CValidationState state;
-                    if (ProcessNewBlock(state, NULL, &block, dbp))
+                    if (ProcessNewBlock(state, NULL, &block, true, dbp))
                         nLoaded++;
                     if (state.IsError())
                         break;
@@ -3488,7 +3484,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                     head.ToString());
                             CValidationState dummy;
-                            if (ProcessNewBlock(dummy, NULL, &block, &it->second))
+                            if (ProcessNewBlock(dummy, NULL, &block, true, &it->second))
                             {
                                 nLoaded++;
                                 queue.push_back(block.GetHash());
@@ -3700,7 +3696,7 @@ void static CheckBlockIndex()
 // CAlert
 //
 
-string GetWarnings(string strFor)
+std::string GetWarnings(const std::string& strFor)
 {
     int nPriority = 0;
     string strStatusBar;
@@ -4183,7 +4179,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                         vToFetch.push_back(inv);
                         // Mark block as in flight already, even though the actual "getdata" message only goes out
                         // later (within the same cs_main lock, though).
-                        MarkBlockAsInFlight(pfrom->GetId(), inv.hash);
+                        MarkBlockAsInFlight(pfrom->GetId(), inv.hash, chainparams.GetConsensus());
                     }
                     LogPrint("net", "getheaders (%d) %s to peer=%d\n", pindexBestHeader->nHeight, inv.hash.ToString(), pfrom->id);
                 }
@@ -4267,6 +4263,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         vRecv >> locator >> hashStop;
 
         LOCK(cs_main);
+
+        if (IsInitialBlockDownload())
+            return true;
 
         CBlockIndex* pindex = NULL;
         if (locator.IsNull())
@@ -4472,7 +4471,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         pfrom->AddInventoryKnown(inv);
 
         CValidationState state;
-        ProcessNewBlock(state, pfrom, &block);
+        // Process all blocks from whitelisted peers, even if not requested.
+        ProcessNewBlock(state, pfrom, &block, pfrom->fWhitelisted, NULL);
         int nDoS;
         if (state.IsInvalid(nDoS)) {
             pfrom->PushMessage("reject", strCommand, state.GetRejectCode(),
@@ -5036,7 +5036,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         // more quickly than once every 5 minutes, then we'll shorten the download window for this block).
         if (!pto->fDisconnect && state.vBlocksInFlight.size() > 0) {
             QueuedBlock &queuedBlock = state.vBlocksInFlight.front();
-            int64_t nTimeoutIfRequestedNow = GetBlockTimeout(nNow, nQueuedValidatedHeaders - state.nBlocksInFlightValidHeaders);
+            int64_t nTimeoutIfRequestedNow = GetBlockTimeout(nNow, nQueuedValidatedHeaders - state.nBlocksInFlightValidHeaders, consensusParams);
             if (queuedBlock.nTimeDisconnect > nTimeoutIfRequestedNow) {
                 LogPrint("net", "Reducing block download timeout for peer=%d block=%s, orig=%d new=%d\n", pto->id, queuedBlock.hash.ToString(), queuedBlock.nTimeDisconnect, nTimeoutIfRequestedNow);
                 queuedBlock.nTimeDisconnect = nTimeoutIfRequestedNow;
@@ -5057,7 +5057,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             FindNextBlocksToDownload(pto->GetId(), MAX_BLOCKS_IN_TRANSIT_PER_PEER - state.nBlocksInFlight, vToDownload, staller);
             BOOST_FOREACH(CBlockIndex *pindex, vToDownload) {
                 vGetData.push_back(CInv(MSG_BLOCK, pindex->GetBlockHash()));
-                MarkBlockAsInFlight(pto->GetId(), pindex->GetBlockHash(), pindex);
+                MarkBlockAsInFlight(pto->GetId(), pindex->GetBlockHash(), consensusParams, pindex);
                 LogPrint("net", "Requesting block %s (%d) peer=%d\n", pindex->GetBlockHash().ToString(),
                     pindex->nHeight, pto->id);
             }
