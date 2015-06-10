@@ -7,11 +7,6 @@
 #include "config/bitcoin-config.h"
 #endif
 
-#if (defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__))
-#include <pthread.h>
-#include <pthread_np.h>
-#endif
-
 #include "util.h"
 
 #include "chainparamsbase.h"
@@ -22,6 +17,11 @@
 #include "utiltime.h"
 
 #include <stdarg.h>
+
+#if (defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__))
+#include <pthread.h>
+#include <pthread_np.h>
+#endif
 
 #ifndef WIN32
 // for posix_fallocate
@@ -208,6 +208,7 @@ bool LogAcceptCategory(const char* category)
 
         // if not debugging everything and not debugging specific category, LogPrint does nothing.
         if (setCategories.count(string("")) == 0 &&
+            setCategories.count(string("1")) == 0 &&
             setCategories.count(string(category)) == 0)
             return false;
     }
@@ -701,7 +702,7 @@ boost::filesystem::path GetTempPath() {
 #endif
 }
 
-void runCommand(std::string strCommand)
+void runCommand(const std::string& strCommand)
 {
     int nErr = ::system(strCommand.c_str());
     if (nErr)
