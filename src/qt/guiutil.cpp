@@ -265,6 +265,19 @@ void copyEntryData(QAbstractItemView *view, int column, int role)
     }
 }
 
+QString getEntryData(QAbstractItemView *view, int column, int role)
+{
+    if(!view || !view->selectionModel())
+        return QString();
+    QModelIndexList selection = view->selectionModel()->selectedRows(column);
+
+    if(!selection.isEmpty()) {
+        // Return first item
+        return (selection.at(0).data(role).toString());
+    }
+    return QString();
+}
+
 QString getSaveFileName(QWidget *parent, const QString &caption, const QString &dir,
     const QString &filter,
     QString *selectedSuffixOut)
@@ -741,14 +754,14 @@ LSSharedFileListItemRef findStartupItemInList(LSSharedFileListRef list, CFURLRef
         CFURLRef currentItemURL = NULL;
 
 #if defined(MAC_OS_X_VERSION_MAX_ALLOWED) && MAC_OS_X_VERSION_MAX_ALLOWED >= 10100
-	if(&LSSharedFileListItemCopyResolvedURL)
-	    currentItemURL = LSSharedFileListItemCopyResolvedURL(item, resolutionFlags, NULL);
+    if(&LSSharedFileListItemCopyResolvedURL)
+        currentItemURL = LSSharedFileListItemCopyResolvedURL(item, resolutionFlags, NULL);
 #if defined(MAC_OS_X_VERSION_MIN_REQUIRED) && MAC_OS_X_VERSION_MIN_REQUIRED < 10100
-	else
-	    LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, NULL);
+    else
+        LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, NULL);
 #endif
 #else
-	LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, NULL);
+    LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, NULL);
 #endif
 
         if(currentItemURL && CFEqual(currentItemURL, findUrl)) {

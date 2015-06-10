@@ -6,7 +6,6 @@
 #ifndef BITCOIN_CHAINPARAMS_H
 #define BITCOIN_CHAINPARAMS_H
 
-#include "arith_uint256.h"
 #include "chainparamsbase.h"
 #include "checkpoints.h"
 #include "consensus/params.h"
@@ -19,6 +18,12 @@ struct CDNSSeedData {
     std::string name, host;
     CDNSSeedData(const std::string &strName, const std::string &strHost) : name(strName), host(strHost) {}
 };
+
+struct SeedSpec6 {
+    uint8_t addr[16];
+    uint16_t port;
+};
+
 
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
@@ -41,15 +46,9 @@ public:
     };
 
     const Consensus::Params& GetConsensus() const { return consensus; }
-    const uint256& HashGenesisBlock() const { return consensus.hashGenesisBlock; }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
     int GetDefaultPort() const { return nDefaultPort; }
-    const arith_uint256& ProofOfWorkLimit() const { return consensus.powLimit; }
-    int SubsidyHalvingInterval() const { return consensus.nSubsidyHalvingInterval; }
-    int EnforceBlockUpgradeMajority() const { return consensus.nMajorityEnforceBlockUpgrade; }
-    int RejectBlockOutdatedMajority() const { return consensus.nMajorityRejectBlockOutdated; }
-    int ToCheckBlockUpgradeMajority() const { return consensus.nMajorityWindow; }
 
     /** Used if GenerateBitcoins is called with a negative number of threads */
     int DefaultMinerThreads() const { return nMinerThreads; }
@@ -59,13 +58,9 @@ public:
     bool MiningRequiresPeers() const { return fMiningRequiresPeers; }
     /** Default value for -checkmempool and -checkblockindex argument */
     bool DefaultConsistencyChecks() const { return fDefaultConsistencyChecks; }
-    /** Allow mining of a min-difficulty block */
-    bool AllowMinDifficultyBlocks() const { return consensus.fPowAllowMinDifficultyBlocks; }
-    /** Make standard checks */
+    /** Policy: Filter transactions that do not match well-defined patterns */
     bool RequireStandard() const { return fRequireStandard; }
-    int64_t TargetTimespan() const { return consensus.nPowTargetTimespan; }
-    int64_t TargetSpacing() const { return consensus.nPowTargetSpacing; }
-    int64_t DifficultyAdjustmentInterval() const { return consensus.nPowTargetTimespan / consensus.nPowTargetSpacing; }
+    int64_t PruneAfterHeight() const { return nPruneAfterHeight; }
     /** Make miner stop after a block is found. In RPC, don't return until nGenProcLimit blocks are generated */
     bool MineBlocksOnDemand() const { return fMineBlocksOnDemand; }
     /** In the future use NetworkIDString() for RPC fields */
@@ -74,8 +69,8 @@ public:
     std::string NetworkIDString() const { return strNetworkID; }
     const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
-    const std::vector<CAddress>& FixedSeeds() const { return vFixedSeeds; }
-    virtual const Checkpoints::CCheckpointData& Checkpoints() const = 0;
+    const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
+    const Checkpoints::CCheckpointData& Checkpoints() const { return checkpointData; }
 protected:
     CChainParams() {}
 
@@ -85,22 +80,24 @@ protected:
     std::vector<unsigned char> vAlertPubKey;
     int nDefaultPort;
     int nMinerThreads;
+    uint64_t nPruneAfterHeight;
     std::vector<CDNSSeedData> vSeeds;
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
     std::string strNetworkID;
     CBlock genesis;
-    std::vector<CAddress> vFixedSeeds;
+    std::vector<SeedSpec6> vFixedSeeds;
     bool fRequireRPCPassword;
     bool fMiningRequiresPeers;
     bool fDefaultConsistencyChecks;
     bool fRequireStandard;
     bool fMineBlocksOnDemand;
     bool fTestnetToBeDeprecatedFieldRPC;
+    Checkpoints::CCheckpointData checkpointData;
 };
 
 /**
- * Return the currently selected parameters. This won't change after app startup
- * outside of the unit tests.
+ * Return the currently selected parameters. This won't change after app
+ * startup, except for unit tests.
  */
 const CChainParams &Params();
 
