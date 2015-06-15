@@ -53,7 +53,7 @@ struct CNodeStateStats;
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 750000;
 static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
 /** Default for -blockprioritysize, maximum space for zero/low-fee transactions **/
-static const unsigned int DEFAULT_BLOCK_PRIORITY_SIZE = 50000;
+static const unsigned int DEFAULT_BLOCK_PRIORITY_SIZE = 17000;
 /** Default for accepting alerts from the P2P network. */
 static const bool DEFAULT_ALERTS = true;
 /** The maximum size for transactions we're willing to relay/mine */
@@ -96,6 +96,14 @@ static const unsigned int BLOCK_DOWNLOAD_WINDOW = 1024;
 static const unsigned int DATABASE_WRITE_INTERVAL = 3600;
 /** Maximum length of reject messages. */
 static const unsigned int MAX_REJECT_MESSAGE_LENGTH = 111;
+
+/** Litecoin: Dust Threshold: outputs below this value in satoshis are assessed an additional 1000 bytes per txout */
+static const CAmount DUST_THRESHOLD = 100000; // 0.001 LTC
+/** Litecoin: Default TX Fee per 1000 bytes */
+static const CAmount DEFAULT_TX_FEE = 100000; // 0.001 LTC
+
+/** Litecoin: default minimum input threshold, override with -mininput */
+static const CAmount DEFAULT_MINIMUM_INPUT_THRESHOLD = DUST_THRESHOLD / 100; // 0.00001 LTC
 
 /** "reject" message codes */
 static const unsigned char REJECT_MALFORMED = 0x01;
