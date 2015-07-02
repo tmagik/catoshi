@@ -30,8 +30,12 @@ testScripts=(
     'zapwallettxes.py'
     'proxy_test.py'
     'merkle_blocks.py'
+    'fundrawtransaction.py'
     'signrawtransactions.py'
     'walletbackup.py'
+    'nodehandling.py'
+    'reindex.py'
+    'decodescript.py'
 );
 testScriptsExt=(
     'bipdersig-p2p.py'
@@ -43,7 +47,6 @@ testScriptsExt=(
     'invalidateblock.py'
     'keypool.py'
     'receivedby.py'
-    'reindex.py'
     'rpcbind_test.py'
 #   'script_test.py'
     'smartfees.py'
@@ -51,6 +54,7 @@ testScriptsExt=(
     'invalidblockrequest.py'
     'rawtransactions.py'
 #    'forknotify.py'
+    'p2p-acceptblock.py'
 );
 
 extArg="-extended"
