@@ -156,8 +156,8 @@ void Shutdown()
 #ifdef ENABLE_WALLET
     if (pwalletMain)
         pwalletMain->Flush(false);
-    GenerateBitcoins(false, NULL, 0);
 #endif
+    GenerateBitcoins(false, 0, Params());
     StopNode();
     UnregisterNodeSignals(GetNodeSignals());
 
@@ -266,6 +266,7 @@ std::string HelpMessage(HelpMessageMode mode)
     // Do not translate _(...) -help-debug options, Many technical terms, and only a very small audience, so is unnecessary stress to translators.
     string strUsage = HelpMessageGroup(_("Options:"));
     strUsage += HelpMessageOpt("-?", _("This help message"));
+    strUsage += HelpMessageOpt("-alerts", strprintf(_("Receive and display P2P network alerts (default: %u)"), DEFAULT_ALERTS));
     strUsage += HelpMessageOpt("-alertnotify=<cmd>", _("Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)"));
     strUsage += HelpMessageOpt("-blocknotify=<cmd>", _("Execute command when the best block changes (%s in cmd is replaced by block hash)"));
     strUsage += HelpMessageOpt("-checkblocks=<n>", strprintf(_("How many blocks to check at startup (default: %u, 0 = all)"), 288));
@@ -282,7 +283,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-loadblock=<file>", _("Imports blocks from external blk000??.dat file") + " " + _("on startup"));
     strUsage += HelpMessageOpt("-maxorphantx=<n>", strprintf(_("Keep at most <n> unconnectable transactions in memory (default: %u)"), DEFAULT_MAX_ORPHAN_TRANSACTIONS));
     strUsage += HelpMessageOpt("-par=<n>", strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"),
-        -(int)boost::thread::hardware_concurrency(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS));
+        -GetNumCores(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS));
 #ifndef WIN32
     strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), "bitcoind.pid"));
 #endif
@@ -369,10 +370,8 @@ std::string HelpMessage(HelpMessageMode mode)
         debugCategories += ", qt";
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
         _("If <category> is not supplied or if <category> = 1, output all debugging information.") + _("<category> can be:") + " " + debugCategories + ".");
-#ifdef ENABLE_WALLET
     strUsage += HelpMessageOpt("-gen", strprintf(_("Generate coins (default: %u)"), 0));
     strUsage += HelpMessageOpt("-genproclimit=<n>", strprintf(_("Set the number of threads for coin generation if enabled (-1 = all cores, default: %d)"), 1));
-#endif
     strUsage += HelpMessageOpt("-help-debug", _("Show all debugging options (usage: --help -help-debug)"));
     strUsage += HelpMessageOpt("-logips", strprintf(_("Include IP addresses in debug output (default: %u)"), 0));
     strUsage += HelpMessageOpt("-logtimestamps", strprintf(_("Prepend debug output with timestamp (default: %u)"), 1));
@@ -476,24 +475,43 @@ struct CImportingNow
 
 // If we're using -prune with -reindex, then delete block files that will be ignored by the
 // reindex.  Since reindexing works by starting at block file 0 and looping until a blockfile
-// is missing, and since pruning works by deleting the oldest block file first, just check
-// for block file 0, and if it doesn't exist, delete all the block files in the
-// directory (since they won't be read by the reindex but will take up disk space).
-void DeleteAllBlockFiles()
+// is missing, do the same here to delete any later block files after a gap.  Also delete all
+// rev files since they'll be rewritten by the reindex anyway.  This ensures that vinfoBlockFile
+// is in sync with what's actually on disk by the time we start downloading, so that pruning
+// works correctly.
+void CleanupBlockRevFiles()
 {
-    if (boost::filesystem::exists(GetBlockPosFilename(CDiskBlockPos(0, 0), "blk")))
-        return;
+    using namespace boost::filesystem;
+    map<string, path> mapBlockFiles;
 
-    LogPrintf("Removing all blk?????.dat and rev?????.dat files for -reindex with -prune\n");
-    boost::filesystem::path blocksdir = GetDataDir() / "blocks";
-    for (boost::filesystem::directory_iterator it(blocksdir); it != boost::filesystem::directory_iterator(); it++) {
-        if (is_regular_file(*it)) {
-            if ((it->path().filename().string().length() == 12) &&
-                (it->path().filename().string().substr(8,4) == ".dat") &&
-                ((it->path().filename().string().substr(0,3) == "blk") ||
-                 (it->path().filename().string().substr(0,3) == "rev")))
-                boost::filesystem::remove(it->path());
+    // Glob all blk?????.dat and rev?????.dat files from the blocks directory.
+    // Remove the rev files immediately and insert the blk file paths into an
+    // ordered map keyed by block file index.
+    LogPrintf("Removing unusable blk?????.dat and rev?????.dat files for -reindex with -prune\n");
+    path blocksdir = GetDataDir() / "blocks";
+    for (directory_iterator it(blocksdir); it != directory_iterator(); it++) {
+        if (is_regular_file(*it) &&
+            it->path().filename().string().length() == 12 &&
+            it->path().filename().string().substr(8,4) == ".dat")
+        {
+            if (it->path().filename().string().substr(0,3) == "blk")
+                mapBlockFiles[it->path().filename().string().substr(3,5)] = it->path();
+            else if (it->path().filename().string().substr(0,3) == "rev")
+                remove(it->path());
         }
+    }
+
+    // Remove all block files that aren't part of a contiguous set starting at
+    // zero by walking the ordered map (keys are block file indices) by
+    // keeping a separate counter.  Once we hit a gap (or if 0 doesn't exist)
+    // start removing block files.
+    int nContigCounter = 0;
+    BOOST_FOREACH(const PAIRTYPE(string, path)& item, mapBlockFiles) {
+        if (atoi(item.first) == nContigCounter) {
+            nContigCounter++;
+            continue;
+        }
+        remove(item.second);
     }
 }
 
@@ -717,16 +735,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         nMaxConnections = nFD - MIN_CORE_FILEDESCRIPTORS;
 
     // if using block pruning, then disable txindex
-    // also disable the wallet (for now, until SPV support is implemented in wallet)
     if (GetArg("-prune", 0)) {
         if (GetBoolArg("-txindex", false))
             return InitError(_("Prune mode is incompatible with -txindex."));
 #ifdef ENABLE_WALLET
-        if (!GetBoolArg("-disablewallet", false)) {
-            if (SoftSetBoolArg("-disablewallet", true))
-                LogPrintf("%s : parameter interaction: -prune -> setting -disablewallet=1\n", __func__);
-            else
-                return InitError(_("Can't run with a wallet in prune mode."));
+        if (GetBoolArg("-rescan", false)) {
+            return InitError(_("Rescans are not possible in pruned mode. You will need to use -reindex which will download the whole blockchain again."));
         }
 #endif
     }
@@ -760,7 +774,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = GetArg("-par", DEFAULT_SCRIPTCHECK_THREADS);
     if (nScriptCheckThreads <= 0)
-        nScriptCheckThreads += boost::thread::hardware_concurrency();
+        nScriptCheckThreads += GetNumCores();
     if (nScriptCheckThreads <= 1)
         nScriptCheckThreads = 0;
     else if (nScriptCheckThreads > MAX_SCRIPTCHECK_THREADS)
@@ -855,6 +869,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     fIsBareMultisigStd = GetBoolArg("-permitbaremultisig", true);
     nMaxDatacarrierBytes = GetArg("-datacarriersize", nMaxDatacarrierBytes);
+
+    fAlerts = GetBoolArg("-alerts", DEFAULT_ALERTS);
+
+    // Option to startup with mocktime set (used for regression testing):
+    SetMockTime(GetArg("-mocktime", 0)); // SetMockTime(0) is a no-op
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
@@ -975,31 +994,36 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
-    proxyType addrProxy;
-    bool fProxy = false;
-    if (mapArgs.count("-proxy")) {
-        addrProxy = proxyType(CService(mapArgs["-proxy"], 9050), GetBoolArg("-proxyrandomize", true));
+    bool proxyRandomize = GetBoolArg("-proxyrandomize", true);
+    // -proxy sets a proxy for all outgoing network traffic
+    // -noproxy (or -proxy=0) as well as the empty string can be used to not set a proxy, this is the default
+    std::string proxyArg = GetArg("-proxy", "");
+    if (proxyArg != "" && proxyArg != "0") {
+        proxyType addrProxy = proxyType(CService(proxyArg, 9050), proxyRandomize);
         if (!addrProxy.IsValid())
-            return InitError(strprintf(_("Invalid -proxy address: '%s'"), mapArgs["-proxy"]));
+            return InitError(strprintf(_("Invalid -proxy address: '%s'"), proxyArg));
 
         SetProxy(NET_IPV4, addrProxy);
         SetProxy(NET_IPV6, addrProxy);
+        SetProxy(NET_TOR, addrProxy);
         SetNameProxy(addrProxy);
-        fProxy = true;
+        SetReachable(NET_TOR); // by default, -proxy sets onion as reachable, unless -noonion later
     }
 
-    // -onion can override normal proxy, -noonion disables connecting to .onion entirely
-    if (!(mapArgs.count("-onion") && mapArgs["-onion"] == "0") &&
-        (fProxy || mapArgs.count("-onion"))) {
-        proxyType addrOnion;
-        if (!mapArgs.count("-onion"))
-            addrOnion = addrProxy;
-        else
-            addrOnion = proxyType(CService(mapArgs["-onion"], 9050), GetBoolArg("-proxyrandomize", true));
-        if (!addrOnion.IsValid())
-            return InitError(strprintf(_("Invalid -onion address: '%s'"), mapArgs["-onion"]));
-        SetProxy(NET_TOR, addrOnion);
-        SetReachable(NET_TOR);
+    // -onion can be used to set only a proxy for .onion, or override normal proxy for .onion addresses
+    // -noonion (or -onion=0) disables connecting to .onion entirely
+    // An empty string is used to not override the onion proxy (in which case it defaults to -proxy set above, or none)
+    std::string onionArg = GetArg("-onion", "");
+    if (onionArg != "") {
+        if (onionArg == "0") { // Handle -noonion/-onion=0
+            SetReachable(NET_TOR, false); // set onions as unreachable
+        } else {
+            proxyType addrOnion = proxyType(CService(onionArg, 9050), proxyRandomize);
+            if (!addrOnion.IsValid())
+                return InitError(strprintf(_("Invalid -onion address: '%s'"), onionArg));
+            SetProxy(NET_TOR, addrOnion);
+            SetReachable(NET_TOR);
+        }
     }
 
     // see Step 2: parameter interactions for more information about these
@@ -1117,9 +1141,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
                 if (fReindex) {
                     pblocktree->WriteReindexing(true);
-                    //If we're reindexing in prune mode, wipe away all our block and undo data files
+                    //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
                     if (fPruneMode)
-                        DeleteAllBlockFiles();
+                        CleanupBlockRevFiles();
                 }
 
                 if (!LoadBlockIndex()) {
@@ -1317,6 +1341,19 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
         if (chainActive.Tip() && chainActive.Tip() != pindexRescan)
         {
+            //We can't rescan beyond non-pruned blocks, stop and throw an error
+            //this might happen if a user uses a old wallet within a pruned node
+            // or if he ran -disablewallet for a longer time, then decided to re-enable
+            if (fPruneMode)
+            {
+                CBlockIndex *block = chainActive.Tip();
+                while (block && block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA) && block->pprev->nTx > 0 && pindexRescan != block)
+                    block = block->pprev;
+
+                if (pindexRescan != block)
+                    return InitError(_("Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)"));
+            }
+
             uiInterface.InitMessage(_("Rescanning..."));
             LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
             nStart = GetTimeMillis();
@@ -1403,14 +1440,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Monitor the chain, and alert if we get blocks much quicker or slower than expected
     int64_t nPowTargetSpacing = Params().GetConsensus().nPowTargetSpacing;
     CScheduler::Function f = boost::bind(&PartitionCheck, &IsInitialBlockDownload,
-                                         boost::ref(cs_main), boost::cref(chainActive), nPowTargetSpacing);
+                                         boost::ref(cs_main), boost::cref(pindexBestHeader), nPowTargetSpacing);
     scheduler.scheduleEvery(f, nPowTargetSpacing);
 
-#ifdef ENABLE_WALLET
     // Generate coins in the background
-    if (pwalletMain)
-        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
-#endif
+    GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1), Params());
 
     // ********************************************************* Step 11: finished
 
