@@ -1,9 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2013-2014 The Catcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
-// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "db.h"
 #include "net.h"
@@ -44,6 +46,7 @@ struct LocalServiceInfo {
 //
 bool fDiscover = true;
 uint64_t nLocalServices = NODE_NETWORK;
+CAddress addrSeenByPeer(CService("0.0.0.0", 0), nLocalServices);
 static CCriticalSection cs_mapLocalHost;
 static map<CNetAddr, LocalServiceInfo> mapLocalHost;
 static bool vfReachable[NET_MAX] = {};
@@ -1114,7 +1117,7 @@ void ThreadMapPort()
             }
         }
 
-        string strDesc = "Catcoin " + FormatFullVersion();
+        string strDesc = BRAND_upper " " + FormatFullVersion();
 
         try {
             while (true) {
@@ -1659,7 +1662,7 @@ void static Discover()
     if (!fDiscover)
         return;
 
-#ifdef WIN32
+#if defined(WIN32) || defined(ANDROID) // TODO FIXTHIS, https://github.com/kmackay/android-ifaddrs
     // Get local host IP
     char pszHostName[1000] = "";
     if (gethostname(pszHostName, sizeof(pszHostName)) != SOCKET_ERROR)

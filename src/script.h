@@ -1,7 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2012 The PPCoin developers
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
-// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html// Copyright (c) 2009-2012 The Bitcoin developers
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 #ifndef H_CODECOIN_SCRIPT
 #define H_CODECOIN_SCRIPT
 
