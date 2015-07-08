@@ -1,6 +1,19 @@
 /*
  * W.J. van der Laan 2011-2012
  */
+/*
+ * Copyright (c) 2009-2012 The *coin developers
+ * where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+ * Previously distributed under the MIT/X11 software license, see the
+ * file COPYING or http://www.opensource.org/licenses/mit-license.php.
+ * Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+ * Distributed under the Affero GNU General public license version 3
+ * file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+ */
+#ifdef ANDROID
+#include <netdb.h>
+#include <endian.h>
+#endif
 
 #include <QApplication>
 
@@ -71,7 +84,7 @@ static bool ThreadSafeMessageBox(const std::string& message, const std::string& 
     }
 }
 
-static bool ThreadSafeAskFee(int64 nFeeRequired)
+static bool ThreadSafeAskFee(int64_t nFeeRequired)
 {
     if(!guiref)
         return false;

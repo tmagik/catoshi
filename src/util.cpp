@@ -1,6 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
@@ -67,6 +70,11 @@ namespace boost {
 #elif defined(__linux__)
 # include <sys/prctl.h>
 #endif
+
+#if !defined (WIN32) && !defined(ANDROID)
+#include <execinfo.h>
+#endif
+
 
 using namespace std;
 
@@ -1022,6 +1030,19 @@ void PrintException(std::exception* pex, const char* pszThread)
     throw;
 }
 
+void LogStackTrace() {
+    printf("\n\n******* exception encountered *******\n");
+    if (fileout)
+    {
+#if !defined(WIN32) && !defined(ANDROID)
+        void* pszBuffer[32];
+        size_t size;
+        size = backtrace(pszBuffer, 32);
+        backtrace_symbols_fd(pszBuffer, size, fileno(fileout));
+#endif
+    }
+}
+
 void PrintExceptionContinue(std::exception* pex, const char* pszThread)
 {
     std::string message = FormatException(pex, pszThread);
@@ -1238,11 +1259,14 @@ void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
         fcntl(fileno(file), F_PREALLOCATE, &fst);
     }
     ftruncate(fileno(file), fst.fst_length);
-#elif defined(__linux__)
+#elif defined(__linux__) && !defined(ANDROID)
     // Version using posix_fallocate
     off_t nEndPos = (off_t)offset + length;
     posix_fallocate(fileno(file), 0, nEndPos);
 #else
+#if defined(ANDROID)
+#warning "... so if we link with glibc ..."
+#endif
     // Fallback version
     // TODO: just write one byte per block
     static const char buf[65536] = {};

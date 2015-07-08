@@ -9,6 +9,34 @@ DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE
 CONFIG += no_include_pwd
 CONFIG += thread
 
+#may need below. cause arg
+#
+android:DEFINES += BOOST_NO_SCOPED_ENUMS BOOST_NO_CXX11_SCOPED_ENUMS __WORDSIZE=32
+
+COIN_brand=catcoin
+# use: qmake "COIN_brand=catcoin"
+contains(COIN_brand, catcoin) {
+    message(Building for Catcoin)
+    DEFINES += BRAND_catcoin
+    TARGET = catcoin
+} else {
+contains(COIN_brand, givecoin) {
+    message(Building for Givecoin)
+    DEFINES += BRAND_givecoin
+    TARGET = givecoin
+} else {
+contains(COIN_brand, givestake) { # for testing, for now
+    DEFINES += BRAND_givecoin PPCOINSTAKE
+    TARGET = givestake
+} else {
+contains(COIN_brand, bluecoin) {
+    DEFINES += BRAND_bluecoin
+    TARGET = bluecoin
+} else {
+    DEFINES += BRAND_codecoin
+    TARGET = codecoin
+}}}}
+
 # for boost 1.37, add -mt to the boost libraries
 # use: qmake BOOST_LIB_SUFFIX=-mt
 # for boost thread win32 with _win32 sufix
@@ -79,6 +107,8 @@ contains(USE_QRCODE, 1) {
 #  or: qmake "USE_UPNP=0" (disabled by default)
 #  or: qmake "USE_UPNP=-" (not supported)
 # miniupnpc (http://miniupnp.free.fr/files/) must be installed for support
+!android {
+!ios {
 contains(USE_UPNP, -) {
     message(Building without UPNP support)
 } else {
@@ -90,6 +120,8 @@ contains(USE_UPNP, -) {
     INCLUDEPATH += $$MINIUPNPC_INCLUDE_PATH
     LIBS += $$join(MINIUPNPC_LIB_PATH,,-L,) -lminiupnpc
     win32:LIBS += -liphlpapi
+}
+}
 }
 
 # use: qmake "USE_DBUS=1"
@@ -111,39 +143,13 @@ contains(USE_IPV6, -) {
     DEFINES += USE_IPV6=$$USE_IPV6
 }
 
+android:DEFINES += LEVELDB_PLATFORM_POSIX OS_ANDROID
+
+INCLUDEPATH += src/leveldb/include src/leveldb/helpers src/leveldb
+
 contains(BITCOIN_NEED_QT_PLUGINS, 1) {
     DEFINES += BITCOIN_NEED_QT_PLUGINS
     QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs qtaccessiblewidgets
-}
-
-INCLUDEPATH += src/leveldb/include src/leveldb/helpers
-LIBS += $$PWD/src/leveldb/libleveldb.a $$PWD/src/leveldb/libmemenv.a
-!win32 {
-    # we use QMAKE_CXXFLAGS_RELEASE even without RELEASE=1 because we use RELEASE to indicate linking preferences not -O preferences
-    genleveldb.commands = cd $$PWD/src/leveldb && CC=$$QMAKE_CC CXX=$$QMAKE_CXX $(MAKE) OPT=\"$$QMAKE_CXXFLAGS $$QMAKE_CXXFLAGS_RELEASE\" libleveldb.a libmemenv.a
-} else {
-    # make an educated guess about what the ranlib command is called
-    isEmpty(QMAKE_RANLIB) {
-        QMAKE_RANLIB = $$replace(QMAKE_STRIP, strip, ranlib)
-    }
-    LIBS += -lshlwapi
-    #genleveldb.commands = cd $$PWD/src/leveldb && CC=$$QMAKE_CC CXX=$$QMAKE_CXX TARGET_OS=OS_WINDOWS_CROSSCOMPILE $(MAKE) OPT=\"$$QMAKE_CXXFLAGS $$QMAKE_CXXFLAGS_RELEASE\" libleveldb.a libmemenv.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libleveldb.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libmemenv.a
-}
-genleveldb.target = $$PWD/src/leveldb/libleveldb.a
-genleveldb.depends = FORCE
-PRE_TARGETDEPS += $$PWD/src/leveldb/libleveldb.a
-QMAKE_EXTRA_TARGETS += genleveldb
-# Gross ugly hack that depends on qmake internals, unfortunately there is no other way to do it.
-QMAKE_CLEAN += $$PWD/src/leveldb/libleveldb.a; cd $$PWD/src/leveldb ; $(MAKE) clean
-
-# regenerate src/build.h
-!win32|contains(USE_BUILD_INFO, 1) {
-    genbuild.depends = FORCE
-    genbuild.commands = cd $$PWD; /bin/sh share/genbuild.sh $$OUT_PWD/build/build.h
-    genbuild.target = $$OUT_PWD/build/build.h
-    PRE_TARGETDEPS += $$OUT_PWD/build/build.h
-    QMAKE_EXTRA_TARGETS += genbuild
-    DEFINES += HAVE_BUILD_INFO
 }
 
 QMAKE_CXXFLAGS_WARN_ON = -fdiagnostics-show-option -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter -Wstack-protector
@@ -172,7 +178,7 @@ HEADERS += src/qt/codecoingui.h \
     src/sync.h \
     src/util.h \
     src/hash.h \
-    src/uint256.h \
+    src/uintBIG.h \
     src/serialize.h \
     src/main.h \
     src/net.h \
@@ -308,6 +314,22 @@ SOURCES += src/qt/codecoin.cpp \
     src/txdb.cpp \
     src/qt/splashscreen.cpp
 
+#leveldb sources
+SOURCES += src/leveldb/db/builder.cc src/leveldb/db/c.cc src/leveldb/db/dbformat.cc src/leveldb/db/db_impl.cc \
+    src/leveldb/db/db_iter.cc src/leveldb/db/filename.cc src/leveldb/db/log_reader.cc src/leveldb/db/log_writer.cc \
+    src/leveldb/db/memtable.cc src/leveldb/db/repair.cc src/leveldb/db/table_cache.cc src/leveldb/db/version_edit.cc \
+    src/leveldb/db/version_set.cc src/leveldb/db/write_batch.cc src/leveldb/table/block_builder.cc \
+    src/leveldb/table/block.cc src/leveldb/table/filter_block.cc src/leveldb/table/format.cc src/leveldb/table/iterator.cc \
+    src/leveldb/table/merger.cc src/leveldb/table/table_builder.cc src/leveldb/table/table.cc \
+    src/leveldb/table/two_level_iterator.cc src/leveldb/util/arena.cc \
+    src/leveldb/util/db_bloom.cc src/leveldb/util/cache.cc src/leveldb/util/coding.cc src/leveldb/util/comparator.cc \
+    src/leveldb/util/crc32c.cc src/leveldb/util/env.cc src/leveldb/util/env_posix.cc src/leveldb/util/env_win.cc \
+    src/leveldb/util/filter_policy.cc src/leveldb/util/db_hash.cc src/leveldb/util/histogram.cc src/leveldb/util/logging.cc \
+    src/leveldb/util/options.cc src/leveldb/util/status.cc src/leveldb/port/port_posix.cc
+
+#leveldb libmemv
+SOURCES += src/leveldb/helpers/memenv/memenv.cc
+
 RESOURCES += src/qt/codecoin.qrc
 
 FORMS += src/qt/forms/sendcoinsdialog.ui \
@@ -397,7 +419,9 @@ isEmpty(BOOST_THREAD_LIB_SUFFIX) {
 }
 
 isEmpty(BDB_LIB_PATH) {
-    macx:BDB_LIB_PATH = /opt/local/lib/db53
+    !linux:BDB_LIB_PATH = debs/lib
+#    macx:BDB_LIB_PATH = /opt/local/lib/db53
+    android:BDB_LIB_PATH = deps/lib
 }
 
 isEmpty(BDB_LIB_SUFFIX) {
@@ -405,7 +429,9 @@ isEmpty(BDB_LIB_SUFFIX) {
 }
 
 isEmpty(BDB_INCLUDE_PATH) {
-    macx:BDB_INCLUDE_PATH = /opt/local/include/db53
+    !linux:BDB_INCLUDE_PATH = deps/include
+    #macx:BDB_INCLUDE_PATH = /opt/local/include/db53
+    android:BDB_INCLUDE_PATH = deps/include
 }
 
 isEmpty(BOOST_LIB_PATH) {
@@ -432,7 +458,7 @@ win32:!contains(MINGW_THREAD_BUGFIX, 0) {
 
 !win32:!macx {
     DEFINES += LINUX
-    LIBS += -lrt
+    !android:LIBS += -lrt
     # _FILE_OFFSET_BITS=64 lets 32-bit fopen transparently support large files.
     DEFINES += _FILE_OFFSET_BITS=64
 }

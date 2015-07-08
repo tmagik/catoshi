@@ -1,6 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef CODECOIN_BIGNUM_H
@@ -195,6 +198,21 @@ public:
         pch[2] = (nSize >> 8) & 0xff;
         pch[3] = (nSize) & 0xff;
         BN_mpi2bn(pch, p - pch, this);
+    }
+
+    uint64_t getuint64()
+    {
+        unsigned int nSize = BN_bn2mpi(this, NULL);
+        if (nSize < 4)
+            return 0;
+        std::vector<unsigned char> vch(nSize);
+        BN_bn2mpi(this, &vch[0]);
+        if (vch.size() > 4)
+            vch[4] &= 0x7f;
+        uint64_t n = 0;
+        for (unsigned int i = 0, j = vch.size()-1; i < sizeof(n) && j >= 4; i++, j--)
+            ((unsigned char*)&n)[i] = vch[j];
+        return n;
     }
 
     void setuint256(uint256 n)
