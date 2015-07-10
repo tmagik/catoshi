@@ -18,6 +18,7 @@
 #include "main.h"
 #include "miner.h"
 #include "net.h"
+#include "policy/policy.h"
 #include "rpcserver.h"
 #include "script/standard.h"
 #include "scheduler.h"
@@ -156,8 +157,8 @@ void Shutdown()
 #ifdef ENABLE_WALLET
     if (pwalletMain)
         pwalletMain->Flush(false);
-    GenerateBitcoins(false, NULL, 0);
 #endif
+    GenerateBitcoins(false, 0, Params());
     StopNode();
     UnregisterNodeSignals(GetNodeSignals());
 
@@ -266,6 +267,7 @@ std::string HelpMessage(HelpMessageMode mode)
     // Do not translate _(...) -help-debug options, Many technical terms, and only a very small audience, so is unnecessary stress to translators.
     string strUsage = HelpMessageGroup(_("Options:"));
     strUsage += HelpMessageOpt("-?", _("This help message"));
+    strUsage += HelpMessageOpt("-alerts", strprintf(_("Receive and display P2P network alerts (default: %u)"), DEFAULT_ALERTS));
     strUsage += HelpMessageOpt("-alertnotify=<cmd>", _("Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)"));
     strUsage += HelpMessageOpt("-blocknotify=<cmd>", _("Execute command when the best block changes (%s in cmd is replaced by block hash)"));
     strUsage += HelpMessageOpt("-checkblocks=<n>", strprintf(_("How many blocks to check at startup (default: %u, 0 = all)"), 288));
@@ -282,7 +284,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-loadblock=<file>", _("Imports blocks from external blk000??.dat file") + " " + _("on startup"));
     strUsage += HelpMessageOpt("-maxorphantx=<n>", strprintf(_("Keep at most <n> unconnectable transactions in memory (default: %u)"), DEFAULT_MAX_ORPHAN_TRANSACTIONS));
     strUsage += HelpMessageOpt("-par=<n>", strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"),
-        -(int)boost::thread::hardware_concurrency(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS));
+        -GetNumCores(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS));
 #ifndef WIN32
     strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), "bitcoind.pid"));
 #endif
@@ -370,10 +372,8 @@ std::string HelpMessage(HelpMessageMode mode)
         debugCategories += ", qt";
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
         _("If <category> is not supplied or if <category> = 1, output all debugging information.") + _("<category> can be:") + " " + debugCategories + ".");
-#ifdef ENABLE_WALLET
     strUsage += HelpMessageOpt("-gen", strprintf(_("Generate coins (default: %u)"), 0));
     strUsage += HelpMessageOpt("-genproclimit=<n>", strprintf(_("Set the number of threads for coin generation if enabled (-1 = all cores, default: %d)"), 1));
-#endif
     strUsage += HelpMessageOpt("-help-debug", _("Show all debugging options (usage: --help -help-debug)"));
     strUsage += HelpMessageOpt("-logips", strprintf(_("Include IP addresses in debug output (default: %u)"), 0));
     strUsage += HelpMessageOpt("-logtimestamps", strprintf(_("Prepend debug output with timestamp (default: %u)"), 1));
@@ -396,6 +396,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-testnet", _("Use the test network"));
 
     strUsage += HelpMessageGroup(_("Node relay options:"));
+    if (showDebug)
+        strUsage += HelpMessageOpt("-acceptnonstdtxn", strprintf("Relay and mine \"non-standard\" transactions (%sdefault: %u)", "testnet/regtest only; ", !Params(CBaseChainParams::TESTNET).RequireStandard()));
     strUsage += HelpMessageOpt("-datacarrier", strprintf(_("Relay and mine data carrier transactions (default: %u)"), 1));
     strUsage += HelpMessageOpt("-datacarriersize", strprintf(_("Maximum size of data in data carrier transactions we relay and mine (default: %u)"), MAX_OP_RETURN_RELAY));
 
@@ -805,7 +807,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = GetArg("-par", DEFAULT_SCRIPTCHECK_THREADS);
     if (nScriptCheckThreads <= 0)
-        nScriptCheckThreads += boost::thread::hardware_concurrency();
+        nScriptCheckThreads += GetNumCores();
     if (nScriptCheckThreads <= 1)
         nScriptCheckThreads = 0;
     else if (nScriptCheckThreads > MAX_SCRIPTCHECK_THREADS)
@@ -849,6 +851,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         else
             return InitError(strprintf(_("Invalid amount for -minrelaytxfee=<amount>: '%s'"), mapArgs["-minrelaytxfee"]));
     }
+
+    fRequireStandard = !GetBoolArg("-acceptnonstdtxn", !Params().RequireStandard());
+    if (Params().RequireStandard() && !fRequireStandard)
+        return InitError(strprintf("acceptnonstdtxn is not currently supported for %s chain", chainparams.NetworkIDString()));
 
 #ifdef ENABLE_WALLET
     if (mapArgs.count("-mintxfee"))
@@ -896,6 +902,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     fIsBareMultisigStd = GetBoolArg("-permitbaremultisig", true);
     nMaxDatacarrierBytes = GetArg("-datacarriersize", nMaxDatacarrierBytes);
+
+    fAlerts = GetBoolArg("-alerts", DEFAULT_ALERTS);
+
+    // Option to startup with mocktime set (used for regression testing):
+    SetMockTime(GetArg("-mocktime", 0)); // SetMockTime(0) is a no-op
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
@@ -1018,31 +1029,36 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
-    proxyType addrProxy;
-    bool fProxy = false;
-    if (mapArgs.count("-proxy")) {
-        addrProxy = proxyType(CService(mapArgs["-proxy"], 9050), GetBoolArg("-proxyrandomize", true));
+    bool proxyRandomize = GetBoolArg("-proxyrandomize", true);
+    // -proxy sets a proxy for all outgoing network traffic
+    // -noproxy (or -proxy=0) as well as the empty string can be used to not set a proxy, this is the default
+    std::string proxyArg = GetArg("-proxy", "");
+    if (proxyArg != "" && proxyArg != "0") {
+        proxyType addrProxy = proxyType(CService(proxyArg, 9050), proxyRandomize);
         if (!addrProxy.IsValid())
-            return InitError(strprintf(_("Invalid -proxy address: '%s'"), mapArgs["-proxy"]));
+            return InitError(strprintf(_("Invalid -proxy address: '%s'"), proxyArg));
 
         SetProxy(NET_IPV4, addrProxy);
         SetProxy(NET_IPV6, addrProxy);
+        SetProxy(NET_TOR, addrProxy);
         SetNameProxy(addrProxy);
-        fProxy = true;
+        SetReachable(NET_TOR); // by default, -proxy sets onion as reachable, unless -noonion later
     }
 
-    // -onion can override normal proxy, -noonion disables connecting to .onion entirely
-    if (!(mapArgs.count("-onion") && mapArgs["-onion"] == "0") &&
-        (fProxy || mapArgs.count("-onion"))) {
-        proxyType addrOnion;
-        if (!mapArgs.count("-onion"))
-            addrOnion = addrProxy;
-        else
-            addrOnion = proxyType(CService(mapArgs["-onion"], 9050), GetBoolArg("-proxyrandomize", true));
-        if (!addrOnion.IsValid())
-            return InitError(strprintf(_("Invalid -onion address: '%s'"), mapArgs["-onion"]));
-        SetProxy(NET_TOR, addrOnion);
-        SetReachable(NET_TOR);
+    // -onion can be used to set only a proxy for .onion, or override normal proxy for .onion addresses
+    // -noonion (or -onion=0) disables connecting to .onion entirely
+    // An empty string is used to not override the onion proxy (in which case it defaults to -proxy set above, or none)
+    std::string onionArg = GetArg("-onion", "");
+    if (onionArg != "") {
+        if (onionArg == "0") { // Handle -noonion/-onion=0
+            SetReachable(NET_TOR, false); // set onions as unreachable
+        } else {
+            proxyType addrOnion = proxyType(CService(onionArg, 9050), proxyRandomize);
+            if (!addrOnion.IsValid())
+                return InitError(strprintf(_("Invalid -onion address: '%s'"), onionArg));
+            SetProxy(NET_TOR, addrOnion);
+            SetReachable(NET_TOR);
+        }
     }
 
     // see Step 2: parameter interactions for more information about these
@@ -1462,11 +1478,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                                          boost::ref(cs_main), boost::cref(pindexBestHeader), nPowTargetSpacing);
     scheduler.scheduleEvery(f, nPowTargetSpacing);
 
-#ifdef ENABLE_WALLET
     // Generate coins in the background
-    if (pwalletMain)
-        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
-#endif
+    GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1), Params());
 
     // ********************************************************* Step 11: finished
 
