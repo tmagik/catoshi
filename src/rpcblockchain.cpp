@@ -77,7 +77,6 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     return result;
 }
 
-
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false)
 {
     UniValue result(UniValue::VOBJ);
@@ -117,7 +116,6 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
         result.push_back(Pair("nextblockhash", pnext->GetBlockHash().GetHex()));
     return result;
 }
-
 
 UniValue getblockcount(const UniValue& params, bool fHelp)
 {
@@ -596,6 +594,8 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
             "  \"difficulty\": xxxxxx,     (numeric) the current difficulty\n"
             "  \"verificationprogress\": xxxx, (numeric) estimate of verification progress [0..1]\n"
             "  \"chainwork\": \"xxxx\"     (string) total amount of work in active chain, in hexadecimal\n"
+            "  \"pruned\": xx,             (boolean) if the blocks are subject to pruning\n"
+            "  \"pruneheight\": xxxxxx,    (numeric) heighest block available\n"
             "  \"softforks\": [            (array) status of softforks in progress\n"
             "     {\n"
             "        \"id\": \"xxxx\",        (string) name of softfork\n"
@@ -760,6 +760,7 @@ UniValue getmempoolinfo(const UniValue& params, bool fHelp)
             "{\n"
             "  \"size\": xxxxx                (numeric) Current tx count\n"
             "  \"bytes\": xxxxx               (numeric) Sum of all tx sizes\n"
+            "  \"usage\": xxxxx               (numeric) Total memory usage for the mempool\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getmempoolinfo", "")
@@ -769,6 +770,7 @@ UniValue getmempoolinfo(const UniValue& params, bool fHelp)
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("size", (int64_t) mempool.size()));
     ret.push_back(Pair("bytes", (int64_t) mempool.GetTotalTxSize()));
+    ret.push_back(Pair("usage", (int64_t) mempool.DynamicMemoryUsage()));
 
     return ret;
 }
