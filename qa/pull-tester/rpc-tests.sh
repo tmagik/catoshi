@@ -19,8 +19,8 @@ testScripts=(
     'wallet.py'
     'listtransactions.py'
     'mempool_resurrect_test.py'
-    'txn_doublespend.py'
     'txn_doublespend.py --mineblock'
+    'txn_clone.py'
     'getchaintips.py'
     'rawtransactions.py'
     'rest.py'
@@ -35,12 +35,15 @@ testScripts=(
     'walletbackup.py'
     'nodehandling.py'
     'reindex.py'
+    'decodescript.py'
 );
 testScriptsExt=(
     'bipdersig-p2p.py'
     'bipdersig.py'
     'getblocktemplate_longpoll.py'
     'getblocktemplate_proposals.py'
+    'txn_doublespend.py'
+    'txn_clone.py --mineblock'
     'pruning.py'
     'forknotify.py'
     'invalidateblock.py'
@@ -51,7 +54,6 @@ testScriptsExt=(
     'smartfees.py'
     'maxblocksinflight.py'
     'invalidblockrequest.py'
-    'rawtransactions.py'
 #    'forknotify.py'
     'p2p-acceptblock.py'
 );

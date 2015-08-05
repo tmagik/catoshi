@@ -266,6 +266,9 @@ bool static InterruptibleRecv(char* data, size_t len, int timeout, SOCKET& hSock
         } else { // Other error or blocking
             int nErr = WSAGetLastError();
             if (nErr == WSAEINPROGRESS || nErr == WSAEWOULDBLOCK || nErr == WSAEINVAL) {
+                if (!IsSelectableSocket(hSocket)) {
+                    return false;
+                }
                 struct timeval tval = MillisToTimeval(std::min(endTime - curTime, maxWait));
                 fd_set fdset;
                 FD_ZERO(&fdset);
@@ -1289,6 +1292,13 @@ CSubNet::CSubNet(const std::string &strSubnet, bool fAllowLookup)
     // Normalize network according to netmask
     for(int x=0; x<16; ++x)
         network.ip[x] &= netmask[x];
+}
+
+CSubNet::CSubNet(const CNetAddr &addr):
+    valid(addr.IsValid())
+{
+    memset(netmask, 255, sizeof(netmask));
+    network = addr;
 }
 
 bool CSubNet::Match(const CNetAddr &addr) const
