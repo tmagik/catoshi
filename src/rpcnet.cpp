@@ -4,6 +4,7 @@
 
 #include "rpcserver.h"
 
+#include "chainparams.h"
 #include "clientversion.h"
 #include "main.h"
 #include "net.h"
@@ -12,6 +13,7 @@
 #include "sync.h"
 #include "timedata.h"
 #include "util.h"
+#include "utilstrencodings.h"
 #include "version.h"
 
 #include <boost/foreach.hpp>
@@ -421,7 +423,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
             "  }\n"
             "  ,...\n"
             "  ],\n"
-            "  \"relayfee\": x.xxxxxxxx,                (numeric) minimum relay fee for non-free transactions in btc/kb\n"
+            "  \"relayfee\": x.xxxxxxxx,                (numeric) minimum relay fee for non-free transactions in " + CURRENCY_UNIT + "/kB\n"
             "  \"localaddresses\": [                    (array) list of local addresses\n"
             "  {\n"
             "    \"address\": \"xxxx\",                 (string) network address\n"
@@ -441,8 +443,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("version",       CLIENT_VERSION));
-    obj.push_back(Pair("subversion",
-        FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>())));
+    obj.push_back(Pair("subversion",    strSubVersion));
     obj.push_back(Pair("protocolversion",PROTOCOL_VERSION));
     obj.push_back(Pair("localservices",       strprintf("%016x", nLocalServices)));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
@@ -515,7 +516,7 @@ UniValue setban(const UniValue& params, bool fHelp)
         if (params.size() == 4 && params[3].isTrue())
             absolute = true;
 
-        isSubnet ? CNode::Ban(subNet, banTime, absolute) : CNode::Ban(netAddr, banTime, absolute);
+        isSubnet ? CNode::Ban(subNet, BanReasonManuallyAdded, banTime, absolute) : CNode::Ban(netAddr, BanReasonManuallyAdded, banTime, absolute);
 
         //disconnect possible nodes
         while(CNode *bannedNode = (isSubnet ? FindNode(subNet) : FindNode(netAddr)))
@@ -527,6 +528,7 @@ UniValue setban(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_MISC_ERROR, "Error: Unban failed");
     }
 
+    DumpBanlist(); //store banlist to disk
     return NullUniValue;
 }
 
@@ -541,15 +543,19 @@ UniValue listbanned(const UniValue& params, bool fHelp)
                             + HelpExampleRpc("listbanned", "")
                             );
 
-    std::map<CSubNet, int64_t> banMap;
+    banmap_t banMap;
     CNode::GetBanned(banMap);
 
     UniValue bannedAddresses(UniValue::VARR);
-    for (std::map<CSubNet, int64_t>::iterator it = banMap.begin(); it != banMap.end(); it++)
+    for (banmap_t::iterator it = banMap.begin(); it != banMap.end(); it++)
     {
+        CBanEntry banEntry = (*it).second;
         UniValue rec(UniValue::VOBJ);
         rec.push_back(Pair("address", (*it).first.ToString()));
-        rec.push_back(Pair("banned_untill", (*it).second));
+        rec.push_back(Pair("banned_until", banEntry.nBanUntil));
+        rec.push_back(Pair("ban_created", banEntry.nCreateTime));
+        rec.push_back(Pair("ban_reason", banEntry.banReasonToString()));
+
         bannedAddresses.push_back(rec);
     }
 
@@ -568,6 +574,7 @@ UniValue clearbanned(const UniValue& params, bool fHelp)
                             );
 
     CNode::ClearBanned();
+    DumpBanlist(); //store banlist to disk
 
     return NullUniValue;
 }
