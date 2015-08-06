@@ -14,6 +14,7 @@ from struct import *
 import binascii
 import json
 import StringIO
+import decimal
 
 try:
     import http.client as httplib
@@ -55,78 +56,78 @@ class RESTTest (BitcoinTestFramework):
         connect_nodes_bi(self.nodes,0,2)
         self.is_network_split=False
         self.sync_all()
-        
+
     def run_test(self):
         url = urlparse.urlparse(self.nodes[0].url)
         print "Mining blocks..."
-        
+
         self.nodes[0].generate(1)
         self.sync_all()
         self.nodes[2].generate(100)
         self.sync_all()
-        
+
         assert_equal(self.nodes[0].getbalance(), 50)
-        
+
         txid = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
         bb_hash = self.nodes[0].getbestblockhash()
-        
+
         assert_equal(self.nodes[1].getbalance(), Decimal("0.1")) #balance now should be 0.1 on node 1
-        
+
         # load the latest 0.1 tx over the REST API
         json_string = http_get_call(url.hostname, url.port, '/rest/tx/'+txid+self.FORMAT_SEPARATOR+"json")
         json_obj = json.loads(json_string)
         vintx = json_obj['vin'][0]['txid'] # get the vin to later check for utxo (should be spent by then)
-        # get n of 0.1 outpoint 
+        # get n of 0.1 outpoint
         n = 0
         for vout in json_obj['vout']:
             if vout['value'] == 0.1:
                 n = vout['n']
-        
-        
+
+
         ######################################
         # GETUTXOS: query a unspent outpoint #
         ######################################
-        json_request = '{"checkmempool":true,"outpoints":[{"txid":"'+txid+'","n":'+str(n)+'}]}'
-        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'json', json_request)
+        json_request = '/checkmempool/'+txid+'-'+str(n)
+        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
-        
+
         #check chainTip response
         assert_equal(json_obj['chaintipHash'], bb_hash)
-        
+
         #make sure there is one utxo
         assert_equal(len(json_obj['utxos']), 1)
         assert_equal(json_obj['utxos'][0]['value'], 0.1)
-        
-        
+
+
         ################################################
         # GETUTXOS: now query a already spent outpoint #
         ################################################
-        json_request = '{"checkmempool":true,"outpoints":[{"txid":"'+vintx+'","n":0}]}'
-        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'json', json_request)
+        json_request = '/checkmempool/'+vintx+'-0'
+        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
-        
+
         #check chainTip response
         assert_equal(json_obj['chaintipHash'], bb_hash)
 
         #make sure there is no utox in the response because this oupoint has been spent
         assert_equal(len(json_obj['utxos']), 0)
-        
+
         #check bitmap
         assert_equal(json_obj['bitmap'], "0")
-        
-        
+
+
         ##################################################
         # GETUTXOS: now check both with the same request #
         ##################################################
-        json_request = '{"checkmempool":true,"outpoints":[{"txid":"'+txid+'","n":'+str(n)+'},{"txid":"'+vintx+'","n":0}]}'
-        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'json', json_request)
+        json_request = '/checkmempool/'+txid+'-'+str(n)+'/'+vintx+'-0'
+        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
         assert_equal(len(json_obj['utxos']), 1)
         assert_equal(json_obj['bitmap'], "10")
-        
+
         #test binary response
         bb_hash = self.nodes[0].getbestblockhash()
 
@@ -135,19 +136,18 @@ class RESTTest (BitcoinTestFramework):
         binaryRequest += pack("i", n);
         binaryRequest += binascii.unhexlify(vintx);
         binaryRequest += pack("i", 0);
-        
+
         bin_response = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'bin', binaryRequest)
-        
         output = StringIO.StringIO()
         output.write(bin_response)
         output.seek(0)
         chainHeight = unpack("i", output.read(4))[0]
         hashFromBinResponse = hex(deser_uint256(output))[2:].zfill(65).rstrip("L")
-        
+
         assert_equal(bb_hash, hashFromBinResponse) #check if getutxo's chaintip during calculation was fine
         assert_equal(chainHeight, 102) #chain height must be 102
-        
-        
+
+
         ############################
         # GETUTXOS: mempool checks #
         ############################
@@ -157,55 +157,56 @@ class RESTTest (BitcoinTestFramework):
         json_string = http_get_call(url.hostname, url.port, '/rest/tx/'+txid+self.FORMAT_SEPARATOR+"json")
         json_obj = json.loads(json_string)
         vintx = json_obj['vin'][0]['txid'] # get the vin to later check for utxo (should be spent by then)
-        # get n of 0.1 outpoint 
+        # get n of 0.1 outpoint
         n = 0
         for vout in json_obj['vout']:
             if vout['value'] == 0.1:
                 n = vout['n']
-        
-        json_request = '{"checkmempool":false,"outpoints":[{"txid":"'+txid+'","n":'+str(n)+'}]}'
-        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'json', json_request)
+
+        json_request = '/'+txid+'-'+str(n)
+        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
         assert_equal(len(json_obj['utxos']), 0) #there should be a outpoint because it has just added to the mempool
-        
-        json_request = '{"checkmempool":true,"outpoints":[{"txid":"'+txid+'","n":'+str(n)+'}]}'
-        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'json', json_request)
+
+        json_request = '/checkmempool/'+txid+'-'+str(n)
+        json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
         assert_equal(len(json_obj['utxos']), 1) #there should be a outpoint because it has just added to the mempool
-        
+
         #do some invalid requests
         json_request = '{"checkmempool'
         response = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'json', json_request, True)
         assert_equal(response.status, 500) #must be a 500 because we send a invalid json request
-        
+
         json_request = '{"checkmempool'
         response = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'bin', json_request, True)
         assert_equal(response.status, 500) #must be a 500 because we send a invalid bin request
-        
+
+        response = http_get_call(url.hostname, url.port, '/rest/getutxos/checkmempool'+self.FORMAT_SEPARATOR+'bin', '', True)
+        assert_equal(response.status, 500) #must be a 500 because we send a invalid bin request
+
         #test limits
-        json_request = '{"checkmempool":true,"outpoints":['
-        for x in range(0, 200):
-            json_request += '{"txid":"'+txid+'","n":'+str(n)+'},'
-        json_request = json_request.rstrip(",")
-        json_request+="]}";
-        response = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'json', json_request, True)
+        json_request = '/checkmempool/'
+        for x in range(0, 20):
+            json_request += txid+'-'+str(n)+'/'
+        json_request = json_request.rstrip("/")
+        response = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json', '', True)
         assert_equal(response.status, 500) #must be a 500 because we exceeding the limits
-        
-        json_request = '{"checkmempool":true,"outpoints":['
-        for x in range(0, 90):
-            json_request += '{"txid":"'+txid+'","n":'+str(n)+'},'
-        json_request = json_request.rstrip(",")
-        json_request+="]}";
-        response = http_get_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'json', json_request, True)
+
+        json_request = '/checkmempool/'
+        for x in range(0, 15):
+            json_request += txid+'-'+str(n)+'/'
+        json_request = json_request.rstrip("/");
+        response = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json', '', True)
         assert_equal(response.status, 200) #must be a 500 because we exceeding the limits
 
         self.nodes[0].generate(1) #generate block to not affect upcomming tests
         self.sync_all()
-        
+
         ################
         # /rest/block/ #
         ################
-        
+
         # check binary format
         response = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+"bin", "", True)
         assert_equal(response.status, 200)
@@ -235,12 +236,43 @@ class RESTTest (BitcoinTestFramework):
         assert_equal(response_header_str.encode("hex")[0:160], response_header_hex_str[0:160])
 
         # check json format
-        json_string = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+'json')
-        json_obj = json.loads(json_string)
-        assert_equal(json_obj['hash'], bb_hash)
+        block_json_string = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+'json')
+        block_json_obj = json.loads(block_json_string)
+        assert_equal(block_json_obj['hash'], bb_hash)
+
+        # compare with json block header
+        response_header_json = http_get_call(url.hostname, url.port, '/rest/headers/1/'+bb_hash+self.FORMAT_SEPARATOR+"json", "", True)
+        assert_equal(response_header_json.status, 200)
+        response_header_json_str = response_header_json.read()
+        json_obj = json.loads(response_header_json_str, parse_float=decimal.Decimal)
+        assert_equal(len(json_obj), 1) #ensure that there is one header in the json response
+        assert_equal(json_obj[0]['hash'], bb_hash) #request/response hash should be the same
+
+        #compare with normal RPC block response
+        rpc_block_json = self.nodes[0].getblock(bb_hash)
+        assert_equal(json_obj[0]['hash'],               rpc_block_json['hash'])
+        assert_equal(json_obj[0]['confirmations'],      rpc_block_json['confirmations'])
+        assert_equal(json_obj[0]['height'],             rpc_block_json['height'])
+        assert_equal(json_obj[0]['version'],            rpc_block_json['version'])
+        assert_equal(json_obj[0]['merkleroot'],         rpc_block_json['merkleroot'])
+        assert_equal(json_obj[0]['time'],               rpc_block_json['time'])
+        assert_equal(json_obj[0]['nonce'],              rpc_block_json['nonce'])
+        assert_equal(json_obj[0]['bits'],               rpc_block_json['bits'])
+        assert_equal(json_obj[0]['difficulty'],         rpc_block_json['difficulty'])
+        assert_equal(json_obj[0]['chainwork'],          rpc_block_json['chainwork'])
+        assert_equal(json_obj[0]['previousblockhash'],  rpc_block_json['previousblockhash'])
+
+        #see if we can get 5 headers in one response
+        self.nodes[1].generate(5)
+        self.sync_all()
+        response_header_json = http_get_call(url.hostname, url.port, '/rest/headers/5/'+bb_hash+self.FORMAT_SEPARATOR+"json", "", True)
+        assert_equal(response_header_json.status, 200)
+        response_header_json_str = response_header_json.read()
+        json_obj = json.loads(response_header_json_str)
+        assert_equal(len(json_obj), 5) #now we should have 5 header objects
 
         # do tx test
-        tx_hash = json_obj['tx'][0]['txid'];
+        tx_hash = block_json_obj['tx'][0]['txid'];
         json_string = http_get_call(url.hostname, url.port, '/rest/tx/'+tx_hash+self.FORMAT_SEPARATOR+"json")
         json_obj = json.loads(json_string)
         assert_equal(json_obj['txid'], tx_hash)
@@ -249,7 +281,7 @@ class RESTTest (BitcoinTestFramework):
         hex_string = http_get_call(url.hostname, url.port, '/rest/tx/'+tx_hash+self.FORMAT_SEPARATOR+"hex", "", True)
         assert_equal(hex_string.status, 200)
         assert_greater_than(int(response.getheader('content-length')), 10)
-        
+
 
 
         # check block tx details
@@ -279,7 +311,7 @@ class RESTTest (BitcoinTestFramework):
 
         #test rest bestblock
         bb_hash = self.nodes[0].getbestblockhash()
-        
+
         json_string = http_get_call(url.hostname, url.port, '/rest/chaininfo.json')
         json_obj = json.loads(json_string)
         assert_equal(json_obj['bestblockhash'], bb_hash)
