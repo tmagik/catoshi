@@ -94,6 +94,7 @@ BITCOIN_CORE_H = \
   consensus/params.h \
   consensus/validation.h \
   core_io.h \
+  core_memusage.h \
   eccryptoverify.h \
   ecwrapper.h \
   hash.h \
@@ -111,6 +112,7 @@ BITCOIN_CORE_H = \
   netbase.h \
   noui.h \
   policy/fees.h \
+  policy/policy.h \
   pow.h \
   primitives/block.h \
   primitives/transaction.h \
@@ -154,17 +156,6 @@ BITCOIN_CORE_H = \
   wallet/wallet_ismine.h \
   wallet/walletdb.h
 
-JSON_H = \
-  json/json_spirit.h \
-  json/json_spirit_error_position.h \
-  json/json_spirit_reader.h \
-  json/json_spirit_reader_template.h \
-  json/json_spirit_stream_reader.h \
-  json/json_spirit_utils.h \
-  json/json_spirit_value.h \
-  json/json_spirit_writer.h \
-  json/json_spirit_writer_template.h
-
 obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
 	@$(top_srcdir)/share/genbuild.sh $(abs_top_builddir)/src/obj/build.h \
@@ -187,6 +178,7 @@ libbitcoin_server_a_SOURCES = \
   net.cpp \
   noui.cpp \
   policy/fees.cpp \
+  policy/policy.cpp \
   pow.cpp \
   rest.cpp \
   rpcblockchain.cpp \
@@ -200,7 +192,6 @@ libbitcoin_server_a_SOURCES = \
   txdb.cpp \
   txmempool.cpp \
   validationinterface.cpp \
-  $(JSON_H) \
   $(BITCOIN_CORE_H)
 
 # wallet: shared between bitcoind and bitcoin-qt, but only linked
@@ -342,6 +333,7 @@ endif
 
 bitcoin_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
+  $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBSECP256K1)
 
