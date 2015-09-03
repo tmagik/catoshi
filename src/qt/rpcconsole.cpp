@@ -330,10 +330,10 @@ void RPCConsole::setClientModel(ClientModel *model)
 
         // Provide initial values
         ui->clientVersion->setText(model->formatFullVersion());
+        ui->clientUserAgent->setText(model->formatSubVersion());
         ui->clientName->setText(model->clientName());
         ui->buildDate->setText(model->formatBuildDate());
         ui->startupTime->setText(model->formatClientStartupTime());
-
         ui->networkName->setText(QString::fromStdString(Params().NetworkIDString()));
     }
 }
@@ -570,7 +570,7 @@ void RPCConsole::peerLayoutChanged()
 
     if (detailNodeRow < 0)
     {
-        // detail node dissapeared from table (node disconnected)
+        // detail node disappeared from table (node disconnected)
         fUnselect = true;
     }
     else

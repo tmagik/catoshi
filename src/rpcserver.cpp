@@ -363,6 +363,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "importprivkey",          &importprivkey,          true  },
     { "wallet",             "importwallet",           &importwallet,           true  },
     { "wallet",             "importaddress",          &importaddress,          true  },
+    { "wallet",             "importpubkey",           &importpubkey,           true  },
     { "wallet",             "keypoolrefill",          &keypoolrefill,          true  },
     { "wallet",             "listaccounts",           &listaccounts,           false },
     { "wallet",             "listaddressgroupings",   &listaddressgroupings,   false },
@@ -606,7 +607,7 @@ void StartRPCThreads()
         LogPrintf("No rpcpassword set - using random cookie authentication\n");
         if (!GenerateAuthCookie(&strRPCUserColonPass)) {
             uiInterface.ThreadSafeMessageBox(
-                _("Error: A fatal internal error occured, see debug.log for details"), // Same message as AbortNode
+                _("Error: A fatal internal error occurred, see debug.log for details"), // Same message as AbortNode
                 "", CClientUIInterface::MSG_ERROR);
             StartShutdown();
             return;
@@ -670,7 +671,7 @@ void StartRPCThreads()
         vEndpoints.push_back(ip::tcp::endpoint(boost::asio::ip::address_v6::any(), defaultPort));
         vEndpoints.push_back(ip::tcp::endpoint(boost::asio::ip::address_v4::any(), defaultPort));
         // Prefer making the socket dual IPv6/IPv4 instead of binding
-        // to both addresses seperately.
+        // to both addresses separately.
         bBindAny = true;
     }
 
@@ -752,14 +753,14 @@ void StopRPCThreads()
     {
         acceptor->cancel(ec);
         if (ec)
-            LogPrintf("%s: Warning: %s when cancelling acceptor", __func__, ec.message());
+            LogPrintf("%s: Warning: %s when cancelling acceptor\n", __func__, ec.message());
     }
     rpc_acceptors.clear();
     BOOST_FOREACH(const PAIRTYPE(std::string, boost::shared_ptr<deadline_timer>) &timer, deadlineTimers)
     {
         timer.second->cancel(ec);
         if (ec)
-            LogPrintf("%s: Warning: %s when cancelling timer", __func__, ec.message());
+            LogPrintf("%s: Warning: %s when cancelling timer\n", __func__, ec.message());
     }
     deadlineTimers.clear();
 
