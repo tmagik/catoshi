@@ -27,6 +27,7 @@
 #include <QScrollBar>
 #include <QThread>
 #include <QTime>
+#include <QTimer>
 
 #if QT_VERSION < 0x050000
 #include <QUrl>
@@ -64,6 +65,40 @@ public Q_SLOTS:
 Q_SIGNALS:
     void reply(int category, const QString &command);
 };
+
+/** Class for handling RPC timers
+ * (used for e.g. re-locking the wallet after a timeout)
+ */
+class QtRPCTimerBase: public QObject, public RPCTimerBase
+{
+    Q_OBJECT
+public:
+    QtRPCTimerBase(boost::function<void(void)>& func, int64_t millis):
+        func(func)
+    {
+        timer.setSingleShot(true);
+        connect(&timer, SIGNAL(timeout()), this, SLOT(timeout()));
+        timer.start(millis);
+    }
+    ~QtRPCTimerBase() {}
+private Q_SLOTS:
+    void timeout() { func(); }
+private:
+    QTimer timer;
+    boost::function<void(void)> func;
+};
+
+class QtRPCTimerInterface: public RPCTimerInterface
+{
+public:
+    ~QtRPCTimerInterface() {}
+    const char *Name() { return "Qt"; }
+    RPCTimerBase* NewTimer(boost::function<void(void)>& func, int64_t millis)
+    {
+        return new QtRPCTimerBase(func, millis);
+    }
+};
+
 
 #include "rpcconsole.moc"
 
@@ -231,6 +266,9 @@ RPCConsole::RPCConsole(const PlatformStyle *platformStyle, QWidget *parent) :
     ui->label_berkeleyDBVersion->hide();
     ui->berkeleyDBVersion->hide();
 #endif
+    // Register RPC timer interface
+    rpcTimerInterface = new QtRPCTimerInterface();
+    RPCRegisterTimerInterface(rpcTimerInterface);
 
     startExecutor();
     setTrafficGraphRange(INITIAL_TRAFFIC_GRAPH_MINS);
@@ -245,6 +283,8 @@ RPCConsole::~RPCConsole()
 {
     GUIUtil::saveWindowGeometry("nRPCConsoleWindow", this);
     Q_EMIT stopExecutor();
+    RPCUnregisterTimerInterface(rpcTimerInterface);
+    delete rpcTimerInterface;
     delete ui;
 }
 
@@ -569,7 +609,7 @@ void RPCConsole::peerLayoutChanged()
 
     if (detailNodeRow < 0)
     {
-        // detail node dissapeared from table (node disconnected)
+        // detail node disappeared from table (node disconnected)
         fUnselect = true;
     }
     else
