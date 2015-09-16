@@ -5,8 +5,8 @@ CURDIR=$(cd $(dirname "$0"); pwd)
 # Get BUILDDIR and REAL_BITCOIND
 . "${CURDIR}/tests-config.sh"
 
-export BITCOINCLI=${BUILDDIR}/qa/pull-tester/run-bitcoin-cli
 export BITCOIND=${REAL_BITCOIND}
+export BITCOINCLI=${REAL_BITCOINCLI}
 
 if [ "x${EXEEXT}" = "x.exe" ]; then
   echo "Win tests currently disabled"
@@ -36,6 +36,7 @@ testScripts=(
     'nodehandling.py'
     'reindex.py'
     'decodescript.py'
+    'p2p-fullblocktest.py'
 );
 testScriptsExt=(
     'bipdersig-p2p.py'
@@ -57,6 +58,10 @@ testScriptsExt=(
 #    'forknotify.py'
     'p2p-acceptblock.py'
 );
+
+if [ "x$ENABLE_ZMQ" = "x1" ]; then
+  testScripts=( ${testScripts[@]} 'zmq_test.py' )
+fi
 
 extArg="-extended"
 passOn=${@#$extArg}
