@@ -965,47 +965,45 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow)
 {
     CBlockIndex *pindexSlow = NULL;
+
+    LOCK(cs_main);
+
+    if (mempool.lookup(hash, txOut))
     {
-        LOCK(cs_main);
+        return true;
+    }
+
+    if (fTxIndex) {
+        CDiskTxPos postx;
+        if (pblocktree->ReadTxIndex(hash, postx)) {
+            CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
+            if (file.IsNull())
+                return error("%s: OpenBlockFile failed", __func__);
+            CBlockHeader header;
+            try {
+                file >> header;
+                fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
+                file >> txOut;
+            } catch (const std::exception& e) {
+                return error("%s: Deserialize or I/O error - %s", __func__, e.what());
+            }
+            hashBlock = header.GetHash();
+            if (txOut.GetHash() != hash)
+                return error("%s: txid mismatch", __func__);
+            return true;
+        }
+    }
+
+    if (fAllowSlow) { // use coin database to locate block that contains transaction, and scan it
+        int nHeight = -1;
         {
-            if (mempool.lookup(hash, txOut))
-            {
-                return true;
-            }
+            CCoinsViewCache &view = *pcoinsTip;
+            const CCoins* coins = view.AccessCoins(hash);
+            if (coins)
+                nHeight = coins->nHeight;
         }
-
-        if (fTxIndex) {
-            CDiskTxPos postx;
-            if (pblocktree->ReadTxIndex(hash, postx)) {
-                CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
-                if (file.IsNull())
-                    return error("%s: OpenBlockFile failed", __func__);
-                CBlockHeader header;
-                try {
-                    file >> header;
-                    fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
-                    file >> txOut;
-                } catch (const std::exception& e) {
-                    return error("%s: Deserialize or I/O error - %s", __func__, e.what());
-                }
-                hashBlock = header.GetHash();
-                if (txOut.GetHash() != hash)
-                    return error("%s: txid mismatch", __func__);
-                return true;
-            }
-        }
-
-        if (fAllowSlow) { // use coin database to locate block that contains transaction, and scan it
-            int nHeight = -1;
-            {
-                CCoinsViewCache &view = *pcoinsTip;
-                const CCoins* coins = view.AccessCoins(hash);
-                if (coins)
-                    nHeight = coins->nHeight;
-            }
-            if (nHeight > 0)
-                pindexSlow = chainActive[nHeight];
-        }
+        if (nHeight > 0)
+            pindexSlow = chainActive[nHeight];
     }
 
     if (pindexSlow) {
@@ -2315,9 +2313,7 @@ bool ActivateBestChain(CValidationState &state, const CBlock *pblock) {
             int nBlockEstimate = 0;
             if (fCheckpointsEnabled)
                 nBlockEstimate = Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints());
-            // Don't relay blocks if pruning -- could cause a peer to try to download, resulting
-            // in a stalled download if the block file is pruned before the request.
-            if (nLocalServices & NODE_NETWORK) {
+            {
                 LOCK(cs_vNodes);
                 BOOST_FOREACH(CNode* pnode, vNodes)
                     if (chainActive.Height() > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
@@ -4204,6 +4200,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 LogPrint("net", "  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
                 break;
             }
+            // If pruning, don't inv blocks unless we have on disk and are likely to still have
+            // for some reasonable time window (1 hour) that block relay might require.
+            const int nPrunedBlocksLikelyToHave = MIN_BLOCKS_TO_KEEP - 3600 / chainparams.GetConsensus().nPowTargetSpacing;
+            if (fPruneMode && (!(pindex->nStatus & BLOCK_HAVE_DATA) || pindex->nHeight <= chainActive.Tip()->nHeight - nPrunedBlocksLikelyToHave))
+            {
+                LogPrint("net", " getblocks stopping, pruned or too old block at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
+                break;
+            }
             pfrom->PushInventory(CInv(MSG_BLOCK, pindex->GetBlockHash()));
             if (--nLimit <= 0)
             {
@@ -4282,8 +4286,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             RelayTransaction(tx);
             vWorkQueue.push_back(inv.hash);
 
-            LogPrint("mempool", "AcceptToMemoryPool: peer=%d %s: accepted %s (poolsz %u)\n",
-                pfrom->id, pfrom->cleanSubVer,
+            LogPrint("mempool", "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u)\n",
+                pfrom->id,
                 tx.GetHash().ToString(),
                 mempool.size());
 
@@ -4372,8 +4376,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         int nDoS = 0;
         if (state.IsInvalid(nDoS))
         {
-            LogPrint("mempoolrej", "%s from peer=%d %s was not accepted into the memory pool: %s\n", tx.GetHash().ToString(),
-                pfrom->id, pfrom->cleanSubVer,
+            LogPrint("mempoolrej", "%s from peer=%d was not accepted: %s\n", tx.GetHash().ToString(),
+                pfrom->id,
                 FormatStateMessage(state));
             if (state.GetRejectCode() < REJECT_INTERNAL) // Never send AcceptToMemoryPool's internal codes over P2P
                 pfrom->PushMessage("reject", strCommand, state.GetRejectCode(),
@@ -4574,9 +4578,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
 
         if (!(sProblem.empty())) {
-            LogPrint("net", "pong peer=%d %s: %s, %x expected, %x received, %u bytes\n",
+            LogPrint("net", "pong peer=%d: %s, %x expected, %x received, %u bytes\n",
                 pfrom->id,
-                pfrom->cleanSubVer,
                 sProblem,
                 pfrom->nPingNonceSent,
                 nonce,
