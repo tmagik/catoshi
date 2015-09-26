@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The *coin developers
-// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, Grant, ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
