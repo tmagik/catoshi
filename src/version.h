@@ -29,6 +29,10 @@ extern const std::string CLIENT_DATE;
 #if defined(BRAND_uro)
 static const int PROTOCOL_VERSION = 70013;
 static const int MIN_PEER_PROTO_VERSION = 70012;
+#elif defined(BRAND_grantcoin)
+static const int PROTOCOL_VERSION = 70001;
+static const int MIN_PEER_PROTO_VERSION = 60004;
+static const int MIN_PROTO_VERSION = 209;
 #else
 static const int PROTOCOL_VERSION = 70002;
 // disconnect from peers older than this proto version

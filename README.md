@@ -6,23 +6,25 @@ http://kittyco.in
 Copyright (c) 2009-2013 Bitcoin Developers
 Copyright (c) 2011-2013 Litecoin Developers
 Copyright (c) 2013-2014 Catcoin Developers
-Copyright (c) 2014 Troy Benjegerdes <hozer@hozed.org>
+Copyright (c) 2015 Grantcoin Developers
+Copyright (c) 2015 Troy Benjegerdes <hozer@hozed.org>
 
-What is Codecoin
-----------------
+### What is Codecoin
 
 Codecoin is a project to build multiple C++ 'Catoshi' clients from the
-same source tree. Default build is Catcoin/Kittycoin. On linux, do this:
+same source tree. Default build is Grantcoin. On linux, do this:
 
     cd src
-    make                         # builds catcoin
+    make                         # builds grantcoin
     make COIN_BRAND=solarcoin    # builds solarcoin
     make COIN_BRAND=uro          # builds uro
 
-What is kittycoin?
-----------------
+### What is Grantcoin?
+[Grantcoin](http://www.grantcoin.org/) (abbreviated GRT) is the first [cryptocurrency](https://en.wikipedia.org/wiki/Cryptocurrency) distributed primarily as Proof-of-Participation grants according to a transparent business plan by a legally incorporated nonprofit organization. Grantcoin is based on [Peercoin](http://peercoin.net/) (PPCoin), the first digital currency using Proof-of-Stake consensus as a security model, which is more energy efficient than [Bitcoin](http://en.wikipedia.org/wiki/Bitcoin)'s Proof-of-Work mining system. Grantcoin will begin with several months of PoW until the currency is widely circulated, with further evolution determined by the foundation and community.
 
-Kittycoin is a (currently) Catcoin-compatible cryptographic currency with
+### What is kittycoin?
+
+Kittycoin used to ba a Catcoin-compatible cryptographic currency with
 scrypt N=1024 proof of work, with (mostly) the same blockchain parameters
 as Bitcoin:
  - 50 coins per block
@@ -34,8 +36,7 @@ as Bitcoin:
 For more information, as well as an immediately useable, binary version of
 the Catcoin client sofware, see http://www.catcoins.org
 
-Why the Catbox?
----------------
+###Why the Catbox?
 
 Because, frankly, right now this code stinks. It's a big pile of crap, and
 I'm taking a bunch of other crapcoin and other stinky bits like p2pool and
@@ -61,8 +62,7 @@ What do we do with Catcoin better than any other coin?
 					faster
 And then land on our feet.
 
-License
--------
+### License
 
 Kittycoin is released under the terms of the Affero GNU General Public License
 version 3 (AGPLv3). See COPYRING for more information, or the GNU website at
@@ -74,8 +74,7 @@ get-rich-quick copycrap startup will accidentally include my AGPLv3 code, and
 then I will 0wn them. The revolution will not be televised, it will be quietly
 settled out-of-court.
 
-Development process
--------------------
+### Development process
 
 The development process is Troy commits stuff when he feels like it. He's not
 a computer execution unit following a process, he's a guy who happens to like

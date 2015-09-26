@@ -10,6 +10,8 @@
 #include "catcoin.h"
 #elif BRAND_uro
 #include "uro.h"
+#elif BRAND_grantcoin
+#include "grantcoin.h"
 #else
 #error "No BRAND_*COIN defined!!"
 #endif
