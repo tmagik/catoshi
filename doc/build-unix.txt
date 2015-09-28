@@ -6,6 +6,8 @@ Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 Distributed under the Affero GNU General public license version 3
 file COPYING or http://www.gnu.org/licenses/agpl-3.0.html.
 
+Copyright (c) 2014-2015 Troy Benjegerdes under AGPLv3
+see file COPYING for more infos
 
 UNIX BUILD NOTES
 ================
@@ -14,9 +16,9 @@ To Build
 --------
 
 cd src/
-make -f makefile.unix            # Headless bitcoin
+make             # Headless codecoin
 
-See readme-qt.rst for instructions on building Bitcoin QT,
+See readme-qt.rst for instructions on building Codecoin QT,
 the graphical bitcoin.
 
 Dependencies

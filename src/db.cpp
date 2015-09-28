@@ -477,18 +477,9 @@ void CDBEnv::Flush(bool fShutdown)
 
 
 
-
-
-
-
-
-
-
-
 //
 // CAddrDB
 //
-
 
 CAddrDB::CAddrDB()
 {

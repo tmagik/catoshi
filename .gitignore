@@ -1,7 +1,11 @@
 src/*.exe
+src/catcoin
 src/catcoind
+src/test_catcoin
+src/ppcoin
 src/ppcoind
 src/grantcoind
+src/test_ppcoin
 src/build.h
 .*.swp
 *.*~*
@@ -11,11 +15,13 @@ src/build.h
 *.o
 *.patch
 .catcoin
+.ppcoin
 
 # Compilation and Qt preprocessor part
 *.qm
 Makefile
 catcoin-qt
+ppcoin-qt
 Catcoin-Qt.app
 
 # Unit-tests
@@ -32,4 +38,4 @@ qrc_*.cpp
 .DS_Store
 build
 
-
+!src/leveldb-*/Makefile

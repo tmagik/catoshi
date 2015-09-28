@@ -1,3 +1,7 @@
+Code: src/strlcpy.h
+Author: Todd C. Miller <Todd.Miller@courtesan.com>
+License: ISC
+
 Icon: src/qt/res/icons/clock*.png, src/qt/res/icons/tx*.png,
       src/qt/res/src/clock_green.svg, src/qt/res/src/clock1.svg,
       src/qt/res/src/clock2.svg, src/qt/res/src/clock3.svg,
