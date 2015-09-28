@@ -9,7 +9,13 @@ Files: *
 Copyright: 2009-2012, Bitcoin Developers
 License: Expat
 Comment: The Bitcoin Developers encompasses the current developers listed on bitcoin.org,
-         as well as the numerous contributors to the project.
+         as well as the numerous contributors to various altcoin projects
+
+Files: * (and Catoshi repo merge metadata)
+Copyright: 2014-2015 7 Elements LLC & Troy Benjegerdes
+License: AGPLv3
+Comment: Multi-coin support and merge metadata is AGPLv3, and commercial use
+        license exceptions are available from the author(s)
 
 Files: src/json/*
 Copyright: 2007-2009, John W. Wilkinson

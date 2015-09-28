@@ -5,9 +5,9 @@ SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.8.7
-!define COMPANY "Catcoin project"
-!define URL http://www.catcoin.pw/
+!define VERSION 0.9.0
+!define COMPANY "Codecoin project"
+!define URL http://www.7el.us/codecoin/
 
 # MUI Symbol Definitions
 !define MUI_ICON "..\share\pixmaps\bitcoin.ico"
@@ -19,8 +19,8 @@ SetCompressor /SOLID lzma
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT HKLM
 !define MUI_STARTMENUPAGE_REGISTRY_KEY ${REGKEY}
 !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME StartMenuGroup
-!define MUI_STARTMENUPAGE_DEFAULTFOLDER Catcoin
-!define MUI_FINISHPAGE_RUN $INSTDIR\catcoin-qt.exe
+!define MUI_STARTMENUPAGE_DEFAULTFOLDER Codecoin
+!define MUI_FINISHPAGE_RUN $INSTDIR\codecoin-qt.exe
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "..\share\pixmaps\nsis-wizard.bmp"
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
@@ -46,13 +46,13 @@ Var StartMenuGroup
 
 # Installer attributes
 OutFile catcoin-0.8.7-win32-setup.exe
-InstallDir $PROGRAMFILES\Catcoin
+InstallDir $PROGRAMFILES\Codecoin
 CRCCheck on
 XPStyle on
 BrandingText " "
 ShowInstDetails show
 VIProductVersion 0.8.7
-VIAddVersionKey ProductName Catcoin
+VIAddVersionKey ProductName Codecoin
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
 VIAddVersionKey CompanyWebsite "${URL}"

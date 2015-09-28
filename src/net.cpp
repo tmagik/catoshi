@@ -140,8 +140,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer)
 bool RecvLine(SOCKET hSocket, string& strLine)
 {
     strLine = "";
-    while (true)
-    {
+    while(true){
         char c;
         int nBytes = recv(hSocket, &c, 1, 0);
         if (nBytes > 0)
@@ -312,8 +311,7 @@ bool GetMyExternalIP2(const CService& addrConnect, const char* pszGet, const cha
     {
         if (strLine.empty()) // HTTP response is separated from headers by blank line
         {
-            while (true)
-            {
+            while(true){
                 if (!RecvLine(hSocket, strLine))
                 {
                     closesocket(hSocket);
@@ -700,14 +698,6 @@ int CNetMessage::readData(const char *pch, unsigned int nBytes)
     return nCopy;
 }
 
-
-
-
-
-
-
-
-
 // requires LOCK(cs_vSend)
 void SocketSendData(CNode *pnode)
 {
@@ -756,8 +746,7 @@ static list<CNode*> vNodesDisconnected;
 void ThreadSocketHandler()
 {
     unsigned int nPrevNodeCount = 0;
-    while (true)
-    {
+    while (true){
         //
         // Disconnect nodes
         //
@@ -1822,6 +1811,23 @@ void RelayTransaction(const CTransaction& tx, const uint256& hash)
     RelayTransaction(tx, hash, ss);
 }
 
+static void AddRelay(const CInv& inv, const CDataStream& ss)
+{
+    {
+        LOCK(cs_mapRelay);
+        // Expire old relay messages
+        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < GetTime())
+        {
+            mapRelay.erase(vRelayExpiration.front().second);
+            vRelayExpiration.pop_front();
+        }
+
+        // Save original serialized message so newer versions are preserved
+        mapRelay.insert(std::make_pair(inv, ss));
+        vRelayExpiration.push_back(std::make_pair(GetTime() + 15 * 60, inv));
+    }
+}
+
 void RelayTransaction(const CTransaction& tx, const uint256& hash, const CDataStream& ss)
 {
     CInv inv(MSG_TX, hash);
@@ -1851,4 +1857,21 @@ void RelayTransaction(const CTransaction& tx, const uint256& hash, const CDataSt
         } else
             pnode->PushInventory(inv);
     }
+}
+
+void RelayBlock(const CBlock& block, const uint256& hash)
+{
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss.reserve(10000);
+    ss << block;
+    RelayBlock(block, hash, ss);
+}
+
+void RelayBlock(const CBlock& tx, const uint256& hash, const CDataStream& ss)
+{
+    CInv inv(MSG_BLOCK, hash);
+    AddRelay(inv, ss);
+    LOCK(cs_vNodes);
+    BOOST_FOREACH(CNode* pnode, vNodes)
+        pnode->PushInventory(inv);
 }

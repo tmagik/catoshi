@@ -1,11 +1,16 @@
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include <QApplication>
 
 #include "guiutil.h"
-
 #include "bitcoinaddressvalidator.h"
 #include "walletmodel.h"
 #include "codecoinunits.h"
-
 #include "util.h"
 #include "init.h"
 
@@ -13,17 +18,17 @@
 #include <QDoubleValidator>
 #include <QFont>
 #include <QLineEdit>
-#if QT_VERSION >= 0x050000
-#include <QUrlQuery>
-#else
 #include <QUrl>
-#endif
-#include <QTextDocument> // for Qt::mightBeRichText
+#include <QTextDocument> // For Qt::escape & mightBeRichText
 #include <QAbstractItemView>
+#include <QApplication>
 #include <QClipboard>
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QThread>
+#if QT_VERSION >= 0x050000
+#include <QUrlQuery>
+#endif
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -83,8 +88,7 @@ void setupAmountWidget(QLineEdit *widget, QWidget *parent)
 
 bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
 {
-    // return if URI is not valid or is no bitcoin URI
-    if(!uri.isValid() || uri.scheme() != QString("catcoin"))
+    if(uri.scheme() != QString("" BRAND_lower ""))
         return false;
 
     SendCoinsRecipient rv;
@@ -138,10 +142,10 @@ bool parseBitcoinURI(QString uri, SendCoinsRecipient *out)
     // Convert bitcoin:// to bitcoin:
     //
     //    Cannot handle this later, because bitcoin:// will cause Qt to see the part after // as host,
-    //    which will lower-case it (and thus invalidate the address).
-    if(uri.startsWith("catcoin://"))
+    //    which will lowercase it (and thus invalidate the address).
+    if(uri.startsWith("" BRAND_lower "://"))
     {
-        uri.replace(0, 11, "catcoin:");
+        uri.replace(0, 11, "" BRAND_lower ":");
     }
     QUrl uriInstance(uri);
     return parseBitcoinURI(uriInstance, out);
@@ -239,7 +243,7 @@ QString getSaveFileName(QWidget *parent, const QString &caption,
 
 Qt::ConnectionType blockingGUIThreadConnection()
 {
-    if(QThread::currentThread() != qApp->thread())
+    if(QThread::currentThread() != QCoreApplication::instance()->thread())
     {
         return Qt::BlockingQueuedConnection;
     }
@@ -251,8 +255,8 @@ Qt::ConnectionType blockingGUIThreadConnection()
 
 bool checkPoint(const QPoint &p, const QWidget *w)
 {
-    QWidget *atW = QApplication::widgetAt(w->mapToGlobal(p));
-    if (!atW) return false;
+  QWidget *atW = qApp->widgetAt(w->mapToGlobal(p));
+  if(!atW) return false;
     return atW->topLevelWidget() == w;
 }
 
@@ -301,7 +305,7 @@ bool ToolTipToRichTextFilter::eventFilter(QObject *obj, QEvent *evt)
 #ifdef WIN32
 boost::filesystem::path static StartupShortcutPath()
 {
-    return GetSpecialFolderPath(CSIDL_STARTUP) / "Catcoin.lnk";
+    return GetSpecialFolderPath(CSIDL_STARTUP) / "" BRAND_lower ".lnk";
 }
 
 bool GetStartOnSystemStartup()
@@ -383,7 +387,7 @@ boost::filesystem::path static GetAutostartDir()
 
 boost::filesystem::path static GetAutostartFilePath()
 {
-    return GetAutostartDir() / "catcoin.desktop";
+    return GetAutostartDir() / "" BRAND_lower ".desktop";
 }
 
 bool GetStartOnSystemStartup()
@@ -424,7 +428,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
         // Write a bitcoin.desktop file to the autostart directory:
         optionFile << "[Desktop Entry]\n";
         optionFile << "Type=Application\n";
-        optionFile << "Name=Catcoin\n";
+        optionFile << "Name=" BRAND_upper "\n";
         optionFile << "Exec=" << pszExePath << " -min\n";
         optionFile << "Terminal=false\n";
         optionFile << "Hidden=false\n";
@@ -495,10 +499,10 @@ bool SetStartOnSystemStartup(bool fAutoStart) { return false; }
 HelpMessageBox::HelpMessageBox(QWidget *parent) :
     QMessageBox(parent)
 {
-    header = tr("Catcoin-Qt") + " " + tr("version") + " " +
+    header = tr("" BRAND_lower "-qt") + " " + tr("version") + " " +
         QString::fromStdString(FormatFullVersion()) + "\n\n" +
         tr("Usage:") + "\n" +
-        "  catcoin-qt [" + tr("command-line options") + "]                     " + "\n";
+        "  " BRAND_lower "-qt [" + tr("command-line options") + "]                     " + "\n";
 
     coreOptions = QString::fromStdString(HelpMessage());
 
@@ -507,7 +511,7 @@ HelpMessageBox::HelpMessageBox(QWidget *parent) :
         "  -min                   " + tr("Start minimized") + "\n" +
         "  -splash                " + tr("Show splash screen on startup (default: 1)") + "\n";
 
-    setWindowTitle(tr("Catcoin-Qt"));
+    setWindowTitle(tr("" BRAND_lower "-qt"));
     setTextFormat(Qt::PlainText);
     // setMinimumWidth is ignored for QMessageBox so put in non-breaking spaces to make it wider.
     setText(header + QString(QChar(0x2003)).repeated(50));

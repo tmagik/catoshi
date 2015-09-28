@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef CODECOIN_NET_H
@@ -73,6 +73,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
 
 extern bool fDiscover;
 extern uint64_t nLocalServices;
+extern CAddress addrSeenByPeer;
 extern uint64_t nLocalHostNonce;
 extern CAddrMan addrman;
 extern int nMaxConnections;
@@ -637,9 +638,13 @@ public:
 };
 
 
-
+/* shouldn't these be part of the actual CTransaction/CBlock class */
 class CTransaction;
 void RelayTransaction(const CTransaction& tx, const uint256& hash);
 void RelayTransaction(const CTransaction& tx, const uint256& hash, const CDataStream& ss);
+
+class CBlock;
+void RelayBlock(const CBlock& tx, const uint256& hash);
+void RelayBlock(const CBlock& tx, const uint256& hash, const CDataStream& ss);
 
 #endif

@@ -1,4 +1,4 @@
-#include "../codecoin.h"
+#include "codecoin.h"
 #include "codecoinunits.h"
 
 #include <QStringList>

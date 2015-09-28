@@ -1,5 +1,8 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
@@ -37,8 +40,21 @@
 #define UEND(a)             ((unsigned char*)&((&(a))[1]))
 #define ARRAYLEN(array)     (sizeof(array)/sizeof((array)[0]))
 
+// __WORDSIZE is GLibc-specific and used by Google Breakpad on Linux.
+#ifndef __WORDSIZE
+#warning "defining __WORDSIZE"
+#if defined(__i386__) ||  defined(__ARM_EABI__) || defined(__mips__)
+#define __WORDSIZE 32
+#elif defined(__x86_64__) || defined(__aarch64__)
+#define __WORDSIZE 64
+#else
+#error "Unsupported Android CPU ABI"
+#endif
+#endif
+
 /*
 #ifndef PRI64d
+#warning defining PRI64d
 #if defined(_MSC_VER) || defined(__MSVCRT__)
 #define PRI64d  "I64d"
 #define PRI64u  "I64u"

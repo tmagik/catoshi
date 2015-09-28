@@ -1,3 +1,10 @@
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef COINCONTROLDIALOG_H
 #define COINCONTROLDIALOG_H
 
@@ -30,7 +37,7 @@ public:
     static void updateLabels(WalletModel*, QDialog*);
     static QString getPriorityLabel(double);
     
-    static QList<qint64> payAmounts;
+    static QList<std::pair<QString, qint64> > payAddresses;
     static CCoinControl *coinControl;
 
 private:
@@ -42,12 +49,13 @@ private:
     QMenu *contextMenu;
     QTreeWidgetItem *contextMenuItem;
     QAction *copyTransactionHashAction;
-    QAction *lockAction;
-    QAction *unlockAction;
+    //QAction *lockAction;
+    //QAction *unlockAction;
     
     QString strPad(QString, int, QString);
     void sortView(int, Qt::SortOrder);
     void updateView();
+    void unselectSpent();
     
     enum
     {
@@ -57,6 +65,7 @@ private:
         COLUMN_ADDRESS,
         COLUMN_DATE,
         COLUMN_CONFIRMATIONS,
+        COLUMN_COINAGE,
         COLUMN_PRIORITY,
         COLUMN_TXHASH,
         COLUMN_VOUT_INDEX,
@@ -70,8 +79,8 @@ private slots:
     void copyLabel();
     void copyAddress();
     void copyTransactionHash();
-    void lockCoin();
-    void unlockCoin();
+    //void lockCoin();
+    //void unlockCoin();
     void clipboardQuantity();
     void clipboardAmount();
     void clipboardFee();
@@ -86,7 +95,7 @@ private slots:
     void headerSectionClicked(int);
     void buttonBoxClicked(QAbstractButton*);
     void buttonSelectAllClicked();
-    void updateLabelLocked();
+    //void updateLabelLocked();
 };
 
 #endif // COINCONTROLDIALOG_H

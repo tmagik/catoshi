@@ -1,3 +1,10 @@
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef OPTIONSMODEL_H
 #define OPTIONSMODEL_H
 
@@ -12,24 +19,22 @@
 class OptionsModel : public QAbstractListModel
 {
     Q_OBJECT
-
 public:
     explicit OptionsModel(QObject *parent = 0);
 
     enum OptionID {
-        StartAtStartup,         // bool
-        MinimizeToTray,         // bool
-        MapPortUPnP,            // bool
-        MinimizeOnClose,        // bool
-        ProxyUse,               // bool
-        ProxyIP,                // QString
-        ProxyPort,              // int
-        ProxySocksVersion,      // int
-        Fee,                    // qint64
-        DisplayUnit,            // CodecoinUnits::Unit
-        DisplayAddresses,       // bool
-        Language,               // QString
-        CoinControlFeatures,    // bool
+        StartAtStartup, // bool
+        MinimizeToTray, // bool
+        MapPortUPnP, // bool
+        MinimizeOnClose, // bool
+        ConnectSOCKS4, // bool
+        ProxyIP, // QString
+        ProxyPort, // QString
+        Fee, // qint64
+        DisplayUnit, // BitcoinUnits::Unit
+        DisplayAddresses, // bool
+        DetachDatabases, // bool
+        CoinControlFeatures, // bool
         OptionIDRowCount,
     };
 
@@ -45,20 +50,20 @@ public:
 
     /* Explicit getters */
     qint64 getTransactionFee();
-    bool getMinimizeToTray() { return fMinimizeToTray; }
-    bool getMinimizeOnClose() { return fMinimizeOnClose; }
-    int getDisplayUnit() { return nDisplayUnit; }
-    bool getDisplayAddresses() { return bDisplayAddresses; }
+    bool getMinimizeToTray();
+    bool getMinimizeOnClose();
+    int getDisplayUnit();
+    bool getDisplayAddresses();
+    bool getCoinControlFeatures();
     QString getLanguage() { return language; }
-    bool getCoinControlFeatures() { return fCoinControlFeatures; }
 
 private:
     int nDisplayUnit;
     bool bDisplayAddresses;
     bool fMinimizeToTray;
     bool fMinimizeOnClose;
-    QString language;
     bool fCoinControlFeatures;
+    QString language;
 
 signals:
     void displayUnitChanged(int unit);

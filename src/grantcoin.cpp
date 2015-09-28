@@ -22,9 +22,9 @@ using namespace std;
 using namespace boost;
 
 uint256 hashGenesisBlock = 0;			// TODO: objectize this for multicoin support
-CBigNum bnProofOfWorkLimit(~uint256(0) >> 28);  // Reduced initial difficulty from Peercoin's 32
-static CBigNum bnInitialHashTarget(~uint256(0) >> 28);  // Reduced from Peercoin's 40
-unsigned int nStakeMinAge = STAKE_MIN_AGE;
+const CBigNum bnProofOfWorkLimit(~uint256(0) >> 28);  // Reduced initial difficulty from Peercoin's 32
+const CBigNum bnInitialHashTarget(~uint256(0) >> 28);  // Reduced from Peercoin's 40
+const unsigned int nStakeMinAge = STAKE_MIN_AGE;
 int nCoinbaseMaturity = COINBASE_MATURITY;
 
 const string strMessageMagic = "Grantcoin Signed Message:\n";

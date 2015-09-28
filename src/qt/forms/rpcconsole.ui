@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>740</width>
+    <width>706</width>
     <height>450</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Catcoin - Debug window</string>
+   <string>CodeCoin debug window</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
@@ -21,7 +21,7 @@
      </property>
      <widget class="QWidget" name="tab_info">
       <attribute name="title">
-       <string>&amp;Information</string>
+       <string>Information</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout" columnstretch="0,1">
        <property name="horizontalSpacing">
@@ -36,7 +36,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Catcoin Core</string>
+          <string>Codecoin Core</string>
          </property>
         </widget>
        </item>
@@ -371,7 +371,7 @@
        <item row="18" column="0">
         <widget class="QPushButton" name="showCLOptionsButton">
          <property name="toolTip">
-          <string>Show the Catcoin-Qt help message to get a list with possible Catcoin command-line options.</string>
+          <string>Show the Codecoin-Qt help message to get a list with possible Codecoin command-line options.</string>
          </property>
          <property name="text">
           <string>&amp;Show</string>

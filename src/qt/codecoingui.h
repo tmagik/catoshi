@@ -1,35 +1,38 @@
-#ifndef BITCOINGUI_H
-#define BITCOINGUI_H
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef CODECOINGUI_H
+#define CODECOINGUI_H
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
-#include <QMap>
 
 class TransactionTableModel;
-class WalletFrame;
-class WalletView;
 class ClientModel;
 class WalletModel;
-class WalletStack;
 class TransactionView;
+class MintingView;
 class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
 class SignVerifyMessageDialog;
+class MultisigDialog;
 class Notificator;
 class RPCConsole;
 
-class CWallet;
-
 QT_BEGIN_NAMESPACE
 class QLabel;
+class QLineEdit;
+class QTableView;
+class QAbstractItemModel;
 class QModelIndex;
 class QProgressBar;
 class QStackedWidget;
 class QUrl;
-class QListWidget;
-class QPushButton;
-class QAction;
 QT_END_NAMESPACE
 
 /**
@@ -39,10 +42,7 @@ QT_END_NAMESPACE
 class BitcoinGUI : public QMainWindow
 {
     Q_OBJECT
-
 public:
-    static const QString DEFAULT_WALLET;
-
     explicit BitcoinGUI(QWidget *parent = 0);
     ~BitcoinGUI();
 
@@ -54,30 +54,28 @@ public:
         The wallet model represents a bitcoin wallet, and offers access to the list of transactions, address book and sending
         functionality.
     */
-
-    bool addWallet(const QString& name, WalletModel *walletModel);
-    bool setCurrentWallet(const QString& name);
-
-    void removeAllWallets();
-
-    /** Used by WalletView to allow access to needed QActions */
-    // Todo: Use Qt signals for these
-    QAction * getOverviewAction() { return overviewAction; }
-    QAction * getHistoryAction() { return historyAction; }
-    QAction * getAddressBookAction() { return addressBookAction; }
-    QAction * getReceiveCoinsAction() { return receiveCoinsAction; }
-    QAction * getSendCoinsAction() { return sendCoinsAction; }
+    void setWalletModel(WalletModel *walletModel);
 
 protected:
     void changeEvent(QEvent *e);
     void closeEvent(QCloseEvent *event);
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
-    bool eventFilter(QObject *object, QEvent *event);
 
 private:
     ClientModel *clientModel;
-    WalletFrame *walletFrame;
+    WalletModel *walletModel;
+
+    QStackedWidget *centralWidget;
+
+    OverviewPage *overviewPage;
+    QWidget *transactionsPage;
+    QWidget *mintingPage;
+    AddressBookPage *addressBookPage;
+    AddressBookPage *receiveCoinsPage;
+    SendCoinsDialog *sendCoinsPage;
+    SignVerifyMessageDialog *messagePage;
+    MultisigDialog *multisigPage;
 
     QLabel *labelEncryptionIcon;
     QLabel *labelConnectionsIcon;
@@ -88,16 +86,19 @@ private:
     QMenuBar *appMenuBar;
     QAction *overviewAction;
     QAction *historyAction;
+    QAction *mintingAction;
     QAction *quitAction;
     QAction *sendCoinsAction;
     QAction *addressBookAction;
-    QAction *signMessageAction;
-    QAction *verifyMessageAction;
+    QAction *messageAction;
+    QAction *multisigAction;
     QAction *aboutAction;
     QAction *receiveCoinsAction;
     QAction *optionsAction;
     QAction *toggleHideAction;
+    QAction *exportAction;
     QAction *encryptWalletAction;
+    QAction *unlockForMintingAction;
     QAction *backupWalletAction;
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
@@ -106,6 +107,7 @@ private:
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
     TransactionView *transactionView;
+    MintingView *mintingView;
     RPCConsole *rpcConsole;
 
     QMovie *syncIconMovie;
@@ -159,25 +161,22 @@ public slots:
     void askFee(qint64 nFeeRequired, bool *payFee);
     void handleURI(QString strURI);
 
-    /** Show incoming transaction notification for new transactions. */
-    void incomingTransaction(const QString& date, int unit, qint64 amount, const QString& type, const QString& address);
+    void gotoMessagePage();
+    void gotoMultisigPage();
 
 private slots:
     /** Switch to overview (home) page */
     void gotoOverviewPage();
     /** Switch to history (transactions) page */
     void gotoHistoryPage();
+    /** Switch to minting page */
+    void gotoMintingPage();
     /** Switch to address book page */
     void gotoAddressBookPage();
     /** Switch to receive coins page */
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
-    void gotoSendCoinsPage(QString addr = "");
-
-    /** Show Sign/Verify Message dialog and switch to sign message tab */
-    void gotoSignMessageTab(QString addr = "");
-    /** Show Sign/Verify Message dialog and switch to verify message tab */
-    void gotoVerifyMessageTab(QString addr = "");
+    void gotoSendCoinsPage();
 
     /** Show configuration dialog */
     void optionsClicked();
@@ -187,6 +186,21 @@ private slots:
     /** Handle tray icon clicked */
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 #endif
+    /** Show incoming transaction notification for new transactions.
+
+        The new items are those between start and end inclusive, under the given parent item.
+    */
+    void incomingTransaction(const QModelIndex & parent, int start, int end);
+    /** Encrypt the wallet */
+    void encryptWallet(bool status);
+    /** Decrypt wallet for minting only */
+    void unlockForMinting(bool status);
+    /** Backup the wallet */
+    void backupWallet();
+    /** Change encrypted wallet passphrase */
+    void changePassphrase();
+    /** Ask for pass phrase to unlock wallet temporarily */
+    void unlockWallet();
 
     /** Show window if hidden, unminimize when minimized, rise when obscured or show if hidden and fToggleHidden is true */
     void showNormalIfMinimized(bool fToggleHidden = false);
@@ -197,4 +211,4 @@ private slots:
     void detectShutdown();
 };
 
-#endif // BITCOINGUI_H
+#endif // CODECOINGUI_H

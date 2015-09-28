@@ -1,7 +1,9 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2013-2014 The Catcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
@@ -47,7 +49,8 @@ Value GetNetworkHashPS(int lookup, int height) {
 	if (minTime == maxTime)
 		return 0;
 
-	uint256 workDiff = pb->nChainWork - pb0->nChainWork;
+	// TODO: fix this to properly report something usefull with stake&hybrid coins
+	uint256 workDiff = pb->nChainTrust - pb0->nChainTrust;
 	int64_t timeDiff = maxTime - minTime;
 
 	return (boost::int64_t)(workDiff.getdouble() / timeDiff);
@@ -105,14 +108,14 @@ Value getestnextdiff(const Array& params, bool fHelp)
 	/* make a fake block so we can fake a timestamp and nbits */
 	CBlockHeader dummyblock;
 	CBlockIndex* dummyindex;
-	uint64_t nextWork = GetNextWorkRequired(pindexBest, &dummyblock);
+	uint64_t nextWork = GetNextTrustRequired(pindexBest, &dummyblock);
 
 	dummyindex = new CBlockIndex;
 	dummyindex->pprev = pindexBest;
 	dummyindex->nHeight = pindexBest->nHeight+1;
 	dummyindex->nTime = timestamp;
 	dummyindex->nBits = nextWork;	/* fill in from above, so we can get the real one*/
-	nextWork = GetNextWorkRequired(dummyindex, &dummyblock);
+	nextWork = GetNextTrustRequired(dummyindex, &dummyblock);
 	delete dummyindex;
 
 	
@@ -347,7 +350,10 @@ Value getworkex(const Array& params, bool fHelp)
 			CDataStream(coinbase, SER_NETWORK, PROTOCOL_VERSION) >> pblock->vtx[0];
 
 		pblock->hashMerkleRoot = pblock->BuildMerkleTree();
-
+#if defined(PPCOINSTAKE)
+		if (!pblock->SignBlock(*pwalletMain))
+			throw JSONRPCError(-100, "Unable to sign block, wallet locked?");
+#endif
 		return CheckWork(pblock, *pwalletMain, reservekey);
 	}
 }
@@ -557,7 +563,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 		uint256 txHash = tx.GetHash();
 		setTxIndex[txHash] = i++;
 
-		if (tx.IsCoinBase())
+		if (tx.IsGenerated())
 			continue;
 
 		Object entry;
@@ -604,8 +610,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 	result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
 	result.push_back(Pair("target", hashTarget.GetHex()));
 	/* danger, there be off-by-one here, add 1 to be safe until we have regression tests -- T */
-	/* For now, advertise 3 minute minimum, even though the hard limit is still 60s */
-	result.push_back(Pair("mintime", (int64_t)(pindexPrev->GetBlockTime()+180+1)));
+	result.push_back(Pair("mintime", (int64_t)(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1)));
 
 	result.push_back(Pair("mutable", aMutable));
 	result.push_back(Pair("noncerange", "00000000ffffffff"));
