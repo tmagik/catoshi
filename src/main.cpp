@@ -13,6 +13,7 @@
 #include "net.h"
 #include "init.h"
 #include "ui_interface.h"
+#include "kernel.h"
 #include "checkqueue.h"
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
@@ -51,11 +52,6 @@ bool fReindex = false;
 bool fBenchmark = false;
 bool fTxIndex = false;
 unsigned int nCoinCacheSize = 5000;
-
-/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
-int64_t CTransaction::nMinTxFee = 100000;
-/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
-int64_t CTransaction::nMinRelayTxFee = 100000;
 
 CMedianFilter<int> cPeerBlockCounts(8, 0); // Amount of blocks that other nodes claim to have
 
@@ -1083,6 +1079,30 @@ uint256 static GetOrphanRoot(const CBlockHeader* pblock)
 	return pblock->GetHash();
 }
 
+#if defined(PPCOINSTAKE)
+// ppcoin: find block wanted by given orphan block
+uint256 WantedByOrphan(const CBlock* pblockOrphan)
+{
+	// Work back to the first block in the orphan chain
+	while (mapOrphanBlocks.count(pblockOrphan->hashPrevBlock))
+		pblockOrphan = mapOrphanBlocks[pblockOrphan->hashPrevBlock];
+	return pblockOrphan->hashPrevBlock;
+}
+#endif /* PPCOINSTAKE */
+
+// ppcoin: find last block index up to pindex
+const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake)
+{
+#if !defined(PPCOINSTAKE)
+	/* better to assert than look for things that don't exist? */
+	assert(fProofOfStake == false);
+	return NULL;
+#endif
+	while (pindex && pindex->pprev && (pindex->IsProofOfStake() != fProofOfStake))
+		pindex = pindex->pprev;
+	return pindex;
+}
+
 bool CheckProofOfWork(uint256 hash, unsigned int nBits)
 {
 	CBigNum bnTarget;
@@ -1311,7 +1331,8 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 
 		// While checking, GetBestBlock() refers to the parent block.
 		// This is also true for mempool checks.
-		int nSpendHeight = inputs.GetBestBlock()->nHeight + 1;
+		CBlockIndex *pindexprev = inputs.GetBestBlock();
+		int nSpendHeight = pindexprev->nHeight + 1;
 		int64_t nValueIn = 0;
 		int64_t nFees = 0;
 		for (unsigned int i = 0; i < vin.size(); i++)
@@ -2014,7 +2035,7 @@ bool CBlock::AddToBlockIndex(CValidationState &state, const CDiskBlockPos &pos)
 	// ppcoin: compute stake modifier
 	uint64_t nStakeModifier = 0;
 	bool fGeneratedStakeModifier = false;
-	if (!ComputeNextStakeModifier(pindexNew->pprev, nStakeModifier, fGeneratedStakeModifier))
+	if (!ComputeNextStakeModifier(pindexNew, nStakeModifier, fGeneratedStakeModifier))
 		return error("AddToBlockIndex() : ComputeNextStakeModifier() failed");
 	pindexNew->SetStakeModifier(nStakeModifier, fGeneratedStakeModifier);
 	pindexNew->nStakeModifierChecksum = GetStakeModifierChecksum(pindexNew);
@@ -2193,11 +2214,8 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 		return error("CheckBlock() : coinbase output not empty for proof-of-stake block");
 
 	// Check coinbase timestamp
-	if ((vtx[0].nVersion >= CTransaction::VERSION_nTime) && 
-		GetBlockTime() > (int64_t)vtx[0].nTime + nMaxClockDrift){
-		printf("Checkblock: blocktime: %d\n", GetBlockTime());
-		print();
-		return state.DoS(50, error("CheckBlock() : coinbase timestamp is too early"));
+	if (vtx[0].has_nTime() && GetBlockTime() > (int64_t)vtx[0].nTime + nMaxClockDrift){
+		return state.DoS(50, error("CheckBlock() : coinbase timestamp drift %" PRId64" exceeds limit %" PRId64, GetBlockTime()-vtx[0].nTime, nMaxClockDrift));
 	}
 	// Check coinstake timestamp
 	if (IsProofOfStake() && !CheckCoinStakeTimestamp(GetBlockTime(), (int64_t)vtx[1].nTime))
@@ -2255,7 +2273,7 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 #if defined(PPCOINSTAKE)
 	// ppcoin: check block signature
 	// Only check block signature if check merkle root, c.f. commit 3cd01fdf
-#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger) || defined(BRAND_grantcoin)
 	if (fCheckMerkleRoot && IsProofOfStake() && !CheckBlockSignature())
 #else 
 	if (fCheckMerkleRoot && !CheckBlockSignature())
