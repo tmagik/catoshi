@@ -1,16 +1,8 @@
-Copyright (c) 2009-2013 Bitcoin Developers
-Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
-Distributed under the Affero GNU General public license version 3
-file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](http://www.openssl.org/). This product includes
-cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.
-
-
-See readme-qt.rst for instructions on building *C0in-Qt, the
-graphical user interface.
-
 WINDOWS BUILD NOTES
 ===================
+
+See [readme-qt.md](readme-qt.md) for instructions on building Bitcoin-Qt, the
+graphical user interface.
 
 Compilers Supported
 -------------------
@@ -22,11 +14,12 @@ Dependencies
 ------------
 Libraries you need to download separately and build:
 
-                default path               download
-OpenSSL         \openssl-1.0.1c-mgw        http://www.openssl.org/source/
-Berkeley DB     \db-4.8.30.NC-mgw          http://www.oracle.com/technology/software/products/berkeley-db/index.html
-Boost           \boost-1.50.0-mgw          http://www.boost.org/users/download/
-miniupnpc       \miniupnpc-1.6-mgw         http://miniupnp.tuxfamily.org/files/
+	name            default path               download
+	--------------------------------------------------------------------------------------------------------------------
+	OpenSSL         \openssl-1.0.1c-mgw        http://www.openssl.org/source/
+	Berkeley DB     \db-4.8.30.NC-mgw          http://www.oracle.com/technology/software/products/berkeley-db/index.html
+	Boost           \boost-1.50.0-mgw          http://www.boost.org/users/download/
+	miniupnpc       \miniupnpc-1.6-mgw         http://miniupnp.tuxfamily.org/files/
 
 Their licenses:
 
@@ -81,10 +74,10 @@ MSYS shell:
 	mkdir miniupnpc
 	cp *.h miniupnpc/
 
-*Coin
+Bitcoin
 -------
 DOS prompt:
 
-	cd \*coin\src
+	cd \bitcoin\src
 	mingw32-make -f makefile.mingw
-	strip *coind.exe
+	strip bitcoind.exe
