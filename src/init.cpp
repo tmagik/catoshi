@@ -867,7 +867,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 
 	// ********************************************************* Step 7: load block chain
 
-#if defined(USE_SSE2) && !defined(BRAND_uro)
+#if defined(USE_SSE2) && !defined(BRAND_uro) && !defined(BRAND_grantcoin)
 	scrypt_detect_sse2(cpuid_edx);
 #endif
 

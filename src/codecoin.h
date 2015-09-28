@@ -11,8 +11,8 @@
 extern const std::string strMessageMagic;
 extern const CBigNum bnProofOfWorkLimit;
 extern const CBigNum bnProofOfStakeLimit;
-extern const unsigned int nStakeMinAge;
-extern const unsigned int nStakeMaxAge;
+//extern const unsigned int nStakeMinAge;
+//extern const unsigned int nStakeMaxAge;
 
 #ifdef BRAND_solarcoin
 #include "solarcoin.h"

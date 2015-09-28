@@ -22,12 +22,24 @@ using namespace std;
 using namespace boost;
 
 uint256 hashGenesisBlock = 0;			// TODO: objectize this for multicoin support
-const CBigNum bnProofOfWorkLimit(~uint256(0) >> 28);  // Reduced initial difficulty from Peercoin's 32
-const CBigNum bnInitialHashTarget(~uint256(0) >> 28);  // Reduced from Peercoin's 40
-const unsigned int nStakeMinAge = STAKE_MIN_AGE;
-int nCoinbaseMaturity = COINBASE_MATURITY;
 
 const string strMessageMagic = "Grantcoin Signed Message:\n";
+
+const CBigNum bnProofOfWorkLimit(~uint256(0) >> 28);  // Reduced initial difficulty from Peercoin's 32
+const CBigNum bnInitialHashTarget(~uint256(0) >> 28);  // Reduced from Peercoin's 40
+
+int nCoinbaseMaturity = COINBASE_MATURITY;
+
+/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
+int64_t CTransaction::nMinTxFee = CENT;
+/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
+int64_t CTransaction::nMinRelayTxFee = CENT;
+
+// TODO: separate max clock drift from tx timestamp limits?
+const unsigned int nMaxClockDrift = 5000;
+
+
+
 /* value, in percent of what difficulty value we'll accept for orphans */
 const int ORPHAN_WORK_THRESHOLD = 1; // FIXME WAY TOO WIDE right now
 
@@ -88,20 +100,27 @@ int64_t GetProofOfWorkReward(int nHeight)
     return nSubsidy;
 }
 
-int64_t GetBlockValue(CBlockIndex *block, int64_t nFees){
-#warning hack
-#warning check if fees actually are destroyed from Moneysupply *future*
-	return GetProofOfWorkReward(block->nHeight);
-}
-
 // peercoin: miner's coin stake is rewarded based on coin age spent (coin-days)
-int64_t GetProofOfStakeReward(int64_t nCoinAge)
+int64_t PPCoin_StakeReward(int64_t nCoinAge)
 {
     static int64_t nRewardCoinYear = CENT;  // creation amount per coin-year
     int64_t nSubsidy = nCoinAge * 33 / (365 * 33 + 8) * nRewardCoinYear;
     if (fDebug && GetBoolArg("-printcreation"))
         printf("GetProofOfStakeReward(): create=%s nCoinAge=%" PRId64 "\n", FormatMoney(nSubsidy).c_str(), nCoinAge);
     return nSubsidy;
+}
+
+/*
+ * Get the allow Seigniorage (money creation, or reward) of the current
+ * block. If CoinAge is > 0, this is a proof of stake block.
+ */
+int64_t GetSeigniorage(const CBlockIndex *block, int64_t nFees, int64_t CoinAge)
+{
+	if(CoinAge == 0){
+		return PPCoin_StakeReward(block->nHeight);
+	} else {
+		return GetProofOfStakeReward(CoinAge);
+	}
 }
 
 static const int64_t nTargetTimespan = 24 * 60 * 60;  // 24 hours
@@ -111,7 +130,7 @@ static const int64_t nTargetSpacingWorkMax = 12 * STAKE_TARGET_SPACING; // 18 mi
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
 //
-unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
+unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, const CBlockHeader* pblock)
 {
     CBigNum bnResult;
     bnResult.SetCompact(nBase);
@@ -126,17 +145,6 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
         bnResult = bnProofOfWorkLimit;
     return bnResult.GetCompact();
 }
-
-// peercoin: find last block index up to pindex
-const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake)
-{
-#if STAKE
-    while (pindex && pindex->pprev && (pindex->IsProofOfStake() != fProofOfStake))
-        pindex = pindex->pprev;
-#endif
-    return pindex;
-}
-
 
 unsigned int static GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake)
 {
@@ -167,7 +175,7 @@ unsigned int static GetNextTargetRequired(const CBlockIndex* pindexLast, bool fP
     return bnNew.GetCompact();
 }
 
-unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
+unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
 	return GetNextTargetRequired(pindexLast, false);	
 }
@@ -431,10 +439,6 @@ If New diff < 0, then set static value of 0.0001 or so.
 }
 #endif
 
-#warning TODO remove
-const char *pchCatMain	= "\xfc\xc1\xb7\xdc";
-const char *pchCatTest	= "\xfd\xcb\xb8\xdd";
-
 const char *pchGrantMain = "\xe2\xe7\xe1\xe4";
 
 unsigned char pchMessageStart[4];
@@ -443,11 +447,7 @@ bool LoadBlockIndex()
 {
 	if (fTestNet)
 	{	/* add 1 to litecoin values (3 to bitcoins) */
-		pchMessageStart[0] = pchCatTest[0];
-		pchMessageStart[1] = pchCatTest[1];
-		pchMessageStart[2] = pchCatTest[2];
-		pchMessageStart[3] = pchCatTest[3];
-		hashGenesisBlock = uint256("0xec7987a2ab5225246c5cf9b8d93b4b75bcef383a4a65d5a265bc09ed54006188");
+		assert(1); /* no pch for testnet yet */
 	} else {
 		pchMessageStart[0] = pchGrantMain[0];
 		pchMessageStart[1] = pchGrantMain[1];
@@ -481,14 +481,11 @@ bool InitBlockIndex() {
         // Genesis block
 		const char* pszTimestamp = "The Courier-Journal 21-MAR-2015 Prince Charles calls for a revolution";
 		CTransaction txNew;
+        txNew.nTime = 1427081625;
 		txNew.vin.resize(1);
 		txNew.vout.resize(1);
 		txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
-#ifdef STAKE
-	// TODO
-		txNew.nTime = 1427081625;
 		txNew.vout[0].SetEmpty();
-#endif
 		CBlock block;
 		block.vtx.push_back(txNew);
 		block.hashPrevBlock = 0;
@@ -509,10 +506,10 @@ bool InitBlockIndex() {
 		printf("%s\n", hash.ToString().c_str());
 		printf("%s\n", hashGenesisBlock.ToString().c_str());
 		printf("%s\n", block.hashMerkleRoot.ToString().c_str());
-		assert(block.hashMerkleRoot == uint256("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
-
 		block.print();
 		assert(hash == hashGenesisBlock);
+		assert(block.hashMerkleRoot == uint256("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
+
 		//assert(block.CheckBlock());
 
 		// Start new block file

@@ -1,12 +1,17 @@
-// Copyright (c) 2012-2013 The PPCoin developers
-// Copyright (c) 2015 The Grantcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, Grant ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 #include <boost/assign/list_of.hpp>
 
 #include "kernel.h"
 #include "db.h"
+#include "txdb.h"
 
 using namespace std;
 
@@ -49,33 +54,49 @@ bool IsProtocolV04(unsigned int nTimeBlock)
     return (nTimeBlock >= (fTestNet? nProtocolV04TestSwitchTime : nProtocolV04SwitchTime));
 }
 
+#if defined(PPCOINSTAKE)
+
+// Get time weight
+int64_t GetWeight(int64_t nIntervalBeginning, int64_t nIntervalEnd)
+{
+    // Kernel hash weight starts from 0 at the min age
+    // this change increases active coins participating the hash and helps
+    // to secure the network when proof-of-stake difficulty is low
+
+    return min(nIntervalEnd - nIntervalBeginning - nStakeMinAge, (int64_t)nStakeMaxAge);
+}
+
 // Get the last stake modifier and its generation time from a given block
-static bool GetLastStakeModifier(const CBlockIndex* pindex, uint64& nStakeModifier, int64& nModifierTime)
+static bool GetLastStakeModifier(const CBlockIndex* pindex, uint64_t& nStakeModifier, int64_t& nModifierTime)
 {
     if (!pindex)
         return error("GetLastStakeModifier: null pindex");
     while (pindex && pindex->pprev && !pindex->GeneratedStakeModifier())
         pindex = pindex->pprev;
-    if (!pindex->GeneratedStakeModifier())
+    if (!pindex->GeneratedStakeModifier()){
         return error("GetLastStakeModifier: no generation at genesis block");
+    }
     nStakeModifier = pindex->nStakeModifier;
     nModifierTime = pindex->GetBlockTime();
     return true;
 }
 
 // Get selection interval section (in seconds)
-static int64 GetStakeModifierSelectionIntervalSection(int nSection)
+static int64_t GetStakeModifierSelectionIntervalSection(int nSection)
 {
     assert (nSection >= 0 && nSection < 64);
-    return (nModifierInterval * 63 / (63 + ((63 - nSection) * (MODIFIER_INTERVAL_RATIO - 1))));
+    int64_t a = nModifierInterval * 63 / (63 + ((63 - nSection) * (MODIFIER_INTERVAL_RATIO - 1)));
+	return a;
 }
 
 // Get stake modifier selection interval (in seconds)
-static int64 GetStakeModifierSelectionInterval()
+static int64_t GetStakeModifierSelectionInterval()
 {
-    int64 nSelectionInterval = 0;
+    int64_t nSelectionInterval = 0;
     for (int nSection=0; nSection<64; nSection++)
+    {
         nSelectionInterval += GetStakeModifierSelectionIntervalSection(nSection);
+    }
     return nSelectionInterval;
 }
 
@@ -83,15 +104,15 @@ static int64 GetStakeModifierSelectionInterval()
 // already selected blocks in vSelectedBlocks, and with timestamp up to
 // nSelectionIntervalStop.
 static bool SelectBlockFromCandidates(
-    vector<pair<int64, uint256> >& vSortedByTimestamp,
+    vector<pair<int64_t, uint256> >& vSortedByTimestamp,
     map<uint256, const CBlockIndex*>& mapSelectedBlocks,
-    int64 nSelectionIntervalStop, uint64 nStakeModifierPrev,
+    int64_t nSelectionIntervalStop, uint64_t nStakeModifierPrev,
     const CBlockIndex** pindexSelected)
 {
     bool fSelected = false;
     uint256 hashBest = 0;
     *pindexSelected = (const CBlockIndex*) 0;
-    BOOST_FOREACH(const PAIRTYPE(int64, uint256)& item, vSortedByTimestamp)
+    BOOST_FOREACH(const PAIRTYPE(int64_t, uint256)& item, vSortedByTimestamp)
     {
         if (!mapBlockIndex.count(item.second))
             return error("SelectBlockFromCandidates: failed to find block index for candidate block %s", item.second.ToString().c_str());
@@ -141,7 +162,7 @@ static bool SelectBlockFromCandidates(
 // block. This is to make it difficult for an attacker to gain control of
 // additional bits in the stake modifier, even after generating a chain of
 // blocks.
-bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64& nStakeModifier, bool& fGeneratedStakeModifier)
+bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64_t& nStakeModifier, bool& fGeneratedStakeModifier)
 {
     const CBlockIndex* pindexPrev = pindexCurrent->pprev;
     nStakeModifier = 0;
@@ -149,9 +170,9 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64& nStakeMo
     if (!pindexPrev)
     {
         fGeneratedStakeModifier = true;
-	if (fDebug){
-		printf("ComputeNextStakeModifier nHeight=%d returned %" PRId64 "\n", 0, nStakeModifier);
-	}
+		if (fDebug){
+			printf("ComputeNextStakeModifier nHeight=%d returned %" PRId64 "\n", 0, nStakeModifier);
+		}
         return true;  // genesis block's modifier is 0
     }
     // First find current stake modifier and its generation block time
@@ -193,7 +214,7 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64& nStakeMo
 
     // Sort candidate blocks by timestamp
     vector<pair<int64_t, uint256> > vSortedByTimestamp;
-    vSortedByTimestamp.reserve(64 * nModifierInterval / nStakeTargetSpacing);
+    vSortedByTimestamp.reserve(64 * nModifierInterval / STAKE_TARGET_SPACING);
     int64_t nSelectionInterval = GetStakeModifierSelectionInterval();
     int64_t nSelectionIntervalStart = (pindexPrev->GetBlockTime() / nModifierInterval) * nModifierInterval - nSelectionInterval;
     const CBlockIndex* pindex = pindexPrev;
@@ -338,7 +359,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     // v0.3 protocol kernel hash weight starts from 0 at the min age
     // this change increases active coins participating the hash and helps
     // to secure the network when proof-of-stake difficulty is low
-    int64 nTimeWeight = min((int64)nTimeTx - txPrev.nTime, (int64_t)nStakeMaxAge) - (IsProtocolV03(nTimeTx)? nStakeMinAge : 0);
+    int64_t nTimeWeight = min((int64_t)nTimeTx - txPrev.nTime, (int64_t)nStakeMaxAge) - (IsProtocolV03(nTimeTx)? nStakeMinAge : 0);
     CBigNum bnCoinDayWeight = CBigNum(nValueIn) * nTimeWeight / COIN / (24 * 60 * 60);
     if(fDebug && GetBoolArg("-printstakehashtime"))
         printf(">>> CheckStakeKernelHash: nTimeTx = %d, txPrev.nTime = %d, nTimeWeight = %" PRId64"\n",
@@ -347,7 +368,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     CDataStream ss(SER_GETHASH, 0);
     uint64_t nStakeModifier = 0;
     int nStakeModifierHeight = 0;
-    int64 nStakeModifierTime = 0;
+    int64_t nStakeModifierTime = 0;
     if (IsProtocolV03(nTimeTx))  // v0.3 protocol
     {
         if (!GetKernelStakeModifier(blockFrom.GetHash(), nStakeModifier, nStakeModifierHeight, nStakeModifierTime, fPrintProofOfStake))
@@ -356,6 +377,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     }
     else // v0.2 protocol
     {
+		assert("CheckStakeKernelHasH: we should not be here: v0.2 protocol");
         ss << nBits;
     }
 
@@ -369,7 +391,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
                 nStakeModifierTime,
                 mapBlockIndex[blockFrom.GetHash()]->nHeight,
                 blockFrom.GetBlockTime());
-        printf("CheckStakeKernelHash() : check protocol=%s modifier=0x%016"PRI64x" nTimeBlockFrom=%u nTxPrevOffset=%u nTimeTxPrev=%u nPrevout=%u nTimeTx=%u hashProof=%s\n",
+        printf("CheckStakeKernelHash() : check protocol=%s modifier=0x%016"PRIx64" nTimeBlockFrom=%u nTxPrevOffset=%u nTimeTxPrev=%u nPrevout=%u nTimeTx=%u hashProof=%s\n",
             IsProtocolV03(nTimeTx)? "0.3" : "0.2",
             IsProtocolV03(nTimeTx)? nStakeModifier : (uint64_t) nBits,
             nTimeBlockFrom, nTxPrevOffset, txPrev.nTime, prevout.n, nTimeTx,
@@ -382,14 +404,14 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     if (fDebug && !fPrintProofOfStake)
     {
         if (IsProtocolV03(nTimeTx))
-            printf("CheckStakeKernelHash() : using modifier 0x%016" PRIx64 " at height=%d timestamp=" PRId64 " for block from height=%d timestamp=" PRId64 "\n",
+            printf("CheckStakeKernelHash() : using modifier 0x%016" PRIx64 " at height=%d timestamp=%" PRId64 " for block from height=%d timestamp=%" PRId64 "\n",
                 nStakeModifier, nStakeModifierHeight, 
                 nStakeModifierTime,
                 mapBlockIndex[blockFrom.GetHash()]->nHeight,
                 blockFrom.GetBlockTime());
-        printf("CheckStakeKernelHash() : pass protocol=%s modifier=0x%016"PRI64x" nTimeBlockFrom=%u nTxPrevOffset=%u nTimeTxPrev=%u nPrevout=%u nTimeTx=%u hashProof=%s\n",
+        printf("CheckStakeKernelHash() : pass protocol=%s modifier=0x%016" PRIx64 " nTimeBlockFrom=%u nTxPrevOffset=%u nTimeTxPrev=%u nPrevout=%u nTimeTx=%u hashProof=%s\n",
             IsProtocolV03(nTimeTx)? "0.3" : "0.2",
-            IsProtocolV03(nTimeTx)? nStakeModifier : (uint64) nBits,
+            IsProtocolV03(nTimeTx)? nStakeModifier : (uint64_t) nBits,
             nTimeBlockFrom, nTxPrevOffset, txPrev.nTime, prevout.n, nTimeTx,
             hashProofOfStake.ToString().c_str());
     }
@@ -447,7 +469,7 @@ bool CheckProofOfStake(CValidationState &state, const CTransaction& tx, unsigned
 }
 
 // Check whether the coinstake timestamp meets protocol
-bool CheckCoinStakeTimestamp(int64 nTimeBlock, int64 nTimeTx)
+bool CheckCoinStakeTimestamp(int64_t nTimeBlock, int64_t nTimeTx)
 {
     if (IsProtocolV03(nTimeTx))  // v0.3 protocol
         return (nTimeBlock == nTimeTx);
@@ -472,8 +494,14 @@ unsigned int GetStakeModifierChecksum(const CBlockIndex* pindex)
 // Check stake modifier hard checkpoints
 bool CheckStakeModifierCheckpoints(int nHeight, unsigned int nStakeModifierChecksum)
 {
+#warning "stake modifier checkpoints disabled"
     if (fTestNet) return true; // Testnet has no checkpoints
+#if 0
     if (mapStakeModifierCheckpoints.count(nHeight))
         return nStakeModifierChecksum == mapStakeModifierCheckpoints[nHeight];
+#else
+#warning "stake modifier checkpoints disabled"
+#endif
     return true;
 }
+#endif /* PPCOINSTAKE */

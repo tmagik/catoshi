@@ -172,12 +172,6 @@ void SendCoinsEntry::setValue(const SendCoinsRecipient &value)
     ui->payAmount->setValue(value.amount);
 }
 
-void SendCoinsEntry::setAddress(const QString &address)
-{
-    ui->payTo->setText(address);
-    ui->payAmount->setFocus();
-}
-
 bool SendCoinsEntry::isClear()
 {
     return ui->payTo->text().isEmpty();
@@ -188,11 +182,3 @@ void SendCoinsEntry::setFocus()
     ui->payTo->setFocus();
 }
 
-void SendCoinsEntry::updateDisplayUnit()
-{
-    if(model && model->getOptionsModel())
-    {
-        // Update payAmount with the current unit
-        ui->payAmount->setDisplayUnit(model->getOptionsModel()->getDisplayUnit());
-    }
-}

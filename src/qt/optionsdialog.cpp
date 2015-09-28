@@ -11,7 +11,7 @@
 #include "bitcoinamountfield.h"
 #include "monitoreddatamapper.h"
 #include "guiutil.h"
-#include "bitcoinunits.h"
+#include "codecoinunits.h"
 #include "qvaluecombobox.h"
 #include "codecoin.h"
 
@@ -284,7 +284,7 @@ DisplayOptionsPage::DisplayOptionsPage(QWidget *parent):
     QLabel *unit_label = new QLabel(tr("&Unit to show amounts in: "));
     unit_hbox->addWidget(unit_label);
     unit = new QValueComboBox(this);
-    unit->setModel(new BitcoinUnits(this));
+    unit->setModel(new CodecoinUnits(this));
     unit->setToolTip(tr("Choose the default subdivision unit to show in the interface, and when sending coins"));
 
     unit_label->setBuddy(unit);

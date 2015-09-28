@@ -216,8 +216,6 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
             {
                 return SendCoinsReturn(AmountWithFeeExceedsBalance, nFeeRequired);
             }
-            emit message(tr("Send Coins"), QString::fromStdString(strFailReason),
-                         CClientUIInterface::MSG_ERROR);
             return TransactionCreationFailed;
         }
         if(!uiInterface.ThreadSafeAskFee(nFeeRequired))

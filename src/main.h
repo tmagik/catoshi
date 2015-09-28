@@ -513,6 +513,8 @@ public:
 #elif defined(BRAND_hamburger)
 	static const int CURRENT_VERSION = 2, VERSION_nTime = 2;
 	static const int LEGACY_VERSION=1;
+#elif defined(BRAND_grantcoin)
+	static const int CURRENT_VERSION = 1;
 #elif defined(BRAND_solarcoin)
 	static const int CURRENT_VERSION_1 = 3, VERSION_nTime = 2;
 	static const int LEGACY_VERSION_1 = 1;
@@ -538,9 +540,13 @@ public:
 		READWRITE(this->nVersion);
 		nVersion = this->nVersion;
 #if defined(PPCOINSTAKE)
+#if defined(BRAND_givecoin)
 		if(this->nVersion > LEGACY_VERSION) { 
 			READWRITE(nTime);
 		}
+#else
+		READWRITE(nTime);
+#endif
 #endif
 		READWRITE(vin);
 		READWRITE(vout);
@@ -637,6 +643,12 @@ public:
 		// givecoin: Do we want this, or something else?
 		return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
 	}
+#if !defined(BRAND_givecoin)
+	bool has_nTime() const { return true; };
+#else
+#warning "this is rather a hack, and it still doesn't work yet"
+	bool has_nTime() const { nVersion > LEGACY_VERSION };
+#endif 
 #else
 	inline bool IsCoinStake() const { return false; };
 #endif
@@ -1481,6 +1493,7 @@ public:
 	static const int CURRENT_VERSION=4;
 #elif defined(BRAND_grantcoin)
 	// TODO: re-endianize when we go to version 2/4 for GRT
+	static const int VERSION_STAKE_START=2;
 	static const int CURRENT_VERSION=1;
 #else
 	static const int CURRENT_VERSION=2;
@@ -1647,7 +1660,7 @@ public:
 	// ppcoin: two types of block: proof-of-work or proof-of-stake
 	bool IsProofOfStake() const
 	{
-#if define(BRAND_grantcoin) || defined(BRAND_givecoin) || defined(BRAND_hamburger)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
 		/* Before you try to be clever here, read the assembly code, because
 		   the compiler is smarter and more deterministic than you are */
 
@@ -1658,6 +1671,8 @@ public:
 			return true;	/* bit 0==1 is proof-of-stake */
 		else
 			return false;	/* bit 0==0 is proof-of-work */
+#elif defined(BRAND_grantcoin)
+		return false;		// no stake for now
 #else
 #error "Your chosen coin brand needs IsProofOfStake implemented"
 		//ppcoin did it this way:

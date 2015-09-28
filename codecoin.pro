@@ -150,6 +150,8 @@ contains(USE_IPV6, -) {
 }
 
 android:DEFINES += LEVELDB_PLATFORM_POSIX OS_ANDROID
+unix:DEFINES += LEVELDB_PLATFORM_POSIX OS_LINUX
+windows:DEFINES += LEVELDB_PLATFORM_WINDOWS OS_WINDOWS
 
 INCLUDEPATH += src/leveldb/include src/leveldb/helpers src/leveldb
 
@@ -219,9 +221,6 @@ HEADERS += src/qt/codecoingui.h \
     src/qt/transactionfilterproxy.h \
     src/qt/transactionview.h \
     src/qt/walletmodel.h \
-    src/qt/walletview.h \
-    src/qt/walletstack.h \
-    src/qt/walletframe.h \
     src/codecoinrpc.h \
     src/qt/overviewpage.h \
     src/qt/csvmodelwriter.h \
@@ -238,6 +237,15 @@ HEADERS += src/qt/codecoingui.h \
     src/ui_interface.h \
     src/qt/rpcconsole.h \
     src/scrypt.h \
+    src/kernel.h \
+    src/qt/mintingview.h \
+    src/qt/mintingtablemodel.h \
+    src/qt/mintingfilterproxy.h \
+    src/kernelrecord.h \
+    src/qt/virtualkeyboard.h \
+    src/qt/multisigaddressentry.h \
+    src/qt/multisiginputentry.h \
+    src/qt/multisigdialog.h \
     src/version.h \
     src/netbase.h \
     src/clientversion.h \
@@ -261,7 +269,6 @@ SOURCES += src/qt/codecoin.cpp \
     src/qt/aboutdialog.cpp \
     src/qt/editaddressdialog.cpp \
     src/qt/bitcoinaddressvalidator.cpp \
-    src/alert.cpp \
     src/version.cpp \
     src/sync.cpp \
     src/util.cpp \
@@ -277,6 +284,9 @@ SOURCES += src/qt/codecoin.cpp \
     src/addrman.cpp \
     src/db.cpp \
     src/walletdb.cpp \
+    src/json/json_spirit_writer.cpp \
+    src/json/json_spirit_value.cpp \
+    src/json/json_spirit_reader.cpp \
     src/qt/clientmodel.cpp \
     src/qt/guiutil.cpp \
     src/qt/transactionrecord.cpp \
@@ -291,9 +301,6 @@ SOURCES += src/qt/codecoin.cpp \
     src/qt/transactionfilterproxy.cpp \
     src/qt/transactionview.cpp \
     src/qt/walletmodel.cpp \
-    src/qt/walletview.cpp \
-    src/qt/walletstack.cpp \
-    src/qt/walletframe.cpp \
     src/codecoinrpc.cpp \
     src/rpcdump.cpp \
     src/rpcnet.cpp \
@@ -313,6 +320,15 @@ SOURCES += src/qt/codecoin.cpp \
     src/qt/notificator.cpp \
     src/qt/paymentserver.cpp \
     src/qt/rpcconsole.cpp \
+    src/kernel.cpp \
+    src/qt/mintingview.cpp \
+    src/qt/mintingtablemodel.cpp \
+    src/qt/mintingfilterproxy.cpp \
+    src/kernelrecord.cpp \
+    src/qt/virtualkeyboard.cpp \
+    src/qt/multisigaddressentry.cpp \
+    src/qt/multisiginputentry.cpp \
+    src/qt/multisigdialog.cpp \
     src/scrypt.cpp \
     src/noui.cpp \
     src/leveldb.cpp \
@@ -338,7 +354,7 @@ SOURCES += src/leveldb/helpers/memenv/memenv.cc
 
 # TODO: figure out how to dereference COIN_brand properly
 contains(COIN_brand, grantcoin){
-RESOURCES += src/qt/res/grantcoin.qrc
+RESOURCES += src/qt/res/grantcoin/codecoin.qrc
 }
 
 FORMS += src/qt/forms/sendcoinsdialog.ui \
@@ -352,7 +368,9 @@ FORMS += src/qt/forms/sendcoinsdialog.ui \
     src/qt/forms/sendcoinsentry.ui \
     src/qt/forms/askpassphrasedialog.ui \
     src/qt/forms/rpcconsole.ui \
-    src/qt/forms/optionsdialog.ui
+    src/qt/forms/multisigaddressentry.ui \
+    src/qt/forms/multisiginputentry.ui \
+    src/qt/forms/multisigdialog.ui
 
 contains(USE_QRCODE, 1) {
 HEADERS += src/qt/qrcodedialog.h
@@ -390,8 +408,8 @@ contains(STATICBUILD, 1) {
 CODECFORTR = UTF-8
 
 # for lrelease/lupdate
-# also add new translations to src/qt/bitcoin.qrc under translations/
-TRANSLATIONS = $$files(src/qt/locale/bitcoin_*.ts)
+# also add new translations to src/qt/codecoin.qrc under translations/
+TRANSLATIONS = $$files(src/qt/locale/codecoin_*.ts)
 
 isEmpty(QMAKE_LRELEASE) {
     win32:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]\\lrelease.exe
@@ -420,7 +438,8 @@ OTHER_FILES += README.md \
 # platform specific defaults, if not overridden on command line
 isEmpty(BOOST_LIB_SUFFIX) {
     macx:BOOST_LIB_SUFFIX = -mt
-    win32:BOOST_LIB_SUFFIX = -mgw44-mt-s-1_50
+    windows:BOOST_LIB_SUFFIX = -mgw44-mt-1_53
+    android:BOOST_LIB_SUFFIX = -gcc-mt-1_53
 }
 
 isEmpty(BOOST_THREAD_LIB_SUFFIX) {
