@@ -180,7 +180,10 @@ X11_OBJS = \
     $(OBJDIR)/skein.o
 
 ifeq ($(COIN_BRAND),grantcoin)
-OBJS += $(X11_OBJS) $(STAKE_OBJS)
+OBJS += $(STAKE_OBJS)
+endif
+ifeq ($(COIN_BRAND),uro)
+OBJS += $(X11_OBJS)
 endif
 ifeq ($(COIN_BRAND),givecoin)
 OBJS += $(X11_OBJS) $(STAKE_OBJS)
