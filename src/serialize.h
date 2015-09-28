@@ -1,11 +1,14 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_SERIALIZE_H
-#define BITCOIN_SERIALIZE_H
+#ifndef CODECOIN_SERIALIZE_H
+#define CODECOIN_SERIALIZE_H
 
 #include <string>
 #include <vector>
@@ -25,6 +28,18 @@
 
 #include "allocators.h"
 #include "version.h"
+
+// __WORDSIZE is GLibc-specific and needed for android/others
+#ifndef __WORDSIZE
+#warning "defining __WORDSIZE"
+#if defined(__i386__) ||  defined(__ARM_EABI__) || defined(__mips__)
+#define __WORDSIZE 32
+#elif defined(__x86_64__) || defined(__aarch64__)
+#define __WORDSIZE 64
+#else
+#error "Unsupported Android CPU ABI"
+#endif
+#endif
 
 class CScript;
 class CDataStream;
@@ -51,6 +66,10 @@ enum
     SER_NETWORK         = (1 << 0),
     SER_DISK            = (1 << 1),
     SER_GETHASH         = (1 << 2),
+
+    // modifiers
+    SER_SKIPSIG         = (1 << 16),
+    SER_BLOCKHEADERONLY = (1 << 17),
 };
 
 #define IMPLEMENT_SERIALIZE(statements)    \

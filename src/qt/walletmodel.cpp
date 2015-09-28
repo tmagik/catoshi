@@ -1,7 +1,16 @@
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include "walletmodel.h"
 #include "guiconstants.h"
 #include "optionsmodel.h"
 #include "addresstablemodel.h"
+#include "mintingtablemodel.h"
 #include "transactiontablemodel.h"
 
 #include "ui_interface.h"
@@ -15,12 +24,13 @@
 WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), wallet(wallet), optionsModel(optionsModel), addressTableModel(0),
     transactionTableModel(0),
-    cachedBalance(0), cachedUnconfirmedBalance(0), cachedImmatureBalance(0),
+    cachedBalance(0), cachedStake(0), cachedUnconfirmedBalance(0), cachedImmatureBalance(0),
     cachedNumTransactions(0),
     cachedEncryptionStatus(Unencrypted),
     cachedNumBlocks(0)
 {
     addressTableModel = new AddressTableModel(wallet, this);
+    mintingTableModel = new MintingTableModel(wallet, this);
     transactionTableModel = new TransactionTableModel(wallet, this);
 
     // This timer will be fired repeatedly to update the balance
@@ -36,25 +46,21 @@ WalletModel::~WalletModel()
     unsubscribeFromCoreSignals();
 }
 
-qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
+qint64 WalletModel::getBalance() const
 {
-    if (coinControl)
-    {
-		int64_t nBalance = 0;
-        std::vector<COutput> vCoins;
-        wallet->AvailableCoins(vCoins, true, coinControl);
-        BOOST_FOREACH(const COutput& out, vCoins)
-            nBalance += out.tx->vout[out.i].nValue;   
-        
-        return nBalance;
-    }
-    
     return wallet->GetBalance();
 }
 
 qint64 WalletModel::getUnconfirmedBalance() const
 {
     return wallet->GetUnconfirmedBalance();
+}
+
+qint64 WalletModel::getStake() const
+{
+#warning fixeme
+    return 0;
+    //return wallet->GetStake();
 }
 
 qint64 WalletModel::getImmatureBalance() const
@@ -95,15 +101,17 @@ void WalletModel::pollBalanceChanged()
 void WalletModel::checkBalanceChanged()
 {
     qint64 newBalance = getBalance();
+    qint64 newStake = getStake();
     qint64 newUnconfirmedBalance = getUnconfirmedBalance();
     qint64 newImmatureBalance = getImmatureBalance();
 
-    if(cachedBalance != newBalance || cachedUnconfirmedBalance != newUnconfirmedBalance || cachedImmatureBalance != newImmatureBalance)
+    if(cachedBalance != newBalance || cachedStake != newStake || cachedUnconfirmedBalance != newUnconfirmedBalance || cachedImmatureBalance != newImmatureBalance)
     {
         cachedBalance = newBalance;
+        cachedStake = newStake;
         cachedUnconfirmedBalance = newUnconfirmedBalance;
         cachedImmatureBalance = newImmatureBalance;
-        emit balanceChanged(newBalance, newUnconfirmedBalance, newImmatureBalance);
+        emit balanceChanged(newBalance, newStake, newUnconfirmedBalance, newImmatureBalance);
     }
 }
 
@@ -155,7 +163,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         }
         setAddress.insert(rcp.address);
 
-        if(rcp.amount <= 0)
+        if(rcp.amount < CTransaction::nMinTxFee)
         {
             return InvalidAmount;
         }
@@ -167,7 +175,12 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         return DuplicateAddress;
     }
 
-	int64_t nBalance = getBalance(coinControl);
+    // we do not use getBalance() here, because some coins could be locked or coin control could be active
+    qint64 nBalance = 0;
+    std::vector<COutput> vCoins;
+    wallet->AvailableCoins(vCoins, true, coinControl);
+    BOOST_FOREACH(const COutput& out, vCoins)
+        nBalance += out.tx->vout[out.i].nValue;
 
     if(total > nBalance)
     {
@@ -248,6 +261,11 @@ OptionsModel *WalletModel::getOptionsModel()
 AddressTableModel *WalletModel::getAddressTableModel()
 {
     return addressTableModel;
+}
+
+MintingTableModel *WalletModel::getMintingTableModel()
+{
+    return mintingTableModel;
 }
 
 TransactionTableModel *WalletModel::getTransactionTableModel()
@@ -360,6 +378,11 @@ void WalletModel::unsubscribeFromCoreSignals()
 WalletModel::UnlockContext WalletModel::requestUnlock()
 {
     bool was_locked = getEncryptionStatus() == Locked;
+    if ((!was_locked) && fWalletUnlockMintOnly)
+    {
+        setWalletLocked(true);
+        was_locked = getEncryptionStatus() == Locked;
+    }
     if(was_locked)
     {
         // Request UI to unlock wallet
@@ -368,7 +391,7 @@ WalletModel::UnlockContext WalletModel::requestUnlock()
     // If wallet is still locked, unlock was failed or cancelled, mark context as invalid
     bool valid = getEncryptionStatus() != Locked;
 
-    return UnlockContext(this, valid, was_locked);
+    return UnlockContext(this, valid, was_locked && !fWalletUnlockMintOnly);
 }
 
 WalletModel::UnlockContext::UnlockContext(WalletModel *wallet, bool valid, bool relock):
@@ -460,4 +483,14 @@ void WalletModel::unlockCoin(COutPoint& output)
 void WalletModel::listLockedCoins(std::vector<COutPoint>& vOutpts)
 {
     wallet->ListLockedCoins(vOutpts);
+}
+
+void WalletModel::clearOrphans()
+{
+    wallet->ClearOrphans();
+}
+
+CWallet * WalletModel::getWallet()
+{
+    return wallet;
 }

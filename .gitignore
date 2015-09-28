@@ -1,7 +1,8 @@
 src/*.exe
-src/catcoin
 src/catcoind
-src/test_catcoin
+src/ppcoind
+src/grantcoind
+src/build.h
 .*.swp
 *.*~*
 *.bak
@@ -31,4 +32,4 @@ qrc_*.cpp
 .DS_Store
 build
 
-!src/leveldb-*/Makefile
+

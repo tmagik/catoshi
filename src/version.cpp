@@ -1,13 +1,17 @@
 // Copyright (c) 2012 The Bitcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2014 The Peerunity developers
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include <string>
 
+#include "codecoin.h"
 #include "version.h"
 
 // Name of client reported in the 'version' message. Report the same name
-// for both bitcoind and bitcoin-qt, to make it harder for attackers to
+// for both peerunityd and peerunity(-qt), to make it harder for attackers to
 // target servers or GUI users specifically.
 const std::string CLIENT_NAME("Catoshi");
 

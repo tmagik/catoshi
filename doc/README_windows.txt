@@ -1,4 +1,4 @@
-Grantcoin 0.1.0 BETA
+Grantcoin 0.2.0 BETA
 
 Copyright (c) 2015 Grantcoin Developers
 Distributed under the MIT/X11 software license, see the accompanying

@@ -1,4 +1,12 @@
+// Copyright *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include "bitcoinunits.h"
+#include "codecoin.h"
 
 #include <QStringList>
 
@@ -34,9 +42,9 @@ QString BitcoinUnits::name(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("GRT");
-    case mBTC: return QString("mGRT");
-    case uBTC: return QString::fromUtf8("μGRT");
+    case BTC: return QString(BRAND_SYM);
+    case mBTC: return QString("m" BRAND_SYM);
+    case uBTC: return QString::fromUtf8("μ" BRAND_SYM);
     default: return QString("???");
     }
 }
@@ -45,9 +53,9 @@ QString BitcoinUnits::description(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("Grantcoins");
-    case mBTC: return QString("Milli-Grantcoins (1 / 1,000)");
-    case uBTC: return QString("Micro-Grantcoins (1 / 1,000,000)");
+    case BTC: return QString(BRAND_CODE);
+    case mBTC: return QString("Milli-" BRAND_CODE " (1 / 1,000)");
+    case uBTC: return QString("Micro-" BRAND_CODE " (1 / 1,000,000)");
     default: return QString("???");
     }
 }
@@ -56,10 +64,10 @@ qint64 BitcoinUnits::factor(int unit)
 {
     switch(unit)
     {
-    case BTC:  return 1000000;
-    case mBTC: return 1000;
-    case uBTC: return 1;
-    default:   return 1000000;
+    case BTC:  return 100000000;
+    case mBTC: return 100000;
+    case uBTC: return 100;
+    default:   return 100000000;
     }
 }
 
@@ -67,9 +75,9 @@ int BitcoinUnits::amountDigits(int unit)
 {
     switch(unit)
     {
-    case BTC: return 10; // 21,000,000 (# digits, without commas)
-    case mBTC: return 13; // 21,000,000,000
-    case uBTC: return 16; // 21,000,000,000,000
+    case BTC: return 8; // 21,000,000 (# digits, without commas)
+    case mBTC: return 11; // 21,000,000,000
+    case uBTC: return 14; // 21,000,000,000,000
     default: return 0;
     }
 }
@@ -78,9 +86,9 @@ int BitcoinUnits::decimals(int unit)
 {
     switch(unit)
     {
-    case BTC: return 6;
-    case mBTC: return 3;
-    case uBTC: return 0;
+    case BTC: return 8;
+    case mBTC: return 5;
+    case uBTC: return 2;
     default: return 0;
     }
 }
@@ -99,7 +107,7 @@ QString BitcoinUnits::format(int unit, qint64 n, bool fPlus)
     QString quotient_str = QString::number(quotient);
     QString remainder_str = QString::number(remainder).rightJustified(num_decimals, '0');
 
-    // Right-trim excess 0's after the decimal point
+    // Right-trim excess zeros after the decimal point
     int nTrim = 0;
     for (int i = remainder_str.size()-1; i>=2 && (remainder_str.at(i) == '0'); --i)
         ++nTrim;

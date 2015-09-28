@@ -1,7 +1,12 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 #include <boost/assign/list_of.hpp>
 
@@ -79,6 +84,9 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 {
     entry.push_back(Pair("txid", tx.GetHash().GetHex()));
     entry.push_back(Pair("version", tx.nVersion));
+#if defined(PPCOINSTAKE)
+    entry.push_back(Pair("time", (boost::int64_t)tx.nTime));
+#endif
     entry.push_back(Pair("locktime", (boost::int64_t)tx.nLockTime));
     Array vin;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -294,7 +302,7 @@ Value createrawtransaction(const Array& params, bool fHelp)
     {
         CBitcoinAddress address(s.name_);
         if (!address.IsValid())
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid Catcoin address: ")+s.name_);
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid " BRAND_upper " address: ")+s.name_);
 
         if (setAddress.count(address))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+s.name_);
@@ -343,7 +351,7 @@ Value signrawtransaction(const Array& params, bool fHelp)
             "signrawtransaction <hex string> [{\"txid\":txid,\"vout\":n,\"scriptPubKey\":hex,\"redeemScript\":hex},...] [<privatekey1>,...] [sighashtype=\"ALL\"]\n"
             "Sign inputs for raw transaction (serialized, hex-encoded).\n"
             "Second optional argument (may be null) is an array of previous transaction outputs that\n"
-            "this transaction depends on but may not yet be in the block chain.\n"
+            "this transaction depends on but may not yet be in the blockchain.\n"
             "Third optional argument (may be null) is an array of base58-encoded private\n"
             "keys that, if given, will be the only keys used to sign the transaction.\n"
             "Fourth optional argument is a string that is one of six values; ALL, NONE, SINGLE or\n"

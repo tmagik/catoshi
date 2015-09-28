@@ -27,7 +27,7 @@ bool IsProtocolV03(unsigned int nTimeCoinStake);
 bool IsProtocolV04(unsigned int nTimeBlock);
 
 // Compute the hash modifier for proof-of-stake
-bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64& nStakeModifier, bool& fGeneratedStakeModifier);
+bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64_t& nStakeModifier, bool& fGeneratedStakeModifier);
 
 // Check whether stake kernel meets hash target
 // Sets hashProofOfStake on success return
@@ -35,10 +35,10 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
 
 // Check kernel hash target and coinstake signature
 // Sets hashProofOfStake on success return
-bool CheckProofOfStake(const CTransaction& tx, unsigned int nBits, uint256& hashProofOfStake);
+bool CheckProofOfStake(CValidationState &state, const CTransaction& tx, unsigned int nBits, uint256& hashProofOfStake);
 
 // Check whether the coinstake timestamp meets protocol
-bool CheckCoinStakeTimestamp(int64 nTimeBlock, int64 nTimeTx);
+bool CheckCoinStakeTimestamp(int64_t nTimeBlock, int64_t nTimeTx);
 
 // Get stake modifier checksum
 unsigned int GetStakeModifierChecksum(const CBlockIndex* pindex);
@@ -46,4 +46,7 @@ unsigned int GetStakeModifierChecksum(const CBlockIndex* pindex);
 // Check stake modifier hard checkpoints
 bool CheckStakeModifierCheckpoints(int nHeight, unsigned int nStakeModifierChecksum);
 
-#endif // GRANTCOIN_KERNEL_H
+// Get time weight using supplied timestamps
+int64_t GetWeight(int64_t nIntervalBeginning, int64_t nIntervalEnd);
+
+#endif // PPCOIN_KERNEL_H

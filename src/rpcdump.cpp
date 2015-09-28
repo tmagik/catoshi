@@ -1,7 +1,12 @@
 // Copyright (c) 2009-2012 Bitcoin Developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 #include "init.h" // for pwalletMain
 #include "codecoinrpc.h"
@@ -54,7 +59,10 @@ Value importprivkey(const Array& params, bool fHelp)
     bool fGood = vchSecret.SetString(strSecret);
 
     if (!fGood) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key");
-
+#if defined(PPCOINSTAKE)
+	if (fWalletUnlockMintOnly) // ppcoin: no importprivkey in mint-only mode
+		throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
+#endif
     CKey key = vchSecret.GetKey();
     CPubKey pubkey = key.GetPubKey();
     CKeyID vchAddress = pubkey.GetID();

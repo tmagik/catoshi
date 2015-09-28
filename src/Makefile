@@ -1,6 +1,12 @@
 # Copyright (c) 2009-2010 Satoshi Nakamoto
-# Distributed under the MIT/X11 software license, see the accompanying
+# Copyright (c) 2011-201? The *Coin developers
+# where * = (Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+# Previously distributed under the MIT/X11 software license, see the
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+# Distributed under the Affero GNU General public license version 3
+# file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 # :=0 --> UPnP support turned off by default at runtime
 # :=1 --> UPnP support turned on by default at runtime
@@ -120,6 +126,10 @@ xCXXFLAGS=-O2 -pthread -Wall -Wextra -Wformat -Wformat-security -Wno-unused-para
 # adds some defaults in front. Unfortunately, LDFLAGS=... $(LDFLAGS) does not work.
 xLDFLAGS=$(LDHARDENING) $(LDFLAGS)
 
+STAKE_OBJS = \
+    $(OBJDIR)/kernel.o \
+    $(OBJDIR)/kernelrecord.o
+
 OBJS= $(OBJDIR)/$(COIN_BRAND).o \
     leveldb/libleveldb.a \
     $(OBJDIR)/alert.o \
@@ -155,8 +165,7 @@ OBJS= $(OBJDIR)/$(COIN_BRAND).o \
     $(OBJDIR)/txdb.o
 
 
-ifeq ($(COIN_BRAND),uro)
-OBJS += \
+X11_OBJS = \
     $(OBJDIR)/cubehash.o \
     $(OBJDIR)/luffa.o \
     $(OBJDIR)/aes_helper.o \
@@ -169,7 +178,20 @@ OBJS += \
     $(OBJDIR)/jh.o \
     $(OBJDIR)/keccak.o \
     $(OBJDIR)/skein.o
+
+ifeq ($(COIN_BRAND),grantcoin)
+OBJS += $(X11_OBJS) $(STAKE_OBJS)
 endif
+ifeq ($(COIN_BRAND),givecoin)
+OBJS += $(X11_OBJS) $(STAKE_OBJS)
+endif
+ifeq ($(COIN_BRAND),hamburger)
+OBJS += $(STAKE_OBJS)
+endif
+ifeq ($(COIN_BRAND),bluecoin)
+OBJS += $(X11_OBJS) $(STAKE_OBJS)
+endif
+
 
 
 ifdef USE_SSE2

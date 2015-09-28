@@ -1,11 +1,17 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include <QApplication>
 
 #include "paymentserver.h"
 
+#include "codecoin.h"
 #include "guiconstants.h"
 #include "ui_interface.h"
 #include "util.h"
@@ -25,7 +31,7 @@
 using namespace boost;
 
 const int BITCOIN_IPC_CONNECT_TIMEOUT = 1000; // milliseconds
-const QString BITCOIN_IPC_PREFIX("catcoin:");
+const QString BITCOIN_IPC_PREFIX(BRAND_lower ":");
 
 //
 // Create a name that is unique for:
@@ -34,7 +40,7 @@ const QString BITCOIN_IPC_PREFIX("catcoin:");
 //
 static QString ipcServerName()
 {
-    QString name("BitcoinQt");
+    QString name(BRAND_upper "Qt");
 
     // Append a simple hash of the datadir
     // Note that GetDataDir(true) returns a different path
@@ -106,7 +112,7 @@ PaymentServer::PaymentServer(QApplication* parent) : QObject(parent), saveURIs(t
     uriServer = new QLocalServer(this);
 
     if (!uriServer->listen(name))
-        qDebug() << tr("Cannot start catcoin: click-to-pay handler");
+        qDebug() << tr("Cannot start " BRAND_upper ": click-to-pay handler");
     else
         connect(uriServer, SIGNAL(newConnection()), this, SLOT(handleURIConnection()));
 }

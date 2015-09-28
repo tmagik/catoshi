@@ -1,6 +1,9 @@
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+
 
 #include <openssl/ecdsa.h>
 #include <openssl/rand.h>
@@ -393,4 +396,19 @@ bool CPubKey::Decompress() {
         return false;
     key.GetPubKey(*this, false);
     return true;
+}
+
+bool CKey::SetPubKey(const CPubKey& pubkey)
+{
+    CECKey key;
+    if (!key.SetPubKey(pubkey))
+        return false;
+    printf("CKey::SetPubKey: DO SOMETHING?\n");
+    return true;
+}
+
+bool CKey::Verify(uint256 hash, const std::vector<unsigned char>& vchSig)
+{
+    CECKey key;
+    return key.Verify(hash, vchSig);
 }

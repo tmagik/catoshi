@@ -1,3 +1,11 @@
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef SENDCOINSENTRY_H
 #define SENDCOINSENTRY_H
 
@@ -26,9 +34,8 @@ public:
     bool isClear();
 
     void setValue(const SendCoinsRecipient &value);
-    void setAddress(const QString &address);
 
-    /** Set up the tab chain manually, as Qt messes up the tab chain by default in some cases (issue https://bugreports.qt-project.org/browse/QTBUG-10907).
+    /** Set up the tab chain manually, as Qt messes up the tab chain by default in some cases (issue http://bugreports.qt.nokia.com/browse/QTBUG-10907).
      */
     QWidget *setupTabChain(QWidget *prev);
 
@@ -47,7 +54,6 @@ private slots:
     void on_payTo_textChanged(const QString &address);
     void on_addressBookButton_clicked();
     void on_pasteButton_clicked();
-    void updateDisplayUnit();
 
 private:
     Ui::SendCoinsEntry *ui;

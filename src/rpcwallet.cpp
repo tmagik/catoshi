@@ -1,6 +1,9 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
@@ -8,9 +11,13 @@
 
 #include "wallet.h"
 #include "walletdb.h"
+#include "kernelrecord.h"
 #include "codecoinrpc.h"
 #include "init.h"
 #include "base58.h"
+
+#include <boost/assign/list_of.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
 using namespace boost;
@@ -19,6 +26,8 @@ using namespace json_spirit;
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
+
+extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, json_spirit::Object& entry);
 
 std::string HelpRequiringPassphrase()
 {
@@ -31,13 +40,15 @@ void EnsureWalletIsUnlocked()
 {
     if (pwalletMain->IsLocked())
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
+	if (fWalletUnlockMintOnly)
+		throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Wallet unlocked for block minting only.");
 }
 
 void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
 {
     int confirms = wtx.GetDepthInMainChain();
     entry.push_back(Pair("confirmations", confirms));
-    if (wtx.IsCoinBase())
+	if (wtx.IsGenerated())
         entry.push_back(Pair("generated", true));
     if (confirms)
     {
@@ -71,31 +82,65 @@ Value getinfo(const Array& params, bool fHelp)
     GetProxy(NET_IPV4, proxy);
 
     Object obj;
-    obj.push_back(Pair("version",       (int)CLIENT_VERSION));
+	obj.push_back(Pair("version",		(int)CLIENT_VERSION));
     obj.push_back(Pair("protocolversion",(int)PROTOCOL_VERSION));
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-        obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
+		obj.push_back(Pair("balance",		ValueFromAmount(pwalletMain->GetBalance())));
     }
-    obj.push_back(Pair("blocks",        (int)nBestHeight));
-    obj.push_back(Pair("timeoffset",    (boost::int64_t)GetTimeOffset()));
-    obj.push_back(Pair("connections",   (int)vNodes.size()));
-    obj.push_back(Pair("proxy",         (proxy.first.IsValid() ? proxy.first.ToStringIPPort() : string())));
-    obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
-    obj.push_back(Pair("testnet",       fTestNet));
+#if defined(PPCOINSTAKE)
+	obj.push_back(Pair("newmint",		ValueFromAmount(pwalletMain->GetNewMint())));
+	obj.push_back(Pair("stake",			ValueFromAmount(pwalletMain->GetStake())));
+	obj.push_back(Pair("moneysupply",	ValueFromAmount(pindexBest->nMoneySupply)));
+#endif	  
+	obj.push_back(Pair("blocks",		(int)nBestHeight));
+	obj.push_back(Pair("timeoffset",	(boost::int64_t)GetTimeOffset()));
+	obj.push_back(Pair("connections",	(int)vNodes.size()));
+	obj.push_back(Pair("proxy",			(proxy.first.IsValid() ? proxy.first.ToStringIPPort() : string())));
+	//obj.push_back(Pair("ip",			  addrSeenByPeer.ToStringIP()));
+	obj.push_back(Pair("difficulty",	(double)GetDifficulty()));
+	obj.push_back(Pair("testnet",		fTestNet));
     if (pwalletMain) {
         obj.push_back(Pair("keypoololdest", (boost::int64_t)pwalletMain->GetOldestKeyPoolTime()));
-        obj.push_back(Pair("keypoolsize",   (int)pwalletMain->GetKeyPoolSize()));
+		obj.push_back(Pair("keypoolsize",	(int)pwalletMain->GetKeyPoolSize()));
     }
-    obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
-    obj.push_back(Pair("mininput",      ValueFromAmount(nMinimumInputValue)));
+	obj.push_back(Pair("paytxfee",		ValueFromAmount(nTransactionFee)));
+	obj.push_back(Pair("mininput",		ValueFromAmount(nMinimumInputValue)));
     if (pwalletMain && pwalletMain->IsCrypted())
         obj.push_back(Pair("unlocked_until", (boost::int64_t)nWalletUnlockTime));
-    obj.push_back(Pair("errors",        GetWarnings("statusbar")));
+	obj.push_back(Pair("errors",		GetWarnings("statusbar")));
     return obj;
 }
 
+#if defined(BRAND_bluecoin) || defined(RPC_getnewpubkey)
+/* does not compile, newKey.Raw() is gone */
+Value getnewpubkey(const Array& params, bool fHelp)
+{
+	if (fHelp || params.size() > 1)
+		throw runtime_error(
+			"getnewpubkey [account]\n"
+			"Returns new public key for coinbase generation.");
 
+	// Parse the account first so we don't generate a key if there's an error
+	string strAccount;
+	if (params.size() > 0)
+		strAccount = AccountFromValue(params[0]);
+
+	if (!pwalletMain->IsLocked())
+		pwalletMain->TopUpKeyPool();
+
+	// Generate a new key that is added to wallet
+	CPubKey newKey;
+	if (!pwalletMain->GetKeyFromPool(newKey, false))
+		throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
+	CKeyID keyID = newKey.GetID();
+
+	pwalletMain->SetAddressBookName(keyID, strAccount);
+	vector<unsigned char> vchPubKey = newKey.Raw();
+
+	return HexStr(vchPubKey.begin(), vchPubKey.end());
+}
+#endif
 
 Value getnewaddress(const Array& params, bool fHelp)
 {
@@ -265,7 +310,7 @@ Value setmininput(const Array& params, bool fHelp)
     // Amount
     int64_t nAmount = 0;
     if (params[0].get_real() != 0.0)
-        nAmount = AmountFromValue(params[0]);        // rejects 0.0 amounts
+		nAmount = AmountFromValue(params[0]);		 // rejects 0.0 amounts
 
     nMinimumInputValue = nAmount;
     return true;
@@ -292,7 +337,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
     if (params.size() > 2 && params[2].type() != null_type && !params[2].get_str().empty())
         wtx.mapValue["comment"] = params[2].get_str();
     if (params.size() > 3 && params[3].type() != null_type && !params[3].get_str().empty())
-        wtx.mapValue["to"]      = params[3].get_str();
+		wtx.mapValue["to"]		= params[3].get_str();
 
     if (pwalletMain->IsLocked())
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
@@ -378,7 +423,7 @@ Value verifymessage(const Array& params, bool fHelp)
             "Verify a signed message");
 
     string strAddress  = params[0].get_str();
-    string strSign     = params[1].get_str();
+	string strSign	   = params[1].get_str();
     string strMessage  = params[2].get_str();
 
     CBitcoinAddress addr(strAddress);
@@ -433,7 +478,7 @@ Value getreceivedbyaddress(const Array& params, bool fHelp)
     for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
-        if (wtx.IsCoinBase() || !wtx.IsFinal())
+		if (wtx.IsGenerated() || !wtx.IsFinal())
             continue;
 
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
@@ -442,7 +487,7 @@ Value getreceivedbyaddress(const Array& params, bool fHelp)
                     nAmount += txout.nValue;
     }
 
-    return  ValueFromAmount(nAmount);
+	return	ValueFromAmount(nAmount);
 }
 
 
@@ -456,6 +501,85 @@ void GetAccountAddresses(string strAccount, set<CTxDestination>& setAddress)
             setAddress.insert(address);
     }
 }
+
+#if defined(PPCOINSTAKE)
+Value listminting(const Array& params, bool fHelp)
+{
+	if(fHelp || params.size() > 2)
+		throw runtime_error(
+				"listminting [count=-1] [from=0]\n"
+				"Return all mintable outputs and provide details for each of them.");
+
+	int count = -1;
+
+	if(params.size() > 0)
+		count = params[0].get_int();
+
+	int from = 0;
+	if(params.size() > 1)
+		from = params[1].get_int();
+
+	Array ret;
+
+	const CBlockIndex *p = GetLastBlockIndex(pindexBest, true);
+	double difficulty = p->GetBlockDifficulty();
+
+	for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+	{
+
+		std::vector<KernelRecord> txList = KernelRecord::decomposeOutput(pwalletMain, it->second);
+		int minAge = nStakeMinAge / 60 / 60 / 24;
+		BOOST_FOREACH(KernelRecord& kr, txList) {
+			if(!kr.spent) {
+
+				if((count > 0 && ret.size() >= count) || from > 0) {
+					from--;
+					break;
+				}
+
+				string strTime = boost::lexical_cast<std::string>(kr.nTime);
+				string strAmount = boost::lexical_cast<std::string>(kr.nValue);
+				string strAge = boost::lexical_cast<std::string>(kr.getAge());
+				string strCoinAge = boost::lexical_cast<std::string>(kr.coinAge);
+
+				Array params;
+				params.push_back(kr.address);
+				string account = AccountFromValue(getaccount(params, false));
+
+				string status = "immature";
+				int searchInterval = 0;
+				int attemps = 0;
+				if(kr.getAge() >=  minAge)
+				{
+					status = "mature";
+					searchInterval = (int)nLastCoinStakeSearchInterval;
+					attemps = GetAdjustedTime() - kr.nTime - nStakeMinAge;
+				}
+
+				Object obj;
+				obj.push_back(Pair("account",					account));
+				obj.push_back(Pair("address",					kr.address));
+				obj.push_back(Pair("input-txid",				kr.hash.ToString()));
+				obj.push_back(Pair("time",						strTime));
+				obj.push_back(Pair("amount",					strAmount));
+				obj.push_back(Pair("status",					status));
+				obj.push_back(Pair("age-in-day",				strAge));
+				obj.push_back(Pair("coin-day-weight",			strCoinAge));
+				obj.push_back(Pair("proof-of-stake-difficulty", difficulty));
+				obj.push_back(Pair("minting-probability-10min", kr.getProbToMintWithinNMinutes(difficulty, 10)));
+				obj.push_back(Pair("minting-probability-24h",	kr.getProbToMintWithinNMinutes(difficulty, 60*24)));
+				obj.push_back(Pair("minting-probability-30d",	kr.getProbToMintWithinNMinutes(difficulty, 60*24*30)));
+				obj.push_back(Pair("minting-probability-90d",	kr.getProbToMintWithinNMinutes(difficulty, 60*24*90)));
+				obj.push_back(Pair("search-interval-in-sec",	searchInterval));
+				obj.push_back(Pair("attempts",					attemps));
+				ret.push_back(obj);
+			}
+		}
+	}
+
+	return ret;
+}
+#endif
 
 Value getreceivedbyaccount(const Array& params, bool fHelp)
 {
@@ -479,7 +603,7 @@ Value getreceivedbyaccount(const Array& params, bool fHelp)
     for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
-        if (wtx.IsCoinBase() || !wtx.IsFinal())
+		if (wtx.IsGenerated() || !wtx.IsFinal())
             continue;
 
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
@@ -506,8 +630,8 @@ int64_t GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMi
         if (!wtx.IsFinal())
             continue;
 
-        int64_t nReceived, nSent, nFee;
-        wtx.GetAccountAmounts(strAccount, nReceived, nSent, nFee);
+		int64_t nGeneratedImmature, nGeneratedMature, nReceived, nSent, nFee;
+		wtx.GetAccountAmounts(strAccount, nGeneratedImmature, nGeneratedMature, nReceived, nSent, nFee);
 
         if (nReceived != 0 && wtx.GetDepthInMainChain() >= nMinDepth)
             nBalance += nReceived;
@@ -536,7 +660,7 @@ Value getbalance(const Array& params, bool fHelp)
             "If [account] is specified, returns the balance in the account.");
 
     if (params.size() == 0)
-        return  ValueFromAmount(pwalletMain->GetBalance());
+		return	ValueFromAmount(pwalletMain->GetBalance());
 
     int nMinDepth = 1;
     if (params.size() > 1)
@@ -553,11 +677,13 @@ Value getbalance(const Array& params, bool fHelp)
             if (!wtx.IsConfirmed())
                 continue;
 
-            int64_t allFee;
+			int64_t allGeneratedImmature, allGeneratedMature, allFee;
+			allGeneratedImmature = allGeneratedMature = allFee = 0;
+
             string strSentAccount;
             list<pair<CTxDestination, int64_t> > listReceived;
             list<pair<CTxDestination, int64_t> > listSent;
-            wtx.GetAmounts(listReceived, listSent, allFee, strSentAccount);
+			wtx.GetAmounts(allGeneratedImmature, allGeneratedMature, listReceived, listSent, allFee, strSentAccount);
             if (wtx.GetDepthInMainChain() >= nMinDepth)
             {
                 BOOST_FOREACH(const PAIRTYPE(CTxDestination,int64_t)& r, listReceived)
@@ -567,7 +693,7 @@ Value getbalance(const Array& params, bool fHelp)
                 nBalance -= r.second;
             nBalance -= allFee;
         }
-        return  ValueFromAmount(nBalance);
+		return	ValueFromAmount(nBalance);
     }
 
     string strAccount = AccountFromValue(params[0]);
@@ -864,7 +990,7 @@ Value ListReceived(const Array& params, bool fByAccounts)
     {
         const CWalletTx& wtx = (*it).second;
 
-        if (wtx.IsCoinBase() || !wtx.IsFinal())
+		if (wtx.IsGenerated() || !wtx.IsFinal())
             continue;
 
         int nDepth = wtx.GetDepthInMainChain();
@@ -985,10 +1111,39 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
     list<pair<CTxDestination, int64_t> > listReceived;
     list<pair<CTxDestination, int64_t> > listSent;
 
-    wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount);
-
     bool fAllAccounts = (strAccount == string("*"));
+#if defined(PPCOINSTAKE)
+	int64_t nGeneratedImmature, nGeneratedMature;
 
+	wtx.GetAmounts(nGeneratedImmature, nGeneratedMature, listReceived, listSent, nFee, strSentAccount);
+
+	// Generated blocks assigned to account ""
+	if ((nGeneratedMature+nGeneratedImmature) != 0 && (fAllAccounts || strAccount == ""))
+	{
+		Object entry;
+		entry.push_back(Pair("account", string("")));
+		if (nGeneratedImmature)
+		{
+			entry.push_back(Pair("category", wtx.GetDepthInMainChain() ? "immature" : "orphan"));
+			entry.push_back(Pair("amount", ValueFromAmount(nGeneratedImmature)));
+		}
+		else if (wtx.IsCoinStake())
+		{
+			entry.push_back(Pair("category", "stake"));
+			entry.push_back(Pair("amount", ValueFromAmount(nGeneratedMature)));
+		}
+		else
+		{
+			entry.push_back(Pair("category", "generate"));
+			entry.push_back(Pair("amount", ValueFromAmount(nGeneratedMature)));
+		}
+		if (fLong)
+			WalletTxToJSON(wtx, entry);
+		ret.push_back(entry);
+	}
+#else 
+	wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount);
+#endif /* PPCOINSTAKE */
     // Sent
     if ((!listSent.empty() || nFee != 0) && (fAllAccounts || strAccount == strSentAccount))
     {
@@ -1134,11 +1289,14 @@ Value listaccounts(const Array& params, bool fHelp)
     for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
-        int64_t nFee;
+		if(!wtx.IsFinal())
+			continue;
+			
+		int64_t nGeneratedImmature, nGeneratedMature, nFee;
         string strSentAccount;
         list<pair<CTxDestination, int64_t> > listReceived;
         list<pair<CTxDestination, int64_t> > listSent;
-        wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount);
+		wtx.GetAmounts(nGeneratedImmature, nGeneratedMature, listReceived, listSent, nFee, strSentAccount);
         mapAccountBalances[strSentAccount] -= nFee;
         BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64_t)& s, listSent)
             mapAccountBalances[strSentAccount] -= s.second;
@@ -1150,6 +1308,18 @@ Value listaccounts(const Array& params, bool fHelp)
                 else
                     mapAccountBalances[""] += r.second;
         }
+#if defined(PPCOINSTAKE)	
+		if((wtx.IsGenerated() && wtx.GetDepthInMainChain() >= nMinDepth && wtx.GetBlocksToMaturity() == 0)
+			|| !wtx.IsGenerated())
+		{
+			mapAccountBalances[strSentAccount] -= nFee;
+			mapAccountBalances[""] += nGeneratedMature;
+
+			BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64_t)& s, listSent)
+				mapAccountBalances[strSentAccount] -= s.second;
+
+		}
+#endif
     }
 
     list<CAccountingEntry> acentries;
@@ -1215,7 +1385,7 @@ Value listsinceblock(const Array& params, bool fHelp)
         CBlockIndex *block;
         for (block = pindexBest;
              block && block->nHeight > target_height;
-             block = block->pprev)  { }
+			 block = block->pprev)	{ }
 
         lastblock = block ? block->GetBlockHash() : 0;
     }
@@ -1381,6 +1551,12 @@ Value walletpassphrase(const Array& params, bool fHelp)
     NewThread(ThreadTopUpKeyPool, NULL);
     int64_t* pnSleepTime = new int64_t(params[1].get_int64());
     NewThread(ThreadCleanWalletPassphrase, pnSleepTime);
+
+	// ppcoin: if user OS account compromised prevent trivial sendmoney commands
+	if (params.size() > 2)
+		fWalletUnlockMintOnly = params[2].get_bool();
+	else
+		fWalletUnlockMintOnly = false;
 
     return Value::null;
 }

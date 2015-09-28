@@ -1,6 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef CODECOIN_WALLET_H
@@ -18,7 +21,9 @@
 #include "ui_interface.h"
 #include "util.h"
 #include "walletdb.h"
+#include "txdb.h"
 
+extern bool fWalletUnlockMintOnly;
 class CAccountingEntry;
 class CWalletTx;
 class CReserveKey;
@@ -70,7 +75,11 @@ public:
 class CWallet : public CCryptoKeyStore
 {
 private:
+#if defined(PPCOINSTAKE)
+    bool SelectCoins(int64_t nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL) const;
+#else
     bool SelectCoins(int64_t nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL) const;
+#endif
 
     CWalletDB *pwalletdbEncryption;
 
@@ -115,6 +124,10 @@ public:
 
     std::map<uint256, CWalletTx> mapWallet;
     int64_t nOrderPosNext;
+#if defined(PPCOINSTAKE)
+    std::vector<uint256> vWalletUpdated;
+    std::vector<uint256> vMintingWalletUpdated;
+#endif
     std::map<uint256, int> mapRequestCount;
 
     std::map<CTxDestination, std::string> mapAddressBook;
@@ -127,13 +140,14 @@ public:
     bool CanSupportFeature(enum WalletFeature wf) { return nWalletMaxVersion >= wf; }
 
     void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl=NULL) const;
-    bool SelectCoinsMinConf(int64_t nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
+#if defined(PPCOINSTAKE)
+    bool SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);
     void UnlockCoin(COutPoint& output);
     void UnlockAllCoins();
     void ListLockedCoins(std::vector<COutPoint>& vOutpts);
-
+#endif
     // keystore implementation
     // Generate a new key
     CPubKey GenerateNewKey();
@@ -173,8 +187,10 @@ public:
     bool AddToWallet(const CWalletTx& wtxIn);
     bool AddToWalletIfInvolvingMe(const uint256 &hash, const CTransaction& tx, const CBlock* pblock, bool fUpdate = false, bool fFindBlock = false);
     bool EraseFromWallet(uint256 hash);
+    void ClearOrphans();
     void WalletUpdateSpent(const CTransaction& prevout);
     int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
+    int ScanForWalletTransaction(const uint256& hashTx);
     void ReacceptWalletTransactions();
     void ResendWalletTransactions();
     int64_t GetBalance() const;
@@ -187,6 +203,13 @@ public:
     bool CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey);
     std::string SendMoney(CScript scriptPubKey, int64_t nValue, CWalletTx& wtxNew, bool fAskFee=false);
     std::string SendMoneyToDestination(const CTxDestination &address, int64_t nValue, CWalletTx& wtxNew, bool fAskFee=false);
+
+#if defined(PPCOINSTAKE)
+	int64_t GetStake() const;
+	bool CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int64_t nSearchInterval, CTransaction& txNew);
+	int64_t GetNewMint() const;
+	bool GetStakeWeight(const CKeyStore& keystore, uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight);
+#endif
 
     bool NewKeyPool();
     bool TopUpKeyPool();
@@ -303,6 +326,9 @@ public:
 
     // get the current wallet format (the oldest client version guaranteed to understand this wallet)
     int GetVersion() { return nWalletVersion; }
+
+    void FixSpentCoins(int& nMismatchSpent, int64_t& nBalanceInQuestion, bool fCheckOnly = false);
+    void DisableTransaction(const CTransaction &tx);
 
     /** Address book entry changed.
      * @note called with lock cs_wallet held.
@@ -543,6 +569,18 @@ public:
         }
     }
 
+void MarkUnspent(unsigned int nOut)
+    {
+        if (nOut >= vout.size())
+            throw std::runtime_error("CWalletTx::MarkUnspent() : nOut out of range");
+        vfSpent.resize(vout.size());
+        if (vfSpent[nOut])
+        {
+            vfSpent[nOut] = false;
+            fAvailableCreditCached = false;
+        }
+    }
+
     bool IsSpent(unsigned int nOut) const
     {
         if (nOut >= vout.size())
@@ -566,7 +604,7 @@ public:
     int64_t GetCredit(bool fUseCache=true) const
     {
         // Must wait until coinbase is safely deep enough in the chain before valuing it
-        if (IsCoinBase() && GetBlocksToMaturity() > 0)
+        if (IsGenerated() && GetBlocksToMaturity() > 0)
             return 0;
 
         // GetBalance can assume transactions in mapWallet won't change
@@ -594,7 +632,7 @@ public:
     int64_t GetAvailableCredit(bool fUseCache=true) const
     {
         // Must wait until coinbase is safely deep enough in the chain before valuing it
-        if (IsCoinBase() && GetBlocksToMaturity() > 0)
+        if ((IsGenerated()) && GetBlocksToMaturity() > 0)
             return 0;
 
         if (fUseCache && fAvailableCreditCached)
@@ -627,11 +665,19 @@ public:
         return nChangeCached;
     }
 
+#if defined(PPCOINSTAKE)
+    void GetAmounts(int64_t& nGeneratedImmature, int64_t& nGeneratedMature, std::list<std::pair<CTxDestination, int64_t> >& listReceived,
+                    std::list<std::pair<CTxDestination, int64_t> >& listSent, int64_t& nFee, std::string& strSentAccount) const;
+
+    void GetAccountAmounts(const std::string& strAccount, int64_t& nGeneratedImmature, int64_t& nGeneratedMature, int64_t& nReceived,
+                           int64_t& nSent, int64_t& nFee) const;
+#else
     void GetAmounts(std::list<std::pair<CTxDestination, int64_t> >& listReceived,
                     std::list<std::pair<CTxDestination, int64_t> >& listSent, int64_t& nFee, std::string& strSentAccount) const;
 
     void GetAccountAmounts(const std::string& strAccount, int64_t& nReceived,
                            int64_t& nSent, int64_t& nFee) const;
+#endif
 
     bool IsFromMe() const
     {
