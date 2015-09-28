@@ -1,11 +1,11 @@
-Name Catcoin
+Name Codecoin
 
 RequestExecutionLevel highest
 SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.9.0
+!define VERSION 0.8.9s
 !define COMPANY "Codecoin project"
 !define URL http://www.7el.us/codecoin/
 
