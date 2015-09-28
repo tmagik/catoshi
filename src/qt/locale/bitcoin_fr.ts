@@ -1,15 +1,16 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="fr" version="2.0">
+<defaultcodec>UTF-8</defaultcodec>
 <context>
     <name>AboutDialog</name>
     <message>
         <location filename="../forms/aboutdialog.ui" line="+14"/>
-        <source>About Bitcoin</source>
-        <translation>À propos de Bitcoin</translation>
+        <source>About Catcoin</source>
+        <translation>À propos de Catcoin</translation>
     </message>
     <message>
         <location line="+39"/>
-        <source>&lt;b&gt;Bitcoin&lt;/b&gt; version</source>
-        <translation>&lt;b&gt;Bitcoin&lt;/b&gt; version</translation>
+        <source>&lt;b&gt;Catcoin&lt;/b&gt; version</source>
+        <translation>&lt;b&gt;Catcoin&lt;/b&gt; version</translation>
     </message>
     <message>
         <location line="+57"/>
@@ -33,8 +34,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+0"/>
-        <source>The Bitcoin developers</source>
-        <translation>Les développeurs Bitcoin</translation>
+        <source>The Litecoin developers</source>
+        <translation>Les développeurs Catcoin</translation>
     </message>
 </context>
 <context>
@@ -66,8 +67,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="+63"/>
-        <source>These are your Bitcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
-        <translation>Voici vos adresses Bitcoin qui vous permettent de recevoir des paiements. Vous pouvez donner une adresse différente à chaque expéditeur afin de savoir qui vous paye.</translation>
+        <source>These are your Catcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
+        <translation>Voici vos adresses Catcoin qui vous permettent de recevoir des paiements. Vous pouvez donner une adresse différente à chaque expéditeur afin de savoir qui vous paye.</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="+14"/>
@@ -81,8 +82,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+11"/>
-        <source>Sign a message to prove you own a Bitcoin address</source>
-        <translation>Signer un message pour prouver que vous détenez une adresse Bitcoin</translation>
+        <source>Sign a message to prove you own a Catcoin address</source>
+        <translation>Signer un message pour prouver que vous détenez une adresse Catcoin</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -106,8 +107,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="-44"/>
-        <source>Verify a message to ensure it was signed with a specified Bitcoin address</source>
-        <translation>Vérifier un message pour vous assurer qu&apos;il a bien été signé avec l&apos;adresse Bitcoin spécifiée</translation>
+        <source>Verify a message to ensure it was signed with a specified Catcoin address</source>
+        <translation>Vérifier un message pour vous assurer qu&apos;il a bien été signé avec l&apos;adresse Catcoin spécifiée</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -121,8 +122,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="-5"/>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Ce sont vos adresses Bitcoin pour émettre des paiements. Vérifiez toujours le montant et l&apos;adresse du destinataire avant d&apos;envoyer des pièces.</translation>
+        <source>These are your Catcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Ce sont vos adresses Catcoin pour émettre des paiements. Vérifiez toujours le montant et l&apos;adresse du destinataire avant d&apos;envoyer des pièces.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -140,7 +141,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Envoyer des Bit&amp;coins</translation>
     </message>
     <message>
-        <location line="+265"/>
+        <location line="+260"/>
         <source>Export Address Book Data</source>
         <translation>Exporter les données du carnet d&apos;adresses</translation>
     </message>
@@ -247,8 +248,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+1"/>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
-        <translation>Attention : Si vous chiffrez votre porte-monnaie et perdez votre phrase de passe, vous &lt;b&gt;PERDREZ ACCÈS À TOUS VOS BITCOINS&lt;/b&gt; !</translation>
+        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR LITECOINS&lt;/b&gt;!</source>
+        <translation>Attention : Si vous chiffrez votre porte-monnaie et perdez votre phrase de passe, vous &lt;b&gt;PERDREZ ACCÈS À TOUS VOS LITECOINS&lt;/b&gt; !</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -274,8 +275,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="-56"/>
-        <source>Bitcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>Bitcoin va à présent se fermer pour terminer la procédure de cryptage. N&apos;oubliez pas que le chiffrement de votre porte-monnaie ne peut pas fournir une protection totale contre le vol par des logiciels malveillants qui infecteraient votre ordinateur.</translation>
+        <source>Catcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your catcoins from being stolen by malware infecting your computer.</source>
+        <translation>Catcoin va à présent se fermer pour terminer la procédure de cryptage. N&apos;oubliez pas que le chiffrement de votre porte-monnaie ne peut pas fournir une protection totale contre le vol par des logiciels malveillants qui infecteraient votre ordinateur.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -322,17 +323,17 @@ This product includes software developed by the OpenSSL Project for use in the O
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+254"/>
+        <location filename="../bitcoingui.cpp" line="+233"/>
         <source>Sign &amp;message...</source>
         <translation>Signer un &amp;message...</translation>
     </message>
     <message>
-        <location line="+246"/>
+        <location line="+280"/>
         <source>Synchronizing with network...</source>
         <translation>Synchronisation avec le réseau…</translation>
     </message>
     <message>
-        <location line="-321"/>
+        <location line="-349"/>
         <source>&amp;Overview</source>
         <translation>&amp;Vue d&apos;ensemble</translation>
     </message>
@@ -372,9 +373,9 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Quitter l’application</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Show information about Bitcoin</source>
-        <translation>Afficher des informations à propos de Bitcoin</translation>
+        <location line="+4"/>
+        <source>Show information about Catcoin</source>
+        <translation>Afficher des informations à propos de Catcoin</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -392,7 +393,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Options…</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+6"/>
         <source>&amp;Encrypt Wallet...</source>
         <translation>&amp;Chiffrer le porte-monnaie...</translation>
     </message>
@@ -407,7 +408,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Modifier la phrase de passe...</translation>
     </message>
     <message>
-        <location line="+251"/>
+        <location line="+285"/>
         <source>Importing blocks from disk...</source>
         <translation>Importation des blocs depuis le disque...</translation>
     </message>
@@ -417,17 +418,17 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Réindexation des blocs sur le disque...</translation>
     </message>
     <message>
-        <location line="-319"/>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Envoyer des pièces à une adresse Bitcoin</translation>
+        <location line="-347"/>
+        <source>Send coins to a Catcoin address</source>
+        <translation>Envoyer des pièces à une adresse Catcoin</translation>
     </message>
     <message>
-        <location line="+52"/>
-        <source>Modify configuration options for Bitcoin</source>
-        <translation>Modifier les options de configuration de Bitcoin</translation>
+        <location line="+49"/>
+        <source>Modify configuration options for Catcoin</source>
+        <translation>Modifier les options de configuration de Catcoin</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+9"/>
         <source>Backup wallet to another location</source>
         <translation>Sauvegarder le porte-monnaie à un autre emplacement</translation>
     </message>
@@ -452,20 +453,18 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Vérifier un message...</translation>
     </message>
     <message>
-        <location line="-183"/>
-        <location line="+6"/>
-        <location line="+508"/>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <location line="-165"/>
+        <location line="+530"/>
+        <source>Catcoin</source>
+        <translation>Catcoin</translation>
     </message>
     <message>
-        <location line="-514"/>
-        <location line="+6"/>
+        <location line="-530"/>
         <source>Wallet</source>
         <translation>Porte-monnaie</translation>
     </message>
     <message>
-        <location line="+107"/>
+        <location line="+101"/>
         <source>&amp;Send</source>
         <translation>&amp;Envoyer</translation>
     </message>
@@ -480,14 +479,12 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Adresses</translation>
     </message>
     <message>
-        <location line="+23"/>
-        <location line="+2"/>
-        <source>&amp;About Bitcoin</source>
-        <translation>À &amp;propos de Bitcoin</translation>
+        <location line="+22"/>
+        <source>&amp;About Catcoin</source>
+        <translation>À &amp;propos de Catcoin</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+2"/>
+        <location line="+9"/>
         <source>&amp;Show / Hide</source>
         <translation>&amp;Afficher / Cacher</translation>
     </message>
@@ -503,13 +500,13 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+7"/>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Signer les messages avec vos adresses Bitcoin pour prouver que vous les détenez</translation>
+        <source>Sign messages with your Catcoin addresses to prove you own them</source>
+        <translation>Signer les messages avec vos adresses Catcoin pour prouver que vous les détenez</translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Vérifier les messages pour vous assurer qu&apos;ils ont bien été signés avec les adresses Bitcoin spécifiées</translation>
+        <source>Verify messages to ensure they were signed with specified Catcoin addresses</source>
+        <translation>Vérifier les messages pour vous assurer qu&apos;ils ont bien été signés avec les adresses Catcoin spécifiées</translation>
     </message>
     <message>
         <location line="+28"/>
@@ -532,21 +529,20 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Barre d&apos;outils des onglets</translation>
     </message>
     <message>
-        <location line="-228"/>
-        <location line="+288"/>
+        <location line="+17"/>
+        <location line="+10"/>
         <source>[testnet]</source>
         <translation>[testnet]</translation>
     </message>
     <message>
-        <location line="-5"/>
-        <location line="+5"/>
-        <source>Bitcoin client</source>
-        <translation>Client Bitcoin</translation>
+        <location line="+47"/>
+        <source>Catcoin client</source>
+        <translation>Client Catcoin</translation>
     </message>
     <message numerus="yes">
-        <location line="+121"/>
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n connexion active avec le réseau Bitcoin</numerusform><numerusform>%n connexions actives avec le réseau Bitcoin</numerusform></translation>
+        <location line="+141"/>
+        <source>%n active connection(s) to Catcoin network</source>
+        <translation><numerusform>%n connexion active avec le réseau Catcoin</numerusform><numerusform>%n connexions actives avec le réseau Catcoin</numerusform></translation>
     </message>
     <message>
         <location line="+22"/>
@@ -660,8 +656,8 @@ Adresse : %4
     <message>
         <location line="-23"/>
         <location line="+23"/>
-        <source>URI can not be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>L&apos;URI ne peut être analysé ! Cela peut être causé par une adresse Bitcoin invalide ou par des paramètres d&apos;URI malformés.</translation>
+        <source>URI can not be parsed! This can be caused by an invalid Catcoin address or malformed URI parameters.</source>
+        <translation>L&apos;URI ne peut être analysé ! Cela peut être causé par une adresse Catcoin invalide ou par des paramètres d&apos;URI malformés.</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -674,15 +670,15 @@ Adresse : %4
         <translation>Le porte-monnaie est &lt;b&gt;chiffré&lt;/b&gt; et est actuellement &lt;b&gt;verrouillé&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoin.cpp" line="+110"/>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>Une erreur fatale est survenue. Bitcoin ne peut plus continuer à fonctionner de façon sûre et va s&apos;arrêter.</translation>
+        <location filename="../bitcoin.cpp" line="+111"/>
+        <source>A fatal error occurred. Catcoin can no longer continue safely and will quit.</source>
+        <translation>Une erreur fatale est survenue. Catcoin ne peut plus continuer à fonctionner de façon sûre et va s&apos;arrêter.</translation>
     </message>
 </context>
 <context>
     <name>ClientModel</name>
     <message>
-        <location filename="../clientmodel.cpp" line="+105"/>
+        <location filename="../clientmodel.cpp" line="+104"/>
         <source>Network Alert</source>
         <translation>Alerte réseau</translation>
     </message>
@@ -741,8 +737,8 @@ Adresse : %4
     </message>
     <message>
         <location line="-5"/>
-        <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
-        <translation>L&apos;adresse fournie « %1 » n&apos;est pas une adresse Bitcoin valide.</translation>
+        <source>The entered address &quot;%1&quot; is not a valid Catcoin address.</source>
+        <translation>L&apos;adresse fournie « %1 » n&apos;est pas une adresse Catcoin valide.</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -756,43 +752,15 @@ Adresse : %4
     </message>
 </context>
 <context>
-    <name>FreespaceChecker</name>
-    <message>
-        <location filename="../intro.cpp" line="+61"/>
-        <source>A new data directory will be created.</source>
-        <translation>Un nouveau répertoire de données sera créé.</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>name</source>
-        <translation>nom</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Directory already exists. Add %1 if you intend to create a new directory here.</source>
-        <translation>Le répertoire existe déjà. Ajoutez %1 si vous voulez créer un nouveau répertoire ici.</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Path already exists, and is not a directory.</source>
-        <translation>Le chemin existe déjà et n&apos;est pas un répertoire.</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Cannot create data directory here.</source>
-        <translation>Impossible de créer un répertoire de données ici.</translation>
-    </message>
-</context>
-<context>
     <name>GUIUtil::HelpMessageBox</name>
     <message>
-        <location filename="../guiutil.cpp" line="+517"/>
-        <location line="+13"/>
-        <source>Bitcoin-Qt</source>
-        <translation>Bitcoin-Qt</translation>
+        <location filename="../guiutil.cpp" line="+424"/>
+        <location line="+12"/>
+        <source>Catcoin-Qt</source>
+        <translation>Catcoin-Qt</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-12"/>
         <source>version</source>
         <translation>version</translation>
     </message>
@@ -826,59 +794,6 @@ Adresse : %4
         <source>Show splash screen on startup (default: 1)</source>
         <translation>Afficher l&apos;écran d&apos;accueil au démarrage (par défaut : 1)</translation>
     </message>
-    <message>
-        <location line="+1"/>
-        <source>Choose data directory on startup (default: 0)</source>
-        <translation>Choisir un répertoire de données au démarrage (par défaut : 0)</translation>
-    </message>
-</context>
-<context>
-    <name>Intro</name>
-    <message>
-        <location filename="../forms/intro.ui" line="+14"/>
-        <source>Welcome</source>
-        <translation>Bienvenue</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Welcome to Bitcoin-Qt.</source>
-        <translation>Bienvenue sur Bitcoin-Qt.</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>As this is the first time the program is launched, you can choose where Bitcoin-Qt will store its data.</source>
-        <translation>Comme c&apos;est la première fois que le logiciel est lancé, vous pouvez choisir où Bitcoin-Qt stockera ses données.</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Bitcoin-Qt will download and store a copy of the Bitcoin block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</source>
-        <translation>Bitcoin-Qt va télécharger et stocker une copie de la chaîne des blocs de Bitcoin. Au moins %1Go de données seront stockées dans ce répertoire et sa taille augmentera avec le temps. Le porte-monnaie sera également stocké dans ce répertoire.</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Use the default data directory</source>
-        <translation>Utiliser le répertoire de données par défaut</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Use a custom data directory:</source>
-        <translation>Utiliser un répertoire de données personnalisé :</translation>
-    </message>
-    <message>
-        <location filename="../intro.cpp" line="+100"/>
-        <source>Error</source>
-        <translation>Erreur</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>GB of free space available</source>
-        <translation>Go d&apos;espace libre disponible</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>(of %1GB needed)</source>
-        <translation>(sur %1Go nécessaires)</translation>
-    </message>
 </context>
 <context>
     <name>OptionsDialog</name>
@@ -904,13 +819,13 @@ Adresse : %4
     </message>
     <message>
         <location line="+31"/>
-        <source>Automatically start Bitcoin after logging in to the system.</source>
-        <translation>Démarrer Bitcoin automatiquement après avoir ouvert une session sur l&apos;ordinateur</translation>
+        <source>Automatically start Catcoin after logging in to the system.</source>
+        <translation>Démarrer Catcoin automatiquement lors de l&apos;ouverture une session sur l&apos;ordinateur.</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>&amp;Start Bitcoin on system login</source>
-        <translation>&amp;Démarrer Bitcoin lors de l&apos;ouverture d&apos;une session</translation>
+        <source>&amp;Start Catcoin on system login</source>
+        <translation>&amp;Démarrer Catcoin lors de l&apos;ouverture d&apos;une session</translation>
     </message>
     <message>
         <location line="+35"/>
@@ -929,8 +844,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+6"/>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>Ouvrir le port du client Bitcoin automatiquement sur le routeur. Cela ne fonctionne que si votre routeur supporte l&apos;UPnP et si la fonctionnalité est activée.</translation>
+        <source>Automatically open the Catcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>Ouvrir le port du client Catcoin automatiquement sur le routeur. Cela ne fonctionne que si votre routeur supporte l&apos;UPnP et si la fonctionnalité est activée.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -939,8 +854,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Connect to the Bitcoin network through a SOCKS proxy (e.g. when connecting through Tor).</source>
-        <translation>Connexion au réseau Bitcoin à travers un proxy SOCKS (par ex. lors d&apos;une connexion via Tor).</translation>
+        <source>Connect to the Catcoin network through a SOCKS proxy (e.g. when connecting through Tor).</source>
+        <translation>Connexion au réseau Catcoin à travers un proxy SOCKS (par ex. lors d&apos;une connexion via Tor).</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -995,7 +910,7 @@ Adresse : %4
     <message>
         <location line="+7"/>
         <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Quit in the menu.</source>
-        <translation>Minimiser au lieu de quitter l&apos;application lorsque la fenêtre est fermée. Lorsque cette option est activée, l&apos;application ne pourra être fermée qu&apos;en sélectionnant Quitter dans le menu déroulant.</translation>
+        <translation>Minimiser au lieu quitter l&apos;application lorsque la fenêtre est fermée. Lorsque cette option est activée, l&apos;application ne pourra être fermée qu&apos;en sélectionnant Quitter dans le menu déroulant.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1014,8 +929,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+13"/>
-        <source>The user interface language can be set here. This setting will take effect after restarting Bitcoin.</source>
-        <translation>La langue de l&apos;interface utilisateur peut être définie ici. Ce réglage sera pris en compte après redémarrage de Bitcoin.</translation>
+        <source>The user interface language can be set here. This setting will take effect after restarting Catcoin.</source>
+        <translation>La langue de l&apos;interface utilisateur peut être définie ici. Ce réglage sera pris en compte après redémarrage de Catcoin.</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -1029,8 +944,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+9"/>
-        <source>Whether to show Bitcoin addresses in the transaction list or not.</source>
-        <translation>Détermine si les adresses Bitcoin seront affichées sur la liste des transactions.</translation>
+        <source>Whether to show Catcoin addresses in the transaction list or not.</source>
+        <translation>Détermine si les adresses Catcoin seront affichées sur la liste des transactions.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1053,7 +968,7 @@ Adresse : %4
         <translation>&amp;Appliquer</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="+54"/>
+        <location filename="../optionsdialog.cpp" line="+53"/>
         <source>default</source>
         <translation>par défaut</translation>
     </message>
@@ -1081,8 +996,8 @@ Adresse : %4
     <message>
         <location line="-9"/>
         <location line="+9"/>
-        <source>This setting will take effect after restarting Bitcoin.</source>
-        <translation>Ce réglage sera pris en compte après un redémarrage de Bitcoin.</translation>
+        <source>This setting will take effect after restarting Catcoin.</source>
+        <translation>Ce réglage sera pris en compte après un redémarrage de Catcoin.</translation>
     </message>
     <message>
         <location line="+29"/>
@@ -1099,12 +1014,17 @@ Adresse : %4
     </message>
     <message>
         <location line="+50"/>
-        <location line="+202"/>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>Les informations affichées peuvent être obsolètes. Votre porte-monnaie est automatiquement synchronisé avec le réseau Bitcoin lorsque la connexion s&apos;établit, or ce processus n&apos;est pas encore terminé.</translation>
+        <location line="+166"/>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Catcoin network after a connection is established, but this process has not completed yet.</source>
+        <translation>Les informations affichées peuvent être obsolètes. Votre porte-monnaie est automatiquement synchronisé avec le réseau Catcoin lorsque la connexion s&apos;établit, or ce processus n&apos;est pas encore terminé.</translation>
     </message>
     <message>
-        <location line="-131"/>
+        <location line="-124"/>
+        <source>Balance:</source>
+        <translation>Solde :</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Unconfirmed:</source>
         <translation>Non confirmé :</translation>
     </message>
@@ -1114,22 +1034,7 @@ Adresse : %4
         <translation>Porte-monnaie</translation>
     </message>
     <message>
-        <location line="+49"/>
-        <source>Confirmed:</source>
-        <translation>Confirmé :</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Your current spendable balance</source>
-        <translation>Votre solde actuel que vous pouvez dépenser</translation>
-    </message>
-    <message>
-        <location line="+29"/>
-        <source>Total of transactions that have yet to be confirmed, and do not yet count toward the spendable balance</source>
-        <translation>Total des transactions qui doivent encore être confirmées et qu&apos;il n&apos;est pas encore possible de dépenser</translation>
-    </message>
-    <message>
-        <location line="+13"/>
+        <location line="+107"/>
         <source>Immature:</source>
         <translation>Immature :</translation>
     </message>
@@ -1139,19 +1044,19 @@ Adresse : %4
         <translation>Le solde généré n&apos;est pas encore mûr</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <source>Total:</source>
-        <translation>Total :</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Your current total balance</source>
-        <translation>Total de votre solde actuel</translation>
-    </message>
-    <message>
-        <location line="+53"/>
+        <location line="+46"/>
         <source>&lt;b&gt;Recent transactions&lt;/b&gt;</source>
         <translation>&lt;b&gt;Transactions récentes&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <location line="-101"/>
+        <source>Your current balance</source>
+        <translation>Votre solde actuel</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Total of transactions that have yet to be confirmed, and do not yet count toward the current balance</source>
+        <translation>Total des transactions qui doivent encore être confirmées et qui ne sont pas prises en compte dans le solde actuel</translation>
     </message>
     <message>
         <location filename="../overviewpage.cpp" line="+116"/>
@@ -1163,28 +1068,9 @@ Adresse : %4
 <context>
     <name>PaymentServer</name>
     <message>
-        <location filename="../paymentserver.cpp" line="+108"/>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>Impossible de démarrer bitcoin : gestionnaire de cliquer-pour-payer</translation>
-    </message>
-</context>
-<context>
-    <name>QObject</name>
-    <message>
-        <location filename="../bitcoin.cpp" line="+92"/>
-        <location filename="../intro.cpp" line="-32"/>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Error: Specified data directory &quot;%1&quot; does not exist.</source>
-        <translation>Erreur : le répertoire de données spécifié « %1 » n&apos;existe pas.</translation>
-    </message>
-    <message>
-        <location filename="../intro.cpp" line="+1"/>
-        <source>Error: Specified data directory &quot;%1&quot; can not be created.</source>
-        <translation>Erreur : le répertoire de données spécifié « %1 » ne peut être créé.</translation>
+        <location filename="../paymentserver.cpp" line="+107"/>
+        <source>Cannot start catcoin: click-to-pay handler</source>
+        <translation>Impossible de démarrer catcoin : gestionnaire de cliquer-pour-payer</translation>
     </message>
 </context>
 <context>
@@ -1220,7 +1106,7 @@ Adresse : %4
         <translation>&amp;Enregistrer sous...</translation>
     </message>
     <message>
-        <location filename="../qrcodedialog.cpp" line="+64"/>
+        <location filename="../qrcodedialog.cpp" line="+62"/>
         <source>Error encoding URI into QR Code.</source>
         <translation>Erreur de l&apos;encodage de l&apos;URI dans le QR Code.</translation>
     </message>
@@ -1262,7 +1148,7 @@ Adresse : %4
         <location line="+53"/>
         <location line="+23"/>
         <location line="+23"/>
-        <location filename="../rpcconsole.cpp" line="+345"/>
+        <location filename="../rpcconsole.cpp" line="+339"/>
         <source>N/A</source>
         <translation>Indisponible</translation>
     </message>
@@ -1333,8 +1219,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Show the Bitcoin-Qt help message to get a list with possible Bitcoin command-line options.</source>
-        <translation>Afficher le message d&apos;aide de Bitcoin-Qt pour obtenir la liste des options de ligne de commande disponibles pour Bitcoin.</translation>
+        <source>Show the Catcoin-Qt help message to get a list with possible Catcoin command-line options.</source>
+        <translation>Afficher le message d&apos;aide de Catcoin-Qt pour obtenir la liste des options de ligne de commande disponibles pour Catcoin.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1353,13 +1239,13 @@ Adresse : %4
     </message>
     <message>
         <location line="-104"/>
-        <source>Bitcoin - Debug window</source>
-        <translation>Bitcoin - Fenêtre de débogage</translation>
+        <source>Catcoin - Debug window</source>
+        <translation>Catcoin - Fenêtre de débogage</translation>
     </message>
     <message>
         <location line="+25"/>
-        <source>Bitcoin Core</source>
-        <translation>Noyau Bitcoin</translation>
+        <source>Catcoin Core</source>
+        <translation>Noyau Catcoin</translation>
     </message>
     <message>
         <location line="+279"/>
@@ -1368,8 +1254,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Open the Bitcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
-        <translation>Ouvrir le journal de débogage de Bitcoin depuis le répertoire de données actuel. Cela peut prendre quelques secondes pour les journaux de grande taille.</translation>
+        <source>Open the Catcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
+        <translation>Ouvrir le journal de débogage de Catcoin depuis le répertoire de données actuel. Cela peut prendre quelques secondes pour les journaux de grande taille.</translation>
     </message>
     <message>
         <location line="+102"/>
@@ -1378,8 +1264,8 @@ Adresse : %4
     </message>
     <message>
         <location filename="../rpcconsole.cpp" line="-30"/>
-        <source>Welcome to the Bitcoin RPC console.</source>
-        <translation>Bienvenue sur la console RPC de Bitcoin.</translation>
+        <source>Welcome to the Catcoin RPC console.</source>
+        <translation>Bienvenue sur la console RPC de Catcoin.</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1396,7 +1282,7 @@ Adresse : %4
     <name>SendCoinsDialog</name>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="+14"/>
-        <location filename="../sendcoinsdialog.cpp" line="+128"/>
+        <location filename="../sendcoinsdialog.cpp" line="+124"/>
         <location line="+5"/>
         <location line="+5"/>
         <location line="+5"/>
@@ -1419,7 +1305,7 @@ Adresse : %4
     <message>
         <location line="+20"/>
         <source>Remove all transaction fields</source>
-        <translation>Réinitialiser tous les champs de transaction</translation>
+        <translation>Enlever tous les champs de transaction</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1447,13 +1333,12 @@ Adresse : %4
         <translation>E&amp;nvoyer</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="-62"/>
-        <location line="+2"/>
+        <location filename="../sendcoinsdialog.cpp" line="-59"/>
         <source>&lt;b&gt;%1&lt;/b&gt; to %2 (%3)</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; à %2 (%3)</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
         <source>Confirm send coins</source>
         <translation>Confirmer l’envoi des pièces</translation>
     </message>
@@ -1522,8 +1407,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+34"/>
-        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>L&apos;adresse à laquelle le paiement sera envoyé (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>L&apos;adresse à laquelle le paiement sera envoyé (par ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+60"/>
@@ -1563,8 +1448,8 @@ Adresse : %4
     </message>
     <message>
         <location filename="../sendcoinsentry.cpp" line="+1"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Entrez une adresse Bitcoin (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Catcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Entrez une adresse Catcoin (par ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
 </context>
 <context>
@@ -1582,12 +1467,12 @@ Adresse : %4
     <message>
         <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation>Vous pouvez signer des messages avec vos adresses pour prouver que vous les détenez. Faites attention à ne pas signer quoi que ce soit de vague car des attaques d&apos;hameçonnage peuvent essayer d&apos;usurper votre identité par votre signature. Ne signez que des déclarations entièrement détaillées et avec lesquelles vous serez d&apos;accord.</translation>
+        <translation>Vous pouvez signer des messages avec vos adresses pour prouver que les détenez. Faites attention à ne pas signer quoi que ce soit de vague car des attaques d&apos;hameçonnage peuvent essayer d&apos;usurper votre identité par votre signature. Ne signez que des déclarations entièrement détaillées et avec lesquelles vous serez d&apos;accord.</translation>
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to sign the message with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>L&apos;adresse avec laquelle le message sera signé (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to sign the message with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>L&apos;adresse avec laquelle le message sera signé (par ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -1628,8 +1513,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+21"/>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>Signer le message pour prouver que vous détenez cette adresse Bitcoin</translation>
+        <source>Sign the message to prove you own this Catcoin address</source>
+        <translation>Signer le message pour prouver que vous détenez cette adresse Catcoin</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1659,13 +1544,13 @@ Adresse : %4
     </message>
     <message>
         <location line="+21"/>
-        <source>The address the message was signed with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>L&apos;adresse avec laquelle le message a été signé (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address the message was signed with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>L&apos;adresse avec laquelle le message a été signé (par ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+40"/>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>Vérifier le message pour vous assurer qu&apos;il a bien été signé par l&apos;adresse Bitcoin spécifiée</translation>
+        <source>Verify the message to ensure it was signed with the specified Catcoin address</source>
+        <translation>Vérifier le message pour vous assurer qu&apos;il a bien été signé par l&apos;adresse Catcoin spécifiée</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1680,8 +1565,8 @@ Adresse : %4
     <message>
         <location filename="../signverifymessagedialog.cpp" line="+27"/>
         <location line="+3"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Entrez une adresse Bitcoin (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Catcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Entrez une adresse Catcoin (par ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="-2"/>
@@ -1690,8 +1575,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+3"/>
-        <source>Enter Bitcoin signature</source>
-        <translation>Entrer une signature Bitcoin</translation>
+        <source>Enter Catcoin signature</source>
+        <translation>Entrer une signature Catcoin</translation>
     </message>
     <message>
         <location line="+82"/>
@@ -1764,8 +1649,8 @@ Adresse : %4
     <name>SplashScreen</name>
     <message>
         <location filename="../splashscreen.cpp" line="+22"/>
-        <source>The Bitcoin developers</source>
-        <translation>Les développeurs Bitcoin</translation>
+        <source>The Litecoin developers</source>
+        <translation>Les développeurs Catcoin</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2182,7 +2067,7 @@ Adresse : %4
         <translation>Afficher les détails de la transaction</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+139"/>
         <source>Export Transaction Data</source>
         <translation>Exporter les données des transactions</translation>
     </message>
@@ -2258,7 +2143,7 @@ Adresse : %4
 <context>
     <name>WalletView</name>
     <message>
-        <location filename="../walletview.cpp" line="+46"/>
+        <location filename="../walletview.cpp" line="+42"/>
         <source>&amp;Export</source>
         <translation>&amp;Exporter</translation>
     </message>
@@ -2268,7 +2153,7 @@ Adresse : %4
         <translation>Exporter les données de l&apos;onglet courant vers un fichier</translation>
     </message>
     <message>
-        <location line="+197"/>
+        <location line="+193"/>
         <source>Backup Wallet</source>
         <translation>Sauvegarder le porte-monnaie</translation>
     </message>
@@ -2301,19 +2186,19 @@ Adresse : %4
 <context>
     <name>bitcoin-core</name>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="+98"/>
-        <source>Bitcoin version</source>
-        <translation>Version de Bitcoin</translation>
+        <location filename="../bitcoinstrings.cpp" line="+94"/>
+        <source>Catcoin version</source>
+        <translation>Version de Catcoin</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+102"/>
         <source>Usage:</source>
         <translation>Utilisation :</translation>
     </message>
     <message>
-        <location line="-30"/>
-        <source>Send command to -server or bitcoind</source>
-        <translation>Envoyer une commande à -server ou à bitcoind</translation>
+        <location line="-29"/>
+        <source>Send command to -server or catcoind</source>
+        <translation>Envoyer une commande à -server ou à catcoind</translation>
     </message>
     <message>
         <location line="-23"/>
@@ -2321,24 +2206,24 @@ Adresse : %4
         <translation>Lister les commandes</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-12"/>
         <source>Get help for a command</source>
         <translation>Obtenir de l’aide pour une commande</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+24"/>
         <source>Options:</source>
         <translation>Options :</translation>
     </message>
     <message>
         <location line="+24"/>
-        <source>Specify configuration file (default: bitcoin.conf)</source>
-        <translation>Spécifier le fichier de configuration (par défaut : bitcoin.conf)</translation>
+        <source>Specify configuration file (default: catcoin.conf)</source>
+        <translation>Spécifier le fichier de configuration (par défaut : catcoin.conf)</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Specify pid file (default: bitcoind.pid)</source>
-        <translation>Spécifier le fichier PID (par défaut : bitcoind.pid)</translation>
+        <source>Specify pid file (default: catcoind.pid)</source>
+        <translation>Spécifier le fichier PID (par défaut : catcoind.pid)</translation>
     </message>
     <message>
         <location line="-1"/>
@@ -2352,8 +2237,8 @@ Adresse : %4
     </message>
     <message>
         <location line="-28"/>
-        <source>Listen for connections on &lt;port&gt; (default: 8333 or testnet: 18333)</source>
-        <translation>Écouter les connexions sur le &lt;port&gt; (par défaut : 8333 ou testnet : 18333)</translation>
+        <source>Listen for connections on &lt;port&gt; (default: 9933 or testnet: 19933)</source>
+        <translation>Écouter les connexions sur le &lt;port&gt; (par défaut : 9933 ou testnet : 19933)</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -2361,12 +2246,12 @@ Adresse : %4
         <translation>Garder au plus &lt;n&gt; connexions avec les pairs (par défaut : 125)</translation>
     </message>
     <message>
-        <location line="-49"/>
+        <location line="-48"/>
         <source>Connect to a node to retrieve peer addresses, and disconnect</source>
         <translation>Se connecter à un nœud pour obtenir des adresses de pairs puis se déconnecter</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+82"/>
         <source>Specify your own public address</source>
         <translation>Spécifier votre propre adresse publique</translation>
     </message>
@@ -2376,19 +2261,19 @@ Adresse : %4
         <translation>Seuil de déconnexion des pairs de mauvaise qualité (par défaut : 100)</translation>
     </message>
     <message>
-        <location line="-136"/>
+        <location line="-134"/>
         <source>Number of seconds to keep misbehaving peers from reconnecting (default: 86400)</source>
         <translation>Délai en secondes de refus de reconnexion aux pairs de mauvaise qualité (par défaut : 86400)</translation>
     </message>
     <message>
-        <location line="-33"/>
+        <location line="-29"/>
         <source>An error occurred while setting up the RPC port %u for listening on IPv4: %s</source>
         <translation>Une erreur est survenue lors de la mise en place du port RPC %u pour écouter sur IPv4 : %s</translation>
     </message>
     <message>
-        <location line="+31"/>
-        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 8332 or testnet: 18332)</source>
-        <translation>Écouter les connexions JSON-RPC sur le &lt;port&gt; (par défaut : 8332 ou tesnet : 18332)</translation>
+        <location line="+27"/>
+        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 9332 or testnet: 19332)</source>
+        <translation>Écouter les connexions JSON-RPC sur le &lt;port&gt; (par défaut : 9332 ou tesnet : 19332)</translation>
     </message>
     <message>
         <location line="+37"/>
@@ -2396,43 +2281,43 @@ Adresse : %4
         <translation>Accepter les commandes de JSON-RPC et de la ligne de commande</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+76"/>
         <source>Run in the background as a daemon and accept commands</source>
         <translation>Fonctionner en arrière-plan en tant que démon et accepter les commandes</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+37"/>
         <source>Use the test network</source>
         <translation>Utiliser le réseau de test</translation>
     </message>
     <message>
-        <location line="-114"/>
+        <location line="-112"/>
         <source>Accept connections from outside (default: 1 if no -proxy or -connect)</source>
         <translation>Accepter les connexions entrantes (par défaut : 1 si -proxy ou -connect ne sont pas présents)</translation>
     </message>
     <message>
-        <location line="-84"/>
+        <location line="-80"/>
         <source>%s, you must set a rpcpassword in the configuration file:
 %s
 It is recommended you use the following random password:
-rpcuser=bitcoinrpc
+rpcuser=catcoinrpc
 rpcpassword=%s
 (you do not need to remember this password)
 The username and password MUST NOT be the same.
 If the file does not exist, create it with owner-readable-only file permissions.
 It is also recommended to set alertnotify so you are notified of problems;
-for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
+for example: alertnotify=echo %%s | mail -s &quot;Catcoin Alert&quot; admin@foo.com
 </source>
         <translation>%s, vous devez définir un mot de passe rpc dans le fichier de configuration : 
 %s
 Il vous est conseillé d&apos;utiliser le mot de passe aléatoire suivant :
-rpcuser=bitcoinrpc
+rpcuser=catcoinrpc
 rpcpassword=%s
 (vous n&apos;avez pas besoin de retenir ce mot de passe)
 Le nom d&apos;utilisateur et le mot de passe NE DOIVENT PAS être identiques.
 Si le fichier n&apos;existe pas, créez-le avec les droits de lecture accordés au propriétaire.
 Il est aussi conseillé de régler alertnotify pour être prévenu des problèmes ;
-par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
+par exemple : alertnotify=echo %%s | mail -s &quot;Catcoin Alert&quot; admin@foo.com
 </translation>
     </message>
     <message>
@@ -2447,16 +2332,11 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
     </message>
     <message>
         <location line="+3"/>
-        <source>Cannot obtain a lock on data directory %s. Bitcoin is probably already running.</source>
-        <translation>Impossible d’obtenir un verrou sur le répertoire de données %s. Bitcoin fonctionne probablement déjà.</translation>
+        <source>Cannot obtain a lock on data directory %s. Catcoin is probably already running.</source>
+        <translation>Impossible d’obtenir un verrou sur le répertoire de données %s. Catcoin fonctionne probablement déjà.</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Enter regression test mode, which uses a special chain in which blocks can be solved instantly. This is intended for regression testing tools and app development.</source>
-        <translation>Entrer dans le mode de test de régression qui utilise une chaîne spéciale dans laquelle les blocs peuvent être résolus instantanément. Ceci est destiné aux outils de test de régression et au développement de l&apos;application.</translation>
-    </message>
-    <message>
-        <location line="+4"/>
         <source>Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
         <translation>Erreur : la transaction a été rejetée ! Cela peut arriver si certaines pièces de votre porte-monnaie étaient déjà dépensées, par exemple si vous avez utilisé une copie de wallet.dat et les pièces ont été dépensées avec cette copie sans être marquées comme telles ici.</translation>
     </message>
@@ -2497,8 +2377,8 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
     </message>
     <message>
         <location line="+3"/>
-        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Bitcoin will not work properly.</source>
-        <translation>Attention : veuillez vérifier que l&apos;heure et la date de votre ordinateur sont correctes ! Si votre horloge n&apos;est pas à l&apos;heure, Bitcoin ne fonctionnera pas correctement.</translation>
+        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Catcoin will not work properly.</source>
+        <translation>Attention : veuillez vérifier que l&apos;heure et la date de votre ordinateur sont correctes ! Si votre horloge n&apos;est pas à l&apos;heure, Catcoin ne fonctionnera pas correctement.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2651,12 +2531,7 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Niveau d&apos;approfondissement de la vérification des blocs (0-4, par défaut : 3)</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Incorrect or no genesis block found. Wrong datadir for network?</source>
-        <translation>Bloc de genèse incorrect ou introuvable. Mauvais répertoire de données pour le réseau ?</translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+19"/>
         <source>Not enough file descriptors available.</source>
         <translation>Pas assez de descripteurs de fichiers disponibles.</translation>
     </message>
@@ -2671,12 +2546,7 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Définir le nombre d&apos;exétrons pour desservir les appels RPC (par défaut : 4)</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Specify wallet file (within data directory)</source>
-        <translation>Spécifiez le fichier de porte-monnaie (au sein du répertoire de données)</translation>
-    </message>
-    <message>
-        <location line="+20"/>
+        <location line="+26"/>
         <source>Verifying blocks...</source>
         <translation>Vérification des blocs...</translation>
     </message>
@@ -2686,17 +2556,7 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Vérification du porte-monnaie...</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Wallet %s resides outside data directory %s</source>
-        <translation>Le porte-monnaie %s réside en dehors du répertoire de données %s</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>You need to rebuild the database using -reindex to change -txindex</source>
-        <translation>Vous devez reconstruire la base de données en utilisant -reindex afin de modifier -txindex</translation>
-    </message>
-    <message>
-        <location line="-76"/>
+        <location line="-69"/>
         <source>Imports blocks from external blk000??.dat file</source>
         <translation>Importe des blocs depuis un fichier blk000??.dat externe</translation>
     </message>
@@ -2706,7 +2566,7 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Définir le nombre de fils d’exécution pour la vérification des scripts (maximum 16, 0 = auto, &lt; 0 = laisser ce nombre de cœurs libres, par défaut : 0)</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+77"/>
         <source>Information</source>
         <translation>Informations</translation>
     </message>
@@ -2767,8 +2627,8 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
     </message>
     <message>
         <location line="+5"/>
-        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
-        <translation>Options SSL : (cf. le wiki de Bitcoin pour les instructions de configuration du SSL)</translation>
+        <source>SSL options: (see the Catcoin Wiki for SSL setup instructions)</source>
+        <translation>Options SSL : (cf. le wiki de Catcoin pour les instructions de configuration du SSL)</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2811,7 +2671,7 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Spécifier le délai d&apos;expiration de la connexion en millisecondes (par défaut : 5000)</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>System error: </source>
         <translation>Erreur système :</translation>
     </message>
@@ -2851,7 +2711,7 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Nom d&apos;utilisateur pour les connexions JSON-RPC</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Warning</source>
         <translation>Avertissement</translation>
     </message>
@@ -2861,37 +2721,42 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Avertissement : cette version est obsolète, une mise à jour est nécessaire !</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>You need to rebuild the databases using -reindex to change -txindex</source>
+        <translation>Vous devez reconstruire les bases de données avec -reindex pour modifier -txindex</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
         <translation>wallet.dat corrompu, la récupération a échoué</translation>
     </message>
     <message>
-        <location line="-52"/>
+        <location line="-50"/>
         <source>Password for JSON-RPC connections</source>
         <translation>Mot de passe pour les connexions JSON-RPC</translation>
     </message>
     <message>
-        <location line="-68"/>
+        <location line="-67"/>
         <source>Allow JSON-RPC connections from specified IP address</source>
         <translation>Autoriser les connexions JSON-RPC depuis l&apos;adresse IP spécifiée</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+76"/>
         <source>Send commands to node running on &lt;ip&gt; (default: 127.0.0.1)</source>
         <translation>Envoyer des commandes au nœud fonctionnant à &lt;ip&gt; (par défaut : 127.0.0.1)</translation>
     </message>
     <message>
-        <location line="-121"/>
+        <location line="-120"/>
         <source>Execute command when the best block changes (%s in cmd is replaced by block hash)</source>
         <translation>Exécuter la commande lorsque le meilleur bloc change (%s est remplacé par le hachage du bloc dans cmd)</translation>
     </message>
     <message>
-        <location line="+149"/>
+        <location line="+147"/>
         <source>Upgrade wallet to latest format</source>
         <translation>Mettre à jour le format du porte-monnaie</translation>
     </message>
     <message>
-        <location line="-22"/>
+        <location line="-21"/>
         <source>Set key pool size to &lt;n&gt; (default: 100)</source>
         <translation>Régler la taille de la plage de clefs sur &lt;n&gt; (par défaut : 100)</translation>
     </message>
@@ -2901,12 +2766,12 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Réanalyser la chaîne de blocs pour les transactions de porte-monnaie manquantes</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+35"/>
         <source>Use OpenSSL (https) for JSON-RPC connections</source>
         <translation>Utiliser OpenSSL (https) pour les connexions JSON-RPC</translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-26"/>
         <source>Server certificate file (default: server.cert)</source>
         <translation>Fichier de certificat serveur (par défaut : server.cert)</translation>
     </message>
@@ -2916,12 +2781,12 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Clef privée du serveur (par défaut : server.pem)</translation>
     </message>
     <message>
-        <location line="-156"/>
+        <location line="-151"/>
         <source>Acceptable ciphers (default: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)</source>
         <translation>Clefs de chiffrement acceptables (par défaut : TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)</translation>
     </message>
     <message>
-        <location line="+171"/>
+        <location line="+165"/>
         <source>This help message</source>
         <translation>Ce message d&apos;aide</translation>
     </message>
@@ -2931,7 +2796,7 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Impossible de se lier à %s sur cet ordinateur (bind a retourné l&apos;erreur %d, %s)</translation>
     </message>
     <message>
-        <location line="-93"/>
+        <location line="-91"/>
         <source>Connect through socks proxy</source>
         <translation>Connexion via un proxy socks</translation>
     </message>
@@ -2941,37 +2806,37 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Autoriser les recherches DNS pour -addnode, -seednode et -connect</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+55"/>
         <source>Loading addresses...</source>
         <translation>Chargement des adresses…</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-35"/>
         <source>Error loading wallet.dat: Wallet corrupted</source>
         <translation>Erreur lors du chargement de wallet.dat : porte-monnaie corrompu</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Error loading wallet.dat: Wallet requires newer version of Bitcoin</source>
-        <translation>Erreur lors du chargement de wallet.dat : le porte-monnaie nécessite une version plus récente de Bitcoin</translation>
+        <source>Error loading wallet.dat: Wallet requires newer version of Catcoin</source>
+        <translation>Erreur lors du chargement de wallet.dat : le porte-monnaie nécessite une version plus récente de Catcoin</translation>
     </message>
     <message>
-        <location line="+96"/>
-        <source>Wallet needed to be rewritten: restart Bitcoin to complete</source>
-        <translation>Le porte-monnaie nécessitait une réécriture : veuillez redémarrer Bitcoin pour terminer l&apos;opération</translation>
+        <location line="+93"/>
+        <source>Wallet needed to be rewritten: restart Catcoin to complete</source>
+        <translation>Le porte-monnaie nécessitait une réécriture : veuillez redémarrer Catcoin pour terminer l&apos;opération</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-95"/>
         <source>Error loading wallet.dat</source>
         <translation>Erreur lors du chargement de wallet.dat</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+28"/>
         <source>Invalid -proxy address: &apos;%s&apos;</source>
         <translation>Adresse -proxy invalide : « %s »</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+56"/>
         <source>Unknown network specified in -onlynet: &apos;%s&apos;</source>
         <translation>Réseau inconnu spécifié sur -onlynet : « %s »</translation>
     </message>
@@ -2981,7 +2846,7 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Version inconnue de proxy -socks demandée : %i</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-96"/>
         <source>Cannot resolve -bind address: &apos;%s&apos;</source>
         <translation>Impossible de résoudre l&apos;adresse -bind : « %s »</translation>
     </message>
@@ -2991,7 +2856,7 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Impossible de résoudre l&apos;adresse -externalip : « %s »</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+44"/>
         <source>Invalid amount for -paytxfee=&lt;amount&gt;: &apos;%s&apos;</source>
         <translation>Montant invalide pour -paytxfee=&lt;montant&gt; : « %s »</translation>
     </message>
@@ -3011,14 +2876,14 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Chargement de l’index des blocs…</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-57"/>
         <source>Add a node to connect to and attempt to keep the connection open</source>
         <translation>Ajouter un nœud auquel se connecter et tenter de garder la connexion ouverte</translation>
     </message>
     <message>
         <location line="-25"/>
-        <source>Unable to bind to %s on this computer. Bitcoin is probably already running.</source>
-        <translation>Impossible de se lier à %s sur cet ordinateur. Bitcoin fonctionne probablement déjà.</translation>
+        <source>Unable to bind to %s on this computer. Catcoin is probably already running.</source>
+        <translation>Impossible de se lier à %s sur cet ordinateur. Catcoin fonctionne probablement déjà.</translation>
     </message>
     <message>
         <location line="+64"/>
@@ -3026,12 +2891,12 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Frais par Ko à ajouter aux transactions que vous enverrez</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+19"/>
         <source>Loading wallet...</source>
         <translation>Chargement du porte-monnaie…</translation>
     </message>
     <message>
-        <location line="-53"/>
+        <location line="-52"/>
         <source>Cannot downgrade wallet</source>
         <translation>Impossible de revenir à une version antérieure du porte-monnaie</translation>
     </message>
@@ -3041,22 +2906,22 @@ par exemple : alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Impossible d&apos;écrire l&apos;adresse par défaut</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+64"/>
         <source>Rescanning...</source>
         <translation>Nouvelle analyse…</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-57"/>
         <source>Done loading</source>
         <translation>Chargement terminé</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+82"/>
         <source>To use the %s option</source>
         <translation>Pour utiliser l&apos;option %s</translation>
     </message>
     <message>
-        <location line="-76"/>
+        <location line="-74"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>

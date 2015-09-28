@@ -1,15 +1,16 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="sv" version="2.0">
+<defaultcodec>UTF-8</defaultcodec>
 <context>
     <name>AboutDialog</name>
     <message>
         <location filename="../forms/aboutdialog.ui" line="+14"/>
-        <source>About Bitcoin</source>
-        <translation>Om Bitcoin</translation>
+        <source>About Catcoin</source>
+        <translation>Om Catcoin</translation>
     </message>
     <message>
         <location line="+39"/>
-        <source>&lt;b&gt;Bitcoin&lt;/b&gt; version</source>
-        <translation>&lt;b&gt;Bitcoin&lt;/b&gt;-version</translation>
+        <source>&lt;b&gt;Catcoin&lt;/b&gt; version</source>
+        <translation>&lt;b&gt;Catcoin&lt;/b&gt;-version</translation>
     </message>
     <message>
         <location line="+57"/>
@@ -34,8 +35,8 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
     </message>
     <message>
         <location line="+0"/>
-        <source>The Bitcoin developers</source>
-        <translation>Bitcoin-utvecklarna</translation>
+        <source>The Litecoin developers</source>
+        <translation>Catcoin-utvecklarna</translation>
     </message>
 </context>
 <context>
@@ -67,8 +68,8 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="+63"/>
-        <source>These are your Bitcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
-        <translation>Detta är dina Bitcoin-adresser för att ta emot betalningar.  Du kan ge varje avsändare en egen adress så att du kan hålla reda på vem som betalar dig.</translation>
+        <source>These are your Catcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
+        <translation>Detta är dina Catcoin-adresser för att ta emot betalningar.  Du kan ge varje avsändare en egen adress så att du kan hålla reda på vem som betalar dig.</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="+14"/>
@@ -82,7 +83,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
     </message>
     <message>
         <location line="+11"/>
-        <source>Sign a message to prove you own a Bitcoin address</source>
+        <source>Sign a message to prove you own a Catcoin address</source>
         <translation>Signera ett meddelande för att bevisa att du äger denna adress</translation>
     </message>
     <message>
@@ -107,8 +108,8 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
     </message>
     <message>
         <location line="-44"/>
-        <source>Verify a message to ensure it was signed with a specified Bitcoin address</source>
-        <translation>Verifiera meddelandet för att vara säker på att den var signerad med den specificerade Bitcoin-adressen</translation>
+        <source>Verify a message to ensure it was signed with a specified Catcoin address</source>
+        <translation>Verifiera meddelandet för att vara säker på att den var signerad med den specificerade Catcoin-adressen</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -122,8 +123,8 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="-5"/>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Detta är dina Bitcoin adresser för att skicka betalningar. Kolla alltid summan och den mottagande adressen innan du skickar Bitcoins.</translation>
+        <source>These are your Catcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Detta är dina Catcoin adresser för att skicka betalningar. Kolla alltid summan och den mottagande adressen innan du skickar Catcoins.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -138,10 +139,10 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
     <message>
         <location line="+1"/>
         <source>Send &amp;Coins</source>
-        <translation>Skicka &amp;Bitcoins</translation>
+        <translation>Skicka &amp;Catcoins</translation>
     </message>
     <message>
-        <location line="+265"/>
+        <location line="+260"/>
         <source>Export Address Book Data</source>
         <translation>Exportera Adressbok</translation>
     </message>
@@ -248,7 +249,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
     </message>
     <message>
         <location line="+1"/>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
+        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR LITECOINS&lt;/b&gt;!</source>
         <translation>VARNING: Om du krypterar din plånbok och glömmer ditt lösenord, kommer du att &lt;b&gt;FÖRLORA ALLA DINA TILLGÅNGAR&lt;/b&gt;!</translation>
     </message>
     <message>
@@ -275,7 +276,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
     </message>
     <message>
         <location line="-56"/>
-        <source>Bitcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
+        <source>Catcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your catcoins from being stolen by malware infecting your computer.</source>
         <translation>Programmet kommer nu att stänga ner för att färdigställa krypteringen. Tänk på att en krypterad plånbok inte skyddar mot stöld om din dator är infekterad med en keylogger.</translation>
     </message>
     <message>
@@ -323,17 +324,17 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+254"/>
+        <location filename="../bitcoingui.cpp" line="+233"/>
         <source>Sign &amp;message...</source>
         <translation>Signera &amp;meddelande...</translation>
     </message>
     <message>
-        <location line="+246"/>
+        <location line="+280"/>
         <source>Synchronizing with network...</source>
         <translation>Synkroniserar med nätverk...</translation>
     </message>
     <message>
-        <location line="-321"/>
+        <location line="-349"/>
         <source>&amp;Overview</source>
         <translation>&amp;Översikt</translation>
     </message>
@@ -373,9 +374,9 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>Avsluta programmet</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Show information about Bitcoin</source>
-        <translation>Visa information om Bitcoin</translation>
+        <location line="+4"/>
+        <source>Show information about Catcoin</source>
+        <translation>Visa information om Catcoin</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -393,7 +394,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>&amp;Alternativ...</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+6"/>
         <source>&amp;Encrypt Wallet...</source>
         <translation>&amp;Kryptera plånbok...</translation>
     </message>
@@ -408,7 +409,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>&amp;Byt Lösenord...</translation>
     </message>
     <message>
-        <location line="+251"/>
+        <location line="+285"/>
         <source>Importing blocks from disk...</source>
         <translation>Importerar block från disk...</translation>
     </message>
@@ -418,17 +419,17 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>Återindexerar block på disken...</translation>
     </message>
     <message>
-        <location line="-319"/>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Skicka mynt till en Bitcoin-adress</translation>
+        <location line="-347"/>
+        <source>Send coins to a Catcoin address</source>
+        <translation>Skicka mynt till en Catcoin-adress</translation>
     </message>
     <message>
-        <location line="+52"/>
-        <source>Modify configuration options for Bitcoin</source>
-        <translation>Ändra konfigurationsalternativ för Bitcoin</translation>
+        <location line="+49"/>
+        <source>Modify configuration options for Catcoin</source>
+        <translation>Ändra konfigurationsalternativ för Catcoin</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+9"/>
         <source>Backup wallet to another location</source>
         <translation>Säkerhetskopiera plånboken till en annan plats</translation>
     </message>
@@ -453,20 +454,18 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>&amp;Verifiera meddelande...</translation>
     </message>
     <message>
-        <location line="-183"/>
-        <location line="+6"/>
-        <location line="+508"/>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <location line="-165"/>
+        <location line="+530"/>
+        <source>Catcoin</source>
+        <translation>Catcoin</translation>
     </message>
     <message>
-        <location line="-514"/>
-        <location line="+6"/>
+        <location line="-530"/>
         <source>Wallet</source>
         <translation>Plånbok</translation>
     </message>
     <message>
-        <location line="+107"/>
+        <location line="+101"/>
         <source>&amp;Send</source>
         <translation>&amp;Skicka</translation>
     </message>
@@ -481,14 +480,12 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>&amp;Adresser</translation>
     </message>
     <message>
-        <location line="+23"/>
-        <location line="+2"/>
-        <source>&amp;About Bitcoin</source>
-        <translation>&amp;Om Bitcoin</translation>
+        <location line="+22"/>
+        <source>&amp;About Catcoin</source>
+        <translation>&amp;Om Catcoin</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+2"/>
+        <location line="+9"/>
         <source>&amp;Show / Hide</source>
         <translation>&amp;Visa / Göm</translation>
     </message>
@@ -504,13 +501,13 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
     </message>
     <message>
         <location line="+7"/>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Signera meddelanden med din Bitcoinadress för att bevisa att du äger dem</translation>
+        <source>Sign messages with your Catcoin addresses to prove you own them</source>
+        <translation>Signera meddelanden med din Catcoinadress för att bevisa att du äger dem</translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Verifiera meddelanden för att vara säker på att de var signerade med den specificerade Bitcoin-adressen</translation>
+        <source>Verify messages to ensure they were signed with specified Catcoin addresses</source>
+        <translation>Verifiera meddelanden för att vara säker på att de var signerade med den specificerade Catcoin-adressen</translation>
     </message>
     <message>
         <location line="+28"/>
@@ -533,21 +530,20 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>Verktygsfält för Tabbar</translation>
     </message>
     <message>
-        <location line="-228"/>
-        <location line="+288"/>
+        <location line="+17"/>
+        <location line="+10"/>
         <source>[testnet]</source>
         <translation>[testnet]</translation>
     </message>
     <message>
-        <location line="-5"/>
-        <location line="+5"/>
-        <source>Bitcoin client</source>
-        <translation>Bitcoin-klient</translation>
+        <location line="+47"/>
+        <source>Catcoin client</source>
+        <translation>Catcoin-klient</translation>
     </message>
     <message numerus="yes">
-        <location line="+121"/>
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n aktiv anslutning till Bitcoin-nätverket</numerusform><numerusform>%n aktiva anslutningar till Bitcoin-nätverket</numerusform></translation>
+        <location line="+141"/>
+        <source>%n active connection(s) to Catcoin network</source>
+        <translation><numerusform>%n aktiv anslutning till Catcoin-nätverket</numerusform><numerusform>%n aktiva anslutningar till Catcoin-nätverket</numerusform></translation>
     </message>
     <message>
         <location line="+22"/>
@@ -661,8 +657,8 @@ Adress: %4
     <message>
         <location line="-23"/>
         <location line="+23"/>
-        <source>URI can not be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>URI går inte att tolkas! Detta kan orsakas av en ogiltig Bitcoin-adress eller felaktiga URI parametrar.</translation>
+        <source>URI can not be parsed! This can be caused by an invalid Catcoin address or malformed URI parameters.</source>
+        <translation>URI går inte att tolkas! Detta kan orsakas av en ogiltig Catcoin-adress eller felaktiga URI parametrar.</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -675,15 +671,15 @@ Adress: %4
         <translation>Denna plånbok är &lt;b&gt;krypterad&lt;/b&gt; och för närvarande &lt;b&gt;låst&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoin.cpp" line="+110"/>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>Ett allvarligt fel har uppstått. Bitcoin kan inte längre köras säkert och kommer att avslutas.</translation>
+        <location filename="../bitcoin.cpp" line="+111"/>
+        <source>A fatal error occurred. Catcoin can no longer continue safely and will quit.</source>
+        <translation>Ett allvarligt fel har uppstått. Catcoin kan inte längre köras säkert och kommer att avslutas.</translation>
     </message>
 </context>
 <context>
     <name>ClientModel</name>
     <message>
-        <location filename="../clientmodel.cpp" line="+105"/>
+        <location filename="../clientmodel.cpp" line="+104"/>
         <source>Network Alert</source>
         <translation>Nätverkslarm</translation>
     </message>
@@ -742,8 +738,8 @@ Adress: %4
     </message>
     <message>
         <location line="-5"/>
-        <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
-        <translation>Den angivna adressen &quot;%1&quot; är inte en giltig Bitcoin-adress.</translation>
+        <source>The entered address &quot;%1&quot; is not a valid Catcoin address.</source>
+        <translation>Den angivna adressen &quot;%1&quot; är inte en giltig Catcoin-adress.</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -757,43 +753,15 @@ Adress: %4
     </message>
 </context>
 <context>
-    <name>FreespaceChecker</name>
-    <message>
-        <location filename="../intro.cpp" line="+61"/>
-        <source>A new data directory will be created.</source>
-        <translation>En ny datakatalog kommer att skapas.</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>name</source>
-        <translation>namn</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Directory already exists. Add %1 if you intend to create a new directory here.</source>
-        <translation>Katalogen finns redan. Läggtill %1 om du vill skapa en ny katalog här.</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Path already exists, and is not a directory.</source>
-        <translation>Sökvägen finns redan, och är inte en katalog.</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Cannot create data directory here.</source>
-        <translation>Kan inte skapa datakatalog här.</translation>
-    </message>
-</context>
-<context>
     <name>GUIUtil::HelpMessageBox</name>
     <message>
-        <location filename="../guiutil.cpp" line="+517"/>
-        <location line="+13"/>
-        <source>Bitcoin-Qt</source>
-        <translation>Bitcoin-Qt</translation>
+        <location filename="../guiutil.cpp" line="+424"/>
+        <location line="+12"/>
+        <source>Catcoin-Qt</source>
+        <translation>Catcoin-Qt</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-12"/>
         <source>version</source>
         <translation>version</translation>
     </message>
@@ -827,59 +795,6 @@ Adress: %4
         <source>Show splash screen on startup (default: 1)</source>
         <translation>Visa startbilden vid uppstart (förvalt: 1)</translation>
     </message>
-    <message>
-        <location line="+1"/>
-        <source>Choose data directory on startup (default: 0)</source>
-        <translation>Välj datakatalog vid uppstart (förvalt: 0)</translation>
-    </message>
-</context>
-<context>
-    <name>Intro</name>
-    <message>
-        <location filename="../forms/intro.ui" line="+14"/>
-        <source>Welcome</source>
-        <translation>Välkommen</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Welcome to Bitcoin-Qt.</source>
-        <translation>Välkommen till Bitcoin-Qt.</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>As this is the first time the program is launched, you can choose where Bitcoin-Qt will store its data.</source>
-        <translation>Eftersom detta är första gången programmet startas, kan du välja var Bitcoin-Qt ska lagra sina data.</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Bitcoin-Qt will download and store a copy of the Bitcoin block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</source>
-        <translation>Bitcoin-QT kommer att ladda ner och spara en kopia av Bitcoin blockkedjan. Åtminstone %1GB av data kommer att sparas i denna katalog, och den kommer att växa övertiden. Plånboken kommer också att sparas i denna katalog.</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Use the default data directory</source>
-        <translation>Använd den förvalda datakatalogen</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Use a custom data directory:</source>
-        <translation>Använd en anpassad datakatalog:</translation>
-    </message>
-    <message>
-        <location filename="../intro.cpp" line="+100"/>
-        <source>Error</source>
-        <translation>Fel</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>GB of free space available</source>
-        <translation>GB ledigt utrymme är tillgängligt</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>(of %1GB needed)</source>
-        <translation>(av %1GB behövs)</translation>
-    </message>
 </context>
 <context>
     <name>OptionsDialog</name>
@@ -905,13 +820,13 @@ Adress: %4
     </message>
     <message>
         <location line="+31"/>
-        <source>Automatically start Bitcoin after logging in to the system.</source>
-        <translation>Starta Bitcoin automatiskt efter inloggning.</translation>
+        <source>Automatically start Catcoin after logging in to the system.</source>
+        <translation>Starta Catcoin automatiskt efter inloggning.</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>&amp;Start Bitcoin on system login</source>
-        <translation>&amp;Starta Bitcoin vid systemstart</translation>
+        <source>&amp;Start Catcoin on system login</source>
+        <translation>&amp;Starta Catcoin vid systemstart</translation>
     </message>
     <message>
         <location line="+35"/>
@@ -930,8 +845,8 @@ Adress: %4
     </message>
     <message>
         <location line="+6"/>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>Öppna automatiskt Bitcoin-klientens port på routern. Detta fungerar endast om din router har UPnP aktiverat.</translation>
+        <source>Automatically open the Catcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>Öppna automatiskt Catcoin-klientens port på routern. Detta fungerar endast om din router har UPnP aktiverat.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -940,8 +855,8 @@ Adress: %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Connect to the Bitcoin network through a SOCKS proxy (e.g. when connecting through Tor).</source>
-        <translation>Anslut till Bitcoin-nätverket genom en SOCKS-proxy (t.ex. när du ansluter genom Tor).</translation>
+        <source>Connect to the Catcoin network through a SOCKS proxy (e.g. when connecting through Tor).</source>
+        <translation>Anslut till Catcoin-nätverket genom en SOCKS-proxy (t.ex. när du ansluter genom Tor).</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1015,8 +930,8 @@ Adress: %4
     </message>
     <message>
         <location line="+13"/>
-        <source>The user interface language can be set here. This setting will take effect after restarting Bitcoin.</source>
-        <translation>Användargränssnittets språk kan ställas in här. Denna inställning träder i kraft efter en omstart av Bitcoin.</translation>
+        <source>The user interface language can be set here. This setting will take effect after restarting Catcoin.</source>
+        <translation>Användargränssnittets språk kan ställas in här. Denna inställning träder i kraft efter en omstart av Catcoin.</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -1030,8 +945,8 @@ Adress: %4
     </message>
     <message>
         <location line="+9"/>
-        <source>Whether to show Bitcoin addresses in the transaction list or not.</source>
-        <translation>Anger om Bitcoin-adresser skall visas i transaktionslistan.</translation>
+        <source>Whether to show Catcoin addresses in the transaction list or not.</source>
+        <translation>Anger om Catcoin-adresser skall visas i transaktionslistan.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1054,7 +969,7 @@ Adress: %4
         <translation>&amp;Verkställ</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="+54"/>
+        <location filename="../optionsdialog.cpp" line="+53"/>
         <source>default</source>
         <translation>standard</translation>
     </message>
@@ -1082,8 +997,8 @@ Adress: %4
     <message>
         <location line="-9"/>
         <location line="+9"/>
-        <source>This setting will take effect after restarting Bitcoin.</source>
-        <translation>Denna inställning träder i kraft efter en omstart av Bitcoin.</translation>
+        <source>This setting will take effect after restarting Catcoin.</source>
+        <translation>Denna inställning träder i kraft efter en omstart av Catcoin.</translation>
     </message>
     <message>
         <location line="+29"/>
@@ -1100,12 +1015,17 @@ Adress: %4
     </message>
     <message>
         <location line="+50"/>
-        <location line="+202"/>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>Den visade informationen kan vara inaktuell. Plånboken synkroniseras automatiskt med Bitcoin-nätverket efter att anslutningen är upprättad, men denna process har inte slutförts ännu.</translation>
+        <location line="+166"/>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Catcoin network after a connection is established, but this process has not completed yet.</source>
+        <translation>Den visade informationen kan vara inaktuell. Plånboken synkroniseras automatiskt med Catcoin-nätverket efter att anslutningen är upprättad, men denna process har inte slutförts ännu.</translation>
     </message>
     <message>
-        <location line="-131"/>
+        <location line="-124"/>
+        <source>Balance:</source>
+        <translation>Saldo:</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Unconfirmed:</source>
         <translation>Obekräftade:</translation>
     </message>
@@ -1115,22 +1035,7 @@ Adress: %4
         <translation>Plånbok</translation>
     </message>
     <message>
-        <location line="+49"/>
-        <source>Confirmed:</source>
-        <translation>Bekräftade:</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Your current spendable balance</source>
-        <translation>Ditt tillgängliga saldo</translation>
-    </message>
-    <message>
-        <location line="+29"/>
-        <source>Total of transactions that have yet to be confirmed, and do not yet count toward the spendable balance</source>
-        <translation>Totalt antal transaktioner som ännu inte bekräftats, och som ännu inte räknas med i aktuellt saldo</translation>
-    </message>
-    <message>
-        <location line="+13"/>
+        <location line="+107"/>
         <source>Immature:</source>
         <translation>Omogen:</translation>
     </message>
@@ -1140,19 +1045,19 @@ Adress: %4
         <translation>Den genererade balansen som ännu inte har mognat</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <source>Total:</source>
-        <translation>Totalt:</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Your current total balance</source>
-        <translation>Ditt nuvarande totala saldo</translation>
-    </message>
-    <message>
-        <location line="+53"/>
+        <location line="+46"/>
         <source>&lt;b&gt;Recent transactions&lt;/b&gt;</source>
         <translation>&lt;b&gt;Nyligen genomförda transaktioner&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <location line="-101"/>
+        <source>Your current balance</source>
+        <translation>Ditt nuvarande saldo</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Total of transactions that have yet to be confirmed, and do not yet count toward the current balance</source>
+        <translation>Totalt antal transaktioner som ännu inte bekräftats, och som ännu inte räknas med i aktuellt saldo</translation>
     </message>
     <message>
         <location filename="../overviewpage.cpp" line="+116"/>
@@ -1164,28 +1069,9 @@ Adress: %4
 <context>
     <name>PaymentServer</name>
     <message>
-        <location filename="../paymentserver.cpp" line="+108"/>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>Kan inte starta bitcoin: klicka-och-betala handhavare</translation>
-    </message>
-</context>
-<context>
-    <name>QObject</name>
-    <message>
-        <location filename="../bitcoin.cpp" line="+92"/>
-        <location filename="../intro.cpp" line="-32"/>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Error: Specified data directory &quot;%1&quot; does not exist.</source>
-        <translation>Fel: Den angivna datakatalogen &quot;%1&quot; finns inte.</translation>
-    </message>
-    <message>
-        <location filename="../intro.cpp" line="+1"/>
-        <source>Error: Specified data directory &quot;%1&quot; can not be created.</source>
-        <translation>Fel: Den angivna datakatalogen &quot;%1&quot; kan inte skapas.</translation>
+        <location filename="../paymentserver.cpp" line="+107"/>
+        <source>Cannot start catcoin: click-to-pay handler</source>
+        <translation>Kan inte starta catcoin: klicka-och-betala handhavare</translation>
     </message>
 </context>
 <context>
@@ -1221,7 +1107,7 @@ Adress: %4
         <translation>&amp;Spara som...</translation>
     </message>
     <message>
-        <location filename="../qrcodedialog.cpp" line="+64"/>
+        <location filename="../qrcodedialog.cpp" line="+62"/>
         <source>Error encoding URI into QR Code.</source>
         <translation>Fel vid skapande av QR-kod från URI.</translation>
     </message>
@@ -1263,7 +1149,7 @@ Adress: %4
         <location line="+53"/>
         <location line="+23"/>
         <location line="+23"/>
-        <location filename="../rpcconsole.cpp" line="+345"/>
+        <location filename="../rpcconsole.cpp" line="+339"/>
         <source>N/A</source>
         <translation>ej tillgänglig</translation>
     </message>
@@ -1334,8 +1220,8 @@ Adress: %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Show the Bitcoin-Qt help message to get a list with possible Bitcoin command-line options.</source>
-        <translation>Visa Bitcoin-Qt hjälpmeddelande för att få en lista med möjliga Bitcoin kommandoradsalternativ.</translation>
+        <source>Show the Catcoin-Qt help message to get a list with possible Catcoin command-line options.</source>
+        <translation>Visa Catcoin-Qt hjälpmeddelande för att få en lista med möjliga Catcoin kommandoradsalternativ.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1354,13 +1240,13 @@ Adress: %4
     </message>
     <message>
         <location line="-104"/>
-        <source>Bitcoin - Debug window</source>
-        <translation>Bitcoin - Debug fönster</translation>
+        <source>Catcoin - Debug window</source>
+        <translation>Catcoin - Debug fönster</translation>
     </message>
     <message>
         <location line="+25"/>
-        <source>Bitcoin Core</source>
-        <translation>Bitcoin Kärna</translation>
+        <source>Catcoin Core</source>
+        <translation>Catcoin Kärna</translation>
     </message>
     <message>
         <location line="+279"/>
@@ -1369,8 +1255,8 @@ Adress: %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Open the Bitcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
-        <translation>Öppna Bitcoin debug-loggfilen som finns i datakatalogen. Detta kan ta några sekunder för stora loggfiler.</translation>
+        <source>Open the Catcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
+        <translation>Öppna Catcoin debug-loggfilen som finns i datakatalogen. Detta kan ta några sekunder för stora loggfiler.</translation>
     </message>
     <message>
         <location line="+102"/>
@@ -1379,8 +1265,8 @@ Adress: %4
     </message>
     <message>
         <location filename="../rpcconsole.cpp" line="-30"/>
-        <source>Welcome to the Bitcoin RPC console.</source>
-        <translation>Välkommen till Bitcoin RPC-konsollen.</translation>
+        <source>Welcome to the Catcoin RPC console.</source>
+        <translation>Välkommen till Catcoin RPC-konsollen.</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1397,7 +1283,7 @@ Adress: %4
     <name>SendCoinsDialog</name>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="+14"/>
-        <location filename="../sendcoinsdialog.cpp" line="+128"/>
+        <location filename="../sendcoinsdialog.cpp" line="+124"/>
         <location line="+5"/>
         <location line="+5"/>
         <location line="+5"/>
@@ -1448,13 +1334,12 @@ Adress: %4
         <translation>&amp;Skicka</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="-62"/>
-        <location line="+2"/>
+        <location filename="../sendcoinsdialog.cpp" line="-59"/>
         <source>&lt;b&gt;%1&lt;/b&gt; to %2 (%3)</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; till %2 (%3)</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
         <source>Confirm send coins</source>
         <translation>Bekräfta skickade mynt</translation>
     </message>
@@ -1523,8 +1408,8 @@ Adress: %4
     </message>
     <message>
         <location line="+34"/>
-        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Adressen som betalningen skall skickas till  (t.ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Adressen som betalningen skall skickas till  (t.ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+60"/>
@@ -1564,8 +1449,8 @@ Adress: %4
     </message>
     <message>
         <location filename="../sendcoinsentry.cpp" line="+1"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Ange en Bitcoin-adress (t.ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Catcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Ange en Catcoin-adress (t.ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
 </context>
 <context>
@@ -1587,8 +1472,8 @@ Adress: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to sign the message with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Adressen att signera meddelandet med  (t.ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to sign the message with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Adressen att signera meddelandet med  (t.ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -1629,7 +1514,7 @@ Adress: %4
     </message>
     <message>
         <location line="+21"/>
-        <source>Sign the message to prove you own this Bitcoin address</source>
+        <source>Sign the message to prove you own this Catcoin address</source>
         <translation>Signera meddelandet för att bevisa att du äger denna adress</translation>
     </message>
     <message>
@@ -1660,13 +1545,13 @@ Adress: %4
     </message>
     <message>
         <location line="+21"/>
-        <source>The address the message was signed with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Adressen som meddelandet var signerat med  (t.ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address the message was signed with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Adressen som meddelandet var signerat med  (t.ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+40"/>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>Verifiera meddelandet för att vara säker på att den var signerad med den angivna Bitcoin-adressen</translation>
+        <source>Verify the message to ensure it was signed with the specified Catcoin address</source>
+        <translation>Verifiera meddelandet för att vara säker på att den var signerad med den angivna Catcoin-adressen</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1681,8 +1566,8 @@ Adress: %4
     <message>
         <location filename="../signverifymessagedialog.cpp" line="+27"/>
         <location line="+3"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Ange en Bitcoin-adress (t.ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Catcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Ange en Catcoin-adress (t.ex. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="-2"/>
@@ -1691,8 +1576,8 @@ Adress: %4
     </message>
     <message>
         <location line="+3"/>
-        <source>Enter Bitcoin signature</source>
-        <translation>Ange Bitcoin-signatur</translation>
+        <source>Enter Catcoin signature</source>
+        <translation>Ange Catcoin-signatur</translation>
     </message>
     <message>
         <location line="+82"/>
@@ -1765,8 +1650,8 @@ Adress: %4
     <name>SplashScreen</name>
     <message>
         <location filename="../splashscreen.cpp" line="+22"/>
-        <source>The Bitcoin developers</source>
-        <translation>Bitcoin-utvecklarna</translation>
+        <source>The Litecoin developers</source>
+        <translation>Catcoin-utvecklarna</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2183,7 +2068,7 @@ Adress: %4
         <translation>Visa transaktionsdetaljer</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+139"/>
         <source>Export Transaction Data</source>
         <translation>Exportera Transaktionsdata</translation>
     </message>
@@ -2259,7 +2144,7 @@ Adress: %4
 <context>
     <name>WalletView</name>
     <message>
-        <location filename="../walletview.cpp" line="+46"/>
+        <location filename="../walletview.cpp" line="+42"/>
         <source>&amp;Export</source>
         <translation>&amp;Exportera</translation>
     </message>
@@ -2269,7 +2154,7 @@ Adress: %4
         <translation>Exportera informationen i den nuvarande fliken till en fil</translation>
     </message>
     <message>
-        <location line="+197"/>
+        <location line="+193"/>
         <source>Backup Wallet</source>
         <translation>Säkerhetskopiera Plånbok</translation>
     </message>
@@ -2302,19 +2187,19 @@ Adress: %4
 <context>
     <name>bitcoin-core</name>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="+98"/>
-        <source>Bitcoin version</source>
-        <translation>Bitcoin version</translation>
+        <location filename="../bitcoinstrings.cpp" line="+94"/>
+        <source>Catcoin version</source>
+        <translation>Catcoin version</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+102"/>
         <source>Usage:</source>
         <translation>Användning:</translation>
     </message>
     <message>
-        <location line="-30"/>
-        <source>Send command to -server or bitcoind</source>
-        <translation>Skicka kommando till -server eller bitcoind</translation>
+        <location line="-29"/>
+        <source>Send command to -server or catcoind</source>
+        <translation>Skicka kommando till -server eller catcoind</translation>
     </message>
     <message>
         <location line="-23"/>
@@ -2322,24 +2207,24 @@ Adress: %4
         <translation>Lista kommandon</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-12"/>
         <source>Get help for a command</source>
         <translation>Få hjälp med ett kommando</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+24"/>
         <source>Options:</source>
         <translation>Inställningar:</translation>
     </message>
     <message>
         <location line="+24"/>
-        <source>Specify configuration file (default: bitcoin.conf)</source>
-        <translation>Ange konfigurationsfil (förvalt: bitcoin.conf)</translation>
+        <source>Specify configuration file (default: catcoin.conf)</source>
+        <translation>Ange konfigurationsfil (förvalt: catcoin.conf)</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Specify pid file (default: bitcoind.pid)</source>
-        <translation>Ange pid fil (förvalt: bitcoind.pid)</translation>
+        <source>Specify pid file (default: catcoind.pid)</source>
+        <translation>Ange pid fil (förvalt: catcoind.pid)</translation>
     </message>
     <message>
         <location line="-1"/>
@@ -2353,8 +2238,8 @@ Adress: %4
     </message>
     <message>
         <location line="-28"/>
-        <source>Listen for connections on &lt;port&gt; (default: 8333 or testnet: 18333)</source>
-        <translation>Lyssna efter anslutningar på &lt;port&gt; (förvalt: 8333 eller testnet: 18333)</translation>
+        <source>Listen for connections on &lt;port&gt; (default: 9933 or testnet: 19933)</source>
+        <translation>Lyssna efter anslutningar på &lt;port&gt; (förvalt: 9933 eller testnet: 19933)</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -2362,12 +2247,12 @@ Adress: %4
         <translation>Ha som mest &lt;n&gt; anslutningar till andra klienter (förvalt: 125)</translation>
     </message>
     <message>
-        <location line="-49"/>
+        <location line="-48"/>
         <source>Connect to a node to retrieve peer addresses, and disconnect</source>
         <translation>Anslut till en nod för att hämta klientadresser, och koppla från</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+82"/>
         <source>Specify your own public address</source>
         <translation>Ange din egen publika adress</translation>
     </message>
@@ -2377,19 +2262,19 @@ Adress: %4
         <translation>Tröskelvärde för att koppla ifrån klienter som missköter sig (förvalt: 100)</translation>
     </message>
     <message>
-        <location line="-136"/>
+        <location line="-134"/>
         <source>Number of seconds to keep misbehaving peers from reconnecting (default: 86400)</source>
         <translation>Antal sekunder att hindra klienter som missköter sig från att ansluta (förvalt: 86400)</translation>
     </message>
     <message>
-        <location line="-33"/>
+        <location line="-29"/>
         <source>An error occurred while setting up the RPC port %u for listening on IPv4: %s</source>
         <translation>Ett fel uppstod vid upprättandet av RPC port %u för att lyssna på IPv4: %s</translation>
     </message>
     <message>
-        <location line="+31"/>
-        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 8332 or testnet: 18332)</source>
-        <translation>Lyssna på JSON-RPC-anslutningar på &lt;port&gt; (förvalt: 8332 eller testnet: 18332)</translation>
+        <location line="+27"/>
+        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 9332 or testnet: 19332)</source>
+        <translation>Lyssna på JSON-RPC-anslutningar på &lt;port&gt; (förvalt: 9332 eller testnet: 19332)</translation>
     </message>
     <message>
         <location line="+37"/>
@@ -2397,43 +2282,43 @@ Adress: %4
         <translation>Tillåt kommandon från kommandotolken och JSON-RPC-kommandon</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+76"/>
         <source>Run in the background as a daemon and accept commands</source>
         <translation>Kör i bakgrunden som tjänst och acceptera kommandon</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+37"/>
         <source>Use the test network</source>
         <translation>Använd testnätverket</translation>
     </message>
     <message>
-        <location line="-114"/>
+        <location line="-112"/>
         <source>Accept connections from outside (default: 1 if no -proxy or -connect)</source>
         <translation>Acceptera anslutningar utifrån (förvalt: 1 om ingen -proxy eller -connect)</translation>
     </message>
     <message>
-        <location line="-84"/>
+        <location line="-80"/>
         <source>%s, you must set a rpcpassword in the configuration file:
 %s
 It is recommended you use the following random password:
-rpcuser=bitcoinrpc
+rpcuser=catcoinrpc
 rpcpassword=%s
 (you do not need to remember this password)
 The username and password MUST NOT be the same.
 If the file does not exist, create it with owner-readable-only file permissions.
 It is also recommended to set alertnotify so you are notified of problems;
-for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
+for example: alertnotify=echo %%s | mail -s &quot;Catcoin Alert&quot; admin@foo.com
 </source>
         <translation>%s, du behöver sätta ett rpclösensord i konfigurationsfilen:
 %s
 Det är rekommenderat att använda följande slumpade lösenord:
-rpcuser=bitcoinrpc
+rpcuser=catcoinrpc
 rpcpassword=%s
 (du behöver inte komma ihåg lösenordet)
 Användarnamnet och lösenordet FÅR INTE bara detsamma.
 Om filen inte existerar, skapa den med enbart ägarläsbara filrättigheter.
 Det är också rekommenderat att sätta alertnotify så du meddelas om problem;
-till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
+till exempel: alertnotify=echo %%s | mail -s &quot;Catcoin Alert&quot; admin@foo.com
 </translation>
     </message>
     <message>
@@ -2448,23 +2333,18 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
     </message>
     <message>
         <location line="+3"/>
-        <source>Cannot obtain a lock on data directory %s. Bitcoin is probably already running.</source>
-        <translation>Kan inte låsa data-mappen %s. Bitcoin körs förmodligen redan.</translation>
+        <source>Cannot obtain a lock on data directory %s. Catcoin is probably already running.</source>
+        <translation>Kan inte låsa data-mappen %s. Catcoin körs förmodligen redan.</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Enter regression test mode, which uses a special chain in which blocks can be solved instantly. This is intended for regression testing tools and app development.</source>
-        <translation>Ange regressiontestläge, som använder en speciell kedja i vilka block kan lösas omedelbart. Detta är avsett för regressiontestnings verktyg och applikationsutveckling.</translation>
-    </message>
-    <message>
-        <location line="+4"/>
         <source>Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
         <translation>Fel: Transaktionen avslogs! Detta kan hända om några av mynten i plånboken redan spenderats, t.ex om du använt en kopia av wallet.dat och mynt spenderades i kopian men inte markerats som spenderas här.</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!</source>
-        <translation>Fel: Denna transaktion kräver en transaktionsavgift på minst %s på grund av dess storlek, komplexitet, eller användning av senast mottagna bitcoins!</translation>
+        <translation>Fel: Denna transaktion kräver en transaktionsavgift på minst %s på grund av dess storlek, komplexitet, eller användning av senast mottagna catcoins!</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2498,8 +2378,8 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
     </message>
     <message>
         <location line="+3"/>
-        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Bitcoin will not work properly.</source>
-        <translation>Varning: Vänligen kolla så att din dators datum och tid är korrekt! Om din klocka går fel kommer Bitcoin inte fungera korrekt.</translation>
+        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Catcoin will not work properly.</source>
+        <translation>Varning: Vänligen kolla så att din dators datum och tid är korrekt! Om din klocka går fel kommer Catcoin inte fungera korrekt.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2652,12 +2532,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Hur grundlig blockverifikationen är (0-4, förvalt: 3)</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Incorrect or no genesis block found. Wrong datadir for network?</source>
-        <translation>Felaktig eller inget genesisblock hittades. Fel datadir för nätverket?</translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+19"/>
         <source>Not enough file descriptors available.</source>
         <translation>Inte tillräckligt med filbeskrivningar tillgängliga.</translation>
     </message>
@@ -2672,12 +2547,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Ange antalet trådar för att hantera RPC anrop (standard: 4)</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Specify wallet file (within data directory)</source>
-        <translation>Ange plånboksfil (inom datakatalogen)</translation>
-    </message>
-    <message>
-        <location line="+20"/>
+        <location line="+26"/>
         <source>Verifying blocks...</source>
         <translation>Verifierar block...</translation>
     </message>
@@ -2687,17 +2557,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Verifierar plånboken...</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Wallet %s resides outside data directory %s</source>
-        <translation>Plånbok %s ligger utanför datakatalogen %s</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>You need to rebuild the database using -reindex to change -txindex</source>
-        <translation>Du måste återskapa databasen med -reindex för att ändra -txindex</translation>
-    </message>
-    <message>
-        <location line="-76"/>
+        <location line="-69"/>
         <source>Imports blocks from external blk000??.dat file</source>
         <translation>Importerar block från extern blk000??.dat fil</translation>
     </message>
@@ -2707,7 +2567,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Ange antalet skriptkontrolltrådar (upp till 16, 0 = auto, &lt;0 = lämna så många kärnor lediga, förval: 0)</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+77"/>
         <source>Information</source>
         <translation>Information</translation>
     </message>
@@ -2768,8 +2628,8 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
     </message>
     <message>
         <location line="+5"/>
-        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
-        <translation>SSL-inställningar: (se Bitcoin-wikin för SSL-setup instruktioner)</translation>
+        <source>SSL options: (see the Catcoin Wiki for SSL setup instructions)</source>
+        <translation>SSL-inställningar: (se Catcoin-wikin för SSL-setup instruktioner)</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2812,7 +2672,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Ange timeout för uppkoppling i millisekunder (förvalt: 5000)</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>System error: </source>
         <translation>Systemfel:</translation>
     </message>
@@ -2852,7 +2712,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Användarnamn för JSON-RPC-anslutningar</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Warning</source>
         <translation>Varning</translation>
     </message>
@@ -2862,37 +2722,42 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Varning: denna version är föråldrad, uppgradering krävs!</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>You need to rebuild the databases using -reindex to change -txindex</source>
+        <translation>Du måste återskapa databaserna med -reindex för att ändra -txindex</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
         <translation>wallet.dat korrupt, räddning misslyckades</translation>
     </message>
     <message>
-        <location line="-52"/>
+        <location line="-50"/>
         <source>Password for JSON-RPC connections</source>
         <translation>Lösenord för JSON-RPC-anslutningar</translation>
     </message>
     <message>
-        <location line="-68"/>
+        <location line="-67"/>
         <source>Allow JSON-RPC connections from specified IP address</source>
         <translation>Tillåt JSON-RPC-anslutningar från specifika IP-adresser</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+76"/>
         <source>Send commands to node running on &lt;ip&gt; (default: 127.0.0.1)</source>
         <translation>Skicka kommandon till klient på &lt;ip&gt; (förvalt: 127.0.0.1)</translation>
     </message>
     <message>
-        <location line="-121"/>
+        <location line="-120"/>
         <source>Execute command when the best block changes (%s in cmd is replaced by block hash)</source>
         <translation>Exekvera kommando när det bästa blocket ändras (%s i cmd är utbytt av blockhash)</translation>
     </message>
     <message>
-        <location line="+149"/>
+        <location line="+147"/>
         <source>Upgrade wallet to latest format</source>
         <translation>Uppgradera plånboken till senaste formatet</translation>
     </message>
     <message>
-        <location line="-22"/>
+        <location line="-21"/>
         <source>Set key pool size to &lt;n&gt; (default: 100)</source>
         <translation>Sätt storleken på nyckelpoolen till &lt;n&gt; (förvalt: 100)</translation>
     </message>
@@ -2902,12 +2767,12 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Sök i blockkedjan efter saknade plånboks transaktioner</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+35"/>
         <source>Use OpenSSL (https) for JSON-RPC connections</source>
         <translation>Använd OpenSSL (https) för JSON-RPC-anslutningar</translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-26"/>
         <source>Server certificate file (default: server.cert)</source>
         <translation>Serverns certifikatfil (förvalt: server.cert)</translation>
     </message>
@@ -2917,12 +2782,12 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Serverns privata nyckel (förvalt: server.pem)</translation>
     </message>
     <message>
-        <location line="-156"/>
+        <location line="-151"/>
         <source>Acceptable ciphers (default: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)</source>
         <translation>Accepterade krypteringsalgoritmer (förvalt: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)</translation>
     </message>
     <message>
-        <location line="+171"/>
+        <location line="+165"/>
         <source>This help message</source>
         <translation>Det här hjälp medelandet</translation>
     </message>
@@ -2932,7 +2797,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Det går inte att binda till %s på den här datorn (bind returnerade felmeddelande %d, %s)</translation>
     </message>
     <message>
-        <location line="-93"/>
+        <location line="-91"/>
         <source>Connect through socks proxy</source>
         <translation>Anslut genom socks-proxy</translation>
     </message>
@@ -2942,37 +2807,37 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Tillåt DNS-sökningar för -addnode, -seednode och -connect</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+55"/>
         <source>Loading addresses...</source>
         <translation>Laddar adresser...</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-35"/>
         <source>Error loading wallet.dat: Wallet corrupted</source>
         <translation>Fel vid inläsningen av wallet.dat: Plånboken är skadad</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Error loading wallet.dat: Wallet requires newer version of Bitcoin</source>
-        <translation>Fel vid inläsningen av wallet.dat: Plånboken kräver en senare version av Bitcoin</translation>
+        <source>Error loading wallet.dat: Wallet requires newer version of Catcoin</source>
+        <translation>Fel vid inläsningen av wallet.dat: Plånboken kräver en senare version av Catcoin</translation>
     </message>
     <message>
-        <location line="+96"/>
-        <source>Wallet needed to be rewritten: restart Bitcoin to complete</source>
-        <translation>Plånboken behöver skrivas om: Starta om Bitcoin för att färdigställa</translation>
+        <location line="+93"/>
+        <source>Wallet needed to be rewritten: restart Catcoin to complete</source>
+        <translation>Plånboken behöver skrivas om: Starta om Catcoin för att färdigställa</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-95"/>
         <source>Error loading wallet.dat</source>
         <translation>Fel vid inläsning av plånboksfilen wallet.dat</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+28"/>
         <source>Invalid -proxy address: &apos;%s&apos;</source>
         <translation>Ogiltig -proxy adress: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+56"/>
         <source>Unknown network specified in -onlynet: &apos;%s&apos;</source>
         <translation>Okänt nätverk som anges i -onlynet: &apos;%s&apos;</translation>
     </message>
@@ -2982,7 +2847,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Okänd -socks proxy version begärd: %i</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-96"/>
         <source>Cannot resolve -bind address: &apos;%s&apos;</source>
         <translation>Kan inte matcha -bind adress: &apos;%s&apos;</translation>
     </message>
@@ -2992,7 +2857,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Kan inte matcha -externalip adress: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+44"/>
         <source>Invalid amount for -paytxfee=&lt;amount&gt;: &apos;%s&apos;</source>
         <translation>Ogiltigt belopp för -paytxfee=&lt;belopp&gt;:&apos;%s&apos;</translation>
     </message>
@@ -3004,7 +2869,7 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
     <message>
         <location line="-6"/>
         <source>Insufficient funds</source>
-        <translation>Otillräckligt med bitcoins</translation>
+        <translation>Otillräckligt med catcoins</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -3012,14 +2877,14 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Laddar blockindex...</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-57"/>
         <source>Add a node to connect to and attempt to keep the connection open</source>
         <translation>Lägg till en nod att koppla upp mot och försök att hålla anslutningen öppen</translation>
     </message>
     <message>
         <location line="-25"/>
-        <source>Unable to bind to %s on this computer. Bitcoin is probably already running.</source>
-        <translation>Det går inte att binda till %s på den här datorn. Bitcoin är förmodligen redan igång.</translation>
+        <source>Unable to bind to %s on this computer. Catcoin is probably already running.</source>
+        <translation>Det går inte att binda till %s på den här datorn. Catcoin är förmodligen redan igång.</translation>
     </message>
     <message>
         <location line="+64"/>
@@ -3027,12 +2892,12 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Avgift per KB att lägga till på transaktioner du skickar</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+19"/>
         <source>Loading wallet...</source>
         <translation>Laddar plånbok...</translation>
     </message>
     <message>
-        <location line="-53"/>
+        <location line="-52"/>
         <source>Cannot downgrade wallet</source>
         <translation>Kan inte nedgradera plånboken</translation>
     </message>
@@ -3042,22 +2907,22 @@ till exempel: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo
         <translation>Kan inte skriva standardadress</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+64"/>
         <source>Rescanning...</source>
         <translation>Söker igen...</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-57"/>
         <source>Done loading</source>
         <translation>Klar med laddning</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+82"/>
         <source>To use the %s option</source>
         <translation>Att använda %s alternativet</translation>
     </message>
     <message>
-        <location line="-76"/>
+        <location line="-74"/>
         <source>Error</source>
         <translation>Fel</translation>
     </message>

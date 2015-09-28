@@ -1,15 +1,16 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="et" version="2.0">
+<defaultcodec>UTF-8</defaultcodec>
 <context>
     <name>AboutDialog</name>
     <message>
         <location filename="../forms/aboutdialog.ui" line="+14"/>
-        <source>About Bitcoin</source>
-        <translation>Bitcoinist</translation>
+        <source>About Catcoin</source>
+        <translation>Catcoinist</translation>
     </message>
     <message>
         <location line="+39"/>
-        <source>&lt;b&gt;Bitcoin&lt;/b&gt; version</source>
-        <translation>&lt;b&gt;Bitcoini&lt;/b&gt; versioon</translation>
+        <source>&lt;b&gt;Catcoin&lt;/b&gt; version</source>
+        <translation>&lt;b&gt;Catcoini&lt;/b&gt; versioon</translation>
     </message>
     <message>
         <location line="+57"/>
@@ -33,7 +34,7 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
     </message>
     <message>
         <location line="+0"/>
-        <source>The Bitcoin developers</source>
+        <source>The Litecoin developers</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -66,8 +67,8 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="+63"/>
-        <source>These are your Bitcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
-        <translation>Maksete saamiseks kasutatavad Bitcoini aadressid. Maksjate paremaks jälgimiseks võib igaühele anda erineva.</translation>
+        <source>These are your Catcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
+        <translation>Maksete saamiseks kasutatavad Catcoini aadressid. Maksjate paremaks jälgimiseks võib igaühele anda erineva.</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="+14"/>
@@ -81,7 +82,7 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
     </message>
     <message>
         <location line="+11"/>
-        <source>Sign a message to prove you own a Bitcoin address</source>
+        <source>Sign a message to prove you own a Catcoin address</source>
         <translation>Allkirjasta sõnum, et tõestada Bitconi aadressi olemasolu.</translation>
     </message>
     <message>
@@ -106,8 +107,8 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
     </message>
     <message>
         <location line="-44"/>
-        <source>Verify a message to ensure it was signed with a specified Bitcoin address</source>
-        <translation>Kinnita sõnum tõestamaks selle allkirjastatust määratud Bitcoini aadressiga.</translation>
+        <source>Verify a message to ensure it was signed with a specified Catcoin address</source>
+        <translation>Kinnita sõnum tõestamaks selle allkirjastatust määratud Catcoini aadressiga.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -121,8 +122,8 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="-5"/>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Need on sinu Bitcoini aadressid maksete saatmiseks. Müntide saatmisel kontrolli alati summat ning saaja aadressi.</translation>
+        <source>These are your Catcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Need on sinu Catcoini aadressid maksete saatmiseks. Müntide saatmisel kontrolli alati summat ning saaja aadressi.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -140,7 +141,7 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
         <translation>Saada &amp;Münte</translation>
     </message>
     <message>
-        <location line="+265"/>
+        <location line="+260"/>
         <source>Export Address Book Data</source>
         <translation>Ekspordi Aadressiraamat</translation>
     </message>
@@ -247,8 +248,8 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
     </message>
     <message>
         <location line="+1"/>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
-        <translation>Hoiatus: Kui sa kaotad oma, rahakoti krüpteerimisel kasutatud, salafraasi, siis &lt;b&gt;KAOTAD KA KÕIK OMA BITCOINID&lt;/b&gt;!</translation>
+        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR LITECOINS&lt;/b&gt;!</source>
+        <translation>Hoiatus: Kui sa kaotad oma, rahakoti krüpteerimisel kasutatud, salafraasi, siis &lt;b&gt;KAOTAD KA KÕIK OMA LITECOINID&lt;/b&gt;!</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -274,8 +275,8 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
     </message>
     <message>
         <location line="-56"/>
-        <source>Bitcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>Bitcoin sulgub krüpteeringu lõpetamiseks. Pea meeles, et rahakoti krüpteerimine ei välista bitcoinide vargust, kui sinu arvuti on nakatunud pahavaraga.</translation>
+        <source>Catcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your catcoins from being stolen by malware infecting your computer.</source>
+        <translation>Catcoin sulgub krüpteeringu lõpetamiseks. Pea meeles, et rahakoti krüpteerimine ei välista catcoinide vargust, kui sinu arvuti on nakatunud pahavaraga.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -322,17 +323,17 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+254"/>
+        <location filename="../bitcoingui.cpp" line="+233"/>
         <source>Sign &amp;message...</source>
         <translation>Signeeri &amp;sõnum</translation>
     </message>
     <message>
-        <location line="+246"/>
+        <location line="+280"/>
         <source>Synchronizing with network...</source>
         <translation>Võrgusünkimine...</translation>
     </message>
     <message>
-        <location line="-321"/>
+        <location line="-349"/>
         <source>&amp;Overview</source>
         <translation>&amp;Ülevaade</translation>
     </message>
@@ -372,9 +373,9 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
         <translation>Väljumine</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Show information about Bitcoin</source>
-        <translation>Kuva info Bitcoini kohta</translation>
+        <location line="+4"/>
+        <source>Show information about Catcoin</source>
+        <translation>Kuva info Catcoini kohta</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -392,7 +393,7 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
         <translation>&amp;Valikud...</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+6"/>
         <source>&amp;Encrypt Wallet...</source>
         <translation>&amp;Krüpteeri Rahakott</translation>
     </message>
@@ -407,7 +408,7 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
         <translation>&amp;Salafraasi muutmine</translation>
     </message>
     <message>
-        <location line="+251"/>
+        <location line="+285"/>
         <source>Importing blocks from disk...</source>
         <translation>Impordi blokid kettalt...</translation>
     </message>
@@ -417,17 +418,17 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
         <translation>Kettal olevate blokkide re-indekseerimine...</translation>
     </message>
     <message>
-        <location line="-319"/>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Saada münte Bitcoini aadressile</translation>
+        <location line="-347"/>
+        <source>Send coins to a Catcoin address</source>
+        <translation>Saada münte Catcoini aadressile</translation>
     </message>
     <message>
-        <location line="+52"/>
-        <source>Modify configuration options for Bitcoin</source>
-        <translation>Muuda Bitcoini seadeid</translation>
+        <location line="+49"/>
+        <source>Modify configuration options for Catcoin</source>
+        <translation>Muuda Catcoini seadeid</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+9"/>
         <source>Backup wallet to another location</source>
         <translation>Varunda rahakott teise asukohta</translation>
     </message>
@@ -452,20 +453,18 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
         <translation>&amp;Kontrolli sõnumit...</translation>
     </message>
     <message>
-        <location line="-183"/>
-        <location line="+6"/>
-        <location line="+508"/>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <location line="-165"/>
+        <location line="+530"/>
+        <source>Catcoin</source>
+        <translation>Catcoin</translation>
     </message>
     <message>
-        <location line="-514"/>
-        <location line="+6"/>
+        <location line="-530"/>
         <source>Wallet</source>
         <translation>Rahakott</translation>
     </message>
     <message>
-        <location line="+107"/>
+        <location line="+101"/>
         <source>&amp;Send</source>
         <translation>&amp;Saada</translation>
     </message>
@@ -480,14 +479,12 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
         <translation>&amp;Aadressid</translation>
     </message>
     <message>
-        <location line="+23"/>
-        <location line="+2"/>
-        <source>&amp;About Bitcoin</source>
-        <translation>%Bitcoinist</translation>
+        <location line="+22"/>
+        <source>&amp;About Catcoin</source>
+        <translation>%Catcoinist</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+2"/>
+        <location line="+9"/>
         <source>&amp;Show / Hide</source>
         <translation>&amp;Näita / Peida</translation>
     </message>
@@ -503,13 +500,13 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
     </message>
     <message>
         <location line="+7"/>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Omandi tõestamiseks allkirjasta sõnumid oma Bitcoini aadressiga</translation>
+        <source>Sign messages with your Catcoin addresses to prove you own them</source>
+        <translation>Omandi tõestamiseks allkirjasta sõnumid oma Catcoini aadressiga</translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Kinnita sõnumid kindlustamaks et need allkirjastati määratud Bitcoini aadressiga</translation>
+        <source>Verify messages to ensure they were signed with specified Catcoin addresses</source>
+        <translation>Kinnita sõnumid kindlustamaks et need allkirjastati määratud Catcoini aadressiga</translation>
     </message>
     <message>
         <location line="+28"/>
@@ -532,21 +529,20 @@ Toode sisaldab OpenSSL Projekti all toodetud tarkvara, mis on kasutamiseks OpenS
         <translation>Vahelehe tööriistariba</translation>
     </message>
     <message>
-        <location line="-228"/>
-        <location line="+288"/>
+        <location line="+17"/>
+        <location line="+10"/>
         <source>[testnet]</source>
         <translation>[testnet]</translation>
     </message>
     <message>
-        <location line="-5"/>
-        <location line="+5"/>
-        <source>Bitcoin client</source>
-        <translation>Bitcoini klient</translation>
+        <location line="+47"/>
+        <source>Catcoin client</source>
+        <translation>Catcoini klient</translation>
     </message>
     <message numerus="yes">
-        <location line="+121"/>
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n aktiivne ühendus Bitcoini võrku</numerusform><numerusform>%n aktiivset ühendust Bitcoini võrku</numerusform></translation>
+        <location line="+141"/>
+        <source>%n active connection(s) to Catcoin network</source>
+        <translation><numerusform>%n aktiivne ühendus Catcoini võrku</numerusform><numerusform>%n aktiivset ühendust Catcoini võrku</numerusform></translation>
     </message>
     <message>
         <location line="+22"/>
@@ -659,8 +655,8 @@ Aadress: %4⏎</translation>
     <message>
         <location line="-23"/>
         <location line="+23"/>
-        <source>URI can not be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>URI ei suudeta parsida. Põhjuseks võib olla kehtetu Bitcoini aadress või vigased URI parameetrid.</translation>
+        <source>URI can not be parsed! This can be caused by an invalid Catcoin address or malformed URI parameters.</source>
+        <translation>URI ei suudeta parsida. Põhjuseks võib olla kehtetu Catcoini aadress või vigased URI parameetrid.</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -673,15 +669,15 @@ Aadress: %4⏎</translation>
         <translation>Rahakott on &lt;b&gt;krüpteeritud&lt;/b&gt; ning hetkel &lt;b&gt;suletud&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoin.cpp" line="+110"/>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>Ilmnes kriitiline tõrge. Bitcoin suletakse turvakaalutluste tõttu.</translation>
+        <location filename="../bitcoin.cpp" line="+111"/>
+        <source>A fatal error occurred. Catcoin can no longer continue safely and will quit.</source>
+        <translation>Ilmnes kriitiline tõrge. Catcoin suletakse turvakaalutluste tõttu.</translation>
     </message>
 </context>
 <context>
     <name>ClientModel</name>
     <message>
-        <location filename="../clientmodel.cpp" line="+105"/>
+        <location filename="../clientmodel.cpp" line="+104"/>
         <source>Network Alert</source>
         <translation>Võrgu Häire</translation>
     </message>
@@ -740,8 +736,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="-5"/>
-        <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
-        <translation>Sisestatud aadress &quot;%1&quot; ei ole Bitcoinis kehtiv.</translation>
+        <source>The entered address &quot;%1&quot; is not a valid Catcoin address.</source>
+        <translation>Sisestatud aadress &quot;%1&quot; ei ole Catcoinis kehtiv.</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -755,43 +751,15 @@ Aadress: %4⏎</translation>
     </message>
 </context>
 <context>
-    <name>FreespaceChecker</name>
-    <message>
-        <location filename="../intro.cpp" line="+61"/>
-        <source>A new data directory will be created.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>name</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Directory already exists. Add %1 if you intend to create a new directory here.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Path already exists, and is not a directory.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Cannot create data directory here.</source>
-        <translation type="unfinished"/>
-    </message>
-</context>
-<context>
     <name>GUIUtil::HelpMessageBox</name>
     <message>
-        <location filename="../guiutil.cpp" line="+517"/>
-        <location line="+13"/>
-        <source>Bitcoin-Qt</source>
-        <translation>Bitcoini-Qt</translation>
+        <location filename="../guiutil.cpp" line="+424"/>
+        <location line="+12"/>
+        <source>Catcoin-Qt</source>
+        <translation>Catcoini-Qt</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-12"/>
         <source>version</source>
         <translation>versioon</translation>
     </message>
@@ -825,59 +793,6 @@ Aadress: %4⏎</translation>
         <source>Show splash screen on startup (default: 1)</source>
         <translation>Käivitamisel teabeakna kuvamine (vaikeväärtus: 1)</translation>
     </message>
-    <message>
-        <location line="+1"/>
-        <source>Choose data directory on startup (default: 0)</source>
-        <translation type="unfinished"/>
-    </message>
-</context>
-<context>
-    <name>Intro</name>
-    <message>
-        <location filename="../forms/intro.ui" line="+14"/>
-        <source>Welcome</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Welcome to Bitcoin-Qt.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>As this is the first time the program is launched, you can choose where Bitcoin-Qt will store its data.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Bitcoin-Qt will download and store a copy of the Bitcoin block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Use the default data directory</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Use a custom data directory:</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location filename="../intro.cpp" line="+100"/>
-        <source>Error</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>GB of free space available</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>(of %1GB needed)</source>
-        <translation type="unfinished"/>
-    </message>
 </context>
 <context>
     <name>OptionsDialog</name>
@@ -903,13 +818,13 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+31"/>
-        <source>Automatically start Bitcoin after logging in to the system.</source>
-        <translation>Käivita Bitcoin süsteemi logimisel.</translation>
+        <source>Automatically start Catcoin after logging in to the system.</source>
+        <translation>Käivita Catcoin süsteemi logimisel.</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>&amp;Start Bitcoin on system login</source>
-        <translation>&amp;Start Bitcoin sisselogimisel</translation>
+        <source>&amp;Start Catcoin on system login</source>
+        <translation>&amp;Start Catcoin sisselogimisel</translation>
     </message>
     <message>
         <location line="+35"/>
@@ -928,8 +843,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+6"/>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>Bitcoini kliendi pordi automaatne avamine ruuteris. Toimib, kui sinu ruuter aktsepteerib UPnP ühendust.</translation>
+        <source>Automatically open the Catcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>Catcoini kliendi pordi automaatne avamine ruuteris. Toimib, kui sinu ruuter aktsepteerib UPnP ühendust.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -938,8 +853,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>Connect to the Bitcoin network through a SOCKS proxy (e.g. when connecting through Tor).</source>
-        <translation>Kasuta Bitcoini võrgustikku ühendumiseks SOCKS turva proxy&apos;t (nt Tor&apos;i kasutamisel).</translation>
+        <source>Connect to the Catcoin network through a SOCKS proxy (e.g. when connecting through Tor).</source>
+        <translation>Kasuta Catcoini võrgustikku ühendumiseks SOCKS turva proxy&apos;t (nt Tor&apos;i kasutamisel).</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1013,8 +928,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+13"/>
-        <source>The user interface language can be set here. This setting will take effect after restarting Bitcoin.</source>
-        <translation>Kasutajaliidese keele valimise koht. Valik rakendub Bitcoini käivitamisel.</translation>
+        <source>The user interface language can be set here. This setting will take effect after restarting Catcoin.</source>
+        <translation>Kasutajaliidese keele valimise koht. Valik rakendub Catcoini käivitamisel.</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -1028,8 +943,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+9"/>
-        <source>Whether to show Bitcoin addresses in the transaction list or not.</source>
-        <translation>Kuvada Bitcoini aadress tehingute loetelus või mitte.</translation>
+        <source>Whether to show Catcoin addresses in the transaction list or not.</source>
+        <translation>Kuvada Catcoini aadress tehingute loetelus või mitte.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1052,7 +967,7 @@ Aadress: %4⏎</translation>
         <translation>&amp;Rakenda</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="+54"/>
+        <location filename="../optionsdialog.cpp" line="+53"/>
         <source>default</source>
         <translation>vaikeväärtus</translation>
     </message>
@@ -1080,8 +995,8 @@ Aadress: %4⏎</translation>
     <message>
         <location line="-9"/>
         <location line="+9"/>
-        <source>This setting will take effect after restarting Bitcoin.</source>
-        <translation>Tehtud valik rakendub Bitcoini käivitamisel.</translation>
+        <source>This setting will take effect after restarting Catcoin.</source>
+        <translation>Tehtud valik rakendub Catcoini käivitamisel.</translation>
     </message>
     <message>
         <location line="+29"/>
@@ -1098,12 +1013,17 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+50"/>
-        <location line="+202"/>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
+        <location line="+166"/>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Catcoin network after a connection is established, but this process has not completed yet.</source>
         <translation>Kuvatav info ei pruugi olla ajakohane. Ühenduse loomisel süngitakse sinu rahakott automaatselt Bitconi võrgustikuga, kuid see toiming on hetkel lõpetamata.</translation>
     </message>
     <message>
-        <location line="-131"/>
+        <location line="-124"/>
+        <source>Balance:</source>
+        <translation>Jääk:</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Unconfirmed:</source>
         <translation>Kinnitamata:</translation>
     </message>
@@ -1113,22 +1033,7 @@ Aadress: %4⏎</translation>
         <translation>Rahakott</translation>
     </message>
     <message>
-        <location line="+49"/>
-        <source>Confirmed:</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Your current spendable balance</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+29"/>
-        <source>Total of transactions that have yet to be confirmed, and do not yet count toward the spendable balance</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+13"/>
+        <location line="+107"/>
         <source>Immature:</source>
         <translation>Ebaküps:</translation>
     </message>
@@ -1138,19 +1043,19 @@ Aadress: %4⏎</translation>
         <translation>Mitte aegunud mine&apos;itud jääk</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <source>Total:</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Your current total balance</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+53"/>
+        <location line="+46"/>
         <source>&lt;b&gt;Recent transactions&lt;/b&gt;</source>
         <translation>&lt;b&gt;Uuesti saadetud tehingud&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <location line="-101"/>
+        <source>Your current balance</source>
+        <translation>Sinu jääk hetkel</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Total of transactions that have yet to be confirmed, and do not yet count toward the current balance</source>
+        <translation>Kinnitamata tehingud kokku. Ei kajastu hetke jäägis</translation>
     </message>
     <message>
         <location filename="../overviewpage.cpp" line="+116"/>
@@ -1162,28 +1067,9 @@ Aadress: %4⏎</translation>
 <context>
     <name>PaymentServer</name>
     <message>
-        <location filename="../paymentserver.cpp" line="+108"/>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>Bitcoin ei käivitu: vajuta-maksa toiming</translation>
-    </message>
-</context>
-<context>
-    <name>QObject</name>
-    <message>
-        <location filename="../bitcoin.cpp" line="+92"/>
-        <location filename="../intro.cpp" line="-32"/>
-        <source>Bitcoin</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Error: Specified data directory &quot;%1&quot; does not exist.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location filename="../intro.cpp" line="+1"/>
-        <source>Error: Specified data directory &quot;%1&quot; can not be created.</source>
-        <translation type="unfinished"/>
+        <location filename="../paymentserver.cpp" line="+107"/>
+        <source>Cannot start catcoin: click-to-pay handler</source>
+        <translation>Catcoin ei käivitu: vajuta-maksa toiming</translation>
     </message>
 </context>
 <context>
@@ -1219,7 +1105,7 @@ Aadress: %4⏎</translation>
         <translation>&amp;Salvesta nimega...</translation>
     </message>
     <message>
-        <location filename="../qrcodedialog.cpp" line="+64"/>
+        <location filename="../qrcodedialog.cpp" line="+62"/>
         <source>Error encoding URI into QR Code.</source>
         <translation>Tõrge URI&apos;st QR koodi loomisel</translation>
     </message>
@@ -1261,7 +1147,7 @@ Aadress: %4⏎</translation>
         <location line="+53"/>
         <location line="+23"/>
         <location line="+23"/>
-        <location filename="../rpcconsole.cpp" line="+345"/>
+        <location filename="../rpcconsole.cpp" line="+339"/>
         <source>N/A</source>
         <translation>N/A</translation>
     </message>
@@ -1332,8 +1218,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>Show the Bitcoin-Qt help message to get a list with possible Bitcoin command-line options.</source>
-        <translation>Näita kehtivate käsurea valikute kuvamiseks Bitcoini-Qt abiteksti</translation>
+        <source>Show the Catcoin-Qt help message to get a list with possible Catcoin command-line options.</source>
+        <translation>Näita kehtivate käsurea valikute kuvamiseks Catcoini-Qt abiteksti</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1352,13 +1238,13 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="-104"/>
-        <source>Bitcoin - Debug window</source>
-        <translation>Bitcoin - debugimise aken</translation>
+        <source>Catcoin - Debug window</source>
+        <translation>Catcoin - debugimise aken</translation>
     </message>
     <message>
         <location line="+25"/>
-        <source>Bitcoin Core</source>
-        <translation>Bitcoini tuumik</translation>
+        <source>Catcoin Core</source>
+        <translation>Catcoini tuumik</translation>
     </message>
     <message>
         <location line="+279"/>
@@ -1367,8 +1253,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>Open the Bitcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
-        <translation>Ava Bitcoini logifail praegusest andmekaustast. Toiminguks võib kuluda kuni mõni sekund.</translation>
+        <source>Open the Catcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
+        <translation>Ava Catcoini logifail praegusest andmekaustast. Toiminguks võib kuluda kuni mõni sekund.</translation>
     </message>
     <message>
         <location line="+102"/>
@@ -1377,8 +1263,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location filename="../rpcconsole.cpp" line="-30"/>
-        <source>Welcome to the Bitcoin RPC console.</source>
-        <translation>Teretulemast Bitcoini RPC konsooli.</translation>
+        <source>Welcome to the Catcoin RPC console.</source>
+        <translation>Teretulemast Catcoini RPC konsooli.</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1395,7 +1281,7 @@ Aadress: %4⏎</translation>
     <name>SendCoinsDialog</name>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="+14"/>
-        <location filename="../sendcoinsdialog.cpp" line="+128"/>
+        <location filename="../sendcoinsdialog.cpp" line="+124"/>
         <location line="+5"/>
         <location line="+5"/>
         <location line="+5"/>
@@ -1446,13 +1332,12 @@ Aadress: %4⏎</translation>
         <translation>S&amp;aada</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="-62"/>
-        <location line="+2"/>
+        <location filename="../sendcoinsdialog.cpp" line="-59"/>
         <source>&lt;b&gt;%1&lt;/b&gt; to %2 (%3)</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; kuni %2 (%3)</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
         <source>Confirm send coins</source>
         <translation>Müntide saatmise kinnitamine</translation>
     </message>
@@ -1521,8 +1406,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+34"/>
-        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Tehingu saaja aadress (nt: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Tehingu saaja aadress (nt: Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+60"/>
@@ -1562,8 +1447,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location filename="../sendcoinsentry.cpp" line="+1"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Sisesta Bitcoini aadress (nt: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Catcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Sisesta Catcoini aadress (nt: Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
 </context>
 <context>
@@ -1585,8 +1470,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to sign the message with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Sõnumi signeerimise aadress (nt: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to sign the message with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Sõnumi signeerimise aadress (nt: Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -1627,8 +1512,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+21"/>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>Allkirjasta sõnum Bitcoini aadressi sulle kuulumise tõestamiseks</translation>
+        <source>Sign the message to prove you own this Catcoin address</source>
+        <translation>Allkirjasta sõnum Catcoini aadressi sulle kuulumise tõestamiseks</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1658,13 +1543,13 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+21"/>
-        <source>The address the message was signed with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Aadress, millega sõnum allkirjastati (nt: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address the message was signed with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Aadress, millega sõnum allkirjastati (nt: Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+40"/>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>Kinnita sõnum tõestamaks selle allkirjastatust määratud Bitcoini aadressiga.</translation>
+        <source>Verify the message to ensure it was signed with the specified Catcoin address</source>
+        <translation>Kinnita sõnum tõestamaks selle allkirjastatust määratud Catcoini aadressiga.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1679,8 +1564,8 @@ Aadress: %4⏎</translation>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="+27"/>
         <location line="+3"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Sisesta Bitcoini aadress (nt: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Catcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>Sisesta Catcoini aadress (nt: Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="-2"/>
@@ -1689,8 +1574,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Enter Bitcoin signature</source>
-        <translation>Sisesta Bitcoini allkiri</translation>
+        <source>Enter Catcoin signature</source>
+        <translation>Sisesta Catcoini allkiri</translation>
     </message>
     <message>
         <location line="+82"/>
@@ -1763,7 +1648,7 @@ Aadress: %4⏎</translation>
     <name>SplashScreen</name>
     <message>
         <location filename="../splashscreen.cpp" line="+22"/>
-        <source>The Bitcoin developers</source>
+        <source>The Litecoin developers</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -2181,7 +2066,7 @@ Aadress: %4⏎</translation>
         <translation>Kuva tehingu detailid</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+139"/>
         <source>Export Transaction Data</source>
         <translation>Tehinguandmete eksport</translation>
     </message>
@@ -2257,7 +2142,7 @@ Aadress: %4⏎</translation>
 <context>
     <name>WalletView</name>
     <message>
-        <location filename="../walletview.cpp" line="+46"/>
+        <location filename="../walletview.cpp" line="+42"/>
         <source>&amp;Export</source>
         <translation type="unfinished"/>
     </message>
@@ -2267,7 +2152,7 @@ Aadress: %4⏎</translation>
         <translation type="unfinished"/>
     </message>
     <message>
-        <location line="+197"/>
+        <location line="+193"/>
         <source>Backup Wallet</source>
         <translation>Varundatud Rahakott</translation>
     </message>
@@ -2300,19 +2185,19 @@ Aadress: %4⏎</translation>
 <context>
     <name>bitcoin-core</name>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="+98"/>
-        <source>Bitcoin version</source>
-        <translation>Bitcoini versioon</translation>
+        <location filename="../bitcoinstrings.cpp" line="+94"/>
+        <source>Catcoin version</source>
+        <translation>Catcoini versioon</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+102"/>
         <source>Usage:</source>
         <translation>Kasutus:</translation>
     </message>
     <message>
-        <location line="-30"/>
-        <source>Send command to -server or bitcoind</source>
-        <translation>Saada käsklus -serverile või bitcoindile</translation>
+        <location line="-29"/>
+        <source>Send command to -server or catcoind</source>
+        <translation>Saada käsklus -serverile või catcoindile</translation>
     </message>
     <message>
         <location line="-23"/>
@@ -2320,24 +2205,24 @@ Aadress: %4⏎</translation>
         <translation>Käskluste loetelu</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-12"/>
         <source>Get help for a command</source>
         <translation>Käskluste abiinfo</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+24"/>
         <source>Options:</source>
         <translation>Valikud:</translation>
     </message>
     <message>
         <location line="+24"/>
-        <source>Specify configuration file (default: bitcoin.conf)</source>
-        <translation>Täpsusta sätete fail (vaikimisi: bitcoin.conf)</translation>
+        <source>Specify configuration file (default: catcoin.conf)</source>
+        <translation>Täpsusta sätete fail (vaikimisi: catcoin.conf)</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Specify pid file (default: bitcoind.pid)</source>
-        <translation>Täpsusta PID fail (vaikimisi: bitcoin.pid)</translation>
+        <source>Specify pid file (default: catcoind.pid)</source>
+        <translation>Täpsusta PID fail (vaikimisi: catcoin.pid)</translation>
     </message>
     <message>
         <location line="-1"/>
@@ -2351,8 +2236,8 @@ Aadress: %4⏎</translation>
     </message>
     <message>
         <location line="-28"/>
-        <source>Listen for connections on &lt;port&gt; (default: 8333 or testnet: 18333)</source>
-        <translation>Kuula ühendusi pordil &lt;port&gt; (vaikeväärtus: 8333 või testnet: 18333)</translation>
+        <source>Listen for connections on &lt;port&gt; (default: 9933 or testnet: 19933)</source>
+        <translation>Kuula ühendusi pordil &lt;port&gt; (vaikeväärtus: 9933 või testnet: 19933)</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -2360,12 +2245,12 @@ Aadress: %4⏎</translation>
         <translation>Säilita vähemalt &lt;n&gt; ühendust peeridega (vaikeväärtus: 125)</translation>
     </message>
     <message>
-        <location line="-49"/>
+        <location line="-48"/>
         <source>Connect to a node to retrieve peer addresses, and disconnect</source>
         <translation>Peeri aadressi saamiseks ühendu korraks node&apos;iga</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+82"/>
         <source>Specify your own public address</source>
         <translation>Täpsusta enda avalik aadress</translation>
     </message>
@@ -2375,19 +2260,19 @@ Aadress: %4⏎</translation>
         <translation>Ulakate peeride valulävi (vaikeväärtus: 100)</translation>
     </message>
     <message>
-        <location line="-136"/>
+        <location line="-134"/>
         <source>Number of seconds to keep misbehaving peers from reconnecting (default: 86400)</source>
         <translation>Mitme sekundi pärast ulakad peerid tagasi võivad tulla (vaikeväärtus: 86400)</translation>
     </message>
     <message>
-        <location line="-33"/>
+        <location line="-29"/>
         <source>An error occurred while setting up the RPC port %u for listening on IPv4: %s</source>
         <translation>RPC pordi %u kuulamiseks seadistamisel ilmnes viga IPv4&apos;l: %s</translation>
     </message>
     <message>
-        <location line="+31"/>
-        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 8332 or testnet: 18332)</source>
-        <translation>Kuula JSON-RPC ühendusel seda porti &lt;port&gt; (vaikeväärtus: 8332 või testnet: 18332)</translation>
+        <location line="+27"/>
+        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 9332 or testnet: 19332)</source>
+        <translation>Kuula JSON-RPC ühendusel seda porti &lt;port&gt; (vaikeväärtus: 9332 või testnet: 19332)</translation>
     </message>
     <message>
         <location line="+37"/>
@@ -2395,43 +2280,43 @@ Aadress: %4⏎</translation>
         <translation>Luba käsurea ning JSON-RPC käsklusi</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+76"/>
         <source>Run in the background as a daemon and accept commands</source>
         <translation>Tööta taustal ning aktsepteeri käsklusi</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+37"/>
         <source>Use the test network</source>
         <translation>Testvõrgu kasutamine</translation>
     </message>
     <message>
-        <location line="-114"/>
+        <location line="-112"/>
         <source>Accept connections from outside (default: 1 if no -proxy or -connect)</source>
         <translation>Luba välisühendusi (vaikeväärtus: 1 kui puudub -proxy või -connect)</translation>
     </message>
     <message>
-        <location line="-84"/>
+        <location line="-80"/>
         <source>%s, you must set a rpcpassword in the configuration file:
 %s
 It is recommended you use the following random password:
-rpcuser=bitcoinrpc
+rpcuser=catcoinrpc
 rpcpassword=%s
 (you do not need to remember this password)
 The username and password MUST NOT be the same.
 If the file does not exist, create it with owner-readable-only file permissions.
 It is also recommended to set alertnotify so you are notified of problems;
-for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
+for example: alertnotify=echo %%s | mail -s &quot;Catcoin Alert&quot; admin@foo.com
 </source>
         <translation>%s, sul tuleb rpcpassword määrata seadete failis:
 %s
 Soovitatav on kasutada järgmist juhuslikku parooli:
-rpcuser=bitcoinrpc
+rpcuser=catcoinrpc
 rpcpassword=%s
 (seda parooli ei pea meeles pidama)
 Kasutajanimi ning parool EI TOHI kattuda.
 Kui faili ei leita, loo see ainult-omaniku-loetavas failiõigustes .
 Soovitatav on seadistada tõrgete puhul teavitus;
-nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
+nt: alertnotify=echo %%s | email -s &quot;Catcoin Alert&quot; admin@foo.com
 </translation>
     </message>
     <message>
@@ -2446,16 +2331,11 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
     </message>
     <message>
         <location line="+3"/>
-        <source>Cannot obtain a lock on data directory %s. Bitcoin is probably already running.</source>
-        <translation>Ei suuda määrata ainuõigust andmekaustale %s. Tõenäolisel on Bitcoin juba avatud.</translation>
+        <source>Cannot obtain a lock on data directory %s. Catcoin is probably already running.</source>
+        <translation>Ei suuda määrata ainuõigust andmekaustale %s. Tõenäolisel on Catcoin juba avatud.</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Enter regression test mode, which uses a special chain in which blocks can be solved instantly. This is intended for regression testing tools and app development.</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+4"/>
         <source>Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
         <translation>Tõrge: Tehingust keelduti! Põhjuseks võib olla juba kulutatud mündid, nt kui wallet.dat fail koopias kulutatid mündid, kuid ei märgitud neid siin vastavalt.</translation>
     </message>
@@ -2496,8 +2376,8 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
     </message>
     <message>
         <location line="+3"/>
-        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Bitcoin will not work properly.</source>
-        <translation>Hoiatus: Palun kontrolli oma arvuti kuupäeva/kellaaega! Kui arvuti kell on vale, siis Bitcoin ei tööta korralikult</translation>
+        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Catcoin will not work properly.</source>
+        <translation>Hoiatus: Palun kontrolli oma arvuti kuupäeva/kellaaega! Kui arvuti kell on vale, siis Catcoin ei tööta korralikult</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2650,12 +2530,7 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Blokkide kontrollimise põhjalikkus (0-4, vaikeväärtus: 3)</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Incorrect or no genesis block found. Wrong datadir for network?</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+19"/>
         <source>Not enough file descriptors available.</source>
         <translation type="unfinished"/>
     </message>
@@ -2670,12 +2545,7 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Määra RPC kõnede haldurite arv (vaikeväärtus: 4)</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Specify wallet file (within data directory)</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+20"/>
+        <location line="+26"/>
         <source>Verifying blocks...</source>
         <translation>Kontrollin blokke...</translation>
     </message>
@@ -2685,17 +2555,7 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Kontrollin rahakotti...</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Wallet %s resides outside data directory %s</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>You need to rebuild the database using -reindex to change -txindex</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
-        <location line="-76"/>
+        <location line="-69"/>
         <source>Imports blocks from external blk000??.dat file</source>
         <translation>Impordi blokid välisest blk000??.dat failist</translation>
     </message>
@@ -2705,7 +2565,7 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation type="unfinished"/>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+77"/>
         <source>Information</source>
         <translation>Informatsioon</translation>
     </message>
@@ -2766,8 +2626,8 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
     </message>
     <message>
         <location line="+5"/>
-        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
-        <translation>SSL valikud: (vaata Bitcoini Wikist või SSL sätete juhendist)</translation>
+        <source>SSL options: (see the Catcoin Wiki for SSL setup instructions)</source>
+        <translation>SSL valikud: (vaata Catcoini Wikist või SSL sätete juhendist)</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2810,7 +2670,7 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Sea ühenduse timeout millisekundites (vaikeväärtus: 5000)</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>System error: </source>
         <translation>Süsteemi tõrge:</translation>
     </message>
@@ -2850,7 +2710,7 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>JSON-RPC ühenduste kasutajatunnus</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Warning</source>
         <translation>Hoiatus</translation>
     </message>
@@ -2860,37 +2720,42 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Hoiatus: versioon on aegunud, uuendus on nõutav!</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>You need to rebuild the databases using -reindex to change -txindex</source>
+        <translation>Andmebaas tuleb taastada kasutades -reindex, et muuta -txindex</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
         <translation>wallet.dat fail on katki, päästmine ebaõnnestus</translation>
     </message>
     <message>
-        <location line="-52"/>
+        <location line="-50"/>
         <source>Password for JSON-RPC connections</source>
         <translation>JSON-RPC ühenduste salasõna</translation>
     </message>
     <message>
-        <location line="-68"/>
+        <location line="-67"/>
         <source>Allow JSON-RPC connections from specified IP address</source>
         <translation>JSON-RPC ühenduste lubamine kindla IP pealt</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+76"/>
         <source>Send commands to node running on &lt;ip&gt; (default: 127.0.0.1)</source>
         <translation>Saada käsklusi node&apos;ile IP&apos;ga &lt;ip&gt; (vaikeväärtus: 127.0.0.1)</translation>
     </message>
     <message>
-        <location line="-121"/>
+        <location line="-120"/>
         <source>Execute command when the best block changes (%s in cmd is replaced by block hash)</source>
         <translation>Käivita käsklus, kui parim plokk muutub (käskluse %s asendatakse ploki hash&apos;iga)</translation>
     </message>
     <message>
-        <location line="+149"/>
+        <location line="+147"/>
         <source>Upgrade wallet to latest format</source>
         <translation>Uuenda rahakott uusimasse vormingusse</translation>
     </message>
     <message>
-        <location line="-22"/>
+        <location line="-21"/>
         <source>Set key pool size to &lt;n&gt; (default: 100)</source>
         <translation>Sea võtmete hulgaks &lt;n&gt; (vaikeväärtus: 100)</translation>
     </message>
@@ -2900,12 +2765,12 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Otsi ploki jadast rahakoti kadunud tehinguid</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+35"/>
         <source>Use OpenSSL (https) for JSON-RPC connections</source>
         <translation>Kasuta JSON-RPC ühenduste jaoks OpenSSL&apos;i (https)</translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-26"/>
         <source>Server certificate file (default: server.cert)</source>
         <translation>Serveri sertifikaadifail (vaikeväärtus: server.cert)</translation>
     </message>
@@ -2915,12 +2780,12 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Serveri privaatvõti (vaikeväärtus: server.pem)</translation>
     </message>
     <message>
-        <location line="-156"/>
+        <location line="-151"/>
         <source>Acceptable ciphers (default: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)</source>
         <translation>Lubatud šiffrid (vaikeväärtus: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)</translation>
     </message>
     <message>
-        <location line="+171"/>
+        <location line="+165"/>
         <source>This help message</source>
         <translation>Käesolev abitekst</translation>
     </message>
@@ -2930,7 +2795,7 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Selle arvutiga ei ole võimalik siduda %s külge (katse nurjus %d, %s tõttu)</translation>
     </message>
     <message>
-        <location line="-93"/>
+        <location line="-91"/>
         <source>Connect through socks proxy</source>
         <translation>Ühendu läbi turva proxi</translation>
     </message>
@@ -2940,37 +2805,37 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>-addnode, -seednode ja -connect tohivad kasutada DNS lookup&apos;i</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+55"/>
         <source>Loading addresses...</source>
         <translation>Aadresside laadimine...</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-35"/>
         <source>Error loading wallet.dat: Wallet corrupted</source>
         <translation>Viga wallet.dat käivitamisel. Vigane rahakkott</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Error loading wallet.dat: Wallet requires newer version of Bitcoin</source>
-        <translation>Viga wallet.dat käivitamisel: Rahakott nõuab Bitcoini uusimat versiooni</translation>
+        <source>Error loading wallet.dat: Wallet requires newer version of Catcoin</source>
+        <translation>Viga wallet.dat käivitamisel: Rahakott nõuab Catcoini uusimat versiooni</translation>
     </message>
     <message>
-        <location line="+96"/>
-        <source>Wallet needed to be rewritten: restart Bitcoin to complete</source>
-        <translation>Rahakott tuli ümberkirjutada: toimingu lõpetamiseks taaskäivita Bitcoin</translation>
+        <location line="+93"/>
+        <source>Wallet needed to be rewritten: restart Catcoin to complete</source>
+        <translation>Rahakott tuli ümberkirjutada: toimingu lõpetamiseks taaskäivita Catcoin</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-95"/>
         <source>Error loading wallet.dat</source>
         <translation>Viga wallet.dat käivitamisel</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+28"/>
         <source>Invalid -proxy address: &apos;%s&apos;</source>
         <translation>Vigane -proxi aadress: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+56"/>
         <source>Unknown network specified in -onlynet: &apos;%s&apos;</source>
         <translation>Kirjeldatud tundmatu võrgustik -onlynet&apos;is: &apos;%s&apos;</translation>
     </message>
@@ -2980,7 +2845,7 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Küsitud tundmatu -socks proxi versioon: %i</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-96"/>
         <source>Cannot resolve -bind address: &apos;%s&apos;</source>
         <translation>Tundmatu -bind aadress: &apos;%s&apos;</translation>
     </message>
@@ -2990,7 +2855,7 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Tundmatu -externalip aadress: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+44"/>
         <source>Invalid amount for -paytxfee=&lt;amount&gt;: &apos;%s&apos;</source>
         <translation>-paytxfee=&lt;amount&gt; jaoks vigane kogus: &apos;%s&apos;</translation>
     </message>
@@ -3010,14 +2875,14 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Klotside indeksi laadimine...</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-57"/>
         <source>Add a node to connect to and attempt to keep the connection open</source>
         <translation>Lisa node ning hoia ühendus avatud</translation>
     </message>
     <message>
         <location line="-25"/>
-        <source>Unable to bind to %s on this computer. Bitcoin is probably already running.</source>
-        <translation>%s&apos;ga ei ole võimalik sellest arvutist siduda. Bitcoin juba töötab.</translation>
+        <source>Unable to bind to %s on this computer. Catcoin is probably already running.</source>
+        <translation>%s&apos;ga ei ole võimalik sellest arvutist siduda. Catcoin juba töötab.</translation>
     </message>
     <message>
         <location line="+64"/>
@@ -3025,12 +2890,12 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Minu saadetavate tehingute lisatasu KB kohta</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+19"/>
         <source>Loading wallet...</source>
         <translation>Rahakoti laadimine...</translation>
     </message>
     <message>
-        <location line="-53"/>
+        <location line="-52"/>
         <source>Cannot downgrade wallet</source>
         <translation>Rahakoti vanandamine ebaõnnestus</translation>
     </message>
@@ -3040,22 +2905,22 @@ nt: alertnotify=echo %%s | email -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>Tõrge vaikimisi aadressi kirjutamisel</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+64"/>
         <source>Rescanning...</source>
         <translation>Üleskaneerimine...</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-57"/>
         <source>Done loading</source>
         <translation>Laetud</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+82"/>
         <source>To use the %s option</source>
         <translation>%s valiku kasutamine</translation>
     </message>
     <message>
-        <location line="-76"/>
+        <location line="-74"/>
         <source>Error</source>
         <translation>Tõrge</translation>
     </message>

@@ -1,7 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #ifndef __cplusplus
 # error This header can only be compiled as C++.
@@ -10,11 +14,20 @@
 #ifndef __INCLUDED_PROTOCOL_H__
 #define __INCLUDED_PROTOCOL_H__
 
-#include "chainparams.h"
+#include "codecoin.h"
 #include "serialize.h"
 #include "netbase.h"
 #include <string>
-#include "uint256.h"
+#include "uintBIG.h"
+
+extern bool fTestNet;
+static inline unsigned short GetDefaultPort(const bool testnet = fTestNet)
+{
+    return testnet ? P2P_PORT_TESTNET : P2P_PORT;
+}
+
+
+extern unsigned char pchMessageStart[4];
 
 /** Message header.
  * (4) message start.
@@ -42,6 +55,7 @@ class CMessageHeader
     // TODO: make private (improves encapsulation)
     public:
         enum {
+            MESSAGE_START_SIZE=sizeof(::pchMessageStart),
             COMMAND_SIZE=12,
             MESSAGE_SIZE_SIZE=sizeof(int),
             CHECKSUM_SIZE=sizeof(int),
@@ -60,6 +74,7 @@ class CMessageHeader
 enum
 {
     NODE_NETWORK = (1 << 0),
+    NODE_BLOOM = (1 << 1),
 };
 
 /** A CService with information about it as peer */
@@ -67,7 +82,7 @@ class CAddress : public CService
 {
     public:
         CAddress();
-        explicit CAddress(CService ipIn, uint64 nServicesIn=NODE_NETWORK);
+        explicit CAddress(CService ipIn, uint64_t nServicesIn=NODE_NETWORK);
 
         void Init();
 
@@ -90,13 +105,13 @@ class CAddress : public CService
 
     // TODO: make private (improves encapsulation)
     public:
-        uint64 nServices;
+        uint64_t nServices;
 
         // disk and network only
         unsigned int nTime;
 
         // memory only
-        int64 nLastTry;
+        int64_t nLastTry;
 };
 
 /** inv message data */

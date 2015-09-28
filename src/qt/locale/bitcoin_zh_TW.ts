@@ -1,15 +1,16 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="zh_TW" version="2.0">
+<defaultcodec>UTF-8</defaultcodec>
 <context>
     <name>AboutDialog</name>
     <message>
         <location filename="../forms/aboutdialog.ui" line="+14"/>
-        <source>About Bitcoin</source>
-        <translation>關於位元幣</translation>
+        <source>About Catcoin</source>
+        <translation>關於莱特幣</translation>
     </message>
     <message>
         <location line="+39"/>
-        <source>&lt;b&gt;Bitcoin&lt;/b&gt; version</source>
-        <translation>&lt;b&gt;位元幣&lt;/b&gt;版本</translation>
+        <source>&lt;b&gt;Catcoin&lt;/b&gt; version</source>
+        <translation>&lt;b&gt;莱特幣&lt;/b&gt;版本</translation>
     </message>
     <message>
         <location line="+57"/>
@@ -33,8 +34,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+0"/>
-        <source>The Bitcoin developers</source>
-        <translation>位元幣開發人員</translation>
+        <source>The Litecoin developers</source>
+        <translation>莱特幣開發人員</translation>
     </message>
 </context>
 <context>
@@ -66,8 +67,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="+63"/>
-        <source>These are your Bitcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
-        <translation>這些是你用來收款的位元幣位址. 你可以提供不同的位址給不同的付款人, 來追蹤是誰支付給你.</translation>
+        <source>These are your Catcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.</source>
+        <translation>這些是你用來收款的莱特幣位址. 你可以提供不同的位址給不同的付款人, 來追蹤是誰支付給你.</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="+14"/>
@@ -81,8 +82,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+11"/>
-        <source>Sign a message to prove you own a Bitcoin address</source>
-        <translation>簽署訊息是用來證明位元幣位址是你的</translation>
+        <source>Sign a message to prove you own a Catcoin address</source>
+        <translation>簽署訊息是用來證明莱特幣位址是你的</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -106,8 +107,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="-44"/>
-        <source>Verify a message to ensure it was signed with a specified Bitcoin address</source>
-        <translation>驗證訊息是用來確認訊息是用指定的位元幣位址簽署的</translation>
+        <source>Verify a message to ensure it was signed with a specified Catcoin address</source>
+        <translation>驗證訊息是用來確認訊息是用指定的莱特幣位址簽署的</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -121,8 +122,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="-5"/>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>這是你用來付款的位元幣位址. 在付錢之前, 務必要檢查金額和收款位址是否正確.</translation>
+        <source>These are your Catcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>這是你用來付款的莱特幣位址. 在付錢之前, 務必要檢查金額和收款位址是否正確.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -140,7 +141,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>付錢</translation>
     </message>
     <message>
-        <location line="+265"/>
+        <location line="+260"/>
         <source>Export Address Book Data</source>
         <translation>匯出位址簿資料</translation>
     </message>
@@ -247,8 +248,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+1"/>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
-        <translation>警告: 如果將錢包加密後忘記密碼, 你會&lt;b&gt;失去其中所有的位元幣&lt;/b&gt;!</translation>
+        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR LITECOINS&lt;/b&gt;!</source>
+        <translation>警告: 如果將錢包加密後忘記密碼, 你會&lt;b&gt;失去其中所有的莱特幣&lt;/b&gt;!</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -274,8 +275,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="-56"/>
-        <source>Bitcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>位元幣現在要關閉以完成加密程序. 請記住, 加密錢包無法完全防止入侵電腦的惡意程式偷取你的位元幣.</translation>
+        <source>Catcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your catcoins from being stolen by malware infecting your computer.</source>
+        <translation>莱特幣現在要關閉以完成加密程序. 請記住, 加密錢包無法完全防止入侵電腦的惡意程式偷取你的莱特幣.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -322,17 +323,17 @@ This product includes software developed by the OpenSSL Project for use in the O
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+254"/>
+        <location filename="../bitcoingui.cpp" line="+233"/>
         <source>Sign &amp;message...</source>
         <translation>訊息簽署...</translation>
     </message>
     <message>
-        <location line="+246"/>
+        <location line="+280"/>
         <source>Synchronizing with network...</source>
         <translation>網路同步中...</translation>
     </message>
     <message>
-        <location line="-321"/>
+        <location line="-349"/>
         <source>&amp;Overview</source>
         <translation>總覽</translation>
     </message>
@@ -372,9 +373,9 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>結束應用程式</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Show information about Bitcoin</source>
-        <translation>顯示位元幣相關資訊</translation>
+        <location line="+4"/>
+        <source>Show information about Catcoin</source>
+        <translation>顯示莱特幣相關資訊</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -392,7 +393,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>選項...</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+6"/>
         <source>&amp;Encrypt Wallet...</source>
         <translation>錢包加密...</translation>
     </message>
@@ -407,7 +408,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>密碼變更...</translation>
     </message>
     <message>
-        <location line="+251"/>
+        <location line="+285"/>
         <source>Importing blocks from disk...</source>
         <translation>從磁碟匯入區塊中...</translation>
     </message>
@@ -417,17 +418,17 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>重建磁碟區塊索引中...</translation>
     </message>
     <message>
-        <location line="-319"/>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>付錢到位元幣位址</translation>
+        <location line="-347"/>
+        <source>Send coins to a Catcoin address</source>
+        <translation>付錢到莱特幣位址</translation>
     </message>
     <message>
-        <location line="+52"/>
-        <source>Modify configuration options for Bitcoin</source>
-        <translation>修改位元幣的設定選項</translation>
+        <location line="+49"/>
+        <source>Modify configuration options for Catcoin</source>
+        <translation>修改莱特幣的設定選項</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+9"/>
         <source>Backup wallet to another location</source>
         <translation>將錢包備份到其它地方</translation>
     </message>
@@ -452,20 +453,18 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>驗證訊息...</translation>
     </message>
     <message>
-        <location line="-183"/>
-        <location line="+6"/>
-        <location line="+508"/>
-        <source>Bitcoin</source>
-        <translation>位元幣</translation>
+        <location line="-165"/>
+        <location line="+530"/>
+        <source>Catcoin</source>
+        <translation>莱特幣</translation>
     </message>
     <message>
-        <location line="-514"/>
-        <location line="+6"/>
+        <location line="-530"/>
         <source>Wallet</source>
         <translation>錢包</translation>
     </message>
     <message>
-        <location line="+107"/>
+        <location line="+101"/>
         <source>&amp;Send</source>
         <translation>付出</translation>
     </message>
@@ -480,14 +479,12 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>位址</translation>
     </message>
     <message>
-        <location line="+23"/>
-        <location line="+2"/>
-        <source>&amp;About Bitcoin</source>
-        <translation>關於位元幣</translation>
+        <location line="+22"/>
+        <source>&amp;About Catcoin</source>
+        <translation>關於莱特幣</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+2"/>
+        <location line="+9"/>
         <source>&amp;Show / Hide</source>
         <translation>顯示或隱藏</translation>
     </message>
@@ -503,13 +500,13 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+7"/>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>用位元幣位址簽署訊息來證明那是你的</translation>
+        <source>Sign messages with your Catcoin addresses to prove you own them</source>
+        <translation>用莱特幣位址簽署訊息來證明那是你的</translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>驗證訊息來確認是用指定的位元幣位址簽署的</translation>
+        <source>Verify messages to ensure they were signed with specified Catcoin addresses</source>
+        <translation>驗證訊息來確認是用指定的莱特幣位址簽署的</translation>
     </message>
     <message>
         <location line="+28"/>
@@ -532,21 +529,20 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>分頁工具列</translation>
     </message>
     <message>
-        <location line="-228"/>
-        <location line="+288"/>
+        <location line="+17"/>
+        <location line="+10"/>
         <source>[testnet]</source>
         <translation>[testnet]</translation>
     </message>
     <message>
-        <location line="-5"/>
-        <location line="+5"/>
-        <source>Bitcoin client</source>
-        <translation>位元幣客戶端軟體</translation>
+        <location line="+47"/>
+        <source>Catcoin client</source>
+        <translation>莱特幣客戶端軟體</translation>
     </message>
     <message numerus="yes">
-        <location line="+121"/>
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>與位元幣網路有 %n 個連線在使用中</numerusform></translation>
+        <location line="+141"/>
+        <source>%n active connection(s) to Catcoin network</source>
+        <translation><numerusform>與莱特幣網路有 %n 個連線在使用中</numerusform></translation>
     </message>
     <message>
         <location line="+22"/>
@@ -659,8 +655,8 @@ Address: %4
     <message>
         <location line="-23"/>
         <location line="+23"/>
-        <source>URI can not be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>無法解析 URI! 也許位元幣位址無效或 URI 參數有誤.</translation>
+        <source>URI can not be parsed! This can be caused by an invalid Catcoin address or malformed URI parameters.</source>
+        <translation>無法解析 URI! 也許莱特幣位址無效或 URI 參數有誤.</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -673,15 +669,15 @@ Address: %4
         <translation>錢包&lt;b&gt;已加密&lt;/b&gt;並且正&lt;b&gt;上鎖中&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoin.cpp" line="+110"/>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>發生了致命的錯誤. 位元幣程式無法再繼續安全執行, 只好結束.</translation>
+        <location filename="../bitcoin.cpp" line="+111"/>
+        <source>A fatal error occurred. Catcoin can no longer continue safely and will quit.</source>
+        <translation>發生了致命的錯誤. 莱特幣程式無法再繼續安全執行, 只好結束.</translation>
     </message>
 </context>
 <context>
     <name>ClientModel</name>
     <message>
-        <location filename="../clientmodel.cpp" line="+105"/>
+        <location filename="../clientmodel.cpp" line="+104"/>
         <source>Network Alert</source>
         <translation>網路警報</translation>
     </message>
@@ -740,8 +736,8 @@ Address: %4
     </message>
     <message>
         <location line="-5"/>
-        <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
-        <translation>輸入的位址 &quot;%1&quot; 並不是有效的位元幣位址.</translation>
+        <source>The entered address &quot;%1&quot; is not a valid Catcoin address.</source>
+        <translation>輸入的位址 &quot;%1&quot; 並不是有效的莱特幣位址.</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -755,43 +751,15 @@ Address: %4
     </message>
 </context>
 <context>
-    <name>FreespaceChecker</name>
-    <message>
-        <location filename="../intro.cpp" line="+61"/>
-        <source>A new data directory will be created.</source>
-        <translation>將會建立新的資料目錄.</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>name</source>
-        <translation>名稱</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Directory already exists. Add %1 if you intend to create a new directory here.</source>
-        <translation>目錄已經存在了. 如果你要在裡面建立新目錄的話, 請加上 %1.</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Path already exists, and is not a directory.</source>
-        <translation>已經存在該路徑了, 並且不是一個目錄.</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Cannot create data directory here.</source>
-        <translation>無法在這裡新增資料目錄</translation>
-    </message>
-</context>
-<context>
     <name>GUIUtil::HelpMessageBox</name>
     <message>
-        <location filename="../guiutil.cpp" line="+517"/>
-        <location line="+13"/>
-        <source>Bitcoin-Qt</source>
-        <translation>位元幣-Qt</translation>
+        <location filename="../guiutil.cpp" line="+424"/>
+        <location line="+12"/>
+        <source>Catcoin-Qt</source>
+        <translation>莱特幣-Qt</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-12"/>
         <source>version</source>
         <translation>版本</translation>
     </message>
@@ -826,59 +794,6 @@ Address: %4
         <source>Show splash screen on startup (default: 1)</source>
         <translation>顯示啓動畫面 (預設: 1)</translation>
     </message>
-    <message>
-        <location line="+1"/>
-        <source>Choose data directory on startup (default: 0)</source>
-        <translation>啓動時選擇資料目錄 (預設值: 0)</translation>
-    </message>
-</context>
-<context>
-    <name>Intro</name>
-    <message>
-        <location filename="../forms/intro.ui" line="+14"/>
-        <source>Welcome</source>
-        <translation>歡迎</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Welcome to Bitcoin-Qt.</source>
-        <translation>歡迎使用&quot;位元幣-Qt&quot;</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>As this is the first time the program is launched, you can choose where Bitcoin-Qt will store its data.</source>
-        <translation>由於這是程式第一次啓動, 你可以選擇&quot;位元幣-Qt&quot;儲存資料的地方.</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Bitcoin-Qt will download and store a copy of the Bitcoin block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</source>
-        <translation>位元幣-Qt 會下載並儲存一份位元幣區塊鏈結的拷貝. 至少有 %1GB 的資料會儲存到這個目錄中, 並且還會持續增長. 另外錢包資料也會儲存在這個目錄.</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Use the default data directory</source>
-        <translation>用預設的資料目錄</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Use a custom data directory:</source>
-        <translation>用自定的資料目錄:</translation>
-    </message>
-    <message>
-        <location filename="../intro.cpp" line="+100"/>
-        <source>Error</source>
-        <translation>錯誤</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>GB of free space available</source>
-        <translation>GB 可用空間</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>(of %1GB needed)</source>
-        <translation>(需要 %1GB)</translation>
-    </message>
 </context>
 <context>
     <name>OptionsDialog</name>
@@ -904,13 +819,13 @@ Address: %4
     </message>
     <message>
         <location line="+31"/>
-        <source>Automatically start Bitcoin after logging in to the system.</source>
-        <translation>在登入系統後自動啓動位元幣.</translation>
+        <source>Automatically start Catcoin after logging in to the system.</source>
+        <translation>在登入系統後自動啓動莱特幣.</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>&amp;Start Bitcoin on system login</source>
-        <translation>系統登入時啟動位元幣</translation>
+        <source>&amp;Start Catcoin on system login</source>
+        <translation>系統登入時啟動莱特幣</translation>
     </message>
     <message>
         <location line="+35"/>
@@ -929,8 +844,8 @@ Address: %4
     </message>
     <message>
         <location line="+6"/>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>自動在路由器上開啟 Bitcoin 的客戶端通訊埠. 只有在你的路由器支援 UPnP 且開啟時才有作用.</translation>
+        <source>Automatically open the Catcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>自動在路由器上開啟 Catcoin 的客戶端通訊埠. 只有在你的路由器支援 UPnP 且開啟時才有作用.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -939,8 +854,8 @@ Address: %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Connect to the Bitcoin network through a SOCKS proxy (e.g. when connecting through Tor).</source>
-        <translation>透過 SOCKS 代理伺服器連線至位元幣網路 (比如說要透過 Tor 連線).</translation>
+        <source>Connect to the Catcoin network through a SOCKS proxy (e.g. when connecting through Tor).</source>
+        <translation>透過 SOCKS 代理伺服器連線至莱特幣網路 (比如說要透過 Tor 連線).</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1014,8 +929,8 @@ Address: %4
     </message>
     <message>
         <location line="+13"/>
-        <source>The user interface language can be set here. This setting will take effect after restarting Bitcoin.</source>
-        <translation>可以在這裡設定使用者介面的語言. 這個設定在位元幣程式重啓後才會生效.</translation>
+        <source>The user interface language can be set here. This setting will take effect after restarting Catcoin.</source>
+        <translation>可以在這裡設定使用者介面的語言. 這個設定在莱特幣程式重啓後才會生效.</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -1029,8 +944,8 @@ Address: %4
     </message>
     <message>
         <location line="+9"/>
-        <source>Whether to show Bitcoin addresses in the transaction list or not.</source>
-        <translation>是否要在交易列表中顯示位元幣位址.</translation>
+        <source>Whether to show Catcoin addresses in the transaction list or not.</source>
+        <translation>是否要在交易列表中顯示莱特幣位址.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1053,7 +968,7 @@ Address: %4
         <translation>套用</translation>
     </message>
     <message>
-        <location filename="../optionsdialog.cpp" line="+54"/>
+        <location filename="../optionsdialog.cpp" line="+53"/>
         <source>default</source>
         <translation>預設</translation>
     </message>
@@ -1081,8 +996,8 @@ Address: %4
     <message>
         <location line="-9"/>
         <location line="+9"/>
-        <source>This setting will take effect after restarting Bitcoin.</source>
-        <translation>這個設定會在位元幣程式重啓後生效.</translation>
+        <source>This setting will take effect after restarting Catcoin.</source>
+        <translation>這個設定會在莱特幣程式重啓後生效.</translation>
     </message>
     <message>
         <location line="+29"/>
@@ -1099,14 +1014,19 @@ Address: %4
     </message>
     <message>
         <location line="+50"/>
-        <location line="+202"/>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>顯示的資訊可能是過期的. 與位元幣網路的連線建立後, 你的錢包會自動和網路同步, 但這個步驟還沒完成.</translation>
+        <location line="+166"/>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Catcoin network after a connection is established, but this process has not completed yet.</source>
+        <translation>顯示的資訊可能是過期的. 與莱特幣網路的連線建立後, 你的錢包會自動和網路同步, 但這個步驟還沒完成.</translation>
     </message>
     <message>
-        <location line="-131"/>
+        <location line="-124"/>
+        <source>Balance:</source>
+        <translation>餘額:</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Unconfirmed:</source>
-        <translation>未確認金額:</translation>
+        <translation>未確認額:</translation>
     </message>
     <message>
         <location line="-78"/>
@@ -1114,22 +1034,7 @@ Address: %4
         <translation>錢包</translation>
     </message>
     <message>
-        <location line="+49"/>
-        <source>Confirmed:</source>
-        <translation>已確認金額:</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Your current spendable balance</source>
-        <translation>目前可用餘額</translation>
-    </message>
-    <message>
-        <location line="+29"/>
-        <source>Total of transactions that have yet to be confirmed, and do not yet count toward the spendable balance</source>
-        <translation>尚未確認的交易的總金額, 可用餘額不包含此金額</translation>
-    </message>
-    <message>
-        <location line="+13"/>
+        <location line="+107"/>
         <source>Immature:</source>
         <translation>未熟成</translation>
     </message>
@@ -1139,19 +1044,19 @@ Address: %4
         <translation>尚未熟成的開採金額</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <source>Total:</source>
-        <translation>總金額:</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Your current total balance</source>
-        <translation>目前全部餘額</translation>
-    </message>
-    <message>
-        <location line="+53"/>
+        <location line="+46"/>
         <source>&lt;b&gt;Recent transactions&lt;/b&gt;</source>
         <translation>&lt;b&gt;最近交易&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <location line="-101"/>
+        <source>Your current balance</source>
+        <translation>目前餘額</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Total of transactions that have yet to be confirmed, and do not yet count toward the current balance</source>
+        <translation>尚未確認之交易的總額, 不包含在目前餘額中</translation>
     </message>
     <message>
         <location filename="../overviewpage.cpp" line="+116"/>
@@ -1163,28 +1068,9 @@ Address: %4
 <context>
     <name>PaymentServer</name>
     <message>
-        <location filename="../paymentserver.cpp" line="+108"/>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>無法啟動 bitcoin 隨按隨付處理器</translation>
-    </message>
-</context>
-<context>
-    <name>QObject</name>
-    <message>
-        <location filename="../bitcoin.cpp" line="+92"/>
-        <location filename="../intro.cpp" line="-32"/>
-        <source>Bitcoin</source>
-        <translation>位元幣</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Error: Specified data directory &quot;%1&quot; does not exist.</source>
-        <translation>錯誤: 不存在指定的資料目錄 &quot;%1&quot;.</translation>
-    </message>
-    <message>
-        <location filename="../intro.cpp" line="+1"/>
-        <source>Error: Specified data directory &quot;%1&quot; can not be created.</source>
-        <translation>錯誤: 無法新增指定的資料目錄 &quot;%1&quot;.</translation>
+        <location filename="../paymentserver.cpp" line="+107"/>
+        <source>Cannot start catcoin: click-to-pay handler</source>
+        <translation>無法啟動 catcoin 隨按隨付處理器</translation>
     </message>
 </context>
 <context>
@@ -1220,7 +1106,7 @@ Address: %4
         <translation>儲存為...</translation>
     </message>
     <message>
-        <location filename="../qrcodedialog.cpp" line="+64"/>
+        <location filename="../qrcodedialog.cpp" line="+62"/>
         <source>Error encoding URI into QR Code.</source>
         <translation>將 URI 編碼成 QR 條碼失敗</translation>
     </message>
@@ -1262,7 +1148,7 @@ Address: %4
         <location line="+53"/>
         <location line="+23"/>
         <location line="+23"/>
-        <location filename="../rpcconsole.cpp" line="+345"/>
+        <location filename="../rpcconsole.cpp" line="+339"/>
         <source>N/A</source>
         <translation>無</translation>
     </message>
@@ -1314,7 +1200,7 @@ Address: %4
     <message>
         <location line="+23"/>
         <source>Estimated total blocks</source>
-        <translation>估算總區塊數</translation>
+        <translation>估計總區塊數</translation>
     </message>
     <message>
         <location line="+23"/>
@@ -1333,8 +1219,8 @@ Address: %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Show the Bitcoin-Qt help message to get a list with possible Bitcoin command-line options.</source>
-        <translation>顯示&quot;位元幣-Qt&quot;的求助訊息, 來取得可用的命令列選項列表.</translation>
+        <source>Show the Catcoin-Qt help message to get a list with possible Catcoin command-line options.</source>
+        <translation>顯示莱特幣-Qt的求助訊息, 來取得可用的命令列選項列表.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1353,13 +1239,13 @@ Address: %4
     </message>
     <message>
         <location line="-104"/>
-        <source>Bitcoin - Debug window</source>
-        <translation>位元幣 - 除錯視窗</translation>
+        <source>Catcoin - Debug window</source>
+        <translation>莱特幣 - 除錯視窗</translation>
     </message>
     <message>
         <location line="+25"/>
-        <source>Bitcoin Core</source>
-        <translation>位元幣核心</translation>
+        <source>Catcoin Core</source>
+        <translation>莱特幣核心</translation>
     </message>
     <message>
         <location line="+279"/>
@@ -1368,8 +1254,8 @@ Address: %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Open the Bitcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
-        <translation>從目前的資料目錄下開啓位元幣的除錯紀錄檔. 當紀錄檔很大時可能要花好幾秒的時間.</translation>
+        <source>Open the Catcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
+        <translation>從目前的資料目錄下開啓莱特幣的除錯紀錄檔. 當紀錄檔很大時可能要花好幾秒的時間.</translation>
     </message>
     <message>
         <location line="+102"/>
@@ -1378,8 +1264,8 @@ Address: %4
     </message>
     <message>
         <location filename="../rpcconsole.cpp" line="-30"/>
-        <source>Welcome to the Bitcoin RPC console.</source>
-        <translation>歡迎使用位元幣 RPC 主控台.</translation>
+        <source>Welcome to the Catcoin RPC console.</source>
+        <translation>歡迎使用莱特幣 RPC 主控台.</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1396,7 +1282,7 @@ Address: %4
     <name>SendCoinsDialog</name>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="+14"/>
-        <location filename="../sendcoinsdialog.cpp" line="+128"/>
+        <location filename="../sendcoinsdialog.cpp" line="+124"/>
         <location line="+5"/>
         <location line="+5"/>
         <location line="+5"/>
@@ -1447,13 +1333,12 @@ Address: %4
         <translation>付出</translation>
     </message>
     <message>
-        <location filename="../sendcoinsdialog.cpp" line="-62"/>
-        <location line="+2"/>
+        <location filename="../sendcoinsdialog.cpp" line="-59"/>
         <source>&lt;b&gt;%1&lt;/b&gt; to %2 (%3)</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; 給 %2 (%3)</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
         <source>Confirm send coins</source>
         <translation>確認要付錢</translation>
     </message>
@@ -1522,8 +1407,8 @@ Address: %4
     </message>
     <message>
         <location line="+34"/>
-        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>付款的目標位址 (比如說 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>付款的目標位址 (比如說 Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+60"/>
@@ -1563,8 +1448,8 @@ Address: %4
     </message>
     <message>
         <location filename="../sendcoinsentry.cpp" line="+1"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>輸入位元幣位址 (比如說 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Catcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>輸入莱特幣位址 (比如說 Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
 </context>
 <context>
@@ -1586,8 +1471,8 @@ Address: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to sign the message with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>用來簽署訊息的位址 (比如說 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to sign the message with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>用來簽署訊息的位址 (比如說 Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -1628,8 +1513,8 @@ Address: %4
     </message>
     <message>
         <location line="+21"/>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>簽署訊息是用來證明這個位元幣位址是你的</translation>
+        <source>Sign the message to prove you own this Catcoin address</source>
+        <translation>簽署訊息是用來證明這個莱特幣位址是你的</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1659,13 +1544,13 @@ Address: %4
     </message>
     <message>
         <location line="+21"/>
-        <source>The address the message was signed with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>簽署該訊息的位址 (比如說 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address the message was signed with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>簽署該訊息的位址 (比如說 Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="+40"/>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>驗證訊息是用來確認訊息是用指定的位元幣位址簽署的</translation>
+        <source>Verify the message to ensure it was signed with the specified Catcoin address</source>
+        <translation>驗證訊息是用來確認訊息是用指定的莱特幣位址簽署的</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1680,8 +1565,8 @@ Address: %4
     <message>
         <location filename="../signverifymessagedialog.cpp" line="+27"/>
         <location line="+3"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>輸入位元幣位址 (比如說 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Catcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</source>
+        <translation>輸入莱特幣位址 (比如說 Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</translation>
     </message>
     <message>
         <location line="-2"/>
@@ -1690,8 +1575,8 @@ Address: %4
     </message>
     <message>
         <location line="+3"/>
-        <source>Enter Bitcoin signature</source>
-        <translation>輸入位元幣簽章</translation>
+        <source>Enter Catcoin signature</source>
+        <translation>輸入莱特幣簽章</translation>
     </message>
     <message>
         <location line="+82"/>
@@ -1764,8 +1649,8 @@ Address: %4
     <name>SplashScreen</name>
     <message>
         <location filename="../splashscreen.cpp" line="+22"/>
-        <source>The Bitcoin developers</source>
-        <translation>位元幣開發人員</translation>
+        <source>The Litecoin developers</source>
+        <translation>莱特幣開發人員</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2182,7 +2067,7 @@ Address: %4
         <translation>顯示交易明細</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+139"/>
         <source>Export Transaction Data</source>
         <translation>匯出交易資料</translation>
     </message>
@@ -2258,7 +2143,7 @@ Address: %4
 <context>
     <name>WalletView</name>
     <message>
-        <location filename="../walletview.cpp" line="+46"/>
+        <location filename="../walletview.cpp" line="+42"/>
         <source>&amp;Export</source>
         <translation>匯出</translation>
     </message>
@@ -2268,7 +2153,7 @@ Address: %4
         <translation>將目前分頁的資料匯出存成檔案</translation>
     </message>
     <message>
-        <location line="+197"/>
+        <location line="+193"/>
         <source>Backup Wallet</source>
         <translation>錢包備份</translation>
     </message>
@@ -2301,19 +2186,19 @@ Address: %4
 <context>
     <name>bitcoin-core</name>
     <message>
-        <location filename="../bitcoinstrings.cpp" line="+98"/>
-        <source>Bitcoin version</source>
-        <translation>位元幣版本</translation>
+        <location filename="../bitcoinstrings.cpp" line="+94"/>
+        <source>Catcoin version</source>
+        <translation>莱特幣版本</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+102"/>
         <source>Usage:</source>
         <translation>用法:</translation>
     </message>
     <message>
-        <location line="-30"/>
-        <source>Send command to -server or bitcoind</source>
-        <translation>送指令給 -server 或 bitcoind
+        <location line="-29"/>
+        <source>Send command to -server or catcoind</source>
+        <translation>送指令給 -server 或 catcoind
 </translation>
     </message>
     <message>
@@ -2323,27 +2208,27 @@ Address: %4
 </translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-12"/>
         <source>Get help for a command</source>
         <translation>取得指令說明
 </translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+24"/>
         <source>Options:</source>
         <translation>選項:
 </translation>
     </message>
     <message>
         <location line="+24"/>
-        <source>Specify configuration file (default: bitcoin.conf)</source>
-        <translation>指定設定檔 (預設: bitcoin.conf)
+        <source>Specify configuration file (default: catcoin.conf)</source>
+        <translation>指定設定檔 (預設: catcoin.conf)
 </translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Specify pid file (default: bitcoind.pid)</source>
-        <translation>指定行程識別碼檔案 (預設: bitcoind.pid)
+        <source>Specify pid file (default: catcoind.pid)</source>
+        <translation>指定行程識別碼檔案 (預設: catcoind.pid)
 </translation>
     </message>
     <message>
@@ -2359,8 +2244,8 @@ Address: %4
     </message>
     <message>
         <location line="-28"/>
-        <source>Listen for connections on &lt;port&gt; (default: 8333 or testnet: 18333)</source>
-        <translation>在通訊埠 &lt;port&gt; 聽候連線 (預設: 8333, 或若為測試網路: 18333)</translation>
+        <source>Listen for connections on &lt;port&gt; (default: 9933 or testnet: 19933)</source>
+        <translation>在通訊埠 &lt;port&gt; 聽候連線 (預設: 9933, 或若為測試網路: 19933)</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -2368,12 +2253,12 @@ Address: %4
         <translation>維持與節點連線數的上限為 &lt;n&gt; 個 (預設: 125)</translation>
     </message>
     <message>
-        <location line="-49"/>
+        <location line="-48"/>
         <source>Connect to a node to retrieve peer addresses, and disconnect</source>
         <translation>連線到某個節點以取得其它節點的位址, 然後斷線</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+82"/>
         <source>Specify your own public address</source>
         <translation>指定自己公開的位址</translation>
     </message>
@@ -2383,19 +2268,19 @@ Address: %4
         <translation>與亂搞的節點斷線的臨界值 (預設: 100)</translation>
     </message>
     <message>
-        <location line="-136"/>
+        <location line="-134"/>
         <source>Number of seconds to keep misbehaving peers from reconnecting (default: 86400)</source>
         <translation>避免與亂搞的節點連線的秒數 (預設: 86400)</translation>
     </message>
     <message>
-        <location line="-33"/>
+        <location line="-29"/>
         <source>An error occurred while setting up the RPC port %u for listening on IPv4: %s</source>
         <translation>在 IPv4 網路上以通訊埠 %u 聽取 RPC 連線時發生錯誤: %s</translation>
     </message>
     <message>
-        <location line="+31"/>
-        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 8332 or testnet: 18332)</source>
-        <translation>在通訊埠 &lt;port&gt; 聽候 JSON-RPC 連線 (預設: 8332, 或若為測試網路: 18332)</translation>
+        <location line="+27"/>
+        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 9332 or testnet: 19332)</source>
+        <translation>在通訊埠 &lt;port&gt; 聽候 JSON-RPC 連線 (預設: 9332, 或若為測試網路: 19332)</translation>
     </message>
     <message>
         <location line="+37"/>
@@ -2404,45 +2289,45 @@ Address: %4
 </translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+76"/>
         <source>Run in the background as a daemon and accept commands</source>
         <translation>以背景程式執行並接受指令</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+37"/>
         <source>Use the test network</source>
         <translation>使用測試網路
 </translation>
     </message>
     <message>
-        <location line="-114"/>
+        <location line="-112"/>
         <source>Accept connections from outside (default: 1 if no -proxy or -connect)</source>
         <translation>是否接受外來連線 (預設: 當沒有 -proxy 或 -connect 時預設為 1)</translation>
     </message>
     <message>
-        <location line="-84"/>
+        <location line="-80"/>
         <source>%s, you must set a rpcpassword in the configuration file:
 %s
 It is recommended you use the following random password:
-rpcuser=bitcoinrpc
+rpcuser=catcoinrpc
 rpcpassword=%s
 (you do not need to remember this password)
 The username and password MUST NOT be the same.
 If the file does not exist, create it with owner-readable-only file permissions.
 It is also recommended to set alertnotify so you are notified of problems;
-for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
+for example: alertnotify=echo %%s | mail -s &quot;Catcoin Alert&quot; admin@foo.com
 </source>
         <translation>%s, 你必須要在以下設定檔中設定 RPC 密碼(rpcpassword):
 %s
 建議你使用以下隨機產生的密碼:
-rpcuser=bitcoinrpc
+rpcuser=catcoinrpc
 rpcpassword=%s
 (你不用記住這個密碼)
 使用者名稱(rpcuser)和密碼(rpcpassword)不可以相同!
 如果設定檔還不存在, 請在新增時, 設定檔案權限為&quot;只有主人才能讀取&quot;.
 也建議你設定警示通知, 發生問題時你才會被通知到;
 比如說設定為:
-alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
+alertnotify=echo %%s | mail -s &quot;Catcoin Alert&quot; admin@foo.com
 </translation>
     </message>
     <message>
@@ -2457,16 +2342,11 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
     </message>
     <message>
         <location line="+3"/>
-        <source>Cannot obtain a lock on data directory %s. Bitcoin is probably already running.</source>
-        <translation>無法鎖定資料目錄 %s. 也許位元幣已經在執行了.</translation>
+        <source>Cannot obtain a lock on data directory %s. Catcoin is probably already running.</source>
+        <translation>無法鎖定資料目錄 %s. 也許莱特幣已經在執行了.</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Enter regression test mode, which uses a special chain in which blocks can be solved instantly. This is intended for regression testing tools and app development.</source>
-        <translation>進入回歸測試模式, 特別的區塊鎖鏈使用中, 可以立即解出區塊. 目的是用來做回歸測試, 以及配合應用程式的開發.</translation>
-    </message>
-    <message>
-        <location line="+4"/>
         <source>Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
         <translation>錯誤: 交易被拒絕了! 有時候會發生這種錯誤, 是因為你錢包中的一些錢已經被花掉了. 比如說你複製了錢包檔 wallet.dat, 然後用複製的錢包花掉了錢, 你現在所用的原來的錢包中卻沒有該筆交易紀錄.</translation>
     </message>
@@ -2507,8 +2387,8 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
     </message>
     <message>
         <location line="+3"/>
-        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Bitcoin will not work properly.</source>
-        <translation>警告: 請檢查電腦時間與日期是否正確! 位元幣無法在時鐘不準的情況下正常運作.</translation>
+        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Catcoin will not work properly.</source>
+        <translation>警告: 請檢查電腦時間與日期是否正確! 莱特幣無法在時鐘不準的情況下正常運作.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2628,7 +2508,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
     <message>
         <location line="+1"/>
         <source>Failed to write to coin database</source>
-        <translation>寫入位元幣資料庫失敗</translation>
+        <translation>寫入莱特幣資料庫失敗</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2648,7 +2528,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
     <message>
         <location line="+1"/>
         <source>Generate coins (default: 0)</source>
-        <translation>生產位元幣 (預設值: 0)</translation>
+        <translation>生產莱特幣 (預設值: 0)</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -2661,12 +2541,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>區塊檢查的仔細程度 (0 至 4, 預設: 3)</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Incorrect or no genesis block found. Wrong datadir for network?</source>
-        <translation>創世區塊不正確或找不到. 資料目錄錯了嗎?</translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+19"/>
         <source>Not enough file descriptors available.</source>
         <translation>檔案描述器不足.</translation>
     </message>
@@ -2681,12 +2556,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>設定處理 RPC 服務請求的執行緒數目 (預設為 4)</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Specify wallet file (within data directory)</source>
-        <translation>指定錢包檔(會在資料目錄中)</translation>
-    </message>
-    <message>
-        <location line="+20"/>
+        <location line="+26"/>
         <source>Verifying blocks...</source>
         <translation>驗證區塊資料中...</translation>
     </message>
@@ -2696,17 +2566,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>驗證錢包資料中...</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Wallet %s resides outside data directory %s</source>
-        <translation>錢包檔 %s 沒有在資料目錄 %s 裡面</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>You need to rebuild the database using -reindex to change -txindex</source>
-        <translation>改變 -txindex 參數後, 必須要用 -reindex 參數來重建資料庫</translation>
-    </message>
-    <message>
-        <location line="-76"/>
+        <location line="-69"/>
         <source>Imports blocks from external blk000??.dat file</source>
         <translation>從其它來源的 blk000??.dat 檔匯入區塊</translation>
     </message>
@@ -2716,7 +2576,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>設定指令碼驗證的執行緒數目 (最多為 16, 若為 0 表示程式自動決定, 小於 0 表示保留不用的處理器核心數目, 預設為 0)</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+77"/>
         <source>Information</source>
         <translation>資訊</translation>
     </message>
@@ -2777,8 +2637,8 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
     </message>
     <message>
         <location line="+5"/>
-        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
-        <translation>SSL 選項: (SSL 設定程序請見 Bitcoin Wiki)</translation>
+        <source>SSL options: (see the Catcoin Wiki for SSL setup instructions)</source>
+        <translation>SSL 選項: (SSL 設定程序請見 Catcoin Wiki)</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2821,7 +2681,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>指定連線在幾毫秒後逾時 (預設: 5000)</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>System error: </source>
         <translation>系統錯誤:</translation>
     </message>
@@ -2861,7 +2721,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>JSON-RPC 連線使用者名稱</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
@@ -2871,38 +2731,43 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>警告: 這個版本已經被淘汰掉了, 必須要升級!</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>You need to rebuild the databases using -reindex to change -txindex</source>
+        <translation>改變 -txindex 參數後, 必須要用 -reindex 參數來重建資料庫</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
         <translation>錢包檔 weallet.dat 壞掉了, 拯救失敗</translation>
     </message>
     <message>
-        <location line="-52"/>
+        <location line="-50"/>
         <source>Password for JSON-RPC connections</source>
         <translation>JSON-RPC 連線密碼</translation>
     </message>
     <message>
-        <location line="-68"/>
+        <location line="-67"/>
         <source>Allow JSON-RPC connections from specified IP address</source>
         <translation>只允許從指定網路位址來的 JSON-RPC 連線</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+76"/>
         <source>Send commands to node running on &lt;ip&gt; (default: 127.0.0.1)</source>
         <translation>送指令給在 &lt;ip&gt; 的節點 (預設: 127.0.0.1)
 </translation>
     </message>
     <message>
-        <location line="-121"/>
+        <location line="-120"/>
         <source>Execute command when the best block changes (%s in cmd is replaced by block hash)</source>
         <translation>當最新區塊改變時所要執行的指令 (指令中的 %s 會被取代為區塊的雜湊值)</translation>
     </message>
     <message>
-        <location line="+149"/>
+        <location line="+147"/>
         <source>Upgrade wallet to latest format</source>
         <translation>將錢包升級成最新的格式</translation>
     </message>
     <message>
-        <location line="-22"/>
+        <location line="-21"/>
         <source>Set key pool size to &lt;n&gt; (default: 100)</source>
         <translation>設定密鑰池大小為 &lt;n&gt; (預設: 100)
 </translation>
@@ -2913,13 +2778,13 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>重新掃描區塊鎖鏈, 以尋找錢包所遺漏的交易.</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+35"/>
         <source>Use OpenSSL (https) for JSON-RPC connections</source>
         <translation>於 JSON-RPC 連線使用 OpenSSL (https)
 </translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-26"/>
         <source>Server certificate file (default: server.cert)</source>
         <translation>伺服器憑證檔 (預設: server.cert)
 </translation>
@@ -2931,13 +2796,13 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
 </translation>
     </message>
     <message>
-        <location line="-156"/>
+        <location line="-151"/>
         <source>Acceptable ciphers (default: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)</source>
         <translation>可以接受的加密法 (預設: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)
 </translation>
     </message>
     <message>
-        <location line="+171"/>
+        <location line="+165"/>
         <source>This help message</source>
         <translation>此協助訊息
 </translation>
@@ -2948,7 +2813,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>無法和這台電腦上的 %s 繫結 (繫結回傳錯誤 %d, %s)</translation>
     </message>
     <message>
-        <location line="-93"/>
+        <location line="-91"/>
         <source>Connect through socks proxy</source>
         <translation>透過 SOCKS 代理伺服器連線</translation>
     </message>
@@ -2958,37 +2823,37 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>允許對 -addnode, -seednode, -connect 的參數使用域名查詢 </translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+55"/>
         <source>Loading addresses...</source>
         <translation>載入位址中...</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-35"/>
         <source>Error loading wallet.dat: Wallet corrupted</source>
         <translation>載入檔案 wallet.dat 失敗: 錢包壞掉了</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Error loading wallet.dat: Wallet requires newer version of Bitcoin</source>
-        <translation>載入檔案 wallet.dat 失敗: 此錢包需要新版的 Bitcoin</translation>
+        <source>Error loading wallet.dat: Wallet requires newer version of Catcoin</source>
+        <translation>載入檔案 wallet.dat 失敗: 此錢包需要新版的 Catcoin</translation>
     </message>
     <message>
-        <location line="+96"/>
-        <source>Wallet needed to be rewritten: restart Bitcoin to complete</source>
-        <translation>錢包需要重寫: 請重啟位元幣來完成</translation>
+        <location line="+93"/>
+        <source>Wallet needed to be rewritten: restart Catcoin to complete</source>
+        <translation>錢包需要重寫: 請重啟莱特幣來完成</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-95"/>
         <source>Error loading wallet.dat</source>
         <translation>載入檔案 wallet.dat 失敗</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+28"/>
         <source>Invalid -proxy address: &apos;%s&apos;</source>
         <translation>無效的 -proxy 位址: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+56"/>
         <source>Unknown network specified in -onlynet: &apos;%s&apos;</source>
         <translation>在 -onlynet 指定了不明的網路別: &apos;%s&apos;</translation>
     </message>
@@ -2998,7 +2863,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>在 -socks 指定了不明的代理協定版本: %i</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-96"/>
         <source>Cannot resolve -bind address: &apos;%s&apos;</source>
         <translation>無法解析 -bind 位址: &apos;%s&apos;</translation>
     </message>
@@ -3008,7 +2873,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>無法解析 -externalip 位址: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+44"/>
         <source>Invalid amount for -paytxfee=&lt;amount&gt;: &apos;%s&apos;</source>
         <translation>設定 -paytxfee=&lt;金額&gt; 的金額無效: &apos;%s&apos;</translation>
     </message>
@@ -3028,14 +2893,14 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>載入區塊索引中...</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-57"/>
         <source>Add a node to connect to and attempt to keep the connection open</source>
         <translation>加入一個要連線的節線, 並試著保持對它的連線暢通</translation>
     </message>
     <message>
         <location line="-25"/>
-        <source>Unable to bind to %s on this computer. Bitcoin is probably already running.</source>
-        <translation>無法和這台電腦上的 %s 繫結. 也許位元幣已經在執行了.</translation>
+        <source>Unable to bind to %s on this computer. Catcoin is probably already running.</source>
+        <translation>無法和這台電腦上的 %s 繫結. 也許莱特幣已經在執行了.</translation>
     </message>
     <message>
         <location line="+64"/>
@@ -3043,12 +2908,12 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>交易付款時每 KB 的交易手續費</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+19"/>
         <source>Loading wallet...</source>
         <translation>載入錢包中...</translation>
     </message>
     <message>
-        <location line="-53"/>
+        <location line="-52"/>
         <source>Cannot downgrade wallet</source>
         <translation>無法將錢包格式降級</translation>
     </message>
@@ -3058,22 +2923,22 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
         <translation>無法寫入預設位址</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+64"/>
         <source>Rescanning...</source>
         <translation>重新掃描中...</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-57"/>
         <source>Done loading</source>
         <translation>載入完成</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+82"/>
         <source>To use the %s option</source>
         <translation>為了要使用 %s 選項</translation>
     </message>
     <message>
-        <location line="-76"/>
+        <location line="-74"/>
         <source>Error</source>
         <translation>錯誤</translation>
     </message>

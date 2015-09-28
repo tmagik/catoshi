@@ -1,8 +1,15 @@
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include "editaddressdialog.h"
 #include "ui_editaddressdialog.h"
-
 #include "addresstablemodel.h"
 #include "guiutil.h"
+#include "codecoin.h"
 
 #include <QDataWidgetMapper>
 #include <QMessageBox>
@@ -26,7 +33,7 @@ EditAddressDialog::EditAddressDialog(Mode mode, QWidget *parent) :
         break;
     case EditReceivingAddress:
         setWindowTitle(tr("Edit receiving address"));
-        ui->addressEdit->setEnabled(false);
+        ui->addressEdit->setDisabled(true);
         break;
     case EditSendingAddress:
         setWindowTitle(tr("Edit sending address"));
@@ -45,9 +52,6 @@ EditAddressDialog::~EditAddressDialog()
 void EditAddressDialog::setModel(AddressTableModel *model)
 {
     this->model = model;
-    if(!model)
-        return;
-
     mapper->setModel(model);
     mapper->addMapping(ui->labelEdit, AddressTableModel::Label);
     mapper->addMapping(ui->addressEdit, AddressTableModel::Address);
@@ -62,7 +66,6 @@ bool EditAddressDialog::saveCurrentRow()
 {
     if(!model)
         return false;
-
     switch(mode)
     {
     case NewReceivingAddress:
@@ -87,39 +90,35 @@ void EditAddressDialog::accept()
 {
     if(!model)
         return;
-
     if(!saveCurrentRow())
     {
         switch(model->getEditStatus())
         {
-        case AddressTableModel::OK:
-            // Failed with unknown reason. Just reject.
-            break;
-        case AddressTableModel::NO_CHANGES:
-            // No changes were made during edit operation. Just reject.
-            break;
-        case AddressTableModel::INVALID_ADDRESS:
-            QMessageBox::warning(this, windowTitle(),
-                tr("The entered address \"%1\" is not a valid Bitcoin address.").arg(ui->addressEdit->text()),
-                QMessageBox::Ok, QMessageBox::Ok);
-            break;
         case AddressTableModel::DUPLICATE_ADDRESS:
             QMessageBox::warning(this, windowTitle(),
                 tr("The entered address \"%1\" is already in the address book.").arg(ui->addressEdit->text()),
                 QMessageBox::Ok, QMessageBox::Ok);
             break;
+        case AddressTableModel::INVALID_ADDRESS:
+            QMessageBox::warning(this, windowTitle(),
+                tr("The entered address \"%1\" is not a valid " BRAND_upper " address.").arg(ui->addressEdit->text()),
+                QMessageBox::Ok, QMessageBox::Ok);
+            return;
         case AddressTableModel::WALLET_UNLOCK_FAILURE:
             QMessageBox::critical(this, windowTitle(),
                 tr("Could not unlock wallet."),
                 QMessageBox::Ok, QMessageBox::Ok);
-            break;
+            return;
         case AddressTableModel::KEY_GENERATION_FAILURE:
             QMessageBox::critical(this, windowTitle(),
                 tr("New key generation failed."),
                 QMessageBox::Ok, QMessageBox::Ok);
+            return;
+        case AddressTableModel::OK:
+            // Failed with unknown reason. Just reject.
             break;
-
         }
+
         return;
     }
     QDialog::accept();

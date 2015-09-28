@@ -1,8 +1,16 @@
+// Copyright *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include "askpassphrasedialog.h"
 #include "ui_askpassphrasedialog.h"
 
 #include "guiconstants.h"
 #include "walletmodel.h"
+#include "codecoin.h"
 
 #include <QMessageBox>
 #include <QPushButton>
@@ -24,7 +32,11 @@ AskPassphraseDialog::AskPassphraseDialog(Mode mode, QWidget *parent) :
     ui->passEdit1->installEventFilter(this);
     ui->passEdit2->installEventFilter(this);
     ui->passEdit3->installEventFilter(this);
+    ui->capsLabel->clear();
 
+    //Setup Keyboard
+    keyboard = new VirtualKeyboard(this);
+    ui->keyboardLayout->addWidget(keyboard);
     switch(mode)
     {
         case Encrypt: // Ask passphrase x2
@@ -59,6 +71,8 @@ AskPassphraseDialog::AskPassphraseDialog(Mode mode, QWidget *parent) :
     connect(ui->passEdit1, SIGNAL(textChanged(QString)), this, SLOT(textChanged()));
     connect(ui->passEdit2, SIGNAL(textChanged(QString)), this, SLOT(textChanged()));
     connect(ui->passEdit3, SIGNAL(textChanged(QString)), this, SLOT(textChanged()));
+
+    connect(ui->keyboardToggle, SIGNAL(clicked()), keyboard, SLOT(toggleKeyboard()));
 }
 
 AskPassphraseDialog::~AskPassphraseDialog()
@@ -98,7 +112,7 @@ void AskPassphraseDialog::accept()
             break;
         }
         QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm wallet encryption"),
-                 tr("Warning: If you encrypt your wallet and lose your passphrase, you will <b>LOSE ALL OF YOUR BITCOINS</b>!") + "<br><br>" + tr("Are you sure you wish to encrypt your wallet?"),
+                 tr("WARNING: If you encrypt your wallet and lose your passphrase, you will <b>LOSE ALL OF YOUR COINS</b>!\nAre you sure you wish to encrypt your wallet?"),
                  QMessageBox::Yes|QMessageBox::Cancel,
                  QMessageBox::Cancel);
         if(retval == QMessageBox::Yes)
@@ -108,16 +122,7 @@ void AskPassphraseDialog::accept()
                 if(model->setWalletEncrypted(true, newpass1))
                 {
                     QMessageBox::warning(this, tr("Wallet encrypted"),
-                                         "<qt>" +
-                                         tr("Bitcoin will close now to finish the encryption process. "
-                                         "Remember that encrypting your wallet cannot fully protect "
-                                         "your bitcoins from being stolen by malware infecting your computer.") +
-                                         "<br><br><b>" +
-                                         tr("IMPORTANT: Any previous backups you have made of your wallet file "
-                                         "should be replaced with the newly generated, encrypted wallet file. "
-                                         "For security reasons, previous backups of the unencrypted wallet file "
-                                         "will become useless as soon as you start using the new, encrypted wallet.") +
-                                         "</b></qt>");
+                                         tr(BRAND " will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your " BRAND_upper "s from being stolen by malware infecting your computer."));
                     QApplication::quit();
                 }
                 else
@@ -166,7 +171,7 @@ void AskPassphraseDialog::accept()
             if(model->changePassphrase(oldpass, newpass1))
             {
                 QMessageBox::information(this, tr("Wallet encrypted"),
-                                     tr("Wallet passphrase was successfully changed."));
+                                     tr("Wallet passphrase was succesfully changed."));
                 QDialog::accept(); // Success
             }
             else
@@ -186,7 +191,7 @@ void AskPassphraseDialog::accept()
 
 void AskPassphraseDialog::textChanged()
 {
-    // Validate input, set Ok button to enabled when acceptable
+    // Validate input, set Ok button to enabled when accepable
     bool acceptable = false;
     switch(mode)
     {
@@ -213,7 +218,7 @@ bool AskPassphraseDialog::event(QEvent *event)
             fCapsLock = !fCapsLock;
         }
         if (fCapsLock) {
-            ui->capsLabel->setText(tr("Warning: The Caps Lock key is on!"));
+            ui->capsLabel->setText(tr("Warning: The Caps Lock key is on."));
         } else {
             ui->capsLabel->clear();
         }
@@ -223,7 +228,7 @@ bool AskPassphraseDialog::event(QEvent *event)
 
 bool AskPassphraseDialog::eventFilter(QObject *object, QEvent *event)
 {
-    /* Detect Caps Lock.
+    /* Detect Caps Lock. 
      * There is no good OS-independent way to check a key state in Qt, but we
      * can detect Caps Lock by checking for the following condition:
      * Shift key is down and the result is a lower case character, or
@@ -235,14 +240,18 @@ bool AskPassphraseDialog::eventFilter(QObject *object, QEvent *event)
         if (str.length() != 0) {
             const QChar *psz = str.unicode();
             bool fShift = (ke->modifiers() & Qt::ShiftModifier) != 0;
-            if ((fShift && *psz >= 'a' && *psz <= 'z') || (!fShift && *psz >= 'A' && *psz <= 'Z')) {
+            if ((fShift && psz->isLower()) || (!fShift && psz->isUpper())) {
                 fCapsLock = true;
-                ui->capsLabel->setText(tr("Warning: The Caps Lock key is on!"));
+                ui->capsLabel->setText(tr("Warning: The Caps Lock key is on."));
             } else if (psz->isLetter()) {
                 fCapsLock = false;
                 ui->capsLabel->clear();
             }
         }
+    } else if (event->type() == QEvent::FocusIn) {
+        if (object->inherits("QLineEdit")) {
+            keyboard->setInput(object);
     }
-    return QDialog::eventFilter(object, event);
+    }
+    return false;
 }

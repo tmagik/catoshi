@@ -1,9 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef _BITCOIN_COMPAT_H
-#define _BITCOIN_COMPAT_H
+// Copyright (c) 2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef _CODECOIN_COMPAT_H
+#define _CODECOIN_COMPAT_H 1
 
 #ifdef WIN32
 #define _WIN32_WINNT 0x0501
@@ -13,8 +14,14 @@
 #endif
 #define FD_SETSIZE 1024 // max number of fds in fd_set
 #include <winsock2.h>
+#include <mswsock.h>
 #include <ws2tcpip.h>
-#else
+#elif defined(ANDROID)
+#include <fcntl.h>
+#include <netdb.h>
+#include <endian.h>
+#include <linux/rtnetlink.h>
+#else // Linux
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/fcntl.h>
@@ -25,11 +32,14 @@
 #include <ifaddrs.h>
 #endif
 
+#ifndef _WIN64
+typedef u_int SOCKET;
+#endif
 #ifdef WIN32
 #define MSG_NOSIGNAL        0
 #define MSG_DONTWAIT        0
+typedef int socklen_t;
 #else
-typedef u_int SOCKET;
 #include "errno.h"
 #define WSAGetLastError()   errno
 #define WSAEINVAL           EINVAL

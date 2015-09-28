@@ -1,7 +1,15 @@
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef TRANSACTIONRECORD_H
 #define TRANSACTIONRECORD_H
 
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <QList>
 
@@ -46,8 +54,8 @@ public:
     /** @name Reported status
        @{*/
     Status status;
-    int64 depth;
-    int64 open_for; /**< Timestamp if status==OpenUntilDate, otherwise number
+	int64_t depth;
+	int64_t open_for; /**< Timestamp if status==OpenUntilDate, otherwise number
                       of additional blocks that need to be mined before
                       finalization */
     /**@}*/
@@ -70,7 +78,8 @@ public:
         SendToOther,
         RecvWithAddress,
         RecvFromOther,
-        SendToSelf
+        SendToSelf,
+        StakeMint
     };
 
     /** Number of confirmation needed for transaction */
@@ -81,15 +90,15 @@ public:
     {
     }
 
-    TransactionRecord(uint256 hash, int64 time):
+	TransactionRecord(uint256 hash, int64_t time):
             hash(hash), time(time), type(Other), address(""), debit(0),
             credit(0), idx(0)
     {
     }
 
-    TransactionRecord(uint256 hash, int64 time,
+	TransactionRecord(uint256 hash, int64_t time,
                 Type type, const std::string &address,
-                int64 debit, int64 credit):
+				int64_t debit, int64_t credit):
             hash(hash), time(time), type(type), address(address), debit(debit), credit(credit),
             idx(0)
     {
@@ -103,11 +112,11 @@ public:
     /** @name Immutable transaction attributes
       @{*/
     uint256 hash;
-    int64 time;
+	int64_t time;
     Type type;
     std::string address;
-    int64 debit;
-    int64 credit;
+	int64_t debit;
+	int64_t credit;
     /**@}*/
 
     /** Subtransaction index, for sort key */

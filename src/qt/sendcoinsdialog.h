@@ -1,8 +1,15 @@
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef SENDCOINSDIALOG_H
 #define SENDCOINSDIALOG_H
 
 #include <QDialog>
-#include <QVariant>
+#include <QString>
 
 namespace Ui {
     class SendCoinsDialog;
@@ -26,13 +33,12 @@ public:
 
     void setModel(WalletModel *model);
 
-    /** Set up the tab chain manually, as Qt messes up the tab chain by default in some cases (issue https://bugreports.qt-project.org/browse/QTBUG-10907).
+    /** Set up the tab chain manually, as Qt messes up the tab chain by default in some cases (issue http://bugreports.qt.nokia.com/browse/QTBUG-10907).
      */
     QWidget *setupTabChain(QWidget *prev);
 
-    void setAddress(const QString &address);
     void pasteEntry(const SendCoinsRecipient &rv);
-    bool handlePaymentRequest(const SendCoinsRecipient &recipient);
+    void handleURI(const QString &uri);
 
 public slots:
     void clear();
@@ -40,7 +46,7 @@ public slots:
     void accept();
     SendCoinsEntry *addEntry();
     void updateRemoveEnabled();
-    void setBalance(qint64 balance, qint64 unconfirmedBalance, qint64 immatureBalance);
+    void setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance);
 
 private:
     Ui::SendCoinsDialog *ui;
@@ -49,8 +55,22 @@ private:
 
 private slots:
     void on_sendButton_clicked();
+
     void removeEntry(SendCoinsEntry* entry);
     void updateDisplayUnit();
+    void coinControlFeatureChanged(bool);
+    void coinControlButtonClicked();
+    void coinControlChangeChecked(int);
+    void coinControlChangeEdited(const QString &);
+    void coinControlUpdateLabels();
+    void coinControlClipboardQuantity();
+    void coinControlClipboardAmount();
+    void coinControlClipboardFee();
+    void coinControlClipboardAfterFee();
+    void coinControlClipboardBytes();
+    void coinControlClipboardPriority();
+    void coinControlClipboardLowOutput();
+    void coinControlClipboardChange();
 };
 
 #endif // SENDCOINSDIALOG_H

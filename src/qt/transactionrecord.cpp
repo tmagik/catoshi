@@ -1,3 +1,11 @@
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include "transactionrecord.h"
 
 #include "wallet.h"
@@ -10,6 +18,10 @@ bool TransactionRecord::showTransaction(const CWalletTx &wtx)
     if (wtx.IsCoinBase())
     {
         // Ensures we show generated coins / mined transactions at depth 1
+		// Just hiding generate because it might orphans is not necessarily
+		// a good UI idea either as it gives the false impression of a slow
+		// network. A progress bar would probably be better UI
+		// TODO: implement progress bar UI
         if (!wtx.IsInMainChain())
         {
             return false;
@@ -24,14 +36,27 @@ bool TransactionRecord::showTransaction(const CWalletTx &wtx)
 QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *wallet, const CWalletTx &wtx)
 {
     QList<TransactionRecord> parts;
-    int64 nTime = wtx.GetTxTime();
-    int64 nCredit = wtx.GetCredit(true);
-    int64 nDebit = wtx.GetDebit();
-    int64 nNet = nCredit - nDebit;
+    qint64 nTime = wtx.GetTxTime();
+    qint64 nCredit = wtx.GetCredit(true);
+    qint64 nDebit = wtx.GetDebit();
+    qint64 nNet = nCredit - nDebit;
     uint256 hash = wtx.GetHash();
     std::map<std::string, std::string> mapValue = wtx.mapValue;
 
-    if (nNet > 0 || wtx.IsCoinBase())
+    if (showTransaction(wtx))
+    {
+        if (wtx.IsCoinStake()) // ppcoin: coinstake transaction
+        {
+            TransactionRecord sub(hash, nTime, TransactionRecord::StakeMint, "", -nDebit, wtx.GetValueOut());
+            CTxDestination address;
+            CTxOut txout = wtx.vout[1];
+
+            if(ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address))
+                sub.address = CBitcoinAddress(address).ToString();
+
+            parts.append(sub);
+        }
+        else if (nNet > 0 || wtx.IsCoinBase())
     {
         //
         // Credit
@@ -79,7 +104,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         if (fAllFromMe && fAllToMe)
         {
             // Payment to self
-            int64 nChange = wtx.GetChange();
+                qint64 nChange = wtx.GetChange();
 
             parts.append(TransactionRecord(hash, nTime, TransactionRecord::SendToSelf, "",
                             -(nDebit - nChange), nCredit - nChange));
@@ -89,7 +114,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             //
             // Debit
             //
-            int64 nTxFee = nDebit - GetValueOut(wtx);
+                qint64 nTxFee = nDebit - wtx.GetValueOut();
 
             for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
             {
@@ -118,7 +143,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                     sub.address = mapValue["to"];
                 }
 
-                int64 nValue = txout.nValue;
+				int64_t nValue = txout.nValue;
                 /* Add fee to first output */
                 if (nTxFee > 0)
                 {
@@ -137,6 +162,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             //
             parts.append(TransactionRecord(hash, nTime, TransactionRecord::Other, "", nNet, 0));
         }
+    }
     }
 
     return parts;
@@ -162,7 +188,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
     status.depth = wtx.GetDepthInMainChain();
     status.cur_num_blocks = nBestHeight;
 
-    if (!IsFinalTx(wtx))
+    if (!wtx.IsFinal())
     {
         if (wtx.nLockTime < LOCKTIME_THRESHOLD)
         {
@@ -192,9 +218,9 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
     }
 
     // For generated transactions, determine maturity
-    if(type == TransactionRecord::Generated)
+    if(type == TransactionRecord::Generated || type == TransactionRecord::StakeMint)
     {
-        int64 nCredit = wtx.GetCredit(true);
+        qint64 nCredit = wtx.GetCredit(true);
         if (nCredit == 0)
         {
             status.maturity = TransactionStatus::Immature;

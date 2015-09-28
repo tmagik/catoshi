@@ -1,19 +1,25 @@
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include "signverifymessagedialog.h"
 #include "ui_signverifymessagedialog.h"
 
 #include "addressbookpage.h"
-#include "base58.h"
 #include "guiutil.h"
-#include "init.h"
-#include "main.h"
-#include "optionsmodel.h"
 #include "walletmodel.h"
-#include "wallet.h"
 
-#include <QClipboard>
+#include "base58.h"
+#include "init.h"
+#include "wallet.h"
 
 #include <string>
 #include <vector>
+#include <QClipboard>
 
 SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
     QDialog(parent),
@@ -24,11 +30,10 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
 
 #if (QT_VERSION >= 0x040700)
     /* Do not move this to the XML file, Qt before 4.7 will choke on it */
-    ui->addressIn_SM->setPlaceholderText(tr("Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)"));
     ui->signatureOut_SM->setPlaceholderText(tr("Click \"Sign Message\" to generate signature"));
-
-    ui->addressIn_VM->setPlaceholderText(tr("Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)"));
-    ui->signatureIn_VM->setPlaceholderText(tr("Enter Bitcoin signature"));
+    ui->signatureIn_VM->setPlaceholderText(tr("Enter the signature of the message"));
+    ui->addressIn_SM->setPlaceholderText(tr("Enter a " BRAND_upper " address"));
+    ui->addressIn_VM->setPlaceholderText(tr("Enter a " BRAND_upper " address"));
 #endif
 
     GUIUtil::setupAddressWidget(ui->addressIn_SM, this);
@@ -70,7 +75,6 @@ void SignVerifyMessageDialog::setAddress_VM(const QString &address)
 void SignVerifyMessageDialog::showTab_SM(bool fShow)
 {
     ui->tabWidget->setCurrentIndex(0);
-
     if (fShow)
         this->show();
 }
@@ -111,7 +115,6 @@ void SignVerifyMessageDialog::on_signMessageButton_SM_clicked()
     CBitcoinAddress addr(ui->addressIn_SM->text().toStdString());
     if (!addr.IsValid())
     {
-        ui->addressIn_SM->setValid(false);
         ui->statusLabel_SM->setStyleSheet("QLabel { color: red; }");
         ui->statusLabel_SM->setText(tr("The entered address is invalid.") + QString(" ") + tr("Please check the address and try again."));
         return;
