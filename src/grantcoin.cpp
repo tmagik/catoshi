@@ -36,7 +36,7 @@ int64_t CTransaction::nMinTxFee = CENT;
 int64_t CTransaction::nMinRelayTxFee = CENT;
 
 // TODO: separate max clock drift from tx timestamp limits?
-const unsigned int nMaxClockDrift = 5000;
+const unsigned int nMaxClockDrift = 2*60*60;   // this is WAY to big..
 
 
 

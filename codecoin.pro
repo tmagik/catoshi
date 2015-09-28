@@ -30,6 +30,10 @@ contains(COIN_brand, givecoin) {
     DEFINES += BRAND_givecoin
     TARGET = givecoin
 } else {
+contains(COIN_brand, hamburger) {
+    DEFINES += BRAND_hamburger
+    TARGET = hamburger
+} else {
 contains(COIN_brand, givestake) { # for testing, for now
     DEFINES += BRAND_givecoin PPCOINSTAKE
     TARGET = givestake
@@ -41,7 +45,7 @@ contains(COIN_brand, bluecoin) {
     DEFINES += BRAND_codecoin
     TARGET = codecoin
     warning "Building GENERIC codecoin, probably will not work"
-}}}}}
+}}}}}}
 
 # for boost 1.37, add -mt to the boost libraries
 # use: qmake BOOST_LIB_SUFFIX=-mt
@@ -160,6 +164,16 @@ contains(BITCOIN_NEED_QT_PLUGINS, 1) {
     QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs qtaccessiblewidgets
 }
 
+# regenerate src/build.h
+!win32|contains(USE_BUILD_INFO, 1) {
+    genbuild.depends = FORCE
+    genbuild.commands = cd $$PWD; /bin/sh share/genbuild.sh $$OUT_PWD/build/build.h
+    genbuild.target = $$OUT_PWD/build/build.h
+    PRE_TARGETDEPS += $$OUT_PWD/build/build.h
+    QMAKE_EXTRA_TARGETS += genbuild
+    DEFINES += HAVE_BUILD_INFO
+}
+
 QMAKE_CXXFLAGS_WARN_ON = -fdiagnostics-show-option -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter -Wstack-protector
 
 # Input
@@ -187,6 +201,9 @@ HEADERS += src/qt/codecoingui.h \
     src/util.h \
     src/hash.h \
     src/uintBIG.h \
+    src/kernel.h \
+    src/scrypt.h \
+    src/pbkdf2.h \
     src/serialize.h \
     src/main.h \
     src/net.h \
@@ -277,6 +294,7 @@ SOURCES += src/qt/codecoin.cpp \
     src/key.cpp \
     src/script.cpp \
     src/main.cpp \
+    src/$${TARGET}.cpp \
     src/init.cpp \
     src/net.cpp \
     src/bloom.cpp \
@@ -333,8 +351,7 @@ SOURCES += src/qt/codecoin.cpp \
     src/noui.cpp \
     src/leveldb.cpp \
     src/txdb.cpp \
-    src/qt/splashscreen.cpp \
-    src/grantcoin.cpp
+    src/qt/splashscreen.cpp
 
 #leveldb sources
 SOURCES += src/leveldb/db/builder.cc src/leveldb/db/c.cc src/leveldb/db/dbformat.cc src/leveldb/db/db_impl.cc \
@@ -378,7 +395,7 @@ SOURCES += src/qt/qrcodedialog.cpp
 FORMS += src/qt/forms/qrcodedialog.ui
 }
 
-contains(BITCOIN_QT_TEST, 1) {
+contains(CODECOIN_QT_TEST, 1) {
 SOURCES += src/qt/test/test_main.cpp \
     src/qt/test/uritests.cpp
 HEADERS += src/qt/test/uritests.h
@@ -486,7 +503,7 @@ win32:!contains(MINGW_THREAD_BUGFIX, 0) {
 
 !win32:!macx {
     DEFINES += LINUX
-    !android:LIBS += -lrt
+    LIBS += -lrt
     # _FILE_OFFSET_BITS=64 lets 32-bit fopen transparently support large files.
     DEFINES += _FILE_OFFSET_BITS=64
 }
@@ -519,3 +536,14 @@ contains(RELEASE, 1) {
 }
 
 system($$QMAKE_LRELEASE -silent $$TRANSLATIONS)
+
+#DISTFILES += \
+#    android/gradle/wrapper/gradle-wrapper.jar \
+#    android/AndroidManifest.xml \
+#    android/gradlew.bat \
+#    android/res/values/libs.xml \
+#    android/build.gradle \
+#    android/gradle/wrapper/gradle-wrapper.properties \
+#    android/gradlew
+
+#ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android

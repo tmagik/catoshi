@@ -4,6 +4,8 @@ src/*.exe
 src/codecoin
 src/codecoind
 src/test_codecoin
+src/catcoind
+src/grantcoind
 src/obj/*
 src/obj-test/*
 .*.swp
@@ -20,6 +22,7 @@ src/obj-test/*
 Makefile
 codecoin-qt
 Codecoin-Qt.app
+grantcoin
 
 # Unit-tests
 Makefile.test
