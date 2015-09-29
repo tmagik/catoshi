@@ -105,6 +105,15 @@ In this version, it is only enforced for peers that send protocol versions
 removed. It is recommended to update SPV clients to check for the `NODE_BLOOM`
 service bit for nodes that report versions newer than 70011.
 
+Merkle branches removed from wallet
+-----------------------------------
+
+Previously, every wallet transaction stored a Merkle branch to prove its
+presence in blocks. This wasn't being used for more than an expensive
+sanity check. Since 0.12, these are no longer stored. When loading a
+0.12 wallet into an older version, it will automatically rescan to avoid
+failed checks.
+
 0.12.0 Change log
 =================
 
@@ -114,6 +123,33 @@ the code changes and accompanying discussion, both the pull request and
 git merge commit are mentioned.
 
 ### RPC and REST
+
+Asm representations of scriptSig signatures now contain SIGHASH type decodes
+----------------------------------------------------------------------------
+
+The `asm` property of each scriptSig now contains the decoded signature hash
+type for each signature that provides a valid defined hash type.
+
+The following items contain assembly representations of scriptSig signatures
+and are affected by this change:
+
+- RPC `getrawtransaction`
+- RPC `decoderawtransaction`
+- REST `/rest/tx/` (JSON format)
+- REST `/rest/block/` (JSON format when including extended tx details)
+- `bitcoin-tx -json`
+
+For example, the `scriptSig.asm` property of a transaction input that
+previously showed an assembly representation of:
+
+    304502207fa7a6d1e0ee81132a269ad84e68d695483745cde8b541e3bf630749894e342a022100c1f7ab20e13e22fb95281a870f3dcf38d782e53023ee313d741ad0cfbc0c509001
+
+now shows as:
+
+    304502207fa7a6d1e0ee81132a269ad84e68d695483745cde8b541e3bf630749894e342a022100c1f7ab20e13e22fb95281a870f3dcf38d782e53023ee313d741ad0cfbc0c5090[ALL]
+
+Note that the output of the RPC `decodescript` did not change because it is
+configured specifically to process scriptPubKey and not scriptSig scripts.
 
 ### Configuration and command-line options
 
