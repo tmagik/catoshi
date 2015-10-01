@@ -8,7 +8,6 @@
 # Add python-bitcoinrpc to module search path:
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "python-bitcoinrpc"))
 
 import json
 import shutil
@@ -16,8 +15,7 @@ import subprocess
 import tempfile
 import traceback
 
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
-from util import *
+from test_framework.util import *
 
 
 def check_array_result(object_array, to_match, expected):
@@ -75,6 +73,21 @@ def run_test(nodes, tmpdir):
     except JSONRPCException,e:
         assert(e.error['code']==-12)
 
+    # refill keypool with three new addresses
+    nodes[0].walletpassphrase('test', 12000)
+    nodes[0].keypoolrefill(3)
+    nodes[0].walletlock()
+
+    # drain them by mining
+    nodes[0].generate(1)
+    nodes[0].generate(1)
+    nodes[0].generate(1)
+    nodes[0].generate(1)
+    try:
+        nodes[0].generate(1)
+        raise AssertionError('Keypool should be exhausted after three addesses')
+    except JSONRPCException,e:
+        assert(e.error['code']==-12)
 
 def main():
     import optparse

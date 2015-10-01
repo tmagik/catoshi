@@ -32,14 +32,14 @@ enum bloomflags
 
 /**
  * BloomFilter is a probabilistic filter which SPV clients provide
- * so that we can filter the transactions we sends them.
+ * so that we can filter the transactions we send them.
  * 
  * This allows for significantly more efficient transaction and block downloads.
  * 
- * Because bloom filters are probabilistic, an SPV node can increase the false-
- * positive rate, making us send them transactions which aren't actually theirs, 
+ * Because bloom filters are probabilistic, a SPV node can increase the false-
+ * positive rate, making us send it transactions which aren't actually its,
  * allowing clients to trade more bandwidth for more privacy by obfuscating which
- * keys are owned by them.
+ * keys are controlled by them.
  */
 class CBloomFilter
 {
@@ -89,6 +89,7 @@ public:
     bool contains(const uint256& hash) const;
 
     void clear();
+    void reset(unsigned int nNewTweak);
 
     //! True if the size is <= MAX_BLOOM_FILTER_SIZE and the number of hash functions is <= MAX_HASH_FUNCS
     //! (catch a filter which was just deserialized which was too big)
@@ -103,7 +104,11 @@ public:
 
 /**
  * RollingBloomFilter is a probabilistic "keep track of most recently inserted" set.
- * Construct it with the number of items to keep track of, and a false-positive rate.
+ * Construct it with the number of items to keep track of, and a false-positive
+ * rate. Unlike CBloomFilter, by default nTweak is set to a cryptographically
+ * secure random value for you. Similarly rather than clear() the method
+ * reset() is provided, which also changes nTweak to decrease the impact of
+ * false-positives.
  *
  * contains(item) will always return true if item was one of the last N things
  * insert()'ed ... but may also return true for items that were not inserted.
@@ -111,12 +116,17 @@ public:
 class CRollingBloomFilter
 {
 public:
-    CRollingBloomFilter(unsigned int nElements, double nFPRate, unsigned int nTweak);
+    // A random bloom filter calls GetRand() at creation time.
+    // Don't create global CRollingBloomFilter objects, as they may be
+    // constructed before the randomizer is properly initialized.
+    CRollingBloomFilter(unsigned int nElements, double nFPRate);
 
     void insert(const std::vector<unsigned char>& vKey);
+    void insert(const uint256& hash);
     bool contains(const std::vector<unsigned char>& vKey) const;
+    bool contains(const uint256& hash) const;
 
-    void clear();
+    void reset();
 
 private:
     unsigned int nBloomSize;

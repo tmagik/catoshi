@@ -1,5 +1,5 @@
-Coding
-====================
+Coding Standards
+================
 
 Various coding styles have been used during the history of the codebase,
 and the result is not very consistent. However, we're now trying to converge to
@@ -53,7 +53,7 @@ bool function(int arg1, const char *arg2)
 ```
 A complete list of `@xxx` commands can be found at http://www.stack.nl/~dimitri/doxygen/manual/commands.html.
 As Doxygen recognizes the comments by the delimiters (`/**` and `*/` in this case), you don't
-*need* to provide any commands for a comment to be valid, just a description text is fine. 
+*need* to provide any commands for a comment to be valid; just a description text is fine.
 
 To describe a class use the same construct above the class definition:
 ```c++
@@ -102,7 +102,7 @@ CXXFLAGS="-g -ggdb -O0" or whatever debug flags you need.
 If the code is behaving strangely, take a look in the debug.log file in the data directory;
 error and debugging messages are written there.
 
-The -debug=... command-line option controls debugging; running with just -debug will turn
+The -debug=... command-line option controls debugging; running with just -debug or -debug=1 will turn
 on all categories (and give you a very large debug.log file).
 
 The Qt code routes qDebug() output to debug.log under category "qt": run with -debug=qt
@@ -171,16 +171,3 @@ Threads
 - BitcoinMiner : Generates bitcoins (if wallet is enabled).
 
 - Shutdown : Does an orderly shutdown of everything.
-
-Pull Request Terminology
-------------------------
-
-Concept ACK - Agree with the idea and overall direction, but haven't reviewed the code changes or tested them.
-
-utACK (untested ACK) - Reviewed and agree with the code changes but haven't actually tested them.
-
-Tested ACK - Reviewed the code changes and have verified the functionality or bug fix.
-
-ACK -  A loose ACK can be confusing. It's best to avoid them unless it's a documentation/comment only change in which case there is nothing to test/verify; therefore the tested/untested distinction is not there.
-
-NACK - Disagree with the code changes/concept. Should be accompanied by an explanation. 

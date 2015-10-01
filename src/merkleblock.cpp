@@ -119,8 +119,8 @@ uint256 CPartialMerkleTree::TraverseAndExtract(int height, unsigned int pos, uns
         if (pos*2+1 < CalcTreeWidth(height-1)) {
             right = TraverseAndExtract(height-1, pos*2+1, nBitsUsed, nHashUsed, vMatch);
             if (right == left) {
-                // If the left and right branch should never be identical as the transaction
-                // hashes covered by them must be unique.
+                // The left and right branches should never be identical, as the transaction
+                // hashes covered by them must each be unique.
                 fBad = true;
             }
         } else {
@@ -168,7 +168,7 @@ uint256 CPartialMerkleTree::ExtractMatches(std::vector<uint256> &vMatch) {
     // traverse the partial tree
     unsigned int nBitsUsed = 0, nHashUsed = 0;
     uint256 hashMerkleRoot = TraverseAndExtract(nHeight, 0, nBitsUsed, nHashUsed, vMatch);
-    // verify that no problems occured during the tree traversal
+    // verify that no problems occurred during the tree traversal
     if (fBad)
         return uint256();
     // verify that all bits were consumed (except for the padding caused by serializing it as a byte sequence)
