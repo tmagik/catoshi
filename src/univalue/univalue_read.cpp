@@ -188,25 +188,22 @@ enum jtokentype getJsonToken(string& tokenVal, unsigned int& consumed,
                 case 't':  valStr += "\t"; break;
 
                 case 'u': {
-                    char buf[4] = {0,0,0,0};
-                    char *last = &buf[0];
                     unsigned int codepoint;
                     if (hatoui(raw + 1, raw + 1 + 4, codepoint) !=
                                raw + 1 + 4)
                         return JTOK_ERR;
 
                     if (codepoint <= 0x7f)
-                         *last = (char)codepoint;
+                        valStr.push_back((char)codepoint);
                     else if (codepoint <= 0x7FF) {
-                        *last++ = (char)(0xC0 | (codepoint >> 6));
-                        *last = (char)(0x80 | (codepoint & 0x3F));
+                        valStr.push_back((char)(0xC0 | (codepoint >> 6)));
+                        valStr.push_back((char)(0x80 | (codepoint & 0x3F)));
                     } else if (codepoint <= 0xFFFF) {
-                        *last++ = (char)(0xE0 | (codepoint >> 12));
-                        *last++ = (char)(0x80 | ((codepoint >> 6) & 0x3F));
-                        *last = (char)(0x80 | (codepoint & 0x3F));
+                        valStr.push_back((char)(0xE0 | (codepoint >> 12)));
+                        valStr.push_back((char)(0x80 | ((codepoint >> 6) & 0x3F)));
+                        valStr.push_back((char)(0x80 | (codepoint & 0x3F)));
                     }
 
-                    valStr += buf;
                     raw += 4;
                     break;
                     }
@@ -247,16 +244,16 @@ bool UniValue::read(const char *raw)
     bool expectColon = false;
     vector<UniValue*> stack;
 
+    string tokenVal;
+    unsigned int consumed;
     enum jtokentype tok = JTOK_NONE;
     enum jtokentype last_tok = JTOK_NONE;
-    while (1) {
+    do {
         last_tok = tok;
 
-        string tokenVal;
-        unsigned int consumed;
         tok = getJsonToken(tokenVal, consumed, raw);
         if (tok == JTOK_NONE || tok == JTOK_ERR)
-            break;
+            return false;
         raw += consumed;
 
         switch (tok) {
@@ -380,9 +377,11 @@ bool UniValue::read(const char *raw)
         default:
             return false;
         }
-    }
+    } while (!stack.empty ());
 
-    if (stack.size() != 0)
+    /* Check that nothing follows the initial construct (parsed above).  */
+    tok = getJsonToken(tokenVal, consumed, raw);
+    if (tok != JTOK_NONE)
         return false;
 
     return true;

@@ -6,7 +6,8 @@
 #include "wallet/walletdb.h"
 
 #include "base58.h"
-#include "main.h"
+#include "consensus/validation.h"
+#include "main.h" // For CheckTransaction
 #include "protocol.h"
 #include "serialize.h"
 #include "sync.h"
@@ -130,12 +131,14 @@ bool CWalletDB::EraseWatchOnly(const CScript &dest)
 bool CWalletDB::WriteBestBlock(const CBlockLocator& locator)
 {
     nWalletDBUpdated++;
-    return Write(std::string("bestblock"), locator);
+    Write(std::string("bestblock"), CBlockLocator()); // Write empty block locator so versions that require a merkle branch automatically rescan
+    return Write(std::string("bestblock_nomerkle"), locator);
 }
 
 bool CWalletDB::ReadBestBlock(CBlockLocator& locator)
 {
-    return Read(std::string("bestblock"), locator);
+    if (Read(std::string("bestblock"), locator) && !locator.vHave.empty()) return true;
+    return Read(std::string("bestblock_nomerkle"), locator);
 }
 
 bool CWalletDB::WriteOrderPosNext(int64_t nOrderPosNext)
@@ -915,7 +918,7 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
     }
 
     std::vector<CDBEnv::KeyValPair> salvagedData;
-    bool allOK = dbenv.Salvage(newFilename, true, salvagedData);
+    bool fSuccess = dbenv.Salvage(newFilename, true, salvagedData);
     if (salvagedData.empty())
     {
         LogPrintf("Salvage(aggressive) found no records in %s.\n", newFilename);
@@ -923,7 +926,6 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
     }
     LogPrintf("Salvage(aggressive) found %u records\n", salvagedData.size());
 
-    bool fSuccess = allOK;
     boost::scoped_ptr<Db> pdbCopy(new Db(dbenv.dbenv, 0));
     int ret = pdbCopy->open(NULL,               // Txn pointer
                             filename.c_str(),   // Filename
