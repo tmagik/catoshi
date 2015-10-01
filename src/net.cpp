@@ -1651,7 +1651,7 @@ void static Discover()
     if (!fDiscover)
         return;
 
-#if defined(WIN32) || defined(ANDROID) // TODO FIXTHIS, https://github.com/kmackay/android-ifaddrs
+#if defined(WIN32) || defined(OS_ANDROID) // TODO FIXTHIS, https://github.com/kmackay/android-ifaddrs
     // Get local host IP
     char pszHostName[1000] = "";
     if (gethostname(pszHostName, sizeof(pszHostName)) != SOCKET_ERROR)

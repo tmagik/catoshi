@@ -2215,7 +2215,7 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 
 	// Check coinbase timestamp
 	if (vtx[0].has_nTime() && GetBlockTime() > (int64_t)vtx[0].nTime + nMaxClockDrift){
-		return state.DoS(50, error("CheckBlock() : coinbase timestamp drift %" PRId64" exceeds limit %" PRId64, GetBlockTime()-vtx[0].nTime, nMaxClockDrift));
+		return state.DoS(50, error("CheckBlock() : coinbase timestamp drift %" PRId64" exceeds limit %u", GetBlockTime()-vtx[0].nTime, nMaxClockDrift));
 	}
 	// Check coinstake timestamp
 	if (IsProofOfStake() && !CheckCoinStakeTimestamp(GetBlockTime(), (int64_t)vtx[1].nTime))
@@ -4646,7 +4646,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 					pblock->vtx[0].nTime = txCoinStake.nTime;
 					pblock->vtx.push_back(txCoinStake);
 				} else {
-					printf("WARNING: coinstake nTime=%" PRId64 " with prev block=%d\n", 
+					printf("WARNING: coinstake nTime=%" PRIu32 " with prev block=%" PRId64 "\n", 
 						txCoinStake.nTime, pindexPrev->GetBlockTime());
 					pblock->vtx.push_back(txCoinStake);
 				}

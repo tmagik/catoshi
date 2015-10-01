@@ -153,8 +153,15 @@ contains(USE_IPV6, -) {
     DEFINES += USE_IPV6=$$USE_IPV6
 }
 
+#leveldb hacks?
+QMAKE_CXXFLAGS=-std=c++11
+
+#Try to match platform leveldb build defines
 android:DEFINES += LEVELDB_PLATFORM_POSIX OS_ANDROID
-unix:DEFINES += LEVELDB_PLATFORM_POSIX OS_LINUX
+#unix:DEFINES += OS_LINUX LEVELDB_PLATFORM_POSIX NDEBUG
+#unix:DEFINES += OS_LINUX LEVELDB_PLATFORM_POSIX LEVELDB_ATOMIC_PRESENT NDEBUG
+# no scoped enums again..
+unix:DEFINES += OS_LINUX LEVELDB_PLATFORM_POSIX LEVELDB_ATOMIC_PRESENT BOOST_NO_CXX11_SCOPED_ENUMS
 windows:DEFINES += LEVELDB_PLATFORM_WINDOWS OS_WINDOWS
 
 INCLUDEPATH += src/leveldb/include src/leveldb/helpers src/leveldb
@@ -312,7 +319,7 @@ SOURCES += src/qt/codecoin.cpp \
     src/qt/monitoreddatamapper.cpp \
     src/qt/transactiondesc.cpp \
     src/qt/transactiondescdialog.cpp \
-    src/qt/bitcoinstrings.cpp \
+    src/qt/codecoinstrings.cpp \
     src/qt/bitcoinamountfield.cpp \
     src/wallet.cpp \
     src/keystore.cpp \
@@ -547,3 +554,14 @@ system($$QMAKE_LRELEASE -silent $$TRANSLATIONS)
 #    android/gradlew
 
 #ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+
+DISTFILES += \
+    android/AndroidManifest.xml \
+    android/gradle/wrapper/gradle-wrapper.jar \
+    android/gradlew \
+    android/res/values/libs.xml \
+    android/build.gradle \
+    android/gradle/wrapper/gradle-wrapper.properties \
+    android/gradlew.bat
+
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
