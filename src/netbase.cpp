@@ -11,10 +11,10 @@
 #include "sync.h"
 #include "hash.h"
 
-#if !defined(WIN32) && !defined(ANDROID)
+#if !defined(WIN32) && !defined(OS_ANDROID)
 #include <sys/fcntl.h>
 #endif
-#if defined(ANDROID)
+#if defined(OS_ANDROID)
 #include <linux/in.h>
 #include <linux/in6.h>
 #endif

@@ -35,9 +35,9 @@ QString CodecoinUnits::name(int unit)
 {
     switch(unit)
     {
-    case CC: return QString("CAT");
-    case mCC: return QString("mCAT");
-    case uCC: return QString::fromUtf8("μCAT");
+    case CC: return QString(BRAND_SYM);
+    case mCC: return QString("m" BRAND_SYM);
+    case uCC: return QString::fromUtf8("μ" BRAND_SYM);
     default: return QString("???");
     }
 }
@@ -46,9 +46,9 @@ QString CodecoinUnits::description(int unit)
 {
     switch(unit)
     {
-    case CC: return QString("Catcoins");
-    case mCC: return QString("Milli-Catcoins (1 / 1,000)");
-    case uCC: return QString("Micro-Catcoins (1 / 1,000,000)");
+    case CC: return QString(BRAND_upper);
+    case mCC: return QString("Milli-" BRAND_upper " (1 / 1,000)");
+    case uCC: return QString("Micro-" BRAND_upper " (1 / 1,000,000)");
     default: return QString("???");
     }
 }

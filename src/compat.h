@@ -16,7 +16,7 @@
 #include <winsock2.h>
 #include <mswsock.h>
 #include <ws2tcpip.h>
-#elif defined(ANDROID)
+#elif defined(OS_ANDROID)
 #include <fcntl.h>
 #include <netdb.h>
 #include <endian.h>

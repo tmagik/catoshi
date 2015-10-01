@@ -71,7 +71,7 @@ namespace boost {
 # include <sys/prctl.h>
 #endif
 
-#if !defined (WIN32) && !defined(ANDROID)
+#if !defined (WIN32) && !defined(OS_ANDROID)
 #include <execinfo.h>
 #endif
 
@@ -1078,7 +1078,7 @@ void LogStackTrace() {
     printf("\n\n******* exception encountered *******\n");
     if (fileout)
     {
-#if !defined(WIN32) && !defined(ANDROID)
+#if !defined(WIN32) && !defined(OS_ANDROID)
         void* pszBuffer[32];
         size_t size;
         size = backtrace(pszBuffer, 32);
@@ -1104,7 +1104,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Unix: ~/.bitcoin
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / BRAND;
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "catoshi" / BRAND_lower;
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -1116,10 +1116,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     fs::create_directory(pathRet);
-    return pathRet / BRAND;
+    return pathRet / "catoshi" / BRAND_lower;
 #else
     // Unix
-    return pathRet / "." BRAND_lower;
+    return pathRet / ".catoshi" / BRAND_lower;
 #endif
 #endif
 }
@@ -1303,12 +1303,12 @@ void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
         fcntl(fileno(file), F_PREALLOCATE, &fst);
     }
     ftruncate(fileno(file), fst.fst_length);
-#elif defined(__linux__) && !defined(ANDROID)
+#elif defined(__linux__) && !defined(OS_ANDROID)
     // Version using posix_fallocate
     off_t nEndPos = (off_t)offset + length;
     posix_fallocate(fileno(file), 0, nEndPos);
 #else
-#if defined(ANDROID)
+#if defined(OS_ANDROID)
 #warning "... so if we link with glibc ..."
 #endif
     // Fallback version

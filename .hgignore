@@ -58,3 +58,6 @@ p2pool/.cache/
 p2pool/.pkg/
 p2pool/build/
 
+
+# android stuff
+deps/*
