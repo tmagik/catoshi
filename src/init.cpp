@@ -446,13 +446,18 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
 		if (file) {
 			CImportingNow imp;
 			filesystem::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
+			fReindex = true;
+			pblocktree->WriteReindexing(true);
 			printf("Importing bootstrap.dat...\n");
 			LoadExternalBlockFile(file);
 			RenameOver(pathBootstrap, pathBootstrapOld);
+			fReindex = false;
+			pblocktree->WriteReindexing(false);
 		}
 	}
 
 	// -loadblock=
+	// TODO: check for race/edge conditions with BlockUndo & switching files
 	BOOST_FOREACH(boost::filesystem::path &path, vImportFiles) {
 		FILE *file = fopen(path.string().c_str(), "rb");
 		if (file) {
@@ -518,7 +523,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 	sigaction(SIGHUP, &sa_hup, NULL);
 #endif
 
-#if defined(USE_SSE2)
+#if defined(USE_SSE2) && defined(USE_SCRYPT)
 	unsigned int cpuid_edx=0;
 #if !defined(MAC_OSX) && (defined(_M_IX86) || defined(__i386__) || defined(__i386))
 	// 32bit x86 Linux or Windows, detect cpuid features
@@ -867,7 +872,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 
 	// ********************************************************* Step 7: load block chain
 
-#if defined(USE_SSE2) && !defined(BRAND_uro) && !defined(BRAND_grantcoin)
+#if defined(USE_SSE2) && defined(USE_SCRYPT)
 	scrypt_detect_sse2(cpuid_edx);
 #endif
 

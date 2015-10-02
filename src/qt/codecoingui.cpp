@@ -411,7 +411,8 @@ void CodecoinGUI::setWalletModel(WalletModel *walletModel)
     if(walletModel)
 {
         // Report errors from wallet thread
-        connect(walletModel, SIGNAL(error(QString,QString,bool)), this, SLOT(error(QString,QString,bool)));
+		// TODO: move/merge this with bitcoin walletview.cpp?
+		connect(walletModel, SIGNAL(message(QString,QString,unsigned int)), this, SLOT(message(QString,QString,unsigned int)));
 
         // Put transaction list in tabs
         transactionView->setModel(walletModel);

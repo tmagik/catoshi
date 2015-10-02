@@ -153,7 +153,6 @@ OBJS= $(OBJDIR)/$(COIN_BRAND).o \
     $(OBJDIR)/rpcblockchain.o \
     $(OBJDIR)/rpcrawtransaction.o \
     $(OBJDIR)/script.o \
-    $(OBJDIR)/scrypt.o \
     $(OBJDIR)/sync.o \
     $(OBJDIR)/util.o \
     $(OBJDIR)/wallet.o \
@@ -163,7 +162,6 @@ OBJS= $(OBJDIR)/$(COIN_BRAND).o \
     $(OBJDIR)/noui.o \
     $(OBJDIR)/leveldb.o \
     $(OBJDIR)/txdb.o
-
 
 X11_OBJS = \
     $(OBJDIR)/cubehash.o \
@@ -179,7 +177,18 @@ X11_OBJS = \
     $(OBJDIR)/keccak.o \
     $(OBJDIR)/skein.o
 
+SCRYPT_OBJS = $(OBJDIR)/scrypt.o
+
+ifdef USE_SSE2
+DEFS += -DUSE_SSE2
+OBJS_SSE2= $(OBJDIR)/scrypt-sse2.o
+SCRYPT_OBJS += $(OBJS_SSE2)
+endif
+
 ifeq ($(COIN_BRAND),grantcoin)
+OBJS += $(STAKE_OBJS)
+endif
+ifeq ($(COIN_BRAND),granttest)
 OBJS += $(STAKE_OBJS)
 endif
 ifeq ($(COIN_BRAND),uro)
@@ -189,18 +198,11 @@ ifeq ($(COIN_BRAND),givecoin)
 OBJS += $(X11_OBJS) $(STAKE_OBJS)
 endif
 ifeq ($(COIN_BRAND),hamburger)
-OBJS += $(STAKE_OBJS)
+DEFS += -DUSE_SCRYPT
+OBJS += $(SCRYPT_OBJS) $(STAKE_OBJS)
 endif
 ifeq ($(COIN_BRAND),bluecoin)
-OBJS += $(X11_OBJS) $(STAKE_OBJS)
-endif
-
-
-
-ifdef USE_SSE2
-DEFS += -DUSE_SSE2
-OBJS_SSE2= $(OBJDIR)/scrypt-sse2.o
-OBJS += $(OBJS_SSE2)
+OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
 endif
 
 all: $(COIN_BRAND)d

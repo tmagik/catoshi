@@ -184,7 +184,7 @@ int GetNumBlocksOfPeers();
 bool IsInitialBlockDownload();
 /** Format a string that describes several potential problems detected by the core */
 std::string GetWarnings(std::string strFor);
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
 uint256 WantedByOrphan(const CBlock* pblockOrphan);
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake);
 #ifdef TESTING
@@ -523,7 +523,7 @@ public:
 	static const int CURRENT_VERSION = 1, VERSION_nTime = 1;
 #endif
 	int nVersion;
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
 	unsigned int nTime;
 #endif
 	std::vector<CTxIn> vin;
@@ -539,7 +539,7 @@ public:
 	(
 		READWRITE(this->nVersion);
 		nVersion = this->nVersion;
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
 #if defined(BRAND_givecoin)
 		if(this->nVersion > LEGACY_VERSION) { 
 			READWRITE(nTime);
@@ -566,7 +566,7 @@ public:
 		nLockTime = 0;
 #if defined(BRAND_solarcoin)
 		strTxComment.clear();
-#elif defined(PPCOINSTAKE)
+#elif defined(PPCOINSTAKE) || defined(BRAND_granttest)
 		nTime = GetAdjustedTime();
 #endif
 	}
@@ -629,7 +629,7 @@ public:
 
 	bool IsCoinBase() const
 	{
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
 		return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
 #else
 		return (vin.size() == 1 && vin[0].prevout.IsNull());
@@ -731,7 +731,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 	friend bool operator==(const CTransaction& a, const CTransaction& b)
 	{
 		return (a.nVersion	== b.nVersion &&
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
 				a.nTime		== b.nTime &&
 #endif
 				a.vin		== b.vin &&
@@ -1578,7 +1578,7 @@ public:
 
 	uint256 GetPoWHash() const
 	{
-#if defined(BRAND_uro) || defined(BRAND_givecoin) || defined(BRAND_bluecoin) || defined(BRAND_grantcoin)
+#if !defined(LITECOIN_SCRYPT_POWHASH)
 		return GetHash();
 #else
 		uint256 thash;

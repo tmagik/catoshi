@@ -3226,6 +3226,8 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
 	}
 	if (nLoaded > 0)
 		printf("Loaded %i blocks from external file in %" PRId64"ms\n", nLoaded, GetTimeMillis() - nStart);
+	FlushBlockFile();
+
 	return nLoaded > 0;
 }
 
@@ -5097,7 +5099,7 @@ void CodecoinMiner(CWallet *pwallet, bool fProofOfStake)
 		unsigned int& nBlockBits = *(unsigned int*)(pdata + 64 + 8);
 		//unsigned int& nBlockNonce = *(unsigned int*)(pdata + 64 + 12);
 
-#if defined(BRAND_grantcoin)
+#if !defined(USE_SCRYPT)
 		uint256 hashbuf[2];
 		uint256& hash = *alignup<16>(hashbuf);
 #endif
@@ -5110,7 +5112,8 @@ void CodecoinMiner(CWallet *pwallet, bool fProofOfStake)
 		{
 			unsigned int nHashesDone = 0;
 
-#if defined(BRAND_grantcoin)
+#if !defined(USE_SCRYPT)
+/* use sha-256 */
             unsigned int nNonceFound;
 
             // Crypto++ SHA-256

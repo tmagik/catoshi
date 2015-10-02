@@ -33,5 +33,6 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 #define BRAND "CatCoin"
 #define BRAND_upper "CatCoin"
 #define BRAND_lower "catcoin"
+#define LITECOIN_SCRYPT_POWHASH
 
 #endif

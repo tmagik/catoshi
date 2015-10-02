@@ -192,8 +192,9 @@ signals:
     // this means that the unlocking failed or was cancelled.
     void requireUnlock();
 
-    // Asynchronous error notification
-    void error(const QString &title, const QString &message, bool modal);
+    // Fired when a message should be reported to the user
+    // TODO: merge with latest bitcoin 
+    void message(const QString &title, const QString &message, unsigned int style);
 };
 
 

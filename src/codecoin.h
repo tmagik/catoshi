@@ -24,6 +24,8 @@ extern const CBigNum bnProofOfStakeLimit;
 #include "uro.h"
 #elif BRAND_grantcoin
 #include "grantcoin.h"
+#elif BRAND_granttest
+#include "granttest.h"
 #elif defined(BRAND_givecoin) || defined(BRAND_givestake)
 #include "givecoin.h"
 #elif defined(BRAND_hamburger)
