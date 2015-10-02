@@ -1,4 +1,10 @@
-#define BOOST_TEST_MODULE Catcoin Test Suite
+// Copyright (c) 2009-2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2013-2014 The Catcoin developers
+// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#define BOOST_TEST_MODULE Codecoin Test Suite
 #include <boost/test/unit_test.hpp>
 #include <boost/filesystem.hpp>
 
@@ -20,10 +26,12 @@ struct TestingSetup {
     boost::thread_group threadGroup;
 
     TestingSetup() {
+	fReindex = 1; // for LoadBlockIndex
+	LoadBlockIndex(); // Call this so we set up hashGenesisBlock & pchMessage
         fPrintToDebugger = true; // don't want to write to debug.log file
         noui_connect();
         bitdb.MakeMock();
-        pathTemp = GetTempPath() / strprintf("test_catcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
+        pathTemp = GetTempPath() / strprintf("test_" BRAND_lower "_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
         boost::filesystem::create_directories(pathTemp);
         mapArgs["-datadir"] = pathTemp.string();
         pblocktree = new CBlockTreeDB(1 << 20, true);
