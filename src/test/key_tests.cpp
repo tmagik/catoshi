@@ -5,7 +5,7 @@
 
 #include "key.h"
 #include "base58.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "util.h"
 
 using namespace std;

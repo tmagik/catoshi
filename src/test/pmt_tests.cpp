@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 
-#include "uint256.h"
+#include "uintBIG.h"
 #include "main.h"
 
 using namespace std;

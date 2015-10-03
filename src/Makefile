@@ -253,9 +253,6 @@ $(OBJDIR)/%.o: %.cpp
 $(COIN_BRAND)d: $(OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
 	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
 
-#solarcoind: $(OBJDIR)/solarcoin.o $(OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
-#	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
-
 
 TESTOBJS := $(patsubst test/%.cpp,$(OBJDIR)/test/%.o,$(wildcard test/*.cpp))
 

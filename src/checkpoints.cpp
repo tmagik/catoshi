@@ -32,7 +32,7 @@ namespace Checkpoints
 		return data;
 	}
 
-	bool CheckHardened(int nHeight, const uint256& hash)
+	bool CheckBlock(int nHeight, const uint256& hash)
 	{
 		if (fTestNet) return true; // Testnet has no checkpoints
 		if (!GetBoolArg("-checkpoints", true))
