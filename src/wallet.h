@@ -21,7 +21,6 @@
 #include "ui_interface.h"
 #include "util.h"
 #include "walletdb.h"
-#include "txdb.h"
 
 extern bool fWalletUnlockMintOnly;
 class CAccountingEntry;
@@ -75,11 +74,11 @@ public:
 class CWallet : public CCryptoKeyStore
 {
 private:
-#if defined(PPCOINSTAKE)
+//#if defined(PPCOINSTAKE)
     bool SelectCoins(int64_t nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL) const;
-#else
-    bool SelectCoins(int64_t nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL) const;
-#endif
+//#else
+//    bool SelectCoins(int64_t nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL) const;
+//#endif
 
     CWalletDB *pwalletdbEncryption;
 
@@ -142,12 +141,15 @@ public:
     void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl=NULL) const;
 #if defined(PPCOINSTAKE)
     bool SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
+#else
+    bool SelectCoinsMinConf(int64_t nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
+#endif
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);
     void UnlockCoin(COutPoint& output);
     void UnlockAllCoins();
     void ListLockedCoins(std::vector<COutPoint>& vOutpts);
-#endif
+
     // keystore implementation
     // Generate a new key
     CPubKey GenerateNewKey();
@@ -665,20 +667,21 @@ void MarkUnspent(unsigned int nOut)
         return nChangeCached;
     }
 
-#if defined(PPCOINSTAKE)
+//#if defined(PPCOINSTAKE)
     void GetAmounts(int64_t& nGeneratedImmature, int64_t& nGeneratedMature, std::list<std::pair<CTxDestination, int64_t> >& listReceived,
                     std::list<std::pair<CTxDestination, int64_t> >& listSent, int64_t& nFee, std::string& strSentAccount) const;
 
     void GetAccountAmounts(const std::string& strAccount, int64_t& nGeneratedImmature, int64_t& nGeneratedMature, int64_t& nReceived,
                            int64_t& nSent, int64_t& nFee) const;
-#else
-    void GetAmounts(std::list<std::pair<CTxDestination, int64_t> >& listReceived,
-                    std::list<std::pair<CTxDestination, int64_t> >& listSent, int64_t& nFee, std::string& strSentAccount) const;
-
-    void GetAccountAmounts(const std::string& strAccount, int64_t& nReceived,
-                           int64_t& nSent, int64_t& nFee) const;
-#endif
-
+/*
+ *#else
+ *  void GetAmounts(std::list<std::pair<CTxDestination, int64_t> >& listReceived,
+ *                   std::list<std::pair<CTxDestination, int64_t> >& listSent, int64_t& nFee, std::string& strSentAccount) const;
+ *
+ *   void GetAccountAmounts(const std::string& strAccount, int64_t& nReceived,
+ *                          int64_t& nSent, int64_t& nFee) const;
+ *#endif
+*/
     bool IsFromMe() const
     {
         return (GetDebit() > 0);

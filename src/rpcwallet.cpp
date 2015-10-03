@@ -11,7 +11,11 @@
 
 #include "wallet.h"
 #include "walletdb.h"
+#include "codecoin.h"
+#if defined(PPCOINSTAKE)
 #include "kernelrecord.h"
+#include "txdb.h"
+#endif
 #include "codecoinrpc.h"
 #include "init.h"
 #include "base58.h"
@@ -1112,11 +1116,11 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
     list<pair<CTxDestination, int64_t> > listSent;
 
     bool fAllAccounts = (strAccount == string("*"));
-#if defined(PPCOINSTAKE)
+
 	int64_t nGeneratedImmature, nGeneratedMature;
 
 	wtx.GetAmounts(nGeneratedImmature, nGeneratedMature, listReceived, listSent, nFee, strSentAccount);
-
+#if defined(PPCOINSTAKE)
 	// Generated blocks assigned to account ""
 	if ((nGeneratedMature+nGeneratedImmature) != 0 && (fAllAccounts || strAccount == ""))
 	{
@@ -1141,8 +1145,6 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
 			WalletTxToJSON(wtx, entry);
 		ret.push_back(entry);
 	}
-#else 
-	wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount);
 #endif /* PPCOINSTAKE */
     // Sent
     if ((!listSent.empty() || nFee != 0) && (fAllAccounts || strAccount == strSentAccount))
