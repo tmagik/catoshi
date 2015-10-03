@@ -28,6 +28,7 @@ COIN_BRAND:=grantcoin
 DEFS=-DBOOST_SPIRIT_THREADSAFE -D_FILE_OFFSET_BITS=64 -DBRAND_$(COIN_BRAND)
 
 OBJDIR = obj/$(COIN_BRAND)
+TESTDIR = $(OBJDIR)/test
 
 DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/$(OBJDIR) $(BOOST_INCLUDE_PATH) $(BDB_INCLUDE_PATH) $(OPENSSL_INCLUDE_PATH))
 LIBS = $(addprefix -L,$(BOOST_LIB_PATH) $(BDB_LIB_PATH) $(OPENSSL_LIB_PATH))
@@ -205,10 +206,13 @@ ifeq ($(COIN_BRAND),bluecoin)
 OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
 endif
 
-all: $(COIN_BRAND)d
+all: $(TESTDIR) $(COIN_BRAND)d
 
-test check: test_$(COIN_BRAND) FORCE
+test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
 	./test_$(COIN_BRAND)
+
+$(TESTDIR):
+	mkdir -p $(TESTDIR)
 
 #
 # LevelDB support
@@ -219,6 +223,7 @@ DEFS += $(addprefix -I,$(CURDIR)/leveldb/include)
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
 leveldb/libleveldb.a:
 	@echo "Building LevelDB ..." && cd leveldb && $(MAKE) CC=$(CC) CXX=$(CXX) OPT="$(xCXXFLAGS)" libleveldb.a libmemenv.a && cd ..
+
 
 # auto-generated dependencies:
 -include $(OBJDIR)/*.P

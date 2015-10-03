@@ -194,8 +194,14 @@ BOOST_AUTO_TEST_CASE(util_FormatMoney)
     BOOST_CHECK_EQUAL(FormatMoney(COIN/10000, false), "0.0001");
     BOOST_CHECK_EQUAL(FormatMoney(COIN/100000, false), "0.00001");
     BOOST_CHECK_EQUAL(FormatMoney(COIN/1000000, false), "0.000001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/10000000, false), "0.0000001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/100000000, false), "0.00000001");
+    if (COIN_DECIMALS > 6)
+       BOOST_CHECK_EQUAL(FormatMoney(COIN/10000000, false), "0.0000001");
+    else
+       BOOST_CHECK(FormatMoney(COIN/10000000, false) != "0.0000001");
+    if (COIN_DECIMALS > 7)
+       BOOST_CHECK_EQUAL(FormatMoney(COIN/100000000, false), "0.00000001");
+    else
+       BOOST_CHECK(FormatMoney(COIN/100000000, false) != "0.00000001");
 }
 
 BOOST_AUTO_TEST_CASE(util_ParseMoney)
@@ -237,10 +243,14 @@ BOOST_AUTO_TEST_CASE(util_ParseMoney)
     BOOST_CHECK_EQUAL(ret, COIN/100000);
     BOOST_CHECK(ParseMoney("0.000001", ret));
     BOOST_CHECK_EQUAL(ret, COIN/1000000);
-    BOOST_CHECK(ParseMoney("0.0000001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/10000000);
-    BOOST_CHECK(ParseMoney("0.00000001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/100000000);
+    if (COIN_DECIMALS > 6){
+        BOOST_CHECK(ParseMoney("0.0000001", ret));
+        BOOST_CHECK_EQUAL(ret, COIN/10000000);
+    }
+    if (COIN_DECIMALS > 7){
+        BOOST_CHECK(ParseMoney("0.00000001", ret));
+        BOOST_CHECK_EQUAL(ret, COIN/100000000);
+    }
 
     // Attempted 63 bit overflow should fail
     BOOST_CHECK(!ParseMoney("92233720368.54775808", ret));

@@ -68,9 +68,9 @@ int CodecoinUnits::amountDigits(int unit)
 {
     switch(unit)
     {
-    case CC: return 8; // 21,000,000 (# digits, without commas)
-    case mCC: return 11; // 21,000,000,000
-    case uCC: return 14; // 21,000,000,000,000
+    case CC: return COIN_DECIMALS; // 21,000,000 (# digits, without commas)
+    case mCC: return COIN_DECIMALS+3; // 21,000,000,000
+    case uCC: return COIN_DECIMALS+6; // 21,000,000,000,000
     default: return 0;
     }
 }
@@ -79,9 +79,9 @@ int CodecoinUnits::decimals(int unit)
 {
     switch(unit)
     {
-    case CC: return 8;
-    case mCC: return 5;
-    case uCC: return 2;
+    case CC: return COIN_DECIMALS;
+    case mCC: return COIN_DECIMALS-3;
+    case uCC: return COIN_DECIMALS-6;
     default: return 0;
     }
 }

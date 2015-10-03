@@ -97,12 +97,12 @@ Testing
 Testing is good. Do it. It makes aforementioned consensus easier.
 
 ### Building
-on debian:
+on debian 8.x:
 
     sudo apt-get install mercurial build-essential libboost-dev libdb++-dev \
 		libssl-dev libminiupnpc-dev libboost-filesystem-dev \
 		libboost-system-dev libboost-program-options-dev \
-		libboost-thread-dev libboost-test-dev libboost-test1.49-dev 
+		libboost-thread-dev libboost-test-dev libboost-test1.55-dev 
     cd src; make
 
 ### Automated Testing
