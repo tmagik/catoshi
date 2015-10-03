@@ -26,7 +26,7 @@ class CSyncCheckpoint;
 namespace Checkpoints
 {
 	// Returns true if block passes checkpoint checks
-	bool CheckHardened(int nHeight, const uint256& hash);
+	bool CheckBlock(int nHeight, const uint256& hash);
 
 	// Return conservative estimate of total number of blocks, 0 if unknown
 	int GetTotalBlocksEstimate();

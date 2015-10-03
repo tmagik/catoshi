@@ -2330,7 +2330,7 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 				return state.DoS(10, error("AcceptBlock() : contains a non-final transaction"));
 
 		// Check that the block chain matches the known block chain up to a checkpoint
-		if (!Checkpoints::CheckHardened(nHeight, hash))
+		if (!Checkpoints::CheckBlock(nHeight, hash))
 			return state.DoS(100, error("AcceptBlock() : rejected by checkpoint lock-in at %d", nHeight));
 
 #if defined(SYNC_CHECKPOINTS)
