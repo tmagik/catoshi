@@ -184,7 +184,7 @@ int GetNumBlocksOfPeers();
 bool IsInitialBlockDownload();
 /** Format a string that describes several potential problems detected by the core */
 std::string GetWarnings(std::string strFor);
-#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 uint256 WantedByOrphan(const CBlock* pblockOrphan);
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake);
 #ifdef TESTING
@@ -523,7 +523,7 @@ public:
 	static const int CURRENT_VERSION = 1, VERSION_nTime = 1;
 #endif
 	int nVersion;
-#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 	unsigned int nTime;
 #endif
 	std::vector<CTxIn> vin;
@@ -539,7 +539,7 @@ public:
 	(
 		READWRITE(this->nVersion);
 		nVersion = this->nVersion;
-#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 #if defined(BRAND_givecoin)
 		if(this->nVersion > LEGACY_VERSION) { 
 			READWRITE(nTime);
@@ -566,7 +566,7 @@ public:
 		nLockTime = 0;
 #if defined(BRAND_solarcoin)
 		strTxComment.clear();
-#elif defined(PPCOINSTAKE) || defined(BRAND_granttest)
+#elif defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 		nTime = GetAdjustedTime();
 #endif
 	}
@@ -629,7 +629,7 @@ public:
 
 	bool IsCoinBase() const
 	{
-#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 		return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
 #else
 		return (vin.size() == 1 && vin[0].prevout.IsNull());
@@ -731,7 +731,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 	friend bool operator==(const CTransaction& a, const CTransaction& b)
 	{
 		return (a.nVersion	== b.nVersion &&
-#if defined(PPCOINSTAKE) || defined(BRAND_granttest)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 				a.nTime		== b.nTime &&
 #endif
 				a.vin		== b.vin &&
@@ -836,153 +836,7 @@ public:
 	});)
 };
 
-/** Undo information for a CTxIn
- *
- *	Contains the prevout's CTxOut being spent, and if this was the
- *	last output of the affected transaction, its metadata as well
- *	(coinbase or not, height, transaction version)
- */
-class CTxInUndo
-{
-public:
-	CTxOut txout;		  // the txout data before being spent
-	bool fCoinBase;		  // if the outpoint was the last unspent: whether it belonged to a coinbase
-	unsigned int nHeight; // if the outpoint was the last unspent: its height
-	int nVersion;		  // if the outpoint was the last unspent: its version
-
-#if defined(PPCOINSTAKE)
-    bool fCoinStake;      // ppcoin: if the outpoint was the last unspent: whether it belonged to a coinstake
-    unsigned int nTime;   // ppcoin: if the outpoint was the last unspent: its tx timestamp
-    
-
-    CTxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0), fCoinStake(false), nTime(0) {}
-    CTxInUndo(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0, bool fCoinStakeIn = false, unsigned int nTimeIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn), fCoinStake(fCoinStakeIn), nTime(nTimeIn) { }
-#else
-	CTxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0) {}
-	CTxInUndo(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn) { }
-#endif
-	unsigned int GetSerializeSize(int nType, int nVersion) const {
-#if defined(PPCOINSTAKE)
-		return ::GetSerializeSize(VARINT(nHeight*4+(fCoinBase ? 1 : 0)+(fCoinStake ? 2 : 0)), nType, nVersion) +
-		::GetSerializeSize(VARINT(nTime), nType, nVersion) +
-#else
-		return ::GetSerializeSize(VARINT(nHeight*2+(fCoinBase ? 1 : 0)), nType, nVersion) +
-#endif
-			   (nHeight > 0 ? ::GetSerializeSize(VARINT(this->nVersion), nType, nVersion) : 0) +
-			   ::GetSerializeSize(CTxOutCompressor(REF(txout)), nType, nVersion);
-	}
-
-	template<typename Stream>
-	void Serialize(Stream &s, int nType, int nVersion) const {
-#if defined(PPCOINSTAKE)
-		::Serialize(s, VARINT(nHeight*4+(fCoinBase ? 1 : 0) +(fCoinStake ? 2 : 0)), nType, nVersion);
-#else
-		::Serialize(s, VARINT(nHeight*2+(fCoinBase ? 1 : 0)), nType, nVersion);
-#endif
-		if (nHeight > 0)
-			::Serialize(s, VARINT(this->nVersion), nType, nVersion);
-		::Serialize(s, CTxOutCompressor(REF(txout)), nType, nVersion);
-	}
-
-	template<typename Stream>
-	void Unserialize(Stream &s, int nType, int nVersion) {
-		unsigned int nCode = 0;
-		::Unserialize(s, VARINT(nCode), nType, nVersion);
-		fCoinBase = nCode & 1;
-#if defined(PPCOINSTAKE)
-		fCoinStake = nCode & 2;
-		::Unserialize(s, VARINT(nTime), nType, nVersion);
-		nHeight = nCode / 4;
-#else
-		nHeight = nCode / 2;
-#endif
-		if (nHeight > 0)
-			::Unserialize(s, VARINT(this->nVersion), nType, nVersion);
-		::Unserialize(s, REF(CTxOutCompressor(REF(txout))), nType, nVersion);
-	}
-};
-
-/** Undo information for a CTransaction */
-class CTxUndo
-{
-public:
-	// undo information for all txins
-	std::vector<CTxInUndo> vprevout;
-
-	IMPLEMENT_SERIALIZE(
-		READWRITE(vprevout);
-	)
-};
-
-/** Undo information for a CBlock */
-class CBlockUndo
-{
-public:
-	std::vector<CTxUndo> vtxundo; // for all but the coinbase
-
-	IMPLEMENT_SERIALIZE(
-		READWRITE(vtxundo);
-	)
-
-	bool WriteToDisk(CDiskBlockPos &pos, const uint256 &hashBlock)
-	{
-		// Open history file to append
-		CAutoFile fileout = CAutoFile(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
-		if (!fileout)
-			return error("CBlockUndo::WriteToDisk() : OpenUndoFile failed");
-
-		// Write index header
-		unsigned int nSize = fileout.GetSerializeSize(*this);
-		fileout << FLATDATA(pchMessageStart) << nSize;
-
-		// Write undo data
-		long fileOutPos = ftell(fileout);
-		if (fileOutPos < 0)
-			return error("CBlockUndo::WriteToDisk() : ftell failed");
-		pos.nPos = (unsigned int)fileOutPos;
-		fileout << *this;
-
-		// calculate & write checksum
-		CHashWriter hasher(SER_GETHASH, PROTOCOL_VERSION);
-		hasher << hashBlock;
-		hasher << *this;
-		fileout << hasher.GetHash();
-
-		// Flush stdio buffers and commit to disk before returning
-		fflush(fileout);
-		if (!IsInitialBlockDownload())
-			FileCommit(fileout);
-
-		return true;
-	}
-
-	bool ReadFromDisk(const CDiskBlockPos &pos, const uint256 &hashBlock)
-	{
-		// Open history file to read
-		CAutoFile filein = CAutoFile(OpenUndoFile(pos, true), SER_DISK, CLIENT_VERSION);
-		if (!filein)
-			return error("CBlockUndo::ReadFromDisk() : OpenBlockFile failed");
-
-		// Read block
-		uint256 hashChecksum;
-		try {
-			filein >> *this;
-			filein >> hashChecksum;
-		}
-		catch (std::exception &e) {
-			return error("%s() : deserialize or I/O error", __PRETTY_FUNCTION__);
-		}
-
-		// Verify checksum
-		CHashWriter hasher(SER_GETHASH, PROTOCOL_VERSION);
-		hasher << hashBlock;
-		hasher << *this;
-		if (hashChecksum != hasher.GetHash())
-			return error("CBlockUndo::ReadFromDisk() : checksum mismatch");
-
-		return true;
-	}
-};
+#include "undo.h"
 
 /** pruned version of CTransaction: only retains metadata and unspent transaction outputs
  *

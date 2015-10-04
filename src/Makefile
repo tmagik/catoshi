@@ -144,6 +144,7 @@ OBJS= $(OBJDIR)/$(COIN_BRAND).o \
     $(OBJDIR)/init.o \
     $(OBJDIR)/keystore.o \
     $(OBJDIR)/main.o \
+    $(OBJDIR)/undo.o \
     $(OBJDIR)/net.o \
     $(OBJDIR)/protocol.o \
     $(OBJDIR)/codecoinrpc.o \
@@ -186,10 +187,10 @@ OBJS_SSE2= $(OBJDIR)/scrypt-sse2.o
 SCRYPT_OBJS += $(OBJS_SSE2)
 endif
 
-ifeq ($(COIN_BRAND),grantcoin)
-OBJS += $(STAKE_OBJS)
-endif
-ifeq ($(COIN_BRAND),granttest)
+#ifeq ($(COIN_BRAND),grantcoin)
+#OBJS += $(STAKE_OBJS)
+#endif
+ifeq ($(COIN_BRAND),grantstake)
 OBJS += $(STAKE_OBJS)
 endif
 ifeq ($(COIN_BRAND),uro)

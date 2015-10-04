@@ -439,20 +439,60 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
 		InitBlockIndex();
 	}
 
+	filesystem::path pathBootstrap;
+	filesystem::path pathBootstrapOld;
+
+#if defined(USE_BOOTSTRAP_GZ)
+	// hardcoded $DATADIR/bootstrap.dat.gz
+	pathBootstrap = GetDataDir() / "bootstrap.dat.gz";
+	if (filesystem::exists(pathBootstrap)) {
+		string cmd = "gzip -d -c " + pathBootstrap.string();
+		printf("cmd: %s\n", cmd.c_str());
+		FILE *file = popen(cmd.c_str(), "r");
+		if (file) {
+			CImportingNow imp;
+			pathBootstrapOld = GetDataDir() / "bootstrap.dat.gz.old";
+			printf("Importing bootstrap.dat.gz...\n");
+			LoadExternalBlockFile(file);
+			RenameOver(pathBootstrap, pathBootstrapOld);
+			pclose(file);
+		} else {
+			printf("popen failed for %s: %s", cmd.c_str(), strerror(errno) );
+
+		}
+	}
+#endif
+
+#if defined(USE_BOOTSTRAP_XZ)
+	// hardcoded $DATADIR/bootstrap.dat.xz
+	pathBootstrap = GetDataDir() / "bootstrap.dat.xz";
+	if (filesystem::exists(pathBootstrap)) {
+		string cmd = "xzcat " + pathBootstrap.string();
+		printf("cmd: %s\n", cmd.c_str());
+		FILE *file = popen(cmd.c_str(), "r");
+		if (file) {
+			CImportingNow imp;
+			pathBootstrapOld = GetDataDir() / "bootstrap.dat.xz.old";
+			printf("Importing bootstrap.dat.xz...\n");
+			LoadExternalBlockFile(file);
+			RenameOver(pathBootstrap, pathBootstrapOld);
+			pclose(file);
+		} else {
+			printf("popen failed for %s: %s", cmd.c_str(), strerror(errno) );
+		}
+	}
+#endif
+
 	// hardcoded $DATADIR/bootstrap.dat
-	filesystem::path pathBootstrap = GetDataDir() / "bootstrap.dat";
+	pathBootstrap = GetDataDir() / "bootstrap.dat";
 	if (filesystem::exists(pathBootstrap)) {
 		FILE *file = fopen(pathBootstrap.string().c_str(), "rb");
 		if (file) {
 			CImportingNow imp;
-			filesystem::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
-			fReindex = true;
-			pblocktree->WriteReindexing(true);
+			pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
 			printf("Importing bootstrap.dat...\n");
 			LoadExternalBlockFile(file);
 			RenameOver(pathBootstrap, pathBootstrapOld);
-			fReindex = false;
-			pblocktree->WriteReindexing(false);
 		}
 	}
 
@@ -700,7 +740,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 	if (file) fclose(file);
 	static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
 	if (!lock.try_lock())
-		return InitError(strprintf(_("Cannot obtain a lock on data directory %s. Catcoin is probably already running."), strDataDir.c_str()));
+		return InitError(strprintf(_("Cannot obtain a lock on data directory %s. " BRAND_upper " is probably already running."), strDataDir.c_str()));
 
 	if (GetBoolArg("-shrinkdebugfile", !fDebug))
 		ShrinkDebugFile();
@@ -715,7 +755,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 	std::ostringstream strErrors;
 
 	if (fDaemon)
-		fprintf(stdout, "Catcoin server starting\n");
+		fprintf(stdout, "" BRAND_upper " server starting\n");
 
 	if (nScriptCheckThreads) {
 		printf("Using %u threads for script verification\n", nScriptCheckThreads);

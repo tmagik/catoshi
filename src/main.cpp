@@ -1096,7 +1096,8 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 #if !defined(PPCOINSTAKE)
 	/* better to assert than look for things that don't exist? */
 	assert(fProofOfStake == false);
-	return NULL;
+	// TODO: this could probably be optimized better to just return pindex-pprev,
+	// but genesis block case has to be dealth with.
 #endif
 	while (pindex && pindex->pprev && (pindex->IsProofOfStake() != fProofOfStake))
 		pindex = pindex->pprev;
@@ -2178,8 +2179,8 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 		return state.DoS(50, error("CheckBlock() : proof of work failed"));
 
 #if !defined(PPCOINSTAKE)
-	if (IsProofOfWork())
-		return state.DoS(100, error("CheckBlock() : IsProofOfWork check failed on PoW-only chain"));
+	if (IsProofOfStake())
+		return state.DoS(100, error("CheckBlock() : PoW-only client/chain reported IsProofOfStake=true"));
 #endif
 
 	// Check timestamp TODO: should this use nMaxClockDrift, or something else?
