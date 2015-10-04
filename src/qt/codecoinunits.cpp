@@ -57,10 +57,10 @@ qint64 CodecoinUnits::factor(int unit)
 {
     switch(unit)
     {
-    case CC:  return 100000000;
-    case mCC: return 100000;
-    case uCC: return 100;
-    default:   return 100000000;
+    case CC:  return COIN;
+    case mCC: return COIN/1000;
+    case uCC: return COIN/1000000;
+    default:   return COIN;
     }
 }
 
