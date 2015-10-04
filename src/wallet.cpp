@@ -643,7 +643,7 @@ int CWalletTx::GetRequestCount() const
     }
     return nRequests;
 }
-#if defined(PPCOINSTAKE)
+#if 1 // always use the extra info instead of #if defined(PPCOINSTAKE)
 void CWalletTx::GetAmounts(int64_t& nGeneratedImmature, int64_t& nGeneratedMature, list<pair<CTxDestination, int64_t> >& listReceived,
                            list<pair<CTxDestination, int64_t> >& listSent, int64_t& nFee, string& strSentAccount) const
 #else
@@ -706,7 +706,7 @@ void CWalletTx::GetAmounts(list<pair<CTxDestination, int64_t> >& listReceived,
 
 }
 
-#if defined(PPCOINSTAKE)
+#if 1 // instead of #if defined(PPCOINSTAKE)
 void CWalletTx::GetAccountAmounts(const string& strAccount, int64_t& nGeneratedImmature, int64_t& nGeneratedMature, int64_t& nReceived,
                                   int64_t& nSent, int64_t& nFee) const
 {
@@ -1119,13 +1119,14 @@ int64_t CWallet::GetNewMint() const
     }
     return nTotal;
 }
+#endif
 
 bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs,
 	vector<COutput> vCoins, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const
-#else
-bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, int nConfMine, int nConfTheirs, vector<COutput> vCoins,
-                                 set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const
-#endif
+//#else
+//bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, int nConfMine, int nConfTheirs, vector<COutput> vCoins,
+//                                 set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const
+//#endif
 {
     setCoinsRet.clear();
     nValueRet = 0;
@@ -1136,6 +1137,7 @@ bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, int nConfMine, int nConfT
     coinLowestLarger.second.first = NULL;
     vector<pair<int64_t, pair<const CWalletTx*,unsigned int> > > vValue;
     int64_t nTotalLower = 0;
+    int64_t n = 0;
 
     random_shuffle(vCoins.begin(), vCoins.end(), GetRandInt);
 

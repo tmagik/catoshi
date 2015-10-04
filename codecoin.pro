@@ -20,6 +20,11 @@ contains(COIN_brand, grantcoin) {
     DEFINES += BRAND_grantcoin
     TARGET = grantcoin
 } else {
+contains(COIN_brand, grantstake) {
+    message(Building for Grantstake)
+    DEFINES += BRAND_grantstake
+    TARGET = grantstake
+} else {
 contains(COIN_brand, catcoin) {
     message(Building for Catcoin)
     DEFINES += BRAND_catcoin
@@ -45,7 +50,7 @@ contains(COIN_brand, bluecoin) {
     DEFINES += BRAND_codecoin
     TARGET = codecoin
 	warning ("Building GENERIC codecoin, probably will not work")
-}}}}}}
+}}}}}}}
 
 # for boost 1.37, add -mt to the boost libraries
 # use: qmake BOOST_LIB_SUFFIX=-mt
@@ -213,6 +218,7 @@ HEADERS += src/qt/codecoingui.h \
     src/pbkdf2.h \
     src/serialize.h \
     src/main.h \
+    src/undo.h \
     src/net.h \
     src/key.h \
     src/db.h \
@@ -301,6 +307,7 @@ SOURCES += src/qt/codecoin.cpp \
     src/key.cpp \
     src/script.cpp \
     src/main.cpp \
+    src/undo.cpp \
     src/$${TARGET}.cpp \
     src/init.cpp \
     src/net.cpp \

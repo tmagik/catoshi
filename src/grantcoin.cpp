@@ -5,8 +5,8 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#if defined(BRAND_granttest)
-#include "granttest.h"
+#if defined(BRAND_grantstake)
+#include "grantstake.h"
 #else
 #include "grantcoin.h"
 #endif
@@ -53,7 +53,8 @@ const int ORPHAN_WORK_THRESHOLD = 1; // FIXME WAY TOO WIDE right now
 // The second name should resolve to a list of seed addresses.
 // FIXME use a single string and/or objectify this
 const char *strMainNetDNSSeed[][2] = {
-	{"grantcoin.org", "seed.grantcoin.org"},
+	{"grantcoin.net", "seed1.grantcoin.net"},
+	{"grantcoin.net", "seed2.grantcoin.net"},
 	{NULL, NULL}
 };
 
@@ -121,7 +122,7 @@ int64_t PPCoin_StakeReward(int64_t nCoinAge)
 int64_t GetSeigniorage(const CBlockIndex *block, int64_t nFees, int64_t CoinAge)
 {
 	if(CoinAge == 0){
-		return PPCoin_StakeReward(block->nHeight);
+		return GetProofOfWorkReward(block->nHeight);
 	} else {
 		return GetProofOfStakeReward(CoinAge);
 	}
