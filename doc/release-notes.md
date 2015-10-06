@@ -46,7 +46,7 @@ caching. A sample config for apache2 could look like:
         # optional enable digest auth
         # AuthType Digest
         # ...
-        
+
         # optional bypass bitcoind rpc basic auth
         # RequestHeader set Authorization "Basic <hash>"
         # get the <hash> from the shell with: base64 <<< bitcoinrpc:<password>
@@ -104,6 +104,16 @@ In this version, it is only enforced for peers that send protocol versions
 `>=70011`. For the next major version it is planned that this restriction will be
 removed. It is recommended to update SPV clients to check for the `NODE_BLOOM`
 service bit for nodes that report versions newer than 70011.
+
+Any sequence of pushdatas in OP_RETURN outputs now allowed
+----------------------------------------------------------
+
+Previously OP_RETURN outputs with a payload were only relayed and mined if they
+had a single pushdata. This restriction has been lifted to allow any
+combination of data pushes and numeric constant opcodes (OP_1 to OP_16). The
+limit on OP_RETURN output size is now applied to the entire serialized
+scriptPubKey, 83 bytes by default. (the previous 80 byte default plus three
+bytes overhead)
 
 Merkle branches removed from wallet
 -----------------------------------
@@ -171,3 +181,11 @@ configured specifically to process scriptPubKey and not scriptSig scripts.
 
 - Removed bitrpc.py from contrib
 
+Addition of ZMQ-based Notifcations
+==================================
+
+Bitcoind can now (optionally) asynchronously notify clients through a
+ZMQ-based PUB socket of the arrival of new transactions and blocks.
+This feature requires installation of the ZMQ C API library 4.x and
+configuring its use through the command line or configuration file.
+Please see docs/zmq.md for details of operation.
