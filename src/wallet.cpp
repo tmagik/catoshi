@@ -1149,8 +1149,8 @@ bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, 
             continue;
 
         int i = output.i;
-#if defined(PPCOINSTAKE)
         int64_t n = pcoin->vout[i].nValue;
+#if defined(PPCOINSTAKE)
 	if (pcoin->nTime > nSpendTime)
 		continue; // ppcoin: timestamp must not exceed spend time
 #endif
@@ -2086,6 +2086,12 @@ void CWallet::DisableTransaction(const CTransaction &tx)
             }
         }
     }
+}
+#else
+void CWallet::DisableTransaction(const CTransaction &tx)
+{
+    printf("ERROR: CWallet::DisableTransactions called for tx %s\n", tx.ToString().c_str());
+    return;
 }
 #endif
 
