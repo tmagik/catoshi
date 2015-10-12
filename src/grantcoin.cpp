@@ -59,13 +59,64 @@ const char *strMainNetDNSSeed[][2] = {
 };
 
 const char *strTestNetDNSSeed[][2] = {
-	{"grantcoin.org", "seed.grantcoin.org"},
+	{"seed", "159.203.84.95"},
 	{NULL, NULL}
 };
+
+int64_t GetProofOfWorkRewardTestNet(int nHeight)
+{
+    int64_t nSubsidy = COIN;
+    if (nHeight == 1)
+        nSubsidy = 10000000000 * COIN;  // Grantcoin created for planned distribution
+    else if (nHeight < 500)
+        nSubsidy = CENT;  // De minimus reward pre-launch and up to 2 weeks post-launch
+    else if (nHeight < 510)
+        nSubsidy = 6.25 * COIN;  // Public mining begins
+    else if (nHeight < 520)
+        nSubsidy = 12.5 * COIN;  // Reward gradually increases during first few days
+    else if (nHeight < 530)
+        nSubsidy = 25 * COIN;
+    else if (nHeight < 540)
+        nSubsidy = 50 * COIN;
+    else if (nHeight < 550)
+        nSubsidy = 100 * COIN;
+    else if (nHeight < 560)
+        nSubsidy = 200 * COIN;
+    else if (nHeight < 1000)
+        nSubsidy = 400 * COIN;  // Maximum reward reached
+    else if (nHeight < 1500)
+        nSubsidy = 200 * COIN;  // Reward starts to decline
+    else if (nHeight < 2000)
+        nSubsidy = 100 * COIN;
+    else if (nHeight < 2500)
+        nSubsidy = 50 * COIN;
+    else if (nHeight < 3000)
+        nSubsidy = 25 * COIN;  // PoW-PoS hybrid phase begins
+    else if (nHeight < 3500)
+        nSubsidy = 12.5 * COIN;
+    else if (nHeight < 4000)
+        nSubsidy = 6.25 * COIN;
+    else if (nHeight < 4500)
+        nSubsidy = 3.13 * COIN;
+    else if (nHeight < 5000)
+        nSubsidy = 1.57 * COIN;
+    else if (nHeight >= 5000)
+        nSubsidy = COIN;  // PoW reward reaches final minimum value
+
+    // if (fDebug && GetBoolArg("-printcreation"))
+    //     printf("GetProofOfWorkReward() : create=%s nBits=0x%08x nSubsidy=%"PRI64d"\n", FormatMoney(nSubsidy).c_str(), nBits, nSubsidy);
+
+    return nSubsidy;
+}
 
 int64_t GetProofOfWorkReward(int nHeight)
 {
     int64_t nSubsidy = COIN;
+/* kludge */
+    if (fTestNet){
+	return GetProofOfWorkRewardTestNet(nHeight);
+    }
+
     if (nHeight == 1)
         nSubsidy = 10000000000 * COIN;  // Grantcoin created for planned distribution
     else if (nHeight < 50000)
@@ -451,8 +502,12 @@ unsigned char pchMessageStart[4];
 bool LoadBlockIndex()
 {
 	if (fTestNet)
-	{	/* add 1 to litecoin values (3 to bitcoins) */
-		assert(1); /* no pch for testnet yet */
+	{	/* err, currently use the same one. TODO: change PCH */
+		pchMessageStart[0] = pchGrantMain[0];
+		pchMessageStart[1] = pchGrantMain[1];
+		pchMessageStart[2] = pchGrantMain[2];
+		pchMessageStart[3] = pchGrantMain[3];
+		hashGenesisBlock = uint256 ("0x000000075c9bddc6a4638910415b2995febabf9dd8b634f0832da86c5bab2df5");
 	} else {
 		pchMessageStart[0] = pchGrantMain[0];
 		pchMessageStart[1] = pchGrantMain[1];
@@ -483,15 +538,30 @@ bool InitBlockIndex() {
 
 	// Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
 	if (!fReindex) {
-        // Genesis block
+		CBlock block;
+        	CTransaction txNew;
+		if(fTestNet){ // GrantTestnet, optimize later.
+        const char* pszTimestamp = "Reuters 10-OCT-2015 Hundreds of thousands protest in Berlin against EU-US trade deal";
+        txNew.nTime = 1444509104;
+        txNew.vin.resize(1);
+        txNew.vout.resize(1);
+        txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
+        txNew.vout[0].SetEmpty();
+        block.vtx.push_back(txNew);
+        block.hashPrevBlock = 0;
+        block.hashMerkleRoot = block.BuildMerkleTree();
+        block.nVersion = 1;
+        block.nTime    = 1444510495;
+        block.nBits    = bnProofOfWorkLimit.GetCompact();
+        block.nNonce   = 87045764;
+		} else {        
+		// Genesis block
 		const char* pszTimestamp = "The Courier-Journal 21-MAR-2015 Prince Charles calls for a revolution";
-		CTransaction txNew;
         txNew.nTime = 1427081625;
 		txNew.vin.resize(1);
 		txNew.vout.resize(1);
 		txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
 		txNew.vout[0].SetEmpty();
-		CBlock block;
 		block.vtx.push_back(txNew);
 		block.hashPrevBlock = 0;
 		block.hashMerkleRoot = block.BuildMerkleTree();
@@ -499,11 +569,6 @@ bool InitBlockIndex() {
 		block.nTime    = 1427086539;
 		block.nBits    = bnProofOfWorkLimit.GetCompact();
 		block.nNonce   = 413974755;
-
-		if (fTestNet)
-		{
-			block.nTime    = 1425014101;
-			block.nNonce   = 122894938;
 		}
 
 		//// debug print
@@ -513,7 +578,11 @@ bool InitBlockIndex() {
 		printf("%s\n", block.hashMerkleRoot.ToString().c_str());
 		block.print();
 		assert(hash == hashGenesisBlock);
-		assert(block.hashMerkleRoot == uint256("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
+		if (fTestNet)
+			assert(block.hashMerkleRoot == uint256("0x650de4987865a27a1c248908c6a93b9d55931ee3df0e97a845c0915bb53a362f"));
+		else {
+			assert(block.hashMerkleRoot == uint256("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
+		}
 
 		//assert(block.CheckBlock());
 
