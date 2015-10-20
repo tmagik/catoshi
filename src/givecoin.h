@@ -4,8 +4,6 @@
 #ifndef CODECOIN_givecoin_H
 #define CODECOIN_givecoin_H
 
-#include "util.h"
-
 static const int RPC_PORT = 31410;
 static const int RPC_PORT_TESTNET =31411;
 static const int P2P_PORT = 31415;

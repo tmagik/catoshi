@@ -5,6 +5,7 @@
 #define CODECOIN_codecoin_H
 
 #include "bignum.h"
+#include <inttypes.h>
 #include <string>
 
 /* TODO: make this a class */

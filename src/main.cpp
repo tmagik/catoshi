@@ -1373,17 +1373,17 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 
 		// Tally transaction fees
 		int64_t nTxFee = nValueIn - GetValueOut();
-		if (nTxFee < 0)
+		if (nTxFee < 0) //CODECOIN TODO: redundant check if we use GetMinFee below.
 			return state.DoS(100, error("CheckInputs() : %s nTxFee < 0", GetHash().ToString().c_str()));
-#if defined(PPCOINSTAKE)
-			// ppcoin: enforce transaction fees for every block
+#if defined(PPCOINSTAKE) || defined (BRAND_grantcoin)
 #if defined(BRAND_givecoin)
+			// ppcoin: enforce transaction fees for every block
 			if (nSpendHeight >= CUTOFF_POS_BLOCK)
+#endif // hackity if
+		if (nTxFee < GetMinFee())
+			return state.DoS(100, error("CheckInputs() : %s not paying required fee=%s, paid=%s", GetHash().ToString().c_str(), FormatMoney(GetMinFee()).c_str(), FormatMoney(nTxFee).c_str()));
 #endif
-			if (nTxFee < GetMinFee())
-				return state.DoS(100, error("CheckInputs() : %s not paying required fee=%s, paid=%s", GetHash().ToString().c_str(), FormatMoney(GetMinFee()).c_str(), FormatMoney(nTxFee).c_str()));
-#endif
-		nFees += nTxFee;
+		nFees += nTxFee; // TODO: check this with ppcoin logic. May not be correct for PPCOINSTAKE
 		if (!MoneyRange(nFees))
 			return state.DoS(100, error("CheckInputs() : nFees out of range"));
 		}
@@ -4618,15 +4618,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 	nBlockMinSize = std::min(nBlockMaxSize, nBlockMinSize);
 
 #if defined(PPCOINSTAKE)
-	// Fee-per-kilobyte amount considered the same as "free"
-	// Be careful setting this: if you set it to zero then
-	// a transaction spammer can cheaply fill blocks using
-	// 1-satoshi-fee transactions. It should be set above the real
-	// cost to you of processing a transaction.
-	int64_t nMinTxFee = CTransaction::nMinTxFee;
-	if (mapArgs.count("-mintxfee"))
-		ParseMoney(mapArgs["-mintxfee"], nMinTxFee);
-
 	// ppcoin: if coinstake available add coinstake tx
 	static int64_t nLastCoinStakeSearchTime = GetAdjustedTime();	// only initialized at startup
 	CBlockIndex* pindexPrev = pindexBest;
@@ -4797,7 +4788,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 			// Prioritize by fee once past the priority size or we run out of high-priority
 			// transactions:
 			if (!fSortedByFee &&
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined (BRANT_grantcoin)
 				((nBlockSize + nTxSize >= nBlockPrioritySize) || (dPriority < COIN * 144 / 250)))
 #else
 				((nBlockSize + nTxSize >= nBlockPrioritySize) || (dPriority < COIN * 576 / 250)))
@@ -4812,7 +4803,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 				continue;
 
 			int64_t nTxFees = tx.GetValueIn(view)-tx.GetValueOut();
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 			// ppcoin: simplify transaction fee - allow free = false
 			if (nTxFees < tx.GetMinFee(nBlockSize, false, GMF_BLOCK))
 				continue;
@@ -4894,7 +4885,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 		indexDummy.nHeight = pindexPrev->nHeight + 1;
 		if (pblock->IsProofOfWork()){
 			pblock->vtx[0].vout[0].nValue = GetBlockValue(&indexDummy, nFees);
-#if defined(PPCOINSTAKE) 
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 			pblock->vtx[0].nTime = pblock->nTime;   /* set coinbase timestamp */
 #endif
 		}

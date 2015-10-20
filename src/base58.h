@@ -282,8 +282,8 @@ public:
     {
         PUBKEY_ADDRESS = 38,  // grantcoin: addresses begin with 'G'
         SCRIPT_ADDRESS = 97, // grantcoin: addresses begin with 'g'
-        PUBKEY_ADDRESS_TEST = 111,
-        SCRIPT_ADDRESS_TEST = 196,
+        PUBKEY_ADDRESS_TEST = 65,  // grantcoin test blockchain: addresses begin with 'T'
+        SCRIPT_ADDRESS_TEST = 127, // grantcoin test blockchain: addresses begin with 't'
     };
 
 	bool Set(const CKeyID &id) {

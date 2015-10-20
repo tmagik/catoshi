@@ -5,6 +5,7 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
+#include "codecoin.h"
 #if defined(BRAND_grantstake)
 #include "grantstake.h"
 #else
