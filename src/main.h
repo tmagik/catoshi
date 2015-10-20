@@ -723,8 +723,8 @@ public:
 		return dPriority > MIN_FREE_PRIORITY;
 	}
 
-// Apply the effects of this transaction on the UTXO set represented by view
-void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash);
+	// Apply the effects of this transaction on the UTXO set represented by view
+	void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash);
 
 	int64_t GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK, unsigned int nBytes=0) const;
 
@@ -755,7 +755,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 	std::string ToString() const
 	{
 		std::string str;
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin) // todo: cleanup later
 		str += IsCoinBase()? "Coinbase" : (IsCoinStake()? "Coinstake" : "CTransaction");
 		str += strprintf("(hash=%s, nTime=%d, ver=%d, vin.size=%" PRIszu", vout.size=%" PRIszu", nLockTime=%d)\n",
 			GetHash().ToString().substr(0,10).c_str(),

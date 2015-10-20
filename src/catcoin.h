@@ -4,8 +4,6 @@
 #ifndef CODECOIN_catcoin_H
 #define CODECOIN_catcoin_H
 
-#include "util.h"
-
 static const int RPC_PORT = 9932;
 static const int RPC_PORT_TESTNET = 19932;
 static const int P2P_PORT = 9933;
