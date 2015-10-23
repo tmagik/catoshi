@@ -75,7 +75,7 @@ uint64_t nPruneTarget = 0;
 bool fAlerts = DEFAULT_ALERTS;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying and mining) */
-CFeeRate minRelayTxFee = CFeeRate(5000);
+CFeeRate minRelayTxFee = CFeeRate(1000);
 
 CTxMemPool mempool(::minRelayTxFee);
 
@@ -740,17 +740,14 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     return true;
 }
 
-CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree)
+CAmount GetMinRelayFee(const CTransaction& tx, const CTxMemPool& pool, unsigned int nBytes, bool fAllowFree)
 {
-    {
-        LOCK(mempool.cs);
-        uint256 hash = tx.GetHash();
-        double dPriorityDelta = 0;
-        CAmount nFeeDelta = 0;
-        mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
-        if (dPriorityDelta > 0 || nFeeDelta > 0)
-            return 0;
-    }
+    uint256 hash = tx.GetHash();
+    double dPriorityDelta = 0;
+    CAmount nFeeDelta = 0;
+    pool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
+    if (dPriorityDelta > 0 || nFeeDelta > 0)
+        return 0;
 
     CAmount nMinFee = ::minRelayTxFee.GetFee(nBytes);
 
@@ -779,7 +776,7 @@ static std::string FormatStateMessage(const CValidationState &state)
 }
 
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
-                        bool* pfMissingInputs, bool fRejectAbsurdFee)
+                        bool* pfMissingInputs, bool fOverrideMempoolLimit, bool fRejectAbsurdFee)
 {
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
@@ -879,17 +876,20 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         CAmount nFees = nValueIn-nValueOut;
         double dPriority = view.GetPriority(tx, chainActive.Height());
 
-        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), mempool.HasNoInputsOf(tx));
+        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), pool.HasNoInputsOf(tx));
         unsigned int nSize = entry.GetTxSize();
 
         // Don't accept it if it can't get into a block
-        CAmount txMinFee = GetMinRelayFee(tx, nSize, true);
+        CAmount txMinFee = GetMinRelayFee(tx, pool, nSize, true);
         if (fLimitFree && nFees < txMinFee)
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient fee", false,
                 strprintf("%d < %d", nFees, txMinFee));
 
-        // Require that free transactions have sufficient priority to be mined in the next block.
-        if (GetBoolArg("-relaypriority", true) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
+        CAmount mempoolRejectFee = pool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
+        if (mempoolRejectFee > 0 && nFees < mempoolRejectFee) {
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool min fee not met", false, strprintf("%d < %d", nFees, mempoolRejectFee));
+        } else if (GetBoolArg("-relaypriority", true) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
+            // Require that free transactions have sufficient priority to be mined in the next block.
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
         }
 
@@ -954,6 +954,17 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // Store transaction in memory
         pool.addUnchecked(hash, entry, setAncestors, !IsInitialBlockDownload());
+
+        // trim mempool and check if tx was trimmed
+        if (!fOverrideMempoolLimit) {
+            int expired = pool.Expire(GetTime() - GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
+            if (expired != 0)
+                LogPrint("mempool", "Expired %i transactions from the memory pool\n", expired);
+
+            pool.TrimToSize(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000);
+            if (!pool.exists(tx.GetHash()))
+                return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool full");
+        }
     }
 
     SyncWithWallets(tx, NULL);
@@ -1740,9 +1751,16 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     unsigned int flags = fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE;
 
-    // Start enforcing the DERSIG (BIP66) rules, for block.nVersion=3 blocks, when 75% of the network has upgraded:
+    // Start enforcing the DERSIG (BIP66) rules, for block.nVersion=3 blocks,
+    // when 75% of the network has upgraded:
     if (block.nVersion >= 3 && IsSuperMajority(3, pindex->pprev, chainparams.GetConsensus().nMajorityEnforceBlockUpgrade, chainparams.GetConsensus())) {
         flags |= SCRIPT_VERIFY_DERSIG;
+    }
+
+    // Start enforcing CHECKLOCKTIMEVERIFY, (BIP65) for block.nVersion=4
+    // blocks, when 75% of the network has upgraded:
+    if (block.nVersion >= 4 && IsSuperMajority(4, pindex->pprev, chainparams.GetConsensus().nMajorityEnforceBlockUpgrade, chainparams.GetConsensus())) {
+        flags |= SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
     }
 
     CBlockUndo blockundo;
@@ -2020,7 +2038,7 @@ void static UpdateTip(CBlockIndex *pindexNew) {
     }
 }
 
-/** Disconnect chainActive's tip. */
+/** Disconnect chainActive's tip. You want to manually re-limit mempool size after this */
 bool static DisconnectTip(CValidationState &state) {
     CBlockIndex *pindexDelete = chainActive.Tip();
     assert(pindexDelete);
@@ -2047,7 +2065,7 @@ bool static DisconnectTip(CValidationState &state) {
         // ignore validation errors in resurrected transactions
         list<CTransaction> removed;
         CValidationState stateDummy;
-        if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL)) {
+        if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL, true)) {
             mempool.remove(tx, removed, true);
         } else if (mempool.exists(tx.GetHash())) {
             vHashUpdate.push_back(tx.GetHash());
@@ -2220,9 +2238,11 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     const CBlockIndex *pindexFork = chainActive.FindFork(pindexMostWork);
 
     // Disconnect active blocks which are no longer in the best chain.
+    bool fBlocksDisconnected = false;
     while (chainActive.Tip() && chainActive.Tip() != pindexFork) {
         if (!DisconnectTip(state))
             return false;
+        fBlocksDisconnected = true;
     }
 
     // Build list of new blocks to connect.
@@ -2267,6 +2287,9 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         }
     }
     }
+
+    if (fBlocksDisconnected)
+        mempool.TrimToSize(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000);
 
     // Callbacks/notifications for a new best chain.
     if (fInvalidFound)
@@ -2353,6 +2376,8 @@ bool InvalidateBlock(CValidationState& state, CBlockIndex *pindex) {
             return false;
         }
     }
+
+    mempool.TrimToSize(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000);
 
     // The resulting new best tip may not be in setBlockIndexCandidates anymore, so
     // add it again.
@@ -2682,6 +2707,11 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     // Reject block.nVersion=2 blocks when 95% (75% on testnet) of the network has upgraded:
     if (block.nVersion < 3 && IsSuperMajority(3, pindexPrev, consensusParams.nMajorityRejectBlockOutdated, consensusParams))
         return state.Invalid(error("%s : rejected nVersion=2 block", __func__),
+                             REJECT_OBSOLETE, "bad-version");
+
+    // Reject block.nVersion=3 blocks when 95% (75% on testnet) of the network has upgraded:
+    if (block.nVersion < 4 && IsSuperMajority(4, pindexPrev, consensusParams.nMajorityRejectBlockOutdated, consensusParams))
+        return state.Invalid(error("%s : rejected nVersion=3 block", __func__),
                              REJECT_OBSOLETE, "bad-version");
 
     return true;
@@ -4290,10 +4320,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             RelayTransaction(tx);
             vWorkQueue.push_back(inv.hash);
 
-            LogPrint("mempool", "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u)\n",
+            LogPrint("mempool", "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)\n",
                 pfrom->id,
                 tx.GetHash().ToString(),
-                mempool.size());
+                mempool.size(), mempool.DynamicMemoryUsage() / 1000);
 
             // Recursively process any orphan transactions that depended on this one
             set<NodeId> setMisbehaving;
@@ -4955,7 +4985,16 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60) {
                 state.fSyncStarted = true;
                 nSyncStarted++;
-                CBlockIndex *pindexStart = pindexBestHeader->pprev ? pindexBestHeader->pprev : pindexBestHeader;
+                const CBlockIndex *pindexStart = pindexBestHeader;
+                /* If possible, start at the block preceding the currently
+                   best known header.  This ensures that we always get a
+                   non-empty list of headers back as long as the peer
+                   is up-to-date.  With a non-empty response, we can initialise
+                   the peer's known best block.  This wouldn't be possible
+                   if we requested starting at pindexBestHeader and
+                   got back an empty response.  */
+                if (pindexStart->pprev)
+                    pindexStart = pindexStart->pprev;
                 LogPrint("net", "initial getheaders (%d) to peer=%d (startheight:%d)\n", pindexStart->nHeight, pto->id, pto->nStartingHeight);
                 pto->PushMessage("getheaders", chainActive.GetLocator(pindexStart), uint256());
             }
