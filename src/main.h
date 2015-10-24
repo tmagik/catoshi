@@ -1374,20 +1374,6 @@ public:
 		READWRITE(nTime);
 		READWRITE(nBits);
 		READWRITE(nNonce);
-
-#if defined(BRAND_bluecoin) // below may be deprecated, find out later.
-		// ConnectBlock depends on vtx following header to generate CDiskTxPos
-		if (!(nType & (SER_GETHASH|SER_BLOCKHEADERONLY)))
-		{
-			READWRITE(vtx);
-			READWRITE(vchBlockSig);
-		}
-		else if (fRead)
-		{
-			const_cast<CBlock*>(this)->vtx.clear();
-			const_cast<CBlock*>(this)->vchBlockSig.clear();
-		}
-#endif
 	)
 
 	void SetNull()
@@ -1454,7 +1440,7 @@ class CBlock : public CBlockHeader
 public:
 	// network and disk
 	std::vector<CTransaction> vtx;
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 	// ppcoin: block signature - signed by coin base txout[0]'s owner
 	std::vector<unsigned char> vchBlockSig;
 #endif
@@ -1476,12 +1462,28 @@ public:
 	IMPLEMENT_SERIALIZE
 	(
 		READWRITE(*(CBlockHeader*)this);
-		READWRITE(vtx);
-#if defined(PPCOINSTAKE)
-#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
-		if ((this->nVersion | 0x1) == 1) /* overload bit 0 of version as PoS indicator */
-#endif
-		READWRITE(vchBlockSig);
+// TODO: determine correct way to manage vchBlockSig 
+//		READWRITE(vtx);
+//  
+//#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+//#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
+//		if ((this->nVersion | 0x1) == 1) /* overload bit 0 of version as PoS indicator */
+//#endif
+//		READWRITE(vchBlockSig);
+//#endif
+//
+#if defined(BRAND_bluecoin) || defined(BRAND_grantcoin) // Was moved from CBlockHeader
+		// ConnectBlock depends on vtx following header to generate CDiskTxPos
+		if (!(nType & (SER_GETHASH|SER_BLOCKHEADERONLY)))
+		{
+			READWRITE(vtx);
+			READWRITE(vchBlockSig);
+		}
+		else if (fRead)
+		{
+			const_cast<CBlock*>(this)->vtx.clear();
+			const_cast<CBlock*>(this)->vchBlockSig.clear();
+		}
 #endif
 	)
 
@@ -1489,7 +1491,7 @@ public:
 	{
 		CBlockHeader::SetNull();
 		vtx.clear();
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 		vchBlockSig.clear();
 #endif
 		vMerkleTree.clear();
@@ -1686,7 +1688,7 @@ public:
 
 	void print() const
 	{
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 		printf("CBlock(hash=%s, vchBlockSig=%s, PoW=%s, input=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu")\n",
 			GetHash().ToString().c_str(),
 			HexStr(vchBlockSig.begin(), vchBlockSig.end()).c_str(),
@@ -2224,7 +2226,7 @@ public:
 		if (nStatus & BLOCK_HAVE_UNDO)
 			READWRITE(VARINT(nUndoPos));
 
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) // TODO: is needed for grantcoin?
 		READWRITE(nMint);
 		READWRITE(nMoneySupply);
 		READWRITE(nFlags);

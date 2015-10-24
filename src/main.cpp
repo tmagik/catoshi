@@ -4788,7 +4788,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 			// Prioritize by fee once past the priority size or we run out of high-priority
 			// transactions:
 			if (!fSortedByFee &&
-#if defined(PPCOINSTAKE) || defined (BRANT_grantcoin)
+#if defined(PPCOINSTAKE) || defined (BRAND_grantcoin)
 				((nBlockSize + nTxSize >= nBlockPrioritySize) || (dPriority < COIN * 144 / 250)))
 #else
 				((nBlockSize + nTxSize >= nBlockPrioritySize) || (dPriority < COIN * 576 / 250)))
