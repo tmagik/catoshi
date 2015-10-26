@@ -30,20 +30,20 @@ file, however it is recommended that a strong and secure password be used
 as this password is security critical to securing the wallet should the
 wallet be enabled.
 
-If bitcoind is run with the "-server" flag (set by default), and no rpcpassword is set, 
-it will use a special cookie file for authentication. The cookie is generated with random 
+If bitcoind is run with the "-server" flag (set by default), and no rpcpassword is set,
+it will use a special cookie file for authentication. The cookie is generated with random
 content when the daemon starts, and deleted when it exits. Read access to this file
-controls who can access it through RPC. 
+controls who can access it through RPC.
 
-By default the cookie is stored in the data directory, but it's location can be overridden 
+By default the cookie is stored in the data directory, but it's location can be overridden
 with the option '-rpccookiefile'.
 
 This allows for running bitcoind without having to do any manual configuration.
 
-`conf`, `pid`, and `wallet` accept relative paths which are interpreted as 
+`conf`, `pid`, and `wallet` accept relative paths which are interpreted as
 relative to the data directory. `wallet` *only* supports relative paths.
 
-For an example configuration file that describes the configuration settings, 
+For an example configuration file that describes the configuration settings,
 see `contrib/debian/examples/bitcoin.conf`.
 
 3. Paths
@@ -103,8 +103,8 @@ use old versions of Upstart and do not supply the start-stop-daemon utility.
 
 Copy bitcoind.init to /etc/init.d/bitcoind. Test by running `service bitcoind start`.
 
-Using this script, you can adjust the path and flags to the bitcoind program by 
-setting the BITCOIND and FLAGS environment variables in the file 
+Using this script, you can adjust the path and flags to the bitcoind program by
+setting the BITCOIND and FLAGS environment variables in the file
 /etc/sysconfig/bitcoind. You can also use the DAEMONOPTS environment variable here.
 
 4e) Mac OS X
@@ -123,4 +123,3 @@ Launch Daemon with a dedicated bitcoin user.
 
 Auto respawning is currently only configured for Upstart and systemd.
 Reasonable defaults have been chosen but YMMV.
-
