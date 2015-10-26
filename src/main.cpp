@@ -2271,10 +2271,10 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 	if (fCheckMerkleRoot && hashMerkleRoot != BuildMerkleTree())
 		return state.DoS(100, error("CheckBlock() : hashMerkleRoot mismatch"));
 
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 	// ppcoin: check block signature
 	// Only check block signature if check merkle root, c.f. commit 3cd01fdf
-#if defined(BRAND_givecoin) || defined(BRAND_hamburger) || defined(BRAND_grantcoin)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger) 
 	if (fCheckMerkleRoot && IsProofOfStake() && !CheckBlockSignature())
 #else 
 	if (fCheckMerkleRoot && !CheckBlockSignature())
@@ -2633,7 +2633,7 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 	return true;
 }
 
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 // ppcoin: sign block
 bool CBlock::SignBlock(const CKeyStore& keystore)
 {
@@ -2677,9 +2677,7 @@ bool CBlock::CheckBlockSignature() const
     if (whichType == TX_PUBKEY)
     {
         const vector<unsigned char>& vchPubKey = vSolutions[0];
-        CKey key;
-        if (!key.SetPubKey(vchPubKey))
-            return false;
+		CPubKey key(vchPubKey);
         if (vchBlockSig.empty())
             return false;
         return key.Verify(GetHash(), vchBlockSig);
@@ -3251,7 +3249,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
 extern map<uint256, CAlert> mapAlerts;
 extern CCriticalSection cs_mapAlerts;
 #endif
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 static string strMintWarning;
 #endif
 
@@ -4855,13 +4853,13 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 
 		nLastBlockTx = nBlockTx;
 		nLastBlockSize = nBlockSize;
-#ifdef PPCOINSTAKE
+		
 		if (fDebug && GetBoolArg("-printpriority"))
-		printf("CreateNewBlock(): total size %" PRIu64"\n", nBlockSize);
+			printf("CreateNewBlock(): total size %" PRIu64"\n", nBlockSize);
 
 		if (pblock->IsProofOfWork())
 			pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(pindexPrev, nFees);
-#endif
+		
 		pblocktemplate->vTxFees[0] = -nFees;
 
 		// Fill in header
@@ -5024,13 +5022,13 @@ void CodecoinMiner(CWallet *pwallet, bool fProofOfStake)
 	// Each thread has its own key and counter
 	CReserveKey reservekey(pwallet);
 	unsigned int nExtraNonce = 0;
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 	string strMintMessage = _("Info: Minting suspended due to locked wallet.");
 #endif
 	try { while (true) {
 		while (vNodes.empty())
 			MilliSleep(1000);
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 		while (pwallet->IsLocked())
 		{
 			strMintWarning = strMintMessage;
@@ -5123,14 +5121,14 @@ void CodecoinMiner(CWallet *pwallet, bool fProofOfStake)
                     // Found a solution
                     pblock->nNonce = ByteReverse(nNonceFound);
                     assert(hash == pblock->GetHash());
-/*  TODO 
+#if defined(PPCOINSTAKE) || defined (BRAND_grantcoin)
                     if (!pblock->SignBlock(*pwalletMain))
                     {
                         strMintWarning = strMintMessage;
                         break;
                     }
                     strMintWarning = "";
-*/
+#endif
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     CheckWork(pblock, *pwallet, reservekey);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
