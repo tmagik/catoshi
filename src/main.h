@@ -1736,7 +1736,7 @@ public:
 	// Store block on disk
 	// if dbp is provided, the file is known to already reside on disk
 	bool AcceptBlock(CValidationState &state, CDiskBlockPos *dbp = NULL);
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 	bool GetCoinAge(uint64_t& nCoinAge) const; // ppcoin: calculate total coin age spent in block
 	bool SignBlock(const CKeyStore& keystore);
 	bool CheckBlockSignature() const;
