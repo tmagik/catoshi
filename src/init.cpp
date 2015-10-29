@@ -369,6 +369,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-whitebind=<addr>", _("Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6"));
     strUsage += HelpMessageOpt("-whitelist=<netmask>", _("Whitelist peers connecting from the given netmask or IP address. Can be specified multiple times.") +
         " " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway"));
+    strUsage += HelpMessageOpt("-maxuploadtarget=<n>", strprintf(_("Tries to keep outbound traffic under the given target (in MiB per 24h), 0 = no limit (default: %d)"), 0));
 
 #ifdef ENABLE_WALLET
     strUsage += HelpMessageGroup(_("Wallet options:"));
@@ -430,6 +431,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-logtimestamps", strprintf(_("Prepend debug output with timestamp (default: %u)"), 1));
     if (showDebug)
     {
+        strUsage += HelpMessageOpt("-logtimemicros", strprintf("Add microsecond precision to debug timestamps (default: %u)", DEFAULT_LOGTIMEMICROS));
         strUsage += HelpMessageOpt("-limitfreerelay=<n>", strprintf("Continuously rate-limit free transactions to <n>*1000 bytes per minute (default: %u)", 15));
         strUsage += HelpMessageOpt("-relaypriority", strprintf("Require high priority for relaying free or low-fee transactions (default: %u)", 1));
         strUsage += HelpMessageOpt("-maxsigcachesize=<n>", strprintf("Limit size of signature cache to <n> entries (default: %u)", 50000));
@@ -727,6 +729,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Set this early so that parameter interactions go to console
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
     fLogTimestamps = GetBoolArg("-logtimestamps", true);
+    fLogTimeMicros = GetBoolArg("-logtimemicros", DEFAULT_LOGTIMEMICROS);
     fLogIPs = GetBoolArg("-logips", false);
 
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
@@ -838,7 +841,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         InitWarning(_("Unsupported argument -benchmark ignored, use -debug=bench."));
 
     // Checkmempool and checkblockindex default to true in regtest mode
-    mempool.setSanityCheck(GetBoolArg("-checkmempool", chainparams.DefaultConsistencyChecks()));
+    int ratio = std::min<int>(std::max<int>(GetArg("-checkmempool", chainparams.DefaultConsistencyChecks() ? 1 : 0), 0), 1000000);
+    if (ratio != 0) {
+        mempool.setSanityCheck(1.0 / ratio);
+    }
     fCheckBlockIndex = GetBoolArg("-checkblockindex", chainparams.DefaultConsistencyChecks());
     fCheckpointsEnabled = GetBoolArg("-checkpoints", true);
 
@@ -1174,6 +1180,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         RegisterValidationInterface(pzmqNotificationInterface);
     }
 #endif
+    if (mapArgs.count("-maxuploadtarget")) {
+        CNode::SetMaxOutboundTarget(GetArg("-maxuploadtarget", 0)*1024*1024);
+    }
 
     // ********************************************************* Step 7: load block chain
 
@@ -1504,10 +1513,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // if pruning, unset the service bit and perform the initial blockstore prune
     // after any wallet rescanning has taken place.
     if (fPruneMode) {
-        uiInterface.InitMessage(_("Pruning blockstore..."));
         LogPrintf("Unsetting NODE_NETWORK on prune mode\n");
         nLocalServices &= ~NODE_NETWORK;
         if (!fReindex) {
+            uiInterface.InitMessage(_("Pruning blockstore..."));
             PruneAndFlush();
         }
     }
