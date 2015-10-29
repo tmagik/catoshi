@@ -72,7 +72,7 @@ bool AppInit(int argc, char* argv[])
     ParseParameters(argc, argv);
 
     // Process help and version before taking care about datadir
-    if (mapArgs.count("-?") || mapArgs.count("-help") || mapArgs.count("-version"))
+    if (mapArgs.count("-?") || mapArgs.count("-h") ||  mapArgs.count("-help") || mapArgs.count("-version"))
     {
         std::string strUsage = _("Bitcoin Core Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n";
 
@@ -109,7 +109,7 @@ bool AppInit(int argc, char* argv[])
         // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
         try {
             SelectParams(ChainNameFromCommandLine());
-        } catch(std::exception &e) {
+        } catch (const std::exception& e) {
             fprintf(stderr, "Error: %s\n", e.what());
             return false;
         }
