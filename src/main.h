@@ -1527,7 +1527,7 @@ public:
 			return true;	/* bit 0==1 is proof-of-stake */
 		else
 			return false;	/* bit 0==0 is proof-of-work */
-#elif defined(BRAND_grantcoin)
+#elif defined(BRAND_grantcoin) || defined(BRAND_grantstake)
 		return false;		// no stake for now
 #else
 #error "Your chosen coin brand needs IsProofOfStake implemented"

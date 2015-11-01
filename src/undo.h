@@ -21,7 +21,7 @@
  *  last output of the affected transaction, its metadata as well
  *  (coinbase or not, height, transaction version)
  */
-class CTxInUndo
+class TxInUndo
 {
 public:
 	CTxOut txout;		  // the txout data before being spent
@@ -29,8 +29,8 @@ public:
 	unsigned int nHeight; // if the outpoint was the last unspent: its height
 	int nVersion;		  // if the outpoint was the last unspent: its version
 
-    CTxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0) {}
-    CTxInUndo(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn) { }
+    TxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0) {}
+    TxInUndo(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn) { }
 
     unsigned int GetSerializeSize(int nType, int nVersion) const {
         return ::GetSerializeSize(VARINT(nHeight*2+(fCoinBase ? 1 : 0)), nType, nVersion) +
@@ -58,44 +58,25 @@ public:
     }
 };
 
-/*
-class CtxInUndoStake : CTxInUndo
+class TxInUndoStake : public TxInUndo
 {
 public:
-	CTxOut txout;		  // the txout data before being spent
-	bool fCoinBase;		  // if the outpoint was the last unspent: whether it belonged to a coinbase
-	unsigned int nHeight; // if the outpoint was the last unspent: its height
-	int nVersion;		  // if the outpoint was the last unspent: its version
+	bool fCoinStake;      // ppcoin: if the outpoint was the last unspent: whether it belonged to a coinstake
+	unsigned int nTime;   // ppcoin: if the outpoint was the last unspent: its tx timestamp
 
-#if defined(PPCOINSTAKE)
-    bool fCoinStake;      // ppcoin: if the outpoint was the last unspent: whether it belonged to a coinstake
-    unsigned int nTime;   // ppcoin: if the outpoint was the last unspent: its tx timestamp
-    
+	TxInUndoStake() : TxInUndo(), fCoinStake(false), nTime(0) {}
+	TxInUndoStake(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0, bool fCoinStakeIn = false, unsigned int nTimeIn = 0) : TxInUndo(txoutIn, fCoinBaseIn, nHeightIn, nVersionIn), fCoinStake(fCoinStakeIn), nTime(nTimeIn) { }
 
-    CTxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0), fCoinStake(false), nTime(0) {}
-    CTxInUndo(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0, bool fCoinStakeIn = false, unsigned int nTimeIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn), fCoinStake(fCoinStakeIn), nTime(nTimeIn) { }
-#else
-	CTxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0) {}
-	CTxInUndo(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn) { }
-#endif
 	unsigned int GetSerializeSize(int nType, int nVersion) const {
-#if defined(PPCOINSTAKE)
 		return ::GetSerializeSize(VARINT(nHeight*4+(fCoinBase ? 1 : 0)+(fCoinStake ? 2 : 0)), nType, nVersion) +
 		::GetSerializeSize(VARINT(nTime), nType, nVersion) +
-#else
-		return ::GetSerializeSize(VARINT(nHeight*2+(fCoinBase ? 1 : 0)), nType, nVersion) +
-#endif
 			   (nHeight > 0 ? ::GetSerializeSize(VARINT(this->nVersion), nType, nVersion) : 0) +
 			   ::GetSerializeSize(CTxOutCompressor(REF(txout)), nType, nVersion);
 	}
 
 	template<typename Stream>
 	void Serialize(Stream &s, int nType, int nVersion) const {
-#if defined(PPCOINSTAKE)
 		::Serialize(s, VARINT(nHeight*4+(fCoinBase ? 1 : 0) +(fCoinStake ? 2 : 0)), nType, nVersion);
-#else
-		::Serialize(s, VARINT(nHeight*2+(fCoinBase ? 1 : 0)), nType, nVersion);
-#endif
 		if (nHeight > 0)
 			::Serialize(s, VARINT(this->nVersion), nType, nVersion);
 		::Serialize(s, CTxOutCompressor(REF(txout)), nType, nVersion);
@@ -106,19 +87,20 @@ public:
 		unsigned int nCode = 0;
 		::Unserialize(s, VARINT(nCode), nType, nVersion);
 		fCoinBase = nCode & 1;
-#if defined(PPCOINSTAKE)
 		fCoinStake = nCode & 2;
 		::Unserialize(s, VARINT(nTime), nType, nVersion);
 		nHeight = nCode / 4;
-#else
-		nHeight = nCode / 2;
-#endif
 		if (nHeight > 0)
 			::Unserialize(s, VARINT(this->nVersion), nType, nVersion);
 		::Unserialize(s, REF(CTxOutCompressor(REF(txout))), nType, nVersion);
 	}
 };
-*/
+
+#if defined(PPCOINSTAKE) // for compatibility with bitcoin-core legacy code
+typedef TxInUndoStake CTxInUndo;
+#else
+typedef TxInUndo CTxInUndo;
+#endif
 
 /** Undo information for a CTransaction */
 class CTxUndo
