@@ -802,7 +802,7 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
 		// This is done last to help prevent CPU exhaustion denial-of-service attacks.
 		if (!tx.CheckInputs(state, view, true, SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC))
 		{
-			return error("CTxMemPool::accept() : ConnectInputs failed %s", hash.ToString().c_str());
+			return error("CTxMemPool::accept() : CheckInputs failed %s", hash.ToString().c_str());
 		}
 	}
 
@@ -1346,6 +1346,16 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 				if (nSpendHeight - coins.nHeight < COINBASE_MATURITY)
 					return state.Invalid(error("CheckInputs() : tried to spend coinbase at depth %d", nSpendHeight - coins.nHeight));
 			}
+
+#if defined(PPCOINSTAKE)
+#if defined(BRAND_grantcoin)
+	#warning "can't check previous tx timestamps without CCoins ppcoinstake structures"
+#endif
+			// peercoin: check transaction timestamp
+			if (coins.nTime > nTime)
+				return state.DoS(100, error("CheckInputs() : tx %s timestamp %d earlier than input tx timestamp %d",
+				GetHash().ToString().c_str(), nTime, coins.nTime));
+#endif
 
 			// Check for negative or overflow input values
 			nValueIn += coins.vout[prevout.n].nValue;
@@ -2238,10 +2248,13 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 	{
 		if (!tx.CheckTransaction(state))
 			return error("CheckBlock() : CheckTransaction failed");
-#if defined(PPCOINSTAKE)
-        // ppcoin: check transaction timestamp
-        if (IsProofOfStake() && (GetBlockTime() < (int64_t)tx.nTime))
-            return state.DoS(50, error("CheckBlock() : block timestamp earlier than transaction timestamp"));
+#if defined(BRAND_grantcoin)
+		if ((GetBlockTime() < (int64_t)tx.nTime))
+			return state.DoS(50, error("CheckBlock() : block timestamp earlier than transaction timestamp"));
+#elif defined(PPCOINSTAKE)
+		// ppcoin: check transaction timestamp
+		if (IsProofOfStake() && (GetBlockTime() < (int64_t)tx.nTime))
+			return state.DoS(50, error("CheckBlock() : block timestamp earlier than transaction timestamp"));
 #endif
 	}
 
