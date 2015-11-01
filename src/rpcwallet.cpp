@@ -86,7 +86,8 @@ Value getinfo(const Array& params, bool fHelp)
     GetProxy(NET_IPV4, proxy);
 
     Object obj;
-	obj.push_back(Pair("version",		(int)CLIENT_VERSION));
+    obj.push_back(Pair("version",		(int)CLIENT_VERSION));
+    obj.push_back(Pair("build",			CLIENT_BUILD));
     obj.push_back(Pair("protocolversion",(int)PROTOCOL_VERSION));
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
@@ -96,12 +97,14 @@ Value getinfo(const Array& params, bool fHelp)
 	obj.push_back(Pair("newmint",		ValueFromAmount(pwalletMain->GetNewMint())));
 	obj.push_back(Pair("stake",			ValueFromAmount(pwalletMain->GetStake())));
 	obj.push_back(Pair("moneysupply",	ValueFromAmount(pindexBest->nMoneySupply)));
+//#elif defined(BRAND_grantcoin)
+	obj.push_back(Pair("moneysupply",	ValueFromAmount(pindexBest->nMoneySupply)));
 #endif	  
 	obj.push_back(Pair("blocks",		(int)nBestHeight));
 	obj.push_back(Pair("timeoffset",	(boost::int64_t)GetTimeOffset()));
 	obj.push_back(Pair("connections",	(int)vNodes.size()));
 	obj.push_back(Pair("proxy",			(proxy.first.IsValid() ? proxy.first.ToStringIPPort() : string())));
-	//obj.push_back(Pair("ip",			  addrSeenByPeer.ToStringIP()));
+	obj.push_back(Pair("ip",			  addrSeenByPeer.ToStringIP()));
 	obj.push_back(Pair("difficulty",	(double)GetDifficulty()));
 	obj.push_back(Pair("testnet",		fTestNet));
     if (pwalletMain) {
