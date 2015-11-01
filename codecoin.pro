@@ -284,7 +284,8 @@ HEADERS += src/qt/codecoingui.h \
     src/threadsafety.h \
     src/limitedmap.h \
     src/qt/macnotificationhandler.h \
-    src/qt/splashscreen.h
+    src/qt/splashscreen.h \
+    $$OUT_PWD/build/build.h
 
 SOURCES += src/qt/codecoin.cpp \
     src/qt/codecoingui.cpp \
