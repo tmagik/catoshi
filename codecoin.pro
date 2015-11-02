@@ -13,37 +13,39 @@ CONFIG += thread
 #
 android:DEFINES += BOOST_NO_SCOPED_ENUMS BOOST_NO_CXX11_SCOPED_ENUMS __WORDSIZE=32
 
-COIN_brand=grantcoin
-# use: qmake "COIN_brand=grantcoin"
-contains(COIN_brand, grantcoin) {
+isEmpty(COIN_BRAND){
+	COIN_BRAND=grantcoin
+}
+# use: qmake "COIN_BRAND=grantstake" for other than grantcoin
+contains(COIN_BRAND, grantcoin) {
     message(Building for Grantcoin)
     DEFINES += BRAND_grantcoin
     TARGET = grantcoin
 } else {
-contains(COIN_brand, grantstake) {
+contains(COIN_BRAND, grantstake) {
     message(Building for Grantstake)
     DEFINES += BRAND_grantstake
     TARGET = grantstake
 } else {
-contains(COIN_brand, catcoin) {
+contains(COIN_BRAND, catcoin) {
     message(Building for Catcoin)
     DEFINES += BRAND_catcoin
     TARGET = catcoin
 } else {
-contains(COIN_brand, givecoin) {
+contains(COIN_BRAND, givecoin) {
     message(Building for Givecoin)
     DEFINES += BRAND_givecoin
     TARGET = givecoin
 } else {
-contains(COIN_brand, hamburger) {
+contains(COIN_BRAND, hamburger) {
     DEFINES += BRAND_hamburger
     TARGET = hamburger
 } else {
-contains(COIN_brand, givestake) { # for testing, for now
+contains(COIN_BRAND, givestake) { # for testing, for now
     DEFINES += BRAND_givecoin PPCOINSTAKE
     TARGET = givestake
 } else {
-contains(COIN_brand, bluecoin) {
+contains(COIN_BRAND, bluecoin) {
     DEFINES += BRAND_bluecoin
     TARGET = bluecoin
 } else {
@@ -384,10 +386,8 @@ SOURCES += src/leveldb/db/builder.cc src/leveldb/db/c.cc src/leveldb/db/dbformat
 #leveldb libmemv
 SOURCES += src/leveldb/helpers/memenv/memenv.cc
 
-# TODO: figure out how to dereference COIN_brand properly
-contains(COIN_brand, grantcoin){
-RESOURCES += src/qt/res/grantcoin/codecoin.qrc
-}
+# TODO: figure out how to dereference COIN_BRAND properly
+RESOURCES += src/qt/res/$$TARGET/codecoin.qrc
 
 FORMS += src/qt/forms/sendcoinsdialog.ui \
     src/qt/forms/coincontroldialog.ui \

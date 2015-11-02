@@ -1,7 +1,9 @@
 #ifndef OVERVIEWPAGE_H
 #define OVERVIEWPAGE_H
 
+#include "codecoinunits.h"
 #include <QWidget>
+#include <QAbstractItemDelegate>
 
 QT_BEGIN_NAMESPACE
 class QModelIndex;
@@ -49,4 +51,22 @@ private slots:
     void handleTransactionClicked(const QModelIndex &index);
 };
 
+class TxViewDelegate : public QAbstractItemDelegate
+{
+	Q_OBJECT
+
+public:
+	TxViewDelegate(): QAbstractItemDelegate(), unit(CodecoinUnits::CC)
+	{
+
+	}
+
+	void paint(QPainter *painter, const QStyleOptionViewItem &option,
+			const QModelIndex &index ) const;
+
+	QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+
+	int unit;
+
+};
 #endif // OVERVIEWPAGE_H

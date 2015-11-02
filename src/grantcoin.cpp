@@ -585,7 +585,7 @@ bool InitBlockIndex() {
 			assert(block.hashMerkleRoot == uint256("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
 		}
 
-		//assert(block.CheckBlock());
+		//assert(block.CheckBlock)
 
 		// Start new block file
 		try {

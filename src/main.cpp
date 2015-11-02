@@ -578,7 +578,7 @@ bool CTransaction::CheckTransaction(CValidationState &state) const
 			return state.DoS(100, error("CTransaction::CheckTransaction() : MoneyRange(0x%" PRIx64") check failed", txout.nValue));
 #if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 		if ((!txout.IsEmpty()) && txout.nValue < CENT)
-			return DoS(100, error("CTransaction::CheckTransaction() : txout.nValue below minimum"));
+			return state.DoS(100, error("CTransaction::CheckTransaction() : txout.nValue below minimum"));
 #endif
 		nValueOut += txout.nValue;
 		if (!MoneyRange(nValueOut))
@@ -1785,11 +1785,7 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
 		// We only do this for blocks after the last checkpoint (reorganisation before that
 		// point should only happen with -reindex/-loadblock, or a misbehaving peer.
 		BOOST_FOREACH(const CTransaction& tx, block.vtx)
-#if defined(PPCOINSTAKE)
-			if (!(tx.IsCoinBase() || tx.IsCoinStake()))
-#else
-			if (!tx.IsCoinBase() && pindex->nHeight > Checkpoints::GetTotalBlocksEstimate())
-#endif
+			if (!tx.IsGenerated() && pindex->nHeight > Checkpoints::GetTotalBlocksEstimate())
 				vResurrect.push_back(tx);
 	}
 
