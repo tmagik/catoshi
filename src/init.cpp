@@ -718,7 +718,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 			return InitError(strprintf(_("Invalid amount for -mininput=<amount>: '%s'"), mapArgs["-mininput"].c_str()));
 	}
 
-#if defined(BRAND_bluecoin) || defined(BRAND_givestake)
+#if defined(PPCOINSTAKE)
 	if (mapArgs.count("-reservebalance")) // ppcoin: reserve balance amount
 	{
 		int64_t nReserveBalance = 0;

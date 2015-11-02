@@ -576,7 +576,10 @@ bool CTransaction::CheckTransaction(CValidationState &state) const
 			return state.DoS(100, error("CTransaction::CheckTransaction() : txout.nValue too high"));
 		if (!MoneyRange(txout.nValue))
 			return state.DoS(100, error("CTransaction::CheckTransaction() : MoneyRange(0x%" PRIx64") check failed", txout.nValue));
-
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+		if ((!txout.IsEmpty()) && txout.nValue < CENT)
+			return DoS(100, error("CTransaction::CheckTransaction() : txout.nValue below minimum"));
+#endif
 		nValueOut += txout.nValue;
 		if (!MoneyRange(nValueOut))
 			return state.DoS(100, error("CTransaction::CheckTransaction() : txout total out of range"));

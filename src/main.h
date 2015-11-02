@@ -718,9 +718,13 @@ public:
 
 	static bool AllowFree(double dPriority)
 	{
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+		return false;
+#else
 		// Large (in bytes) low-priority (new, small-coin) transactions
 		// need a fee.
 		return dPriority > MIN_FREE_PRIORITY;
+#endif
 	}
 
 	// Apply the effects of this transaction on the UTXO set represented by view

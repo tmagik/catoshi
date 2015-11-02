@@ -31,7 +31,7 @@ extern const unsigned int nMaxClockDrift;
 
 
 /** Dust Soft Limit, allowed with additional fee per output */
-static const int64_t DUST_SOFT_LIMIT = 10000; // 0.001 GRT
+static const int64_t DUST_SOFT_LIMIT = CENT; // 0.01 GRT
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */
 static const int64_t DUST_HARD_LIMIT = 100;   // 0.00001 GRT mininput
 

@@ -1328,7 +1328,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64_t> >& vecSend,
                     nChange -= nMoveToFee;
                     nFeeRet += nMoveToFee;
                 }
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
                 // ppcoin: sub-cent change is moved to fee
                 if (nChange > 0 && nChange < CTransaction::nMinTxFee)
                 {
@@ -1409,6 +1409,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64_t> >& vecSend,
                 // Check that enough fee is included
                 int64_t nPayFee = nTransactionFee * (1 + (int64_t)nBytes / 1000);
                 bool fAllowFree = CTransaction::AllowFree(dPriority);
+		/* fAllowFree is always false with PPCOINSTAKE */
                 int64_t nMinFee = wtxNew.GetMinFee(1, fAllowFree, GMF_SEND);
                 if (nFeeRet < max(nPayFee, nMinFee))
                 {
