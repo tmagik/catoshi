@@ -9,32 +9,20 @@
 #include "ui_overviewpage.h"
 
 #include "walletmodel.h"
-#include "codecoinunits.h"
 #include "optionsmodel.h"
 #include "transactiontablemodel.h"
 #include "transactionfilterproxy.h"
 #include "guiutil.h"
 #include "guiconstants.h"
 
-#include <QAbstractItemDelegate>
 #include <QPainter>
-#include <QObject>
 
 #define DECORATION_SIZE 64
 #define NUM_ITEMS 6
 
-class TxViewDelegate : public QAbstractItemDelegate
+void TxViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
+				  const QModelIndex &index ) const
 {
-    Q_OBJECT
-public:
-    TxViewDelegate(): QAbstractItemDelegate(), unit(CodecoinUnits::CC)
-    {
-
-    }
-
-    inline void paint(QPainter *painter, const QStyleOptionViewItem &option,
-                      const QModelIndex &index ) const
-    {
         painter->save();
 
         QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
@@ -86,18 +74,12 @@ public:
         painter->drawText(amountRect, Qt::AlignLeft|Qt::AlignVCenter, GUIUtil::dateTimeStr(date));
 
         painter->restore();
-    }
+}
 
-    inline QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
-    {
+QSize TxViewDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
         return QSize(DECORATION_SIZE, DECORATION_SIZE);
-    }
-
-    int unit;
-
-};
-
-#include "overviewpage.moc"
+}
 
 OverviewPage::OverviewPage(QWidget *parent) :
     QWidget(parent),

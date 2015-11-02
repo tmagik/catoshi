@@ -1476,7 +1476,7 @@ public:
 //		READWRITE(vchBlockSig);
 //#endif
 //
-#if defined(BRAND_bluecoin) || defined(BRAND_grantcoin) // Was moved from CBlockHeader
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin) // Was moved from CBlockHeader
 		// ConnectBlock depends on vtx following header to generate CDiskTxPos
 		if (!(nType & (SER_GETHASH|SER_BLOCKHEADERONLY)))
 		{

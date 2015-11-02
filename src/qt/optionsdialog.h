@@ -9,6 +9,10 @@
 #define OPTIONSDIALOG_H
 
 #include <QDialog>
+#include <QCheckBox>
+#include "codecoinunits.h"
+#include "bitcoinamountfield.h"
+#include "qvaluecombobox.h"
 
 QT_BEGIN_NAMESPACE
 class QStackedWidget;
@@ -55,6 +59,52 @@ private:
     DisplayOptionsPage *display_page;
 
     void setupMainPage();
+};
+
+/* First page of options */
+class MainOptionsPage : public QWidget
+{
+	Q_OBJECT
+public:
+	explicit MainOptionsPage(QWidget *parent=0);
+
+	void setMapper(MonitoredDataMapper *mapper);
+private:
+	QCheckBox *bitcoin_at_startup;
+#ifndef Q_WS_MAC
+	QCheckBox *minimize_to_tray;
+#endif
+	QCheckBox *map_port_upnp;
+#ifndef Q_WS_MAC
+	QCheckBox *minimize_on_close;
+#endif
+	QCheckBox *connect_socks4;
+	QCheckBox *detach_database;
+	QLineEdit *proxy_ip;
+	QLineEdit *proxy_port;
+	BitcoinAmountField *fee_edit;
+
+signals:
+
+public slots:
+
+};
+
+class DisplayOptionsPage : public QWidget
+{
+	Q_OBJECT
+public:
+	explicit DisplayOptionsPage(QWidget *parent=0);
+
+	void setMapper(MonitoredDataMapper *mapper);
+private:
+	QValueComboBox *unit;
+	QCheckBox *display_addresses;
+	QCheckBox *coin_control_features;
+signals:
+
+public slots:
+
 };
 
 #endif // OPTIONSDIALOG_H
