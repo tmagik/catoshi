@@ -1230,7 +1230,8 @@ void CBlockHeader::UpdateTime(const CBlockIndex* pindexPrev)
 {
 	/* This is tighter tolerance than original Satoshi client */
 	/* danger, there be off-by-one here, add 1 to be safe until we have regression tests -- T */
-	nTime = max(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1, GetAdjustedTime());
+	nTime = max(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1, GetBlockTime());
+	nTime = max(GetAdjustedTime(), GetBlockTime());
 
 	// Updating time can change work required on testnet:
 	if (fTestNet)
@@ -4876,16 +4877,17 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet)
 
 		// Fill in header
 		pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-#if defined(PPCOINSTAKE)
-		if (pblock->IsProofOfStake()){
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+		if (pblock->IsProofOfStake())
 			pblock->nTime = pblock->vtx[1].nTime; //same as coinstake timestamp
-			pblock->nTime = max(pindexPrev->GetMedianTimePast()+1, pblock->GetMaxTransactionTime());
-			pblock->nTime = max(pblock->GetBlockTime(), pindexPrev->GetBlockTime() - nMaxClockDrift);
-		}
-		if (pblock->IsProofOfWork())
-#endif /* hackity if ^^ */
+		/* TODO: make this logic less confusing and more robust */
+		/* move this to UpdateTime eventually */
+		pblock->nTime = max(pblock->GetBlockTime(), pblock->GetMaxTransactionTime());
+#endif
 		pblock->UpdateTime(pindexPrev);
-		pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
+		
+		if (pblock->IsProofOfWork())
+			pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
 		pblocktemplate->vTxSigOps[0] = pblock->vtx[0].GetLegacySigOpCount();
 		pblock->nBits  = GetNextTrustRequired(pindexPrev, pblock);
 		pblock->nNonce = 0;
@@ -5222,7 +5224,7 @@ void CodecoinMiner(CWallet *pwallet, bool fProofOfStake)
 				break;
 
 			// Update nTime every few seconds
-#ifdef PPCOINSTAKE /* double update? how does that work? */
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin) /* double update? how does that work? */
 			pblock->nTime = max(pindexPrev->GetMedianTimePast()+1, pblock->GetMaxTransactionTime());
 			pblock->nTime = max(pblock->GetBlockTime(), pindexPrev->GetBlockTime() - nMaxClockDrift);
 #endif
