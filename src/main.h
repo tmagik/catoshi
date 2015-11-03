@@ -1550,7 +1550,16 @@ public:
 		return IsProofOfStake()? std::make_pair(vtx[1].vin[0].prevout, vtx[1].nTime) : std::make_pair(COutPoint(), (unsigned int)0);
 	}
 
+#else /* !PPCOINSTAKE */
+
+	inline bool IsProofOfStake() const { return false;};
+	inline bool IsProofOfWork() const { return true;};
+
+#endif /* PPCOINSTAKE */
+
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 	// ppcoin: get max transaction timestamp
+	// should be #if FEATURE_TXNTIME?
 	int64_t GetMaxTransactionTime() const
 	{
 		int64_t maxTransactionTime = 0;
@@ -1558,12 +1567,7 @@ public:
 			maxTransactionTime = std::max(maxTransactionTime, (int64_t)tx.nTime);
 		return maxTransactionTime;
 	}
-#else /* !PPCOINSTAKE */
-
-	inline bool IsProofOfStake() const { return false;};
-	inline bool IsProofOfWork() const { return true;};
-
-#endif /* PPCOINSTAKE */
+#endif /* FEATURE_TXNTIME */
 
 	CBlockHeader GetBlockHeader() const
 	{
