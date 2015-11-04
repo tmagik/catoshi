@@ -647,7 +647,7 @@ public:
 	bool has_nTime() const { return true; };
 #else
 #warning "this is rather a hack, and it still doesn't work yet"
-	bool has_nTime() const { nVersion > LEGACY_VERSION };
+	bool has_nTime() const { return nVersion > LEGACY_VERSION; };
 #endif 
 #else
 	inline bool IsCoinStake() const { return false; };
@@ -1340,7 +1340,7 @@ class CBlockHeader
 {
 public:
 	// header
-#if defined(BRAND_givecoin) | defined(BRAND_hamburger)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger) || defined (BRAND_grantstake)
 /* Optionally overload lowest bit of nVersion as the 'proof-of-work' indicator,
    instead of overloading the vtx'es */
 	static const int VERSION_STAKE_START=2;
@@ -1520,7 +1520,7 @@ public:
 	// ppcoin: two types of block: proof-of-work or proof-of-stake
 	bool IsProofOfStake() const
 	{
-#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger) || defined(BRAND_grantstake)
 		/* Before you try to be clever here, read the assembly code, because
 		   the compiler is smarter and more deterministic than you are */
 
@@ -1531,7 +1531,7 @@ public:
 			return true;	/* bit 0==1 is proof-of-stake */
 		else
 			return false;	/* bit 0==0 is proof-of-work */
-#elif defined(BRAND_grantcoin) || defined(BRAND_grantstake)
+#elif defined(BRAND_grantcoin)
 		return false;		// no stake for now
 #else
 #error "Your chosen coin brand needs IsProofOfStake implemented"

@@ -237,7 +237,6 @@ MintingTableModel::~MintingTableModel()
 void MintingTableModel::update()
 {
     QList<uint256> updated;
-#if defined(PPCOINSTAKE)
     // Check if there are changes to wallet map
     {
         TRY_LOCK(wallet->cs_wallet, lockWallet);
@@ -260,9 +259,6 @@ void MintingTableModel::update()
             wallet->vMintingWalletUpdated.clear();
         }
     }
-//#else
-//    qDebug("MintingTableModel::update called on PoW-only coin");
-#endif
     if(!updated.empty())
     {
         priv->updateWallet(updated);

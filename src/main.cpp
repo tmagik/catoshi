@@ -940,7 +940,7 @@ int CMerkleTx::GetDepthInMainChain(CBlockIndex* &pindexRet) const
 
 int CMerkleTx::GetBlocksToMaturity() const
 {
-	if (!IsCoinBase())
+	if (!IsGenerated())
 		return 0;
 	return max(0, (COINBASE_MATURITY+20) - GetDepthInMainChain());
 }
@@ -1033,13 +1033,8 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
 			}
 		}
 	}
-
 	return false;
 }
-
-
-
-
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1100,7 +1095,8 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 	/* better to assert than look for things that don't exist? */
 	assert(fProofOfStake == false);
 	// TODO: this could probably be optimized better to just return pindex-pprev,
-	// but genesis block case has to be dealth with.
+	// but genesis block case has to be dealt with.
+	return NULL;
 #endif
 	while (pindex && pindex->pprev && (pindex->IsProofOfStake() != fProofOfStake))
 		pindex = pindex->pprev;
@@ -3246,12 +3242,6 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
 
 
 
-
-
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // CAlert
@@ -3510,6 +3500,9 @@ void static ProcessGetData(CNode* pfrom)
 
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 {
+#if defined(FEATURE_RXBYIP)
+	static map<CService, CPubKey> mapReuseKey;
+#endif
 	RandAddSeedPerfmon();
 	if (fDebug)
 		printf("received: %s (%" PRIszu" bytes)\n", strCommand.c_str(), vRecv.size());
@@ -4010,6 +4003,53 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 			pfrom->PushMessage("inv", vInv);
 	}
 
+#if defined(FEATURE_RXBYIP) /* TODO: genericized this */
+	else if (strCommand == "checkorder")
+	{
+		uint256 hashReply;
+		vRecv >> hashReply;
+
+		if (!GetBoolArg("-allowreceivebyip"))
+		{
+			pfrom->PushMessage("reply", hashReply, (int)2, string(""));
+			return true;
+		}
+
+		CWalletTx order;
+		vRecv >> order;
+
+		/// we have a chance to check the order here
+
+		// Keep giving the same key to the same ip until they use it
+		if (!mapReuseKey.count(pfrom->addr))
+			pwalletMain->GetKeyFromPool(mapReuseKey[pfrom->addr], true);
+
+		// Send back approval of order and pubkey to use
+		CScript scriptPubKey;
+		scriptPubKey << mapReuseKey[pfrom->addr] << OP_CHECKSIG;
+		pfrom->PushMessage("reply", hashReply, (int)0, scriptPubKey);
+	}
+
+
+	else if (strCommand == "reply")
+	{
+		uint256 hashReply;
+		vRecv >> hashReply;
+
+		CRequestTracker tracker;
+		{
+			LOCK(pfrom->cs_mapRequests);
+			map<uint256, CRequestTracker>::iterator mi = pfrom->mapRequests.find(hashReply);
+			if (mi != pfrom->mapRequests.end())
+			{
+				tracker = (*mi).second;
+				pfrom->mapRequests.erase(mi);
+			}
+		}
+		if (!tracker.IsNull())
+			tracker.fn(tracker.param1, vRecv);
+	}
+#endif
 
 	else if (strCommand == "ping")
 	{
