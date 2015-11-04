@@ -20,34 +20,45 @@ isEmpty(COIN_BRAND){
 contains(COIN_BRAND, grantcoin) {
     message(Building for Grantcoin)
     DEFINES += BRAND_grantcoin
+    STAKE = 1
     TARGET = grantcoin
 } else {
 contains(COIN_BRAND, grantstake) {
     message(Building for Grantstake)
     DEFINES += BRAND_grantstake
+    STAKE = 1
     TARGET = grantstake
 } else {
 contains(COIN_BRAND, catcoin) {
     message(Building for Catcoin)
     DEFINES += BRAND_catcoin
+    HASHSCRYPT = 1
     TARGET = catcoin
 } else {
 contains(COIN_BRAND, givecoin) {
     message(Building for Givecoin)
     DEFINES += BRAND_givecoin
     TARGET = givecoin
+    HASHSCRYPT = 1
 } else {
 contains(COIN_BRAND, hamburger) {
     DEFINES += BRAND_hamburger
     TARGET = hamburger
+    HASHSCRYPT = 1
+    STAKE = 1
 } else {
 contains(COIN_BRAND, givestake) { # for testing, for now
     DEFINES += BRAND_givecoin PPCOINSTAKE
     TARGET = givestake
+    STAKE = 1
+    HASHSCRYPT = 1
 } else {
 contains(COIN_BRAND, bluecoin) {
     DEFINES += BRAND_bluecoin
     TARGET = bluecoin
+    STAKE = 1
+    HASHSCRYPT = 1
+    HASHX11 = 1
 } else {
     DEFINES += BRAND_codecoin
     TARGET = codecoin
@@ -209,6 +220,7 @@ HEADERS += src/qt/codecoingui.h \
     src/base58.h \
     src/bignum.h \
     src/checkpoints.h \
+    src/codecoin.h \
     src/coincontrol.h \
     src/compat.h \
     src/sync.h \
@@ -287,6 +299,7 @@ HEADERS += src/qt/codecoingui.h \
     src/limitedmap.h \
     src/qt/macnotificationhandler.h \
     src/qt/splashscreen.h \
+    src/$${TARGET}.h \
     $$OUT_PWD/build/build.h
 
 SOURCES += src/qt/codecoin.cpp \
@@ -355,20 +368,32 @@ SOURCES += src/qt/codecoin.cpp \
     src/qt/notificator.cpp \
     src/qt/paymentserver.cpp \
     src/qt/rpcconsole.cpp \
-    src/kernel.cpp \
     src/qt/mintingview.cpp \
     src/qt/mintingtablemodel.cpp \
     src/qt/mintingfilterproxy.cpp \
-    src/kernelrecord.cpp \
     src/qt/virtualkeyboard.cpp \
     src/qt/multisigaddressentry.cpp \
     src/qt/multisiginputentry.cpp \
     src/qt/multisigdialog.cpp \
-    src/scrypt.cpp \
     src/noui.cpp \
     src/leveldb.cpp \
     src/txdb.cpp \
     src/qt/splashscreen.cpp
+
+contains(STAKE, 1){
+HEADERS += src/kernel.h src/kernelrecord.h
+SOURCES += src/kernel.cpp src/kernelrecord.cpp
+}
+
+contains(HASHX11, 1){
+SOURCES += src/cubehash.c src/luffa.c src/aes_helper.c \
+    src/echo.c src/shavite.c src/simd.c src/blake.c \
+    src/bmw.c src/groestl.c src/jh.c src/keccak.c src/skein.c
+}
+
+contains(HASHSCRYPT, 1){
+SOURCES += src/scrypt.cpp
+}
 
 #leveldb sources
 SOURCES += src/leveldb/db/builder.cc src/leveldb/db/c.cc src/leveldb/db/dbformat.cc src/leveldb/db/db_impl.cc \

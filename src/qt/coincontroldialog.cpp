@@ -8,6 +8,7 @@
 #include "coincontroldialog.h"
 #include "ui_coincontroldialog.h"
 
+#include "codecoin.h" /* PPCOINSTAKE define needs this */
 #include "init.h"
 #include "codecoinunits.h"
 #include "walletmodel.h"
@@ -512,7 +513,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
                 nPayFee += nMoveToFee;
             }
 
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
             // ppcoin: sub-cent change is moved to fee
             if (nChange > 0 && nChange < CTransaction::nMinTxFee)
             {
