@@ -14,6 +14,7 @@
 #include <map>
 
 #include "allocators.h" /* for SecureString */
+#include "codecoin.h" /* for PPCOINSTAKE. TODO: FEATURE_MINTING */
 
 class OptionsModel;
 class AddressTableModel;
@@ -148,7 +149,9 @@ private:
     OptionsModel *optionsModel;
 
     AddressTableModel *addressTableModel;
+#if defined(PPCOINSTAKE)
     MintingTableModel *mintingTableModel;
+#endif
     TransactionTableModel *transactionTableModel;
 
     // Cache some values to be able to detect changes

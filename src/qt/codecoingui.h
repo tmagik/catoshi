@@ -8,6 +8,7 @@
 #ifndef CODECOINGUI_H
 #define CODECOINGUI_H
 
+#include "codecoin.h" /* for PPCOINSTAKE. TODO: FEATURE_MINTING */
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 
@@ -15,7 +16,9 @@ class TransactionTableModel;
 class ClientModel;
 class WalletModel;
 class TransactionView;
+#if defined(PPCOINSTAKE)
 class MintingView;
+#endif
 class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
@@ -70,7 +73,6 @@ private:
 
     OverviewPage *overviewPage;
     QWidget *transactionsPage;
-    QWidget *mintingPage;
     AddressBookPage *addressBookPage;
     AddressBookPage *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
@@ -86,7 +88,6 @@ private:
     QMenuBar *appMenuBar;
     QAction *overviewAction;
     QAction *historyAction;
-    QAction *mintingAction;
     QAction *quitAction;
     QAction *sendCoinsAction;
     QAction *addressBookAction;
@@ -107,10 +108,16 @@ private:
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
     TransactionView *transactionView;
-    MintingView *mintingView;
     RPCConsole *rpcConsole;
 
     QMovie *syncIconMovie;
+
+#if defined(PPCOINSTAKE)
+    QWidget *mintingPage;
+    QAction *mintingAction;
+    MintingView *mintingView;
+#endif
+
     /** Keep track of previous number of blocks, to detect progress */
     int prevBlocks;
 
@@ -169,8 +176,10 @@ private slots:
     void gotoOverviewPage();
     /** Switch to history (transactions) page */
     void gotoHistoryPage();
+#if defined(PPCOINSTAKE)
     /** Switch to minting page */
     void gotoMintingPage();
+#endif
     /** Switch to address book page */
     void gotoAddressBookPage();
     /** Switch to receive coins page */

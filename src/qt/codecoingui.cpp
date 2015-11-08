@@ -225,11 +225,13 @@ void CodecoinGUI::createActions()
     historyAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_4));
     tabGroup->addAction(historyAction);
 
+#if defined(PPCOINSTAKE)
     mintingAction = new QAction(QIcon(":/icons/history"), tr("&Minting"), this);
     mintingAction->setToolTip(tr("Show your minting capacity"));
     mintingAction->setCheckable(true);
     mintingAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_5));
     tabGroup->addAction(mintingAction);
+#endif
 
     addressBookAction = new QAction(QIcon(":/icons/address-book"), tr("&Address Book"), this);
     addressBookAction->setToolTip(tr("Edit the list of stored addresses and labels"));
@@ -263,8 +265,8 @@ void CodecoinGUI::createActions()
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
-    connect(mintingAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
 #if defined(PPCOINSTAKE)
+    connect(mintingAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(mintingAction, SIGNAL(triggered()), this, SLOT(gotoMintingPage()));
 #endif
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
@@ -362,7 +364,9 @@ void CodecoinGUI::createToolBars()
     toolbar->addAction(sendCoinsAction);
     toolbar->addAction(receiveCoinsAction);
     toolbar->addAction(historyAction);
+#if defined(PPCOINSTAKE)
     toolbar->addAction(mintingAction);
+#endif
     toolbar->addAction(addressBookAction);
 #ifdef FIRST_CLASS_MESSAGING
     toolbar->addAction(messageAction);
@@ -794,18 +798,18 @@ void CodecoinGUI::gotoHistoryPage()
     connect(exportAction, SIGNAL(triggered()), transactionView, SLOT(exportClicked()));
 }
 
+#if defined(PPCOINSTAKE)
 void CodecoinGUI::gotoMintingPage()
 {
-#if defined(PPCOINSTAKE)
     mintingAction->setChecked(true);
     centralWidget->setCurrentWidget(mintingPage);
 
     exportAction->setEnabled(true);
     disconnect(exportAction, SIGNAL(triggered()), 0, 0);
     connect(exportAction, SIGNAL(triggered()), mintingView, SLOT(exportClicked()));
-#endif
 }
 
+#endif
 
 void CodecoinGUI::gotoAddressBookPage()
 {
