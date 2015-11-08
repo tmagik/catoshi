@@ -91,7 +91,7 @@ public:
     CBigNum(unsigned short n)   { BN_init(this); setulong(n); }
     CBigNum(unsigned int n)     { BN_init(this); setulong(n); }
     CBigNum(unsigned long n)    { BN_init(this); setulong(n); }
-#if __WORDSIZE == 32
+#if (__WORDSIZE == 32) || defined(MAC_OSX)
     CBigNum(int64_t n)          { BN_init(this); setint64(n); }
     CBigNum(uint64_t n)         { BN_init(this); setuint64(n); }
 #endif /* ugly */

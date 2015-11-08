@@ -27,7 +27,9 @@
 #include "transactiondescdialog.h"
 #include "addresstablemodel.h"
 #include "transactionview.h"
+#if defined(PPCOINSTAKE)
 #include "mintingview.h"
+#endif
 #include "overviewpage.h"
 #include "codecoinunits.h"
 #include "guiconstants.h"
@@ -38,7 +40,7 @@
 #include "wallet.h"
 #include "init.h"
 
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
 #include "macdockiconhandler.h"
 #endif
 
@@ -121,11 +123,13 @@ CodecoinGUI::CodecoinGUI(QWidget *parent):
     vbox->addWidget(transactionView);
     transactionsPage->setLayout(vbox);
 
+#if defined(PPCOINSTAKE)
     mintingPage = new QWidget(this);
     QVBoxLayout *vboxMinting = new QVBoxLayout();
     mintingView = new MintingView(this);
     vboxMinting->addWidget(mintingView);
     mintingPage->setLayout(vboxMinting);
+#endif
 
     addressBookPage = new AddressBookPage(AddressBookPage::ForEditing, AddressBookPage::SendingTab);
 
@@ -140,7 +144,9 @@ CodecoinGUI::CodecoinGUI(QWidget *parent):
     centralWidget = new QStackedWidget(this);
     centralWidget->addWidget(overviewPage);
     centralWidget->addWidget(transactionsPage);
+#if defined(PPCOINSTAKE)
     centralWidget->addWidget(mintingPage);
+#endif
     centralWidget->addWidget(addressBookPage);
     centralWidget->addWidget(receiveCoinsPage);
     centralWidget->addWidget(sendCoinsPage);
@@ -258,7 +264,9 @@ void CodecoinGUI::createActions()
     connect(historyAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
     connect(mintingAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+#if defined(PPCOINSTAKE)
     connect(mintingAction, SIGNAL(triggered()), this, SLOT(gotoMintingPage()));
+#endif
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
     connect(receiveCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
@@ -416,8 +424,9 @@ void CodecoinGUI::setWalletModel(WalletModel *walletModel)
 
         // Put transaction list in tabs
         transactionView->setModel(walletModel);
+#if defined(PPCOINSTAKE)
         mintingView->setModel(walletModel);
-
+#endif
         overviewPage->setModel(walletModel);
         addressBookPage->setModel(walletModel->getAddressTableModel());
         receiveCoinsPage->setModel(walletModel->getAddressTableModel());
@@ -787,13 +796,16 @@ void CodecoinGUI::gotoHistoryPage()
 
 void CodecoinGUI::gotoMintingPage()
 {
+#if defined(PPCOINSTAKE)
     mintingAction->setChecked(true);
     centralWidget->setCurrentWidget(mintingPage);
 
     exportAction->setEnabled(true);
     disconnect(exportAction, SIGNAL(triggered()), 0, 0);
     connect(exportAction, SIGNAL(triggered()), mintingView, SLOT(exportClicked()));
+#endif
 }
+
 
 void CodecoinGUI::gotoAddressBookPage()
 {

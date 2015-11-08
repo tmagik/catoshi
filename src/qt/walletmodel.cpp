@@ -30,7 +30,9 @@ WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *p
     cachedNumBlocks(0)
 {
     addressTableModel = new AddressTableModel(wallet, this);
+#if defined(PPCOINSTAKE)
     mintingTableModel = new MintingTableModel(wallet, this);
+#endif
     transactionTableModel = new TransactionTableModel(wallet, this);
 
     // This timer will be fired repeatedly to update the balance
@@ -261,10 +263,12 @@ AddressTableModel *WalletModel::getAddressTableModel()
     return addressTableModel;
 }
 
+#if defined(PPCOINSTAKE)
 MintingTableModel *WalletModel::getMintingTableModel()
 {
     return mintingTableModel;
 }
+#endif
 
 TransactionTableModel *WalletModel::getTransactionTableModel()
 {

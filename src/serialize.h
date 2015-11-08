@@ -132,7 +132,7 @@ inline unsigned int GetSerializeSize(signed int a,     int, int=0) { return size
 inline unsigned int GetSerializeSize(unsigned int a,   int, int=0) { return sizeof(a); }
 inline unsigned int GetSerializeSize(signed long a,    int, int=0) { return sizeof(a); }
 inline unsigned int GetSerializeSize(unsigned long a,  int, int=0) { return sizeof(a); }
-#if __WORDSIZE == 32
+#if __WORDSIZE == 32 || defined(MAC_OSX)
 inline unsigned int GetSerializeSize(int64_t a,        int, int=0) { return sizeof(a); }
 inline unsigned int GetSerializeSize(uint64_t a,       int, int=0) { return sizeof(a); }
 #endif /* ugly */
@@ -148,7 +148,7 @@ template<typename Stream> inline void Serialize(Stream& s, signed int a,     int
 template<typename Stream> inline void Serialize(Stream& s, unsigned int a,   int, int=0) { WRITEDATA(s, a); }
 template<typename Stream> inline void Serialize(Stream& s, signed long a,    int, int=0) { WRITEDATA(s, a); }
 template<typename Stream> inline void Serialize(Stream& s, unsigned long a,  int, int=0) { WRITEDATA(s, a); }
-#if __WORDSIZE == 32
+#if __WORDSIZE == 32 || defined(MAC_OSX)
 template<typename Stream> inline void Serialize(Stream& s, int64_t a,          int, int=0) { WRITEDATA(s, a); }
 template<typename Stream> inline void Serialize(Stream& s, uint64_t a,         int, int=0) { WRITEDATA(s, a); }
 #endif /* ugly */
@@ -164,7 +164,7 @@ template<typename Stream> inline void Unserialize(Stream& s, signed int& a,     
 template<typename Stream> inline void Unserialize(Stream& s, unsigned int& a,   int, int=0) { READDATA(s, a); }
 template<typename Stream> inline void Unserialize(Stream& s, signed long& a,    int, int=0) { READDATA(s, a); }
 template<typename Stream> inline void Unserialize(Stream& s, unsigned long& a,  int, int=0) { READDATA(s, a); }
-#if __WORDSIZE == 32
+#if __WORDSIZE == 32 || defined(MAC_OSX)
 template<typename Stream> inline void Unserialize(Stream& s, int64_t& a,          int, int=0) { READDATA(s, a); }
 template<typename Stream> inline void Unserialize(Stream& s, uint64_t& a,         int, int=0) { READDATA(s, a); }
 #endif /* ugly */
