@@ -10,7 +10,9 @@
 #include "guiconstants.h"
 #include "optionsmodel.h"
 #include "addresstablemodel.h"
+#if defined(PPCOINSTAKE)
 #include "mintingtablemodel.h"
+#endif
 #include "transactiontablemodel.h"
 
 #include "ui_interface.h"
