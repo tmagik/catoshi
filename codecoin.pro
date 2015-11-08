@@ -20,7 +20,6 @@ isEmpty(COIN_BRAND){
 contains(COIN_BRAND, grantcoin) {
     message(Building for Grantcoin)
     DEFINES += BRAND_grantcoin
-    STAKE = 1
     TARGET = grantcoin
 } else {
 contains(COIN_BRAND, grantstake) {
@@ -135,6 +134,9 @@ contains(USE_QRCODE, 1) {
 #  or: qmake "USE_UPNP=0" (disabled by default)
 #  or: qmake "USE_UPNP=-" (not supported)
 # miniupnpc (http://miniupnp.free.fr/files/) must be installed for support
+macx {
+message(FIXME WARNING mac upnp support disabled for now!!!)
+} else {
 !android {
 !ios {
 contains(USE_UPNP, -) {
@@ -148,6 +150,7 @@ contains(USE_UPNP, -) {
     INCLUDEPATH += $$MINIUPNPC_INCLUDE_PATH
     LIBS += $$join(MINIUPNPC_LIB_PATH,,-L,) -lminiupnpc
     win32:LIBS += -liphlpapi
+}
 }
 }
 }
@@ -172,14 +175,23 @@ contains(USE_IPV6, -) {
 }
 
 #leveldb hacks?
-QMAKE_CXXFLAGS=-std=c++11
+#QMAKE_CXXFLAGS += -std=c++11
+#macx:QMAKE_LFLAGS += -stdlib=libc++
+#macx:QMAKE_CXXFLAGS += -stdlib=libc++
+#CONFIG += c++11
 
 #Try to match platform leveldb build defines
 android:DEFINES += LEVELDB_PLATFORM_POSIX OS_ANDROID
 #unix:DEFINES += OS_LINUX LEVELDB_PLATFORM_POSIX NDEBUG
 #unix:DEFINES += OS_LINUX LEVELDB_PLATFORM_POSIX LEVELDB_ATOMIC_PRESENT NDEBUG
 # no scoped enums again..
-unix:DEFINES += OS_LINUX LEVELDB_PLATFORM_POSIX LEVELDB_ATOMIC_PRESENT BOOST_NO_CXX11_SCOPED_ENUMS
+unix{
+DEFINES += LEVELDB_PLATFORM_POSIX
+macx{
+DEFINES += OS_MACOSX BOOST_NO_SCOPED_ENUMS
+} else {
+DEFINES += OS_LINUX LEVELDB_ATOMIC_PRESENT BOOST_NO_CXX11_SCOPED_ENUMS
+}}
 windows:DEFINES += LEVELDB_PLATFORM_WINDOWS OS_WINDOWS
 
 INCLUDEPATH += src/leveldb/include src/leveldb/helpers src/leveldb
@@ -228,7 +240,6 @@ HEADERS += src/qt/codecoingui.h \
     src/hash.h \
     src/uintBIG.h \
     src/kernel.h \
-    src/scrypt.h \
     src/pbkdf2.h \
     src/serialize.h \
     src/main.h \
@@ -280,12 +291,6 @@ HEADERS += src/qt/codecoingui.h \
     src/allocators.h \
     src/ui_interface.h \
     src/qt/rpcconsole.h \
-    src/scrypt.h \
-    src/kernel.h \
-    src/qt/mintingview.h \
-    src/qt/mintingtablemodel.h \
-    src/qt/mintingfilterproxy.h \
-    src/kernelrecord.h \
     src/qt/virtualkeyboard.h \
     src/qt/multisigaddressentry.h \
     src/qt/multisiginputentry.h \
@@ -368,9 +373,6 @@ SOURCES += src/qt/codecoin.cpp \
     src/qt/notificator.cpp \
     src/qt/paymentserver.cpp \
     src/qt/rpcconsole.cpp \
-    src/qt/mintingview.cpp \
-    src/qt/mintingtablemodel.cpp \
-    src/qt/mintingfilterproxy.cpp \
     src/qt/virtualkeyboard.cpp \
     src/qt/multisigaddressentry.cpp \
     src/qt/multisiginputentry.cpp \
@@ -381,8 +383,16 @@ SOURCES += src/qt/codecoin.cpp \
     src/qt/splashscreen.cpp
 
 contains(STAKE, 1){
-HEADERS += src/kernel.h src/kernelrecord.h
-SOURCES += src/kernel.cpp src/kernelrecord.cpp
+HEADERS += src/kernel.h src/kernelrecord.h \
+    src/kernel.h \
+    src/qt/mintingview.h \
+    src/qt/mintingtablemodel.h \
+    src/qt/mintingfilterproxy.h \
+    src/kernelrecord.h 
+SOURCES += src/kernel.cpp src/kernelrecord.cpp \
+    src/qt/mintingview.cpp \
+    src/qt/mintingtablemodel.cpp \
+    src/qt/mintingfilterproxy.cpp 
 }
 
 contains(HASHX11, 1){
@@ -392,6 +402,7 @@ SOURCES += src/cubehash.c src/luffa.c src/aes_helper.c \
 }
 
 contains(HASHSCRYPT, 1){
+HEADERS += src/scrypt.h
 SOURCES += src/scrypt.cpp
 }
 
@@ -494,7 +505,7 @@ OTHER_FILES += README.md \
 
 # platform specific defaults, if not overridden on command line
 isEmpty(BOOST_LIB_SUFFIX) {
-    macx:BOOST_LIB_SUFFIX = -mt
+#    macx:BOOST_LIB_SUFFIX = -mt
     windows:BOOST_LIB_SUFFIX = -mgw44-mt-1_53
     android:BOOST_LIB_SUFFIX = -gcc-mt-1_53
 }
@@ -504,7 +515,7 @@ isEmpty(BOOST_THREAD_LIB_SUFFIX) {
 }
 
 isEmpty(BDB_LIB_PATH) {
-    !linux:BDB_LIB_PATH = debs/lib
+    !linux:BDB_LIB_PATH = deps/lib
 #    macx:BDB_LIB_PATH = /opt/local/lib/db53
     android:BDB_LIB_PATH = deps/lib
 }
@@ -515,16 +526,16 @@ isEmpty(BDB_LIB_SUFFIX) {
 
 isEmpty(BDB_INCLUDE_PATH) {
     !linux:BDB_INCLUDE_PATH = deps/include
-    #macx:BDB_INCLUDE_PATH = /opt/local/include/db53
+#    macx:BDB_INCLUDE_PATH = /opt/local/include/db53
     android:BDB_INCLUDE_PATH = deps/include
 }
 
 isEmpty(BOOST_LIB_PATH) {
-    macx:BOOST_LIB_PATH = /opt/local/lib
+#    macx:BOOST_LIB_PATH = /opt/local/lib
 }
 
 isEmpty(BOOST_INCLUDE_PATH) {
-    macx:BOOST_INCLUDE_PATH = /opt/local/include
+#    macx:BOOST_INCLUDE_PATH = /opt/local/include
 }
 
 win32:DEFINES += WIN32
@@ -551,12 +562,13 @@ win32:!contains(MINGW_THREAD_BUGFIX, 0) {
 macx:HEADERS += src/qt/macdockiconhandler.h src/qt/macnotificationhandler.h
 macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm src/qt/macnotificationhandler.mm
 macx:LIBS += -framework Foundation -framework ApplicationServices -framework AppKit -framework CoreServices
-macx:DEFINES += MAC_OSX MSG_NOSIGNAL=0
-macx:ICON = src/qt/res/icons/codecoin.icns
+macx:DEFINES += MAC_OSX MSG_NOSIGNAL=0 HAVE_CXX_STDHEADERS
+macx:ICON = src/qt/res/icons/$${TARGET}.icns
 macx:QMAKE_CFLAGS_THREAD += -pthread
 macx:QMAKE_LFLAGS_THREAD += -pthread
 macx:QMAKE_CXXFLAGS_THREAD += -pthread
 macx:QMAKE_INFO_PLIST = share/qt/Info.plist
+macx:OPENSSL_INCLUDE_PATH = /opt/local/include
 
 # Set libraries and includes at end, to use platform-defined defaults if not overridden
 INCLUDEPATH += $$BOOST_INCLUDE_PATH $$BDB_INCLUDE_PATH $$OPENSSL_INCLUDE_PATH $$QRENCODE_INCLUDE_PATH

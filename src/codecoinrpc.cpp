@@ -224,7 +224,9 @@ static const CRPCCommand vRPCCommands[] =
 	{ "sendtoaddress",			&sendtoaddress,			 false,		false,		true },
 	{ "getreceivedbyaddress",	&getreceivedbyaddress,	 false,		false,		true },
 	{ "getreceivedbyaccount",	&getreceivedbyaccount,	 false,		false,		true },
+#if defined(PPCOINSTAKE)
 	{ "listminting",		&listminting,		 false,		false,		true },
+#endif
 	{ "listreceivedbyaddress",	&listreceivedbyaddress,  false,		false,		true },
 	{ "listreceivedbyaccount",	&listreceivedbyaccount,  false,		false,		true },
 	{ "backupwallet",			&backupwallet,			 true,		false,		true },
