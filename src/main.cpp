@@ -1096,7 +1096,6 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 	assert(fProofOfStake == false);
 	// TODO: this could probably be optimized better to just return pindex-pprev,
 	// but genesis block case has to be dealt with.
-	return NULL;
 #endif
 	while (pindex && pindex->pprev && (pindex->IsProofOfStake() != fProofOfStake))
 		pindex = pindex->pprev;
