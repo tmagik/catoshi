@@ -19,7 +19,9 @@
 class OptionsModel;
 class AddressTableModel;
 class TransactionTableModel;
+#if defined(PPCOINSTAKE)
 class MintingTableModel;
+#endif
 class CWallet;
 class CKeyID;
 class CPubKey;
@@ -70,7 +72,9 @@ public:
 
     OptionsModel *getOptionsModel();
     AddressTableModel *getAddressTableModel();
+#if defined(PPCOINSTAKE)
     MintingTableModel *getMintingTableModel();
+#endif
     TransactionTableModel *getTransactionTableModel();
     
     qint64 getBalance() const;
