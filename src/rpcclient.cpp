@@ -12,7 +12,7 @@
 #include <stdint.h>
 
 #include <boost/algorithm/string/case_conv.hpp> // for to_lower()
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 using namespace std;
 
@@ -76,6 +76,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getrawtransaction", 1 },
     { "createrawtransaction", 0 },
     { "createrawtransaction", 1 },
+    { "createrawtransaction", 2 },
     { "signrawtransaction", 1 },
     { "signrawtransaction", 2 },
     { "sendrawtransaction", 1 },
@@ -87,6 +88,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "lockunspent", 1 },
     { "importprivkey", 2 },
     { "importaddress", 2 },
+    { "importaddress", 3 },
+    { "importpubkey", 2 },
     { "verifychain", 0 },
     { "verifychain", 1 },
     { "keypoolrefill", 0 },
