@@ -174,11 +174,16 @@ contains(USE_IPV6, -) {
     DEFINES += USE_IPV6=$$USE_IPV6
 }
 
-#leveldb hacks?
-#QMAKE_CXXFLAGS += -std=c++11
+#leveldb hacks.. Either use CONFIG for qt5, or c++11 flags for QT4
+#Don't do this for mac to avoid libc++ compatibility quagmire for now
 #macx:QMAKE_LFLAGS += -stdlib=libc++
 #macx:QMAKE_CXXFLAGS += -stdlib=libc++
-#CONFIG += c++11
+!macx{
+greaterThan(QT_MAJOR_VERSION, 4) {
+CONFIG += c++11
+} else {
+QMAKE_CXXFLAGS += -std=c++0x
+}}
 
 #Try to match platform leveldb build defines
 android:DEFINES += LEVELDB_PLATFORM_POSIX OS_ANDROID
