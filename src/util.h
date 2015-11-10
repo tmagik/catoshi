@@ -28,6 +28,8 @@
 #include <boost/signals2/signal.hpp>
 #include <boost/thread/exceptions.hpp>
 
+static const bool DEFAULT_LOGTIMEMICROS = false;
+
 /** Signals for translation. */
 class CTranslationInterface
 {
@@ -44,6 +46,7 @@ extern bool fPrintToDebugLog;
 extern bool fServer;
 extern std::string strMiscWarning;
 extern bool fLogTimestamps;
+extern bool fLogTimeMicros;
 extern bool fLogIPs;
 extern volatile bool fReopenDebugLog;
 extern CTranslationInterface translationInterface;
@@ -59,6 +62,7 @@ inline std::string _(const char* psz)
 }
 
 void SetupEnvironment();
+bool SetupNetworking();
 
 /** Return true if log accepts specified category */
 bool LogAcceptCategory(const char* category);
