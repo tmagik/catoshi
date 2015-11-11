@@ -209,9 +209,9 @@ contains(BITCOIN_NEED_QT_PLUGINS, 1) {
 # regenerate src/build.h
 !win32|contains(USE_BUILD_INFO, 1) {
     genbuild.depends = FORCE
-    genbuild.commands = cd $$PWD; /bin/sh share/genbuild.sh $$OUT_PWD/build/build.h
-    genbuild.target = $$OUT_PWD/build/build.h
-    PRE_TARGETDEPS += $$OUT_PWD/build/build.h
+    genbuild.commands = cd $$PWD; /bin/sh share/genbuild.sh src/build.h
+    genbuild.target = src/build.h
+    PRE_TARGETDEPS += src/build.h
     QMAKE_EXTRA_TARGETS += genbuild
     DEFINES += HAVE_BUILD_INFO
 }
@@ -310,7 +310,7 @@ HEADERS += src/qt/codecoingui.h \
     src/qt/macnotificationhandler.h \
     src/qt/splashscreen.h \
     src/$${TARGET}.h \
-    $$OUT_PWD/build/build.h
+    src/build.h
 
 SOURCES += src/qt/codecoin.cpp \
     src/qt/codecoingui.cpp \
