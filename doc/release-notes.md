@@ -124,6 +124,50 @@ sanity check. Since 0.12, these are no longer stored. When loading a
 0.12 wallet into an older version, it will automatically rescan to avoid
 failed checks.
 
+BIP65 - CHECKLOCKTIMEVERIFY
+---------------------------
+
+Previously it was impossible to create a transaction output that was guaranteed
+to be unspendable until a specific date in the future. CHECKLOCKTIMEVERIFY is a
+new opcode that allows a script to check if a specific block height or time has
+been reached, failing the script otherwise. This enables a wide variety of new
+functionality such as time-locked escrows, secure payment channels, etc.
+
+BIP65 implements CHECKLOCKTIMEVERIFY by introducing block version 4, which adds
+additional restrictions to the NOP2 opcode. The same miner-voting mechanism as
+in BIP34 and BIP66 is used: when 751 out of a sequence of 1001 blocks have
+version number 4 or higher, the new consensus rule becomes active for those
+blocks. When 951 out of a sequence of 1001 blocks have version number 4 or
+higher, it becomes mandatory for all blocks and blocks with versions less than
+4 are rejected.
+
+Bitcoin Core's block templates are now for version 4 blocks only, and any
+mining software relying on its `getblocktemplate` must be updated in parallel
+to use either libblkmaker version 0.4.3 or any version from 0.5.2 onward. If
+you are solo mining, this will affect you the moment you upgrade Bitcoin Core,
+which must be done prior to BIP65 achieving its 951/1001 status.  If you are
+mining with the stratum mining protocol: this does not affect you.  If you are
+mining with the getblocktemplate protocol to a pool: this will affect you at
+the pool operator's discretion, which must be no later than BIP65 achieving its
+951/1001 status.
+
+Automatically listen on Tor
+----------------------------
+
+Starting with Tor version 0.2.7.1 it is possible, through Tor's control socket
+API, to create and destroy 'ephemeral' hidden services programmatically.
+Bitcoin Core has been updated to make use of this.
+
+This means that if Tor is running (and proper authorization is available),
+Bitcoin Core automatically creates a hidden service to listen on, without
+manual configuration. This will positively affect the number of available
+.onion nodes.
+
+This new feature is enabled by default if Bitcoin Core is listening, and
+a connection to Tor can be made. It can be configured with the `-listenonion`,
+`-torcontrol` and `-torpassword` settings. To show verbose debugging
+information, pass `-debug=tor`.
+
 0.12.0 Change log
 =================
 
