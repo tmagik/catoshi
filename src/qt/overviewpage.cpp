@@ -189,7 +189,7 @@ void OverviewPage::setModel(WalletModel *model)
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
     }
 
-    // update the display unit, to not use the default ("BLU")
+    // update the display unit, to not use the default (BRAND_CODE)
     updateDisplayUnit();
 }
 
