@@ -64,6 +64,9 @@ contains(COIN_BRAND, bluecoin) {
 	warning ("Building GENERIC codecoin, probably will not work")
 }}}}}}}
 
+#Set up a symlink so QT designer doesn't get confused when editing UI files
+!win:system("ln -sf $$TARGET/codecoin.qrc src/qt/res/codecoin.qrc")
+
 # for boost 1.37, add -mt to the boost libraries
 # use: qmake BOOST_LIB_SUFFIX=-mt
 # for boost thread win32 with _win32 sufix
@@ -190,9 +193,9 @@ android:DEFINES += LEVELDB_PLATFORM_POSIX OS_ANDROID
 #unix:DEFINES += OS_LINUX LEVELDB_PLATFORM_POSIX LEVELDB_ATOMIC_PRESENT NDEBUG
 # no scoped enums again..
 unix{
-DEFINES += LEVELDB_PLATFORM_POSIX
+DEFINES += LEVELDB_PLATFORM_POSIX BOOST_NO_SCOPED_ENUMS
 macx{
-DEFINES += OS_MACOSX BOOST_NO_SCOPED_ENUMS
+DEFINES += OS_MACOSX
 } else {
 DEFINES += OS_LINUX LEVELDB_ATOMIC_PRESENT BOOST_NO_CXX11_SCOPED_ENUMS
 }}
