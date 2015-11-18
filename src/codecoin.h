@@ -4,6 +4,7 @@
 #ifndef CODECOIN_codecoin_H
 #define CODECOIN_codecoin_H
 
+#if !defined(BRANDING_ONLY)  // hack for resource codecoin-qt.rc
 #include "bignum.h"
 #include <inttypes.h>
 #include <string>
@@ -14,6 +15,7 @@ extern const CBigNum bnProofOfWorkLimit;
 extern const CBigNum bnProofOfStakeLimit;
 //extern const unsigned int nStakeMinAge;
 //extern const unsigned int nStakeMaxAge;
+#endif
 
 #ifdef BRAND_solarcoin
 #include "solarcoin.h"

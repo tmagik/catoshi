@@ -1,0 +1,41 @@
+IDI_ICON1 ICON DISCARDABLE "icons/coin.ico"
+IDI_ICON2 ICON DISCARDABLE "icons/coin_testnet.ico"
+
+#include <windows.h>             // needed for VERSIONINFO
+#include "../../clientversion.h" // holds the needed client version information
+#define BRANDING_ONLY		 // TODO fix this, it's a hack
+#include "../../codecoin.h"	 // holds the branding information
+
+#define VER_PRODUCTVERSION     CLIENT_VERSION_MAJOR,CLIENT_VERSION_MINOR,CLIENT_VERSION_REVISION,CLIENT_VERSION_BUILD
+#define VER_PRODUCTVERSION_STR STRINGIZE(CLIENT_VERSION_MAJOR) "." STRINGIZE(CLIENT_VERSION_MINOR) "." STRINGIZE(CLIENT_VERSION_REVISION) "." STRINGIZE(CLIENT_VERSION_BUILD)
+#define VER_FILEVERSION        VER_PRODUCTVERSION
+#define VER_FILEVERSION_STR    VER_PRODUCTVERSION_STR
+#define COPYRIGHT_STR          "2014-" STRINGIZE(COPYRIGHT_YEAR) " 7 Elements LLC"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     VER_FILEVERSION
+PRODUCTVERSION  VER_PRODUCTVERSION
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4" // U.S. English - multilingual (hex)
+        BEGIN
+            VALUE "CompanyName",        BRAND_upper
+            VALUE "FileDescription",    BRAND_upper " (Free software GUI client for " BRAND_upper ")"
+            VALUE "FileVersion",        VER_FILEVERSION_STR
+            VALUE "InternalName",       BRAND_lower
+            VALUE "LegalCopyright",     COPYRIGHT_STR
+            VALUE "LegalTrademarks1",   "Distributed under the AGPLv3 software license, see the accompanying file COPYING or http://www.gnu.org/licenses/agpl-3.0.html"
+            VALUE "OriginalFilename",   BRAND_lower ".exe"
+            VALUE "ProductName",        BRAND_upper
+            VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
+        END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1252 // language neutral - multilingual (decimal)
+    END
+END
