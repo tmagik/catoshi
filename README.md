@@ -1,7 +1,7 @@
 Codecoin Catbox
 ================================
 
-http://kittyco.in
+http://7el.us/CATOSHI
 
 Copyright (c) 2009-2013 Bitcoin Developers
 Copyright (c) 2011-2013 Litecoin Developers
@@ -16,15 +16,15 @@ same source tree. Default build is Grantcoin. On linux, do this:
 
     cd src
     make                         # builds grantcoin
-    make COIN_BRAND=solarcoin    # builds solarcoin
-    make COIN_BRAND=uro          # builds uro
+    make COIN_BRAND=kittycoin    # builds kittycoin
+    make regression # builds & runs regression tests on multiple coins
 
 ### What is Grantcoin?
 [Grantcoin](http://www.grantcoin.org/) (abbreviated GRT) is the first [cryptocurrency](https://en.wikipedia.org/wiki/Cryptocurrency) distributed primarily as Proof-of-Participation grants according to a transparent business plan by a legally incorporated nonprofit organization. Grantcoin is based on [Peercoin](http://peercoin.net/) (PPCoin), the first digital currency using Proof-of-Stake consensus as a security model, which is more energy efficient than [Bitcoin](http://en.wikipedia.org/wiki/Bitcoin)'s Proof-of-Work mining system. Grantcoin will begin with several months of PoW until the currency is widely circulated, with further evolution determined by the foundation and community.
 
 ### What is kittycoin?
 
-Kittycoin used to ba a Catcoin-compatible cryptographic currency with
+Kittycoin used to be a Catcoin-compatible cryptographic currency with
 scrypt N=1024 proof of work, with (mostly) the same blockchain parameters
 as Bitcoin:
  - 50 coins per block
@@ -33,14 +33,15 @@ as Bitcoin:
  - 21 million total coins
  - 1 block difficulty adjustment, with a PID ajustment.
 
-For more information, as well as an immediately useable, binary version of
-the Catcoin client sofware, see http://www.catcoins.org
+It is currently not particularly usefull except as a catbox for n00b
+developers. I mean, it's a developer sandbox that's a safe space to try
+things that would get you flamed on bitcointalk.
 
 ###Why the Catbox?
 
 Because, frankly, right now this code stinks. It's a big pile of crap, and
 I'm taking a bunch of other crapcoin and other stinky bits like p2pool and
-counterparty and mixing it all up here.
+counterparty and mixing it all up like a big compost pile.
 
 But there's a point here. If your shit stinks, you're composting it wrong.
 I grow commodities, and if you're a farmer, all the micronutrients and
@@ -103,7 +104,7 @@ on debian 8.x:
 		libssl-dev libminiupnpc-dev libboost-filesystem-dev \
 		libboost-system-dev libboost-program-options-dev \
 		libboost-thread-dev libboost-test-dev libboost-test1.55-dev 
-    cd src; make
+    cd src; make 
 
 ### Automated Testing
 
