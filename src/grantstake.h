@@ -4,8 +4,6 @@
 #ifndef CODECOIN_grantcoin_H
 #define CODECOIN_grantcoin_H
 
-#include "util.h"
-
 static const int RPC_PORT = 9983;
 static const int RPC_PORT_TESTNET = 9985;
 static const int P2P_PORT = 9982;
@@ -33,7 +31,7 @@ extern const unsigned int nMaxClockDrift;
 
 
 /** Dust Soft Limit, allowed with additional fee per output */
-static const int64_t DUST_SOFT_LIMIT = 10000; // 0.001 GRT
+static const int64_t DUST_SOFT_LIMIT = CENT; // 0.01 GRT
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */
 static const int64_t DUST_HARD_LIMIT = 100;   // 0.00001 GRT mininput
 
@@ -53,7 +51,10 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 #define BRAND_domain "grantcoin.org"
 #define BRAND_CODE "GRT"
 
-//required for grantcoin since it started with stake data structures
+//Use ppcoinstake
 #define PPCOINSTAKE
+// Faster bootstraps with xz. Probably only works on mac/linux
+#define USE_BOOTSTRAP_XZ
+#define USE_BOOTSTRAP_GZ	// might work on android too
 
 #endif

@@ -6,11 +6,6 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "codecoin.h"
-#if defined(BRAND_grantstake)
-#include "grantstake.h"
-#else
-#include "grantcoin.h"
-#endif
 #include "alert.h"
 #include "checkpoints.h"
 #include "db.h"
@@ -27,25 +22,9 @@ using namespace std;
 using namespace boost;
 
 uint256 hashGenesisBlock = 0;			// TODO: objectize this for multicoin support
+const CBigNum bnProofOfWorkLimit(~uint256(0) >> 12);	// *coin: starting difficulty is 1 / 2^12
 
-const string strMessageMagic = "Grantcoin Signed Message:\n";
-
-const CBigNum bnProofOfWorkLimit(~uint256(0) >> 28);  // Reduced initial difficulty from Peercoin's 32
-const CBigNum bnInitialHashTarget(~uint256(0) >> 28);  // Reduced from Peercoin's 40
-
-int nCoinbaseMaturity = COINBASE_MATURITY;
-
-/** TODO: this goes into src/policy/fees.cpp when latest bitcoin code is merged */
-/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
-int64_t CTransaction::nMinTxFee = CENT;
-/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
-int64_t CTransaction::nMinRelayTxFee = CENT;
-
-// TODO: separate max clock drift from tx timestamp limits?
-const unsigned int nMaxClockDrift = 2*60*60;   // this is WAY to big..
-
-
-
+const string strMessageMagic = "Catcoin Signed Message:\n";
 /* value, in percent of what difficulty value we'll accept for orphans */
 const int ORPHAN_WORK_THRESHOLD = 1; // FIXME WAY TOO WIDE right now
 
@@ -54,192 +33,86 @@ const int ORPHAN_WORK_THRESHOLD = 1; // FIXME WAY TOO WIDE right now
 // The first name is used as information source for addrman.
 // The second name should resolve to a list of seed addresses.
 // FIXME use a single string and/or objectify this
+/*
+  Catcoin policy for getting on this list:
+   1) have a catcoind with port 9933 open
+   2) be avaible for #catcoin-dev people to contact you for debug and testing
+   3) be willing to take a haircut on generates if we determine on irc and on
+	  (a future) mailing list that we need to do it to fix the network
+ */
 const char *strMainNetDNSSeed[][2] = {
-	{"grantcoin.net", "seed1.grantcoin.net"},
-	{"grantcoin.net", "seed2.grantcoin.net"},
+	{"thepeeps.net", "p2pool.thepeeps.net"},
+	{"catstat.info", "seed.catstat.info"},
+	{"catcoinwallets.com", "seed.catcoinwallets.com"},
+	{"geekhash.org", "cat.geekhash.org"},
 	{NULL, NULL}
 };
 
 const char *strTestNetDNSSeed[][2] = {
-	{"seed", "159.203.84.95"},
+	{"catstat.info", "testnet-seed.catstat.info"},
+	{"catcoinwallets.com", "seed.catcoinwallets.com"},
 	{NULL, NULL}
 };
 
-int64_t GetProofOfWorkRewardTestNet(int nHeight)
+int64_t GetBlockValue(CBlockIndex *block, int64_t nFees)
 {
-    int64_t nSubsidy = COIN;
-    if (nHeight == 1)
-        nSubsidy = 10000000000 * COIN;  // Grantcoin created for planned distribution
-    else if (nHeight < 500)
-        nSubsidy = CENT;  // De minimus reward pre-launch and up to 2 weeks post-launch
-    else if (nHeight < 510)
-        nSubsidy = 6.25 * COIN;  // Public mining begins
-    else if (nHeight < 520)
-        nSubsidy = 12.5 * COIN;  // Reward gradually increases during first few days
-    else if (nHeight < 530)
-        nSubsidy = 25 * COIN;
-    else if (nHeight < 540)
-        nSubsidy = 50 * COIN;
-    else if (nHeight < 550)
-        nSubsidy = 100 * COIN;
-    else if (nHeight < 560)
-        nSubsidy = 200 * COIN;
-    else if (nHeight < 1000)
-        nSubsidy = 400 * COIN;  // Maximum reward reached
-    else if (nHeight < 1500)
-        nSubsidy = 200 * COIN;  // Reward starts to decline
-    else if (nHeight < 2000)
-        nSubsidy = 100 * COIN;
-    else if (nHeight < 2500)
-        nSubsidy = 50 * COIN;
-    else if (nHeight < 3000)
-        nSubsidy = 25 * COIN;  // PoW-PoS hybrid phase begins
-    else if (nHeight < 3500)
-        nSubsidy = 12.5 * COIN;
-    else if (nHeight < 4000)
-        nSubsidy = 6.25 * COIN;
-    else if (nHeight < 4500)
-        nSubsidy = 3.13 * COIN;
-    else if (nHeight < 5000)
-        nSubsidy = 1.57 * COIN;
-    else if (nHeight >= 5000)
-        nSubsidy = COIN;  // PoW reward reaches final minimum value
+	int64_t nSubsidy = 50 * COIN;
 
-    // if (fDebug && GetBoolArg("-printcreation"))
-    //     printf("GetProofOfWorkReward() : create=%s nBits=0x%08x nSubsidy=%"PRI64d"\n", FormatMoney(nSubsidy).c_str(), nBits, nSubsidy);
+	// Making some sort of 'promise' of 21 million coins is like Monsanto trying to patent
+	// any roundup-resistant plant, or insisting on only running the 'Genuine IBM PC'
+	// Sure you can try to do that, but weeds evolve resistance, China makes clones,
+	// and copycatcoins print money faster than Zimbabwe after they got rid of the farmers.
+	//
+	// Sound currency will come from a robust community that values something in common.
+	// like Cat pictures.  -- Farmer Troy
+	//
+	// FIXME: add Depurrage based on last year of Cat food prices in the blockchain
+	// FIXME2: come up with a way to GET cat food prices in the blockchain
+	// FIXME3: do this more elegantly while maintaining readability
+	//
+	// further economic analysis supporting this at:
+	// http://cryptonomics.org/2014/01/15/the-marginal-cost-of-cryptocurrency/
+	// http://www.ezonomics.com/videos/can_bitcoin_and_other_virtual_currencies_ever_replace_real_money
 
-    return nSubsidy;
+	return nSubsidy + nFees;
 }
 
-int64_t Grantcoin_PoWReward(int nHeight)
-{
-    int64_t nSubsidy = COIN;
-/* kludge */
-    if (fTestNet){
-	return GetProofOfWorkRewardTestNet(nHeight);
-    }
+static const int64_t nTargetTimespan = 6 * 60 * 60; // 6 hours
+static const int64_t nTargetSpacing = 10 * 60;
+static const int64_t nInterval = nTargetTimespan / nTargetSpacing;
 
-    if (nHeight == 1)
-        nSubsidy = 10000000000 * COIN;  // Grantcoin created for planned distribution
-    else if (nHeight < 50000)
-        nSubsidy = CENT;  // De minimus reward pre-launch and up to 2 weeks post-launch
-    else if (nHeight < 51000)
-        nSubsidy = 6.25 * COIN;  // Public mining begins
-    else if (nHeight < 52000)
-        nSubsidy = 12.5 * COIN;  // Reward gradually increases during first few days
-    else if (nHeight < 53000)
-        nSubsidy = 25 * COIN;
-    else if (nHeight < 54000)
-        nSubsidy = 50 * COIN;
-    else if (nHeight < 55000)
-        nSubsidy = 100 * COIN;
-    else if (nHeight < 56000)
-        nSubsidy = 200 * COIN;
-    else if (nHeight < 100000)
-        nSubsidy = 400 * COIN;  // Maximum reward reached
-    else if (nHeight < 150000)
-        nSubsidy = 200 * COIN;  // Reward starts to decline
-    else if (nHeight < 200000)
-        nSubsidy = 100 * COIN;
-    else if (nHeight < 250000)
-        nSubsidy = 50 * COIN;
-    else if (nHeight < 300000)
-        nSubsidy = 25 * COIN;  // PoW-PoS hybrid phase begins
-    else if (nHeight < 350000)
-        nSubsidy = 12.5 * COIN;
-    else if (nHeight < 400000)
-        nSubsidy = 6.25 * COIN;
-    else if (nHeight >= 400000)
-        nSubsidy = CENT;  // PoW reward phased out to de minimus value
-
-    // if (fDebug && GetBoolArg("-printcreation"))
-    //     printf("GetProofOfWorkReward() : create=%s nBits=0x%08x nSubsidy=%"PRI64d"\n", FormatMoney(nSubsidy).c_str(), nBits, nSubsidy);
-
-    return nSubsidy;
-}
-
-// peercoin: miner's coin stake is rewarded based on coin age spent (coin-days)
-int64_t Grantcoin_StakeReward(int64_t nCoinAge)
-{
-    static int64_t nRewardCoinYear = CENT;  // creation amount per coin-year
-    int64_t nSubsidy = nCoinAge * 33 / (365 * 33 + 8) * nRewardCoinYear;
-    if (fDebug && GetBoolArg("-printcreation"))
-        printf("GetProofOfStakeReward(): create=%s nCoinAge=%" PRId64 "\n", FormatMoney(nSubsidy).c_str(), nCoinAge);
-    return nSubsidy;
-}
-
-/*
- * Get the allow Seigniorage (money creation, or reward) of the current
- * block. If CoinAge is > 0, this is a proof of stake block.
- */
-int64_t GetSeigniorage(const CBlockIndex *block, int64_t nFees, int64_t CoinAge)
-{
-	if(CoinAge == 0){
-		return Grantcoin_PoWReward(block->nHeight);
-	} else {
-		return Grantcoin_StakeReward(CoinAge);
-	}
-}
-
-static const int64_t nTargetTimespan = 24 * 60 * 60;  // 24 hours
-static const int64_t nTargetSpacingWorkMax = 12 * STAKE_TARGET_SPACING; // 18 minutes
+static const int64_t nTargetTimespanOld = 14 * 24 * 60 * 60; // two weeks
+static const int64_t nIntervalOld = nTargetTimespanOld / nTargetSpacing;
 
 //
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
 //
-unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, const CBlockHeader* pblock)
+unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
 {
-    CBigNum bnResult;
-    bnResult.SetCompact(nBase);
-    bnResult *= 2;
-    while (nTime > 0 && bnResult < bnProofOfWorkLimit)
-    {
-        // Maximum 200% adjustment per 3 hours
-        bnResult *= 2;
-        nTime -= 3 * 60 * 60;
-    }
-    if (bnResult > bnProofOfWorkLimit)
-        bnResult = bnProofOfWorkLimit;
-    return bnResult.GetCompact();
+	// Testnet has min-difficulty blocks
+	// after nTargetSpacing*2 time between blocks:
+	if (fTestNet && nTime > nTargetSpacing*2)
+		return bnProofOfWorkLimit.GetCompact();
+
+	CBigNum bnResult;
+	bnResult.SetCompact(nBase);
+	while (nTime > 0 && bnResult < bnProofOfWorkLimit)
+	{
+	// should technically be 112/100 * 36 .. ~40
+		bnResult *= 40;
+		// and if we have long blocks, max 40 x, as well
+		nTime -= nTargetTimespan*40;
+	}
+	if (bnResult > bnProofOfWorkLimit)
+		bnResult = bnProofOfWorkLimit;
+	return bnResult.GetCompact();
 }
 
-unsigned int static GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake)
-{
-    if (pindexLast == NULL)
-        return bnProofOfWorkLimit.GetCompact(); // genesis block
-
-    const CBlockIndex* pindexPrev = GetLastBlockIndex(pindexLast, fProofOfStake);
-    if (pindexPrev->pprev == NULL)
-        return bnInitialHashTarget.GetCompact(); // first block
-    const CBlockIndex* pindexPrevPrev = GetLastBlockIndex(pindexPrev->pprev, fProofOfStake);
-    if (pindexPrevPrev->pprev == NULL)
-        return bnInitialHashTarget.GetCompact(); // second block
-
-    int64_t nActualSpacing = pindexPrev->GetBlockTime() - pindexPrevPrev->GetBlockTime();
-
-    // peercoin: target change every block
-    // peercoin: retarget with exponential moving toward target spacing
-    CBigNum bnNew;
-    bnNew.SetCompact(pindexPrev->nBits);
-    int64_t nTargetSpacing = fProofOfStake? STAKE_TARGET_SPACING : min(nTargetSpacingWorkMax, (int64_t) STAKE_TARGET_SPACING * (1 + pindexLast->nHeight - pindexPrev->nHeight));
-    int64_t nInterval = nTargetTimespan / nTargetSpacing;
-    bnNew *= ((nInterval - 1) * nTargetSpacing + nActualSpacing + nActualSpacing);
-    bnNew /= ((nInterval + 1) * nTargetSpacing);
-
-    if (bnNew > bnProofOfWorkLimit)
-        bnNew = bnProofOfWorkLimit;
-
-    return bnNew.GetCompact();
-}
-
-unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
-{
-	return GetNextTargetRequired(pindexLast, false);	
-}
-
-static int minimum_time_fork = 250000;	// minimum time fork
-static int minimum_time_fork_2 = 250000;	// minimum time fork
+static int fork3Block = 27260; // FIXME move to top...
+static int fork4Block = 27680; // Acceptblock needs this
+// static int fork1min = 31919;
+static int fork1min = 210000;	// kittycoin fork block
 
 //Checks for 'hardcoded' block timestamps
 bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock)
@@ -249,7 +122,7 @@ bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, cons
 	int64_t delta = pblock->GetBlockTime() - pindexPrev->GetBlockTime();
 	int nHeight = pindexPrev->nHeight + 1;
 
-	if (nHeight > minimum_time_fork_2){
+	if (nHeight > fork4Block){
 		time_allow = 30;
 	}
 	
@@ -257,19 +130,18 @@ bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, cons
 		printf("WARNING blocktime nHeight %d time_allow %" PRId64" time_warn %" PRId64" time delta %" PRId64"\n", nHeight, time_allow, time_warn, delta);
 	}
 
-	if (nHeight >= minimum_time_fork_2) {
+	if (nHeight >= fork3Block) {
 		if (delta <= time_allow) // see above, from first hard limit
 			return state.Invalid(error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta));
 	}
-	if (nHeight >= minimum_time_fork) { /* don't forward these */
+	if (nHeight >= fork1min) { /* don't forward these */
 		if (delta <= MINIMUM_BLOCK_SPACING)
 			return state.DoS(10, (error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta)));
 	}
 	return true;	
 }
 
-#ifdef CATBOX
-unsigned int GetNextWorkRequired_Catcoin(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
+unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
 	int64_t nTargetTimespanLocal = 0;
 	int64_t nIntervalLocal = 0;
@@ -495,27 +367,28 @@ If New diff < 0, then set static value of 0.0001 or so.
 
 	return bnNew.GetCompact();
 }
-#endif
 
-const char *pchGrantMain = "\xe2\xe7\xe1\xe4";
+
+const char *pchCatMain	= "\xfc\xc1\xb7\xdc";
+const char *pchCatTest	= "\xfd\xcb\xb8\xdd";
 
 unsigned char pchMessageStart[4];
 
 bool LoadBlockIndex()
 {
 	if (fTestNet)
-	{	/* err, currently use the same one. TODO: change PCH */
-		pchMessageStart[0] = pchGrantMain[0];
-		pchMessageStart[1] = pchGrantMain[1];
-		pchMessageStart[2] = pchGrantMain[2];
-		pchMessageStart[3] = pchGrantMain[3];
-		hashGenesisBlock = uint256 ("0x000000075c9bddc6a4638910415b2995febabf9dd8b634f0832da86c5bab2df5");
+	{	/* add 1 to litecoin values (3 to bitcoins) */
+		pchMessageStart[0] = pchCatTest[0];
+		pchMessageStart[1] = pchCatTest[1];
+		pchMessageStart[2] = pchCatTest[2];
+		pchMessageStart[3] = pchCatTest[3];
+		hashGenesisBlock = uint256("0xec7987a2ab5225246c5cf9b8d93b4b75bcef383a4a65d5a265bc09ed54006188");
 	} else {
-		pchMessageStart[0] = pchGrantMain[0];
-		pchMessageStart[1] = pchGrantMain[1];
-		pchMessageStart[2] = pchGrantMain[2];
-		pchMessageStart[3] = pchGrantMain[3];
-		hashGenesisBlock = uint256("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a");
+		pchMessageStart[0] = pchCatMain[0];
+		pchMessageStart[1] = pchCatMain[1];
+		pchMessageStart[2] = pchCatMain[2];
+		pchMessageStart[3] = pchCatMain[3];
+		hashGenesisBlock = uint256("0xbc3b4ec43c4ebb2fef49e6240812549e61ffa623d9418608aa90eaad26c96296");
 	}
 
 	//
@@ -540,37 +413,34 @@ bool InitBlockIndex() {
 
 	// Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
 	if (!fReindex) {
-		CBlock block;
-        	CTransaction txNew;
-		if(fTestNet){ // GrantTestnet, optimize later.
-        const char* pszTimestamp = "Reuters 10-OCT-2015 Hundreds of thousands protest in Berlin against EU-US trade deal";
-        txNew.nTime = 1444509104;
-        txNew.vin.resize(1);
-        txNew.vout.resize(1);
-        txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
-        txNew.vout[0].SetEmpty();
-        block.vtx.push_back(txNew);
-        block.hashPrevBlock = 0;
-        block.hashMerkleRoot = block.BuildMerkleTree();
-        block.nVersion = 1;
-        block.nTime    = 1444510495;
-        block.nBits    = bnProofOfWorkLimit.GetCompact();
-        block.nNonce   = 87045764;
-		} else {        
+		// Genesis Block:
+		// CBlock(hash=12a765e31ffd4059bada, PoW=0000050c34a64b415b6b, ver=1, hashPrevBlock=00000000000000000000, hashMerkleRoot=97ddfbbae6, nTime=1317972665, nBits=1e0ffff0, nNonce=2084524493, vtx=1)
+		//	 CTransaction(hash=97ddfbbae6, ver=1, vin.size=1, vout.size=1, nLockTime=0)
+		//	   CTxIn(COutPoint(0000000000, -1), coinbase 04ffff001d0104404e592054696d65732030352f4f63742f32303131205374657665204a6f62732c204170706c65e280997320566973696f6e6172792c2044696573206174203536)
+		//	   CTxOut(nValue=50.00000000, scriptPubKey=040184710fa689ad5023690c80f3a4)
+		//	 vMerkleTree: 97ddfbbae6
+
 		// Genesis block
-		const char* pszTimestamp = "The Courier-Journal 21-MAR-2015 Prince Charles calls for a revolution";
-        txNew.nTime = 1427081625;
+		const char* pszTimestamp = "NY Times - December 23, 2013 - For Today's Babes, Toyland Is Digital";
+		CTransaction txNew;
 		txNew.vin.resize(1);
 		txNew.vout.resize(1);
-		txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
-		txNew.vout[0].SetEmpty();
+		txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
+		txNew.vout[0].nValue = 50 * COIN;
+		txNew.vout[0].scriptPubKey = CScript() << ParseHex("040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9") << OP_CHECKSIG;
+		CBlock block;
 		block.vtx.push_back(txNew);
 		block.hashPrevBlock = 0;
 		block.hashMerkleRoot = block.BuildMerkleTree();
 		block.nVersion = 1;
-		block.nTime    = 1427086539;
-		block.nBits    = bnProofOfWorkLimit.GetCompact();
-		block.nNonce   = 413974755;
+		block.nTime    = 1387838302;
+		block.nBits    = 0x1e0ffff0;
+		block.nNonce   = 588050;
+
+		if (fTestNet)
+		{
+			block.nTime    = 1387838303; //FIXME testnet0.1
+			block.nNonce   = 608937;
 		}
 
 		//// debug print
@@ -578,15 +448,11 @@ bool InitBlockIndex() {
 		printf("%s\n", hash.ToString().c_str());
 		printf("%s\n", hashGenesisBlock.ToString().c_str());
 		printf("%s\n", block.hashMerkleRoot.ToString().c_str());
+		assert(block.hashMerkleRoot == uint256("0x4007a33db5d9cdf2aab117335eb8431c8d13fb86e0214031fdaebe69a0f29cf7"));
+
+
 		block.print();
 		assert(hash == hashGenesisBlock);
-		if (fTestNet)
-			assert(block.hashMerkleRoot == uint256("0x650de4987865a27a1c248908c6a93b9d55931ee3df0e97a845c0915bb53a362f"));
-		else {
-			assert(block.hashMerkleRoot == uint256("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
-		}
-
-		//assert(block.CheckBlock)
 
 		// Start new block file
 		try {
@@ -614,10 +480,36 @@ namespace Checkpoints
 	//	 (no blocks before with a timestamp after, none after with
 	//	  timestamp before)
 	// + Contains no strange transactions
-	// TODO put this in grantcoin.cpp|.h
+	// TODO put this in catcoin.cpp|.h
 	static MapCheckpoints mapCheckpoints =
 		boost::assign::map_list_of
-		(     0, uint256("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a"))
+		(    4, uint256("fe508d41b7dc2c3079e827d4230e6f7ddebca43c9afc721c1e6431f78d6ff1de"))
+		(    5, uint256("7fc79021dbfa30255ade9bb8d898640516d9c771c3342a9b889ce380c52c6c1f"))
+		( 5000, uint256("ec268a9cfe87adb4d10a147a544493406c80e00a3e6868641e520b184e7ddce3"))
+		(10000, uint256("29c63023c3b8a36b59837734a9c16133a4ef08d9a0e95f639a830c56e415070d"))
+		(20000, uint256("3a0c072b76a298dabffc4f825a084c0f86dc55fe58f9bf31cc7e21bbfb2ead52"))
+		(22500, uint256("fd3c87eae2e9be72499978155844598a8675eff7a61c90f9aebcedc94e1b217f"))
+		(22544, uint256("6dd1a90cc56cf4a46c8c47528c4861c255e86d5f97fcee53ce356174e15c3045"))
+		(22554, uint256("b13e8b128989f9a9fc1a4c1e547330d0b34d3f60189c00391a116922fa4fcb8c"))
+		(22600, uint256("9e2d7f2fdab36c3e2b6f0455470cd957c12172ad7877f7c8e414fd736469c8d2"))
+		(22650, uint256("7afbd354496346819b8a214693af70e1431bfadbf68d49a688ae27539fc6b37e"))
+		(22700, uint256("35154b803fa5700b69f8081aa6d7c798c1e7fd027971252598a18549092a1291"))
+		(22750, uint256("67e6eca7d46c1a612b7638e7a503e6dbc7cca4da493f4267833a6f1c9a655a35"))
+		(22800, uint256("49e84c3b5c261966c37c101ac7691886bd641a382f514c2221735088b1b2beea"))
+		(22850, uint256("c44cec57381a97c3983df0ef1fcf150669dd1794943202d89b805f423a65516f"))
+		(22900, uint256("44de4c262de678a23554dd06a6f57270815ea9d145f6c542ab2a8dfbd2ca242c"))
+		(22950, uint256("cecc4ab30b39fc09bf85eb191e64c1660ab2206c5f80953694997ec5c2db5338"))
+		(25890, uint256("4806f91100ae83904aa0113cc3acda8fe6ac422186243719a68b76c98e7487c2"))
+		(29400,	uint256("6740c8907d9a13dfa1019142cc3b1e0abfe2fe8c832c5333df82a404d9a3e40e"))
+		(30000, uint256("ff05303dc58caf2d102c85a0504ed16939c7840c91f5f0b37a5bf128e9afb73f"))
+		(31830, uint256("9275b100cd5e540177c285c8801a63e644e7611a60a49b50831f70df6e5ea825"))
+		(32040, uint256("d5c7bdecfd330721f489ea59930204345d3fc05dd5df0d2f09c6c53c8c0352b6"))
+		(35000, uint256("8c5b56e660e47b398395fd01fd721b115fe523da400d23c82120c6fd37636423"))
+		(40000, uint256("b8a6e8aaf4f92d4b521bd022de3008884eba51ff2a5c79e0269d65a03d109283"))
+		(41000, uint256("88f114a60cb0841735df03cecc3c5662ffbdac184c7344d30cef4f98f5b61ed3"))
+		(42000, uint256("4a538c3557ab865d74327e38837b5aac63aaebdc4718c2ee7b8101bcdd241eb6"))
+		(43000, uint256("d2428f19de225b56853090fd548d1d7dd2d3d180b989c785eddb615e60f94209"))
+		(44000, uint256("587b814e0a113eaf52b94e4920362f4c076d7dc942a4f8c5c4900f2d94adbc26"))
 //		(33000, uint256("0x"))
 
 		;

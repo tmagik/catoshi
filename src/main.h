@@ -15,13 +15,11 @@
 #include "sync.h"
 #include "net.h"
 #include "script.h"
-#if defined(BRAND_uro)
+#if defined(BRAND_uro) || defined(BRAND_givecoin) || defined(BRAND_bluecoin)
 #include "hashblock.h"
-#elif defined(BRAND_givecoin) || defined(BRAND_bluecoin)
-#include "hashblock.h"
+#endif
+#if defined(LITECOIN_SCRYPT_POWHASH)
 #include "scrypt.h"
-#else
-//#include "scrypt.h"
 #endif
 
 #include <list>

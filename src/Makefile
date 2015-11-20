@@ -203,6 +203,10 @@ ifeq ($(COIN_BRAND),hamburger)
 DEFS += -DUSE_SCRYPT
 OBJS += $(SCRYPT_OBJS) $(STAKE_OBJS)
 endif
+ifeq ($(COIN_BRAND),kittycoin)
+DEFS += -DUSE_SCRYPT
+OBJS += $(SCRYPT_OBJS)
+endif
 ifeq ($(COIN_BRAND),bluecoin)
 OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
 endif
@@ -211,6 +215,13 @@ all: $(TESTDIR) $(COIN_BRAND)d
 
 test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
 	./test_$(COIN_BRAND)
+
+regression: test FORCE
+	$(MAKE) COIN_BRAND=givecoin test
+	$(MAKE) COIN_BRAND=grantstake test
+	$(MAKE) COIN_BRAND=hamburger test
+	$(MAKE) COIN_BRAND=kittycoin test
+	
 
 $(TESTDIR):
 	mkdir -p $(TESTDIR)
