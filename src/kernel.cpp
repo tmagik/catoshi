@@ -386,7 +386,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     if (fPrintProofOfStake)
     {
         if (IsProtocolV03(nTimeTx))
-            printf("CheckStakeKernelHash() : using modifier 0x%016" PRIx64 " at height=%d timestamp=" PRId64 " for block from height=%d timestamp=" PRId64"\n",
+            printf("CheckStakeKernelHash() : using modifier 0x%016" PRIx64 " at height=%d timestamp=%" PRId64 " for block from height=%d timestamp=%" PRId64 "\n",
                 nStakeModifier, nStakeModifierHeight,
                 nStakeModifierTime,
                 mapBlockIndex[blockFrom.GetHash()]->nHeight,

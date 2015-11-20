@@ -35,6 +35,7 @@ const CBigNum bnInitialHashTarget(~uint256(0) >> 28);  // Reduced from Peercoin'
 
 int nCoinbaseMaturity = COINBASE_MATURITY;
 
+/** TODO: this goes into src/policy/fees.cpp when latest bitcoin code is merged */
 /** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
 int64_t CTransaction::nMinTxFee = CENT;
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */

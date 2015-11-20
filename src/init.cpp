@@ -26,7 +26,8 @@
 #include <signal.h>
 #endif
 
-#if defined(USE_SSE2)
+#if defined(USE_SSE2) && defined(USE_SCRYPT)
+#include "scrypt.h"
 #if !defined(MAC_OSX) && (defined(_M_IX86) || defined(__i386__) || defined(__i386))
 #ifdef _MSC_VER
 // MSVC 64bit is unable to use inline asm
