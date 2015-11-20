@@ -11,6 +11,8 @@ static const int P2P_PORT_TESTNET = 31416;
 
 static const int64_t COIN = 100000000;
 static const int64_t CENT = 1000000;
+static const int COIN_DECIMALS = 8; /* decimal places for coin */
+#define COIN_DECIMALS_FMT "08"
 
 /** Dust Soft Limit, allowed with additional fee per output */
 static const int64_t DUST_SOFT_LIMIT = 100000; // 0.001 GIVE
@@ -29,6 +31,8 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 
 /** really only used in rpcmining.cpp **/
 static const int RETARGET_INTERVAL = 15;
+
+#define STAKE_TARGET_SPACING nStakeTargetSpacing
 
 extern const unsigned int nStakeMinAge;
 extern const unsigned int nStakeMaxAge;

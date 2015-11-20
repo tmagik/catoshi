@@ -4,22 +4,22 @@
 #ifndef CODECOIN_hamburger_H
 #define CODECOIN_hamburger_H
 
-#include "util.h"
-
 static const int RPC_PORT = 3123;
 static const int P2P_PORT = 3234;
 static const int RPC_PORT_TESTNET = 4123;
 static const int P2P_PORT_TESTNET = 4234;
 
-
-static const int64_t COIN = 100000000;
-static const int64_t CENT = 1000000;
+static const int64_t COIN = 1000000;
+static const int64_t CENT = 10000;
+static const int COIN_DECIMALS = 6; /* decimal places for coin */
+#define COIN_DECIMALS_FMT "06"
 
 /** Dust Soft Limit, allowed with additional fee per output */
-static const int64_t DUST_SOFT_LIMIT = 100000; // 0.001 GIVE
+static const int64_t DUST_SOFT_LIMIT = 10000; // 0.001 HAM
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */
-static const int64_t DUST_HARD_LIMIT = 1000;   // 0.00001 GIVE mininput
-/** Minimum criteria for AllowFree */
+static const int64_t DUST_HARD_LIMIT = 100;   // 0.00001 HAM mininput
+
+/** Minimum criteria for CTransaction:AllowFree */
 static const int64_t MIN_FREE_PRIORITY = COIN * 576/250;
 /** No amount larger than this (in catoshi) is valid */
 static const int64_t MAX_MONEY = 500000000 * COIN;
@@ -32,6 +32,8 @@ static const int64_t MINIMUM_BLOCK_SPACING = 15;	// Absolute minimum spacing
 
 /** really only used in rpcmining.cpp **/
 static const int RETARGET_INTERVAL = 15;
+
+#define STAKE_TARGET_SPACING nStakeTargetSpacing
 
 extern const unsigned int nStakeMinAge;
 extern const unsigned int nStakeMaxAge;

@@ -19,6 +19,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+#if defined(USE_SCRYPT)
+#include "scrypt.h"
+#endif
+
 using namespace std;
 using namespace boost;
 

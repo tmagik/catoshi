@@ -43,8 +43,14 @@ const unsigned int nMaxClockDrift = 45 * 60; 		// 45 minutes
 //const int nCutoff_Pos_Block = 250000;
 const int nCutoff_Pos_Block = 10;
 
-//int nCoinbaseMaturity = 350; // old from bluecoin
 /* end stake stuff */
+int nCoinbaseMaturity = COINBASE_MATURITY;
+
+/** TODO: this goes into src/policy/fees.cpp when latest bitcoin code is merged */
+/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
+int64_t CTransaction::nMinTxFee = CENT;
+/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
+int64_t CTransaction::nMinRelayTxFee = CENT;
 
 // DNS seeds
 // Each pair gives a source name and a seed name.

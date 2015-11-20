@@ -5,7 +5,7 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-//#include "coins/hamburger.h"
+#include "codecoin.h"
 #include "hamburger.h"
 #include "checkpoints.h"
 #include "db.h"
@@ -42,8 +42,14 @@ const unsigned int nMaxClockDrift = 60 * 60 * 3; 		// 3 hours (way too big)
 //const int nCutoff_Pos_Block = 250000;
 const int nCutoff_Pos_Block = 10;
 
-//int nCoinbaseMaturity = 350; // old from bluecoin
 /* end stake stuff */
+int nCoinbaseMaturity = COINBASE_MATURITY;
+
+/** TODO: this goes into src/policy/fees.cpp when latest bitcoin code is merged */
+/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
+int64_t CTransaction::nMinTxFee = CENT;
+/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
+int64_t CTransaction::nMinRelayTxFee = CENT;
 
 // DNS seeds
 // Each pair gives a source name and a seed name.
@@ -325,6 +331,7 @@ bool LoadBlockIndex()
 		pchMessageStart[1] = 0xd2;
 		pchMessageStart[2] = 0xd3;
 		pchMessageStart[3] = 0xdb;
+		//hashGenesisBlock = uint256("00008076809c7be9078977c58db4e849f2252a25d50c59c0c6cdaf59b24485ba");
 		hashGenesisBlock = uint256("48fbec404c7c044167ae077d319e96b07be7db105585206192c340e107796766");
 	}
 
@@ -367,6 +374,7 @@ bool InitBlockIndex() {
 		block.nTime    = 1426459536;
 		block.nBits    = bnProofOfWorkLimit.GetCompact();
 		block.nNonce   = 2090773291;
+		//block.nNonce   = 2090866385;
 
 		if (fTestNet)
 		{
@@ -376,6 +384,10 @@ bool InitBlockIndex() {
 
 
 		uint256 hash = block.GetHash();
+		printf("%s\n", hash.ToString().c_str());
+		printf("%s\n", hashGenesisBlock.ToString().c_str());
+		printf("%s\n", block.hashMerkleRoot.ToString().c_str());
+		printf("----\n");
 		if (hash != hashGenesisBlock)
 		{
 			printf("Searching for genesis block...\n");
@@ -410,6 +422,7 @@ bool InitBlockIndex() {
 		printf("%s\n", block.hashMerkleRoot.ToString().c_str());
 		block.print();
 		assert(block.hashMerkleRoot == uint256("183732b7df12d37a9f227faf4f83f60dc2206e642d48f6d56daee40631326a8d"));
+		//assert(block.hashMerkleRoot == uint256("3b9bbd8816fb38cc334ae2745eb7487596579b979fd1bdbb0c5a574a554d196d"));
 		//block.print();
 		assert(hash == hashGenesisBlock);
 
