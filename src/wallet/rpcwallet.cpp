@@ -835,7 +835,7 @@ UniValue movecmd(const UniValue& params, bool fHelp)
     debit.nTime = nNow;
     debit.strOtherAccount = strTo;
     debit.strComment = strComment;
-    walletdb.WriteAccountingEntry(debit);
+    pwalletMain->AddAccountingEntry(debit, walletdb);
 
     // Credit
     CAccountingEntry credit;
@@ -845,7 +845,7 @@ UniValue movecmd(const UniValue& params, bool fHelp)
     credit.nTime = nNow;
     credit.strOtherAccount = strFrom;
     credit.strComment = strComment;
-    walletdb.WriteAccountingEntry(credit);
+    pwalletMain->AddAccountingEntry(credit, walletdb);
 
     if (!walletdb.TxnCommit())
         throw JSONRPCError(RPC_DATABASE_ERROR, "database error");
@@ -1470,11 +1470,10 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
 
     UniValue ret(UniValue::VARR);
 
-    std::list<CAccountingEntry> acentries;
-    CWallet::TxItems txOrdered = pwalletMain->OrderedTxItems(acentries, strAccount);
+    const CWallet::TxItems & txOrdered = pwalletMain->wtxOrdered;
 
     // iterate backwards until we have nCount items to return:
-    for (CWallet::TxItems::reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
+    for (CWallet::TxItems::const_reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
     {
         CWalletTx *const pwtx = (*it).second.first;
         if (pwtx != 0)
@@ -1579,8 +1578,7 @@ UniValue listaccounts(const UniValue& params, bool fHelp)
         }
     }
 
-    list<CAccountingEntry> acentries;
-    CWalletDB(pwalletMain->strWalletFile).ListAccountCreditDebit("*", acentries);
+    const list<CAccountingEntry> & acentries = pwalletMain->laccentries;
     BOOST_FOREACH(const CAccountingEntry& entry, acentries)
         mapAccountBalances[entry.strAccount] += entry.nCreditDebit;
 
@@ -2396,7 +2394,7 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
                             "\nResult:\n"
                             "{\n"
                             "  \"hex\":       \"value\", (string)  The resulting raw transaction (hex-encoded string)\n"
-                            "  \"fee\":       n,         (numeric) The fee added to the transaction\n"
+                            "  \"fee\":       n,         (numeric) Fee the resulting transaction pays\n"
                             "  \"changepos\": n          (numeric) The position of the added change output, or -1\n"
                             "}\n"
                             "\"hex\"             \n"
@@ -2418,9 +2416,12 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
     if (!DecodeHexTx(origTx, params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
 
+    if (origTx.vout.size() == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "TX must have at least one output");
+
     bool includeWatching = false;
     if (params.size() > 1)
-        includeWatching = true;
+        includeWatching = params[1].get_bool();
 
     CMutableTransaction tx(origTx);
     CAmount nFee;
