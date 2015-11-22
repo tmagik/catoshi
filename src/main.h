@@ -1906,6 +1906,8 @@ public:
 	COutPoint prevoutStake;
 	unsigned int nStakeTime;
 	uint256 hashProofOfStake;
+#elif defined(FEATURE_MONEYSUPPLY)
+	int64_t nMoneySupply;
 #endif
 	// block header
 	int nVersion;
@@ -1934,6 +1936,8 @@ public:
 		hashProofOfStake = 0;
 		prevoutStake.SetNull();
 		nStakeTime = 0;
+#elif defined(FEATURE_MONEYSUPPLY)
+		nMoneySupply = 0;
 #endif
 		nTx = 0;
 		nChainTx = 0;
@@ -1974,11 +1978,12 @@ public:
 			prevoutStake.SetNull();
 			nStakeTime = 0;
 		}
-#else
+#elif defined(FEATURE_MONEYSUPPLY)
+		nMoneySupply = 0;
+#endif
 		nTx = 0;
 		nChainTx = 0;
 		nStatus = 0;
-#endif
 
 		nVersion	   = block.nVersion;
 		hashMerkleRoot = block.hashMerkleRoot;
@@ -2202,7 +2207,6 @@ struct CBlockIndexWorkComparator
 };
 
 
-
 /** Used to marshal pointers into hashes for db storage. */
 class CDiskBlockIndex : public CBlockIndex
 {
@@ -2249,6 +2253,8 @@ public:
 			const_cast<CDiskBlockIndex*>(this)->nStakeTime = 0;
 			const_cast<CDiskBlockIndex*>(this)->hashProofOfStake = 0;
 		}
+#elif defined(FEATURE_MONEYSUPPLY)
+		READWRITE(nMoneySupply);
 #endif
 
 		// block header

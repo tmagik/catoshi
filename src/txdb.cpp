@@ -237,9 +237,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 #if defined(PPCOINSTAKE)
 				pindexNew->nMint          = diskindex.nMint;
 				pindexNew->nMoneySupply   = diskindex.nMoneySupply;
-#if 1
-				printf("load nHeight=%d moneysupply=%" PRId64 "\n", pindexNew->nHeight, pindexNew->nMoneySupply);
-#endif
 				pindexNew->nFlags         = diskindex.nFlags;
 				pindexNew->nStakeModifier = diskindex.nStakeModifier;
 				pindexNew->prevoutStake   = diskindex.prevoutStake;
@@ -249,6 +246,11 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 				// NovaCoin: build setStakeSeen
 				if (pindexNew->IsProofOfStake())
 					setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
+#elif defined(FEATURE_MONEYSUPPLY)
+				pindexNew->nMoneySupply   = diskindex.nMoneySupply;
+#if 1
+				printf("load nHeight=%d moneysupply=%" PRId64 "\n", pindexNew->nHeight, pindexNew->nMoneySupply);
+#endif
 #endif
 
                 // Watch for genesis block

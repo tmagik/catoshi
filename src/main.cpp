@@ -1694,6 +1694,8 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
     // ppcoin: fees are destroyed to compensate the entire network
     if (fDebug && GetBoolArg("-printcreation"))
         printf("ConnectBlock() : destroy=%s nFees=%" PRId64"\n", FormatMoney(nFees).c_str(), nFees);
+#elif defined(FEATURE_MONEYSUPPLY)
+    pindex->nMoneySupply = (pindex->pprev? pindex->pprev->nMoneySupply : 0) + nValueOut - nValueIn;
 #endif
 
 	// Write undo information to disk
