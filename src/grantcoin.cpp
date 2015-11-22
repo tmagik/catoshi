@@ -93,7 +93,7 @@ int64_t GetProofOfWorkRewardTestNet(int nHeight)
     else if (nHeight < 2500)
         nSubsidy = 50 * COIN;
     else if (nHeight < 3000)
-        nSubsidy = 25 * COIN;  // PoW-PoS hybrid phase begins
+        nSubsidy = 25 * COIN;
     else if (nHeight < 3500)
         nSubsidy = 12.5 * COIN;
     else if (nHeight < 4000)
@@ -144,13 +144,9 @@ int64_t Grantcoin_PoWReward(int nHeight)
     else if (nHeight < 250000)
         nSubsidy = 50 * COIN;
     else if (nHeight < 300000)
-        nSubsidy = 25 * COIN;  // PoW-PoS hybrid phase begins
-    else if (nHeight < 350000)
-        nSubsidy = 12.5 * COIN;
-    else if (nHeight < 400000)
-        nSubsidy = 6.25 * COIN;
-    else if (nHeight >= 400000)
-        nSubsidy = CENT;  // PoW reward phased out to de minimus value
+        nSubsidy = 25 * COIN;
+    else if (nHeight >= 300000)
+        nSubsidy = 10 * COIN;  // Final minimum reward for PoW phase
 
     // if (fDebug && GetBoolArg("-printcreation"))
     //     printf("GetProofOfWorkReward() : create=%s nBits=0x%08x nSubsidy=%"PRI64d"\n", FormatMoney(nSubsidy).c_str(), nBits, nSubsidy);

@@ -20,8 +20,6 @@ inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MO
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 500;
 
-#warning TODO: sanity check following
-
 static const int STAKE_TARGET_SPACING = 1.5 * 60; // 90-second block spacing 
 static const unsigned int nStakeMinAge = 60 * 60 * 24; // minimum age for coin age (24 hours)
 static const unsigned int nStakeMaxAge = 60 * 60 * 24 * 90; // stake age of full weight
@@ -44,6 +42,8 @@ static const int RETARGET_INTERVAL = 36;
 
 /** Minimum block time spacing (hard limit) **/
 static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
+
+#define FEATURE_MONEYSUPPLY
 
 #define BRAND "Grantcoin"
 #define BRAND_upper "Grantcoin"
