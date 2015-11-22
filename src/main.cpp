@@ -670,10 +670,11 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
     // IsFinalTx() with one more than chainActive.Height().
     const int nBlockHeight = chainActive.Height() + 1;
 
-    // Timestamps on the other hand don't get any special treatment,
-    // because we can't know what timestamp the next block will have,
-    // and there aren't timestamp applications where it matters.
-    // However this changes once median past time-locks are enforced:
+    // BIP113 will require that time-locked transactions have nLockTime set to
+    // less than the median time of the previous block they're contained in.
+    // When the next block is created its previous block will be the current
+    // chain tip, so we use that to calculate the median time passed to
+    // IsFinalTx() if LOCKTIME_MEDIAN_TIME_PAST is set.
     const int64_t nBlockTime = (flags & LOCKTIME_MEDIAN_TIME_PAST)
                              ? chainActive.Tip()->GetMedianTimePast()
                              : GetAdjustedTime();
@@ -1310,10 +1311,17 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
                 undo.nVersion = coins->nVersion;
             }
         }
+        // add outputs
+        inputs.ModifyNewCoins(tx.GetHash())->FromTx(tx, nHeight);
     }
-
-    // add outputs
-    inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
+    else {
+        // add outputs for coinbase tx
+        // In this case call the full ModifyCoins which will do a database
+        // lookup to be sure the coins do not already exist otherwise we do not
+        // know whether to mark them fresh or not.  We want the duplicate coinbases
+        // before BIP30 to still be properly overwritten.
+        inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
+    }
 }
 
 void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, int nHeight)
@@ -2577,9 +2585,9 @@ bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAdd
         pos.nPos = vinfoBlockFile[nFile].nSize;
     }
 
-    if (nFile != nLastBlockFile) {
+    if ((int)nFile != nLastBlockFile) {
         if (!fKnown) {
-            LogPrintf("Leaving block file %i: %s\n", nFile, vinfoBlockFile[nFile].ToString());
+            LogPrintf("Leaving block file %i: %s\n", nLastBlockFile, vinfoBlockFile[nLastBlockFile].ToString());
         }
         FlushBlockFile(!fKnown);
         nLastBlockFile = nFile;
@@ -2927,9 +2935,8 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 }
 
 
-bool ProcessNewBlock(CValidationState &state, const CNode* pfrom, const CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
+bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, const CNode* pfrom, const CBlock* pblock, bool fForceProcessing, CDiskBlockPos* dbp)
 {
-    const CChainParams& chainparams = Params();
     // Preliminary checks
     bool checked = CheckBlock(*pblock, state);
 
@@ -2958,9 +2965,8 @@ bool ProcessNewBlock(CValidationState &state, const CNode* pfrom, const CBlock* 
     return true;
 }
 
-bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex * const pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot)
+bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot)
 {
-    const CChainParams& chainparams = Params();
     AssertLockHeld(cs_main);
     assert(pindexPrev && pindexPrev == chainActive.Tip());
     if (fCheckpointsEnabled && !CheckIndexAgainstCheckpoint(pindexPrev, state, chainparams, block.GetHash()))
@@ -3500,7 +3506,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                 // process in case the block isn't known yet
                 if (mapBlockIndex.count(hash) == 0 || (mapBlockIndex[hash]->nStatus & BLOCK_HAVE_DATA) == 0) {
                     CValidationState state;
-                    if (ProcessNewBlock(state, NULL, &block, true, dbp))
+                    if (ProcessNewBlock(state, chainparams, NULL, &block, true, dbp))
                         nLoaded++;
                     if (state.IsError())
                         break;
@@ -3522,7 +3528,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                     head.ToString());
                             CValidationState dummy;
-                            if (ProcessNewBlock(dummy, NULL, &block, true, &it->second))
+                            if (ProcessNewBlock(dummy, chainparams, NULL, &block, true, &it->second))
                             {
                                 nLoaded++;
                                 queue.push_back(block.GetHash());
@@ -4205,6 +4211,12 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return error("message inv size() = %u", vInv.size());
         }
 
+        bool fBlocksOnly = GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY);
+
+        // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistalwaysrelay is true
+        if (pfrom->fWhitelisted && GetBoolArg("-whitelistalwaysrelay", DEFAULT_WHITELISTALWAYSRELAY))
+            fBlocksOnly = false;
+
         LOCK(cs_main);
 
         std::vector<CInv> vToFetch;
@@ -4218,9 +4230,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
             bool fAlreadyHave = AlreadyHave(inv);
             LogPrint("net", "got inv: %s  %s peer=%d\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom->id);
-
-            if (!fAlreadyHave && !fImporting && !fReindex && inv.type != MSG_BLOCK && !GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY))
-                pfrom->AskFor(inv);
 
             if (inv.type == MSG_BLOCK) {
                 UpdateBlockAvailability(pfrom->GetId(), inv.hash);
@@ -4244,6 +4253,13 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     }
                     LogPrint("net", "getheaders (%d) %s to peer=%d\n", pindexBestHeader->nHeight, inv.hash.ToString(), pfrom->id);
                 }
+            }
+            else
+            {
+                if (fBlocksOnly)
+                    LogPrint("net", "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(), pfrom->id);
+                else if (!fAlreadyHave && !fImporting && !fReindex)
+                    pfrom->AskFor(inv);
             }
 
             // Track requests for our stuff
@@ -4369,6 +4385,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
     else if (strCommand == "tx")
     {
+        // Stop processing the transaction early if
+        // We are in blocks only mode and peer is either not whitelisted or whitelistalwaysrelay is off
+        if (GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY) && (!pfrom->fWhitelisted || !GetBoolArg("-whitelistalwaysrelay", DEFAULT_WHITELISTALWAYSRELAY)))
+        {
+            LogPrint("net", "transaction sent in violation of protocol peer=%d\n", pfrom->id);
+            return true;
+        }
+
         vector<uint256> vWorkQueue;
         vector<uint256> vEraseQueue;
         CTransaction tx;
@@ -4562,7 +4586,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         // Such an unrequested block may still be processed, subject to the
         // conditions in AcceptBlock().
         bool forceProcessing = pfrom->fWhitelisted && !IsInitialBlockDownload();
-        ProcessNewBlock(state, pfrom, &block, forceProcessing, NULL);
+        ProcessNewBlock(state, chainparams, pfrom, &block, forceProcessing, NULL);
         int nDoS;
         if (state.IsInvalid(nDoS)) {
             assert (state.GetRejectCode() < REJECT_INTERNAL); // Blocks are never rejected with internal reject codes
