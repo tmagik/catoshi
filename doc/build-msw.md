@@ -1,83 +1,26 @@
 WINDOWS BUILD NOTES
 ===================
 
-See [readme-qt.md](readme-qt.md) for instructions on building Bitcoin-Qt, the
-graphical user interface.
+At this point, the easiest way to build windows is to install a debian 8.0
+VM in virtualbox, and then run:
 
-Compilers Supported
--------------------
-TODO: What works?
-Note: releases are cross-compiled using mingw running on Linux.
-
-
-Dependencies
-------------
-Libraries you need to download separately and build:
-
-	name            default path               download
-	--------------------------------------------------------------------------------------------------------------------
-	OpenSSL         \openssl-1.0.1c-mgw        http://www.openssl.org/source/
-	Berkeley DB     \db-4.8.30.NC-mgw          http://www.oracle.com/technology/software/products/berkeley-db/index.html
-	Boost           \boost-1.50.0-mgw          http://www.boost.org/users/download/
-	miniupnpc       \miniupnpc-1.6-mgw         http://miniupnp.tuxfamily.org/files/
-
-Their licenses:
-
-	OpenSSL        Old BSD license with the problematic advertising requirement
-	Berkeley DB    New BSD license with additional requirement that linked software must be free open source
-	Boost          MIT-like license
-	miniupnpc      New (3-clause) BSD license
-
-Versions used in this release:
-
-	OpenSSL      1.0.1c
-	Berkeley DB  4.8.30.NC
-	Boost        1.50.0
-	miniupnpc    1.6
+hg clone https://bitbucket.org/tmagik/catoshi
+git clone https://github.com/mxe/mxe.git
+cd mxe
+make db qtbase boost openssl
+cd ../
+mkdir build-windows
+cd build-windows
+(might have to add mxe tools to path)
+../mxe/usr/bin/i686-w64-mingw32.static-qmake-qt5 ../catoshi/codecoin.pro
+make
 
 
-OpenSSL
--------
-MSYS shell:
 
-un-tar sources with MSYS 'tar xfz' to avoid issue with symlinks (OpenSSL ticket 2377)
-change 'MAKE' env. variable from 'C:\MinGW32\bin\mingw32-make.exe' to '/c/MinGW32/bin/mingw32-make.exe'
+### WARNING: ###
+Using MXE may result in using versions of openssl or db that have various
+issues. See
+https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-July/009697.html
 
-	cd /c/openssl-1.0.1c-mgw
-	./config
-	make
-
-Berkeley DB
------------
-MSYS shell:
-
-	cd /c/db-4.8.30.NC-mgw/build_unix
-	sh ../dist/configure --enable-mingw --enable-cxx
-	make
-
-Boost
------
-DOS prompt:
-
-	downloaded boost jam 3.1.18
-	cd \boost-1.50.0-mgw
-	bjam toolset=gcc --build-type=complete stage
-
-MiniUPnPc
----------
-UPnP support is optional, make with `USE_UPNP=` to disable it.
-
-MSYS shell:
-
-	cd /c/miniupnpc-1.6-mgw
-	make -f Makefile.mingw
-	mkdir miniupnpc
-	cp *.h miniupnpc/
-
-Bitcoin
--------
-DOS prompt:
-
-	cd \bitcoin\src
-	mingw32-make -f makefile.mingw
-	strip bitcoind.exe
+TODO: clone mxe and modify openssl/db/etc to our liking, and add a catoshi
+garget
