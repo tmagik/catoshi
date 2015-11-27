@@ -129,6 +129,8 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool fPri
 
     result.push_back(Pair("tx", txinfo));
     result.push_back(Pair("signature", HexStr(block.vchBlockSig.begin(), block.vchBlockSig.end())));
+#elif defined(BRAND_grantcoin)
+    	result.push_back(Pair("signature", HexStr(block.vchBlockSig.begin(), block.vchBlockSig.end())));
 #endif /* PPCCOINSTAKE */
 	return result;
 }
