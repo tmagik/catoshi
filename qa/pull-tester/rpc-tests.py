@@ -69,6 +69,7 @@ if EXEEXT == ".exe" and "-win" not in opts:
 testScripts = [
     'wallet.py',
     'listtransactions.py',
+    'receivedby.py',
     'mempool_resurrect_test.py',
     'txn_doublespend.py --mineblock',
     'txn_clone.py',
@@ -104,15 +105,14 @@ testScriptsExt = [
     'forknotify.py',
     'invalidateblock.py',
     'keypool.py',
-    'receivedby.py',
 #    'rpcbind_test.py', #temporary, bug in libevent, see #6655
-#    'script_test.py', #used for manual comparison of 2 binaries
     'smartfees.py',
     'maxblocksinflight.py',
     'invalidblockrequest.py',
     'p2p-acceptblock.py',
     'mempool_packages.py',
     'maxuploadtarget.py',
+    'replace-by-fee.py',
 ]
 
 #Enable ZMQ tests
