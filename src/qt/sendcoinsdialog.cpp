@@ -531,7 +531,7 @@ void SendCoinsDialog::processSendCoinsReturn(const WalletModel::SendCoinsReturn 
         msgParams.second = CClientUIInterface::MSG_ERROR;
         break;
     case WalletModel::AbsurdFee:
-        msgParams.first = tr("A fee higher than %1 is considered an absurdly high fee.").arg(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), 10000000));
+        msgParams.first = tr("A fee higher than %1 is considered an absurdly high fee.").arg(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), maxTxFee));
         break;
     case WalletModel::PaymentRequestExpired:
         msgParams.first = tr("Payment request expired.");
@@ -633,7 +633,8 @@ void SendCoinsDialog::updateSmartFeeLabel()
         return;
 
     int nBlocksToConfirm = defaultConfirmTarget - ui->sliderSmartFee->value();
-    CFeeRate feeRate = mempool.estimateFee(nBlocksToConfirm);
+    int estimateFoundAtBlocks = nBlocksToConfirm;
+    CFeeRate feeRate = mempool.estimateSmartFee(nBlocksToConfirm, &estimateFoundAtBlocks);
     if (feeRate <= CFeeRate(0)) // not enough data => minfee
     {
         ui->labelSmartFee->setText(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), CWallet::GetRequiredFee(1000)) + "/kB");
@@ -644,7 +645,7 @@ void SendCoinsDialog::updateSmartFeeLabel()
     {
         ui->labelSmartFee->setText(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), feeRate.GetFeePerK()) + "/kB");
         ui->labelSmartFee2->hide();
-        ui->labelFeeEstimation->setText(tr("Estimated to begin confirmation within %n block(s).", "", nBlocksToConfirm));
+        ui->labelFeeEstimation->setText(tr("Estimated to begin confirmation within %n block(s).", "", estimateFoundAtBlocks));
     }
 
     updateFeeMinimizedLabel();
