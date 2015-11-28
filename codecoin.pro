@@ -65,9 +65,10 @@ contains(COIN_BRAND, bluecoin) {
 }}}}}}}
 
 #Set up a symlink so QT designer doesn't get confused when editing UI files
-!windows:system("ln -sf $$TARGET/codecoin.qrc src/qt/res/codecoin.qrc")
+#will error on windows build without cygwin.
+system("ln -sf $$TARGET/codecoin.qrc src/qt/res/codecoin.qrc")
 #same thing for icons
-!windows:system("ln -sf $$TARGET/icons src/qt/res/icons")
+system("ln -sf $$TARGET/icons src/qt/res/icons")
 
 # for boost 1.37, add -mt to the boost libraries
 # use: qmake BOOST_LIB_SUFFIX=-mt
