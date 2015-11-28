@@ -89,8 +89,8 @@ win32 {
     BOOST_LIB_PATH=C:/deps/boost1.55-1.55.0+dfsg.orig/stage/lib
     BDB_INCLUDE_PATH=C:/deps/db5.3-5.3.28/build_unix
     BDB_LIB_PATH=C:/deps/db5.3-5.3.28/build_unix
-    OPENSSL_INCLUDE_PATH=C:/deps/openssl-1.0.2d/include
-    OPENSSL_LIB_PATH=C:/deps/openssl-1.0.2d
+    OPENSSL_INCLUDE_PATH=
+    OPENSSL_LIB_PATH=
     MINIUPNPC_INCLUDE_PATH=C:/deps/
     MINIUPNPC_LIB_PATH=C:/deps/miniupnpc
 }
@@ -141,7 +141,7 @@ contains(USE_QRCODE, 1) {
 #  or: qmake "USE_UPNP=0" (disabled by default)
 #  or: qmake "USE_UPNP=-" (not supported)
 # miniupnpc (http://miniupnp.free.fr/files/) must be installed for support
-macx || windows {
+macx {
 message(FIXME WARNING upnp support disabled for now!!!)
 USE_UPNP=-
 }
@@ -155,10 +155,11 @@ contains(USE_UPNP, -) {
     count(USE_UPNP, 0) {
         USE_UPNP=1
     }
-    DEFINES += USE_UPNP=$$USE_UPNP STATICLIB
+    DEFINES += USE_UPNP=$$USE_UPNP 
     INCLUDEPATH += $$MINIUPNPC_INCLUDE_PATH
     LIBS += $$join(MINIUPNPC_LIB_PATH,,-L,) -lminiupnpc
     win32:LIBS += -liphlpapi
+    win32:DEFINES += MINIUPNP_STATICLIB
 }
 
 # use: qmake "USE_DBUS=1"
