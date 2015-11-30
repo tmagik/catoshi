@@ -91,6 +91,7 @@ testScripts = [
     'p2p-fullblocktest.py',
     'blockchain.py',
     'disablewallet.py',
+    'sendheaders.py',
 ]
 testScriptsExt = [
     'bip65-cltv.py',
@@ -112,6 +113,7 @@ testScriptsExt = [
     'p2p-acceptblock.py',
     'mempool_packages.py',
     'maxuploadtarget.py',
+    'replace-by-fee.py',
 ]
 
 #Enable ZMQ tests
