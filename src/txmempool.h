@@ -63,9 +63,10 @@ private:
     size_t nModSize; //! ... and modified size for priority
     size_t nUsageSize; //! ... and total memory usage
     int64_t nTime; //! Local time when entering the mempool
-    double dPriority; //! Priority when entering the mempool
-    unsigned int nHeight; //! Chain height when entering the mempool
+    double entryPriority; //! Priority when entering the mempool
+    unsigned int entryHeight; //! Chain height when entering the mempool
     bool hadNoDependencies; //! Not dependent on any other txs when it entered the mempool
+    CAmount inChainInputValue; //! Sum of all txin values that are already in blockchain
 
     // Information about descendants of this transaction that are in the
     // mempool; if we remove this transaction we must remove all of these
@@ -78,15 +79,20 @@ private:
 
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
-                    int64_t _nTime, double _dPriority, unsigned int _nHeight, bool poolHasNoInputsOf = false);
+                    int64_t _nTime, double _entryPriority, unsigned int _entryHeight,
+                    bool poolHasNoInputsOf, CAmount _inChainInputValue);
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
     const CTransaction& GetTx() const { return this->tx; }
+    /**
+     * Fast calculation of lower bound of current priority as update
+     * from entry priority. Only inputs that were originally in-chain will age.
+     */
     double GetPriority(unsigned int currentHeight) const;
     const CAmount& GetFee() const { return nFee; }
     size_t GetTxSize() const { return nTxSize; }
     int64_t GetTime() const { return nTime; }
-    unsigned int GetHeight() const { return nHeight; }
+    unsigned int GetHeight() const { return entryHeight; }
     bool WasClearAtEntry() const { return hadNoDependencies; }
     size_t DynamicMemoryUsage() const { return nUsageSize; }
 
@@ -420,6 +426,11 @@ public:
      */
     bool CalculateMemPoolAncestors(const CTxMemPoolEntry &entry, setEntries &setAncestors, uint64_t limitAncestorCount, uint64_t limitAncestorSize, uint64_t limitDescendantCount, uint64_t limitDescendantSize, std::string &errString, bool fSearchForParents = true);
 
+    /** Populate setDescendants with all in-mempool descendants of hash.
+     *  Assumes that setDescendants includes all in-mempool descendants of anything
+     *  already in it.  */
+    void CalculateDescendants(txiter it, setEntries &setDescendants);
+
     /** The minimum fee to get into the mempool, which may itself not be enough
       *  for larger-sized transactions.
       *  The minReasonableRelayFee constructor arg is used to bound the time it
@@ -454,8 +465,20 @@ public:
 
     bool lookup(uint256 hash, CTransaction& result) const;
 
+    /** Estimate fee rate needed to get into the next nBlocks
+     *  If no answer can be given at nBlocks, return an estimate
+     *  at the lowest number of blocks where one can be given
+     */
+    CFeeRate estimateSmartFee(int nBlocks, int *answerFoundAtBlocks = NULL) const;
+
     /** Estimate fee rate needed to get into the next nBlocks */
     CFeeRate estimateFee(int nBlocks) const;
+
+    /** Estimate priority needed to get into the next nBlocks
+     *  If no answer can be given at nBlocks, return an estimate
+     *  at the lowest number of blocks where one can be given
+     */
+    double estimateSmartPriority(int nBlocks, int *answerFoundAtBlocks = NULL) const;
 
     /** Estimate priority needed to get into the next nBlocks */
     double estimatePriority(int nBlocks) const;
@@ -493,10 +516,6 @@ private:
     void UpdateForRemoveFromMempool(const setEntries &entriesToRemove);
     /** Sever link between specified transaction and direct children. */
     void UpdateChildrenForRemoval(txiter entry);
-    /** Populate setDescendants with all in-mempool descendants of hash.
-     *  Assumes that setDescendants includes all in-mempool descendants of anything
-     *  already in it.  */
-    void CalculateDescendants(txiter it, setEntries &setDescendants);
 
     /** Before calling removeUnchecked for a given transaction,
      *  UpdateForRemoveFromMempool must be called on the entire (dependent) set
