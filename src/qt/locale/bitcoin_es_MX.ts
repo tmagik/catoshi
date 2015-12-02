@@ -193,6 +193,9 @@
     </message>
 </context>
 <context>
+    <name>BanTableModel</name>
+    </context>
+<context>
     <name>BitcoinGUI</name>
     <message>
         <source>Sign &amp;message...</source>
@@ -671,10 +674,6 @@
     <message>
         <source>Copy change</source>
         <translation>copiar cambio</translation>
-    </message>
-    <message>
-        <source>Total Amount %1 (= %2)</source>
-        <translation>Monto total %1(=%2)</translation>
     </message>
     <message>
         <source>or</source>
