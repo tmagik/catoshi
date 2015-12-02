@@ -1550,14 +1550,6 @@
         <translation>Siste Mottatte</translation>
     </message>
     <message>
-        <source>Bytes Sent</source>
-        <translation>Byte Sendt</translation>
-    </message>
-    <message>
-        <source>Bytes Received</source>
-        <translation>Byte Mottatt</translation>
-    </message>
-    <message>
         <source>Ping Time</source>
         <translation>Ping-tid</translation>
     </message>
@@ -2070,6 +2062,10 @@
         <translation>Kopier veksel</translation>
     </message>
     <message>
+        <source>Total Amount %1</source>
+        <translation>Totalt Beløp %1</translation>
+    </message>
+    <message>
         <source>or</source>
         <translation>eller</translation>
     </message>
@@ -2101,17 +2097,13 @@
         <source>Payment request expired.</source>
         <translation>Betalingsetterspørringen har utløpt.</translation>
     </message>
+    <message>
+        <source>Pay only the required fee of %1</source>
+        <translation>Betal kun påkrevd gebyr på %1</translation>
+    </message>
     <message numerus="yes">
         <source>Estimated to begin confirmation within %n block(s).</source>
         <translation><numerusform>Anslått til å begynne bekreftelse innen %n blokk.</numerusform><numerusform>Anslått til å begynne bekreftelse innen %n blokker.</numerusform></translation>
-    </message>
-    <message>
-        <source>Pay only the minimum fee of %1</source>
-        <translation>Betal kun minimumsgebyret på %1</translation>
-    </message>
-    <message>
-        <source>Total Amount %1&lt;span style='font-size:10pt;font-weight:normal;'&gt;&lt;br /&gt;(=%2)&lt;/span&gt;</source>
-        <translation>Totalt Beløp %1&lt;span style='font-size:10pt;font-weight:normal;'&gt;&lt;br /&gt;(=%2)&lt;/span&gt;</translation>
     </message>
     <message>
         <source>The recipient address is not valid. Please recheck.</source>
@@ -2745,6 +2737,10 @@
         <translation>Kopier transaksjons-ID</translation>
     </message>
     <message>
+        <source>Copy raw transaction</source>
+        <translation>Kopier råtransaksjon</translation>
+    </message>
+    <message>
         <source>Edit label</source>
         <translation>Rediger merkelapp</translation>
     </message>
@@ -2892,10 +2888,6 @@
         <translation>Ta imot kommandolinje- og JSON-RPC-kommandoer</translation>
     </message>
     <message>
-        <source>Fees (in %s/kB) smaller than this are considered zero fee for relaying (default: %s)</source>
-        <translation>Gebyrer (i %s/kB) mindre enn dette vil anses som gebyrfrie (for videresending) (standard: %s)</translation>
-    </message>
-    <message>
         <source>If &lt;category&gt; is not supplied or if &lt;category&gt; = 1, output all debugging information.</source>
         <translation>Hvis &lt;category&gt; ikke er oppgitt eller hvis &lt;category&gt; = 1, ta ut all informasjon for feilsøking.</translation>
     </message>
@@ -3016,10 +3008,6 @@
         <translation>&lt;category&gt; kan være:</translation>
     </message>
     <message>
-        <source>Attempt to recover private keys from a corrupt wallet.dat</source>
-        <translation>Forsøk å berge private nøkler fra en korrupt wallet.dat</translation>
-    </message>
-    <message>
         <source>Block creation options:</source>
         <translation>Valg for opprettelse av blokker:</translation>
     </message>
@@ -3057,11 +3045,11 @@
     </message>
     <message>
         <source>Enable publish raw block in &lt;address&gt;</source>
-        <translation>Slå på publish raw block i &lt;address&gt;</translation>
+        <translation>Slå på publisering av råblokk i &lt;address&gt;</translation>
     </message>
     <message>
         <source>Enable publish raw transaction in &lt;address&gt;</source>
-        <translation>Slå på publish raw transaction i &lt;address&gt;</translation>
+        <translation>Slå på publisering av råtransaksjon i &lt;address&gt;</translation>
     </message>
     <message>
         <source>Error initializing block database</source>
@@ -3176,10 +3164,6 @@
         <translation>Du må gjenoppbygge databasen med å bruke -reindex for å endre -txindex</translation>
     </message>
     <message>
-        <source>Imports blocks from external blk000??.dat file</source>
-        <translation>Importerer blokker fra ekstern fil blk000??.dat</translation>
-    </message>
-    <message>
         <source>Allow JSON-RPC connections from specified source. Valid for &lt;ip&gt; are a single IP (e.g. 1.2.3.4), a network/netmask (e.g. 1.2.3.4/255.255.255.0) or a network/CIDR (e.g. 1.2.3.4/24). This option can be specified multiple times</source>
         <translation>Tillat JSON-RPC-tilkoblinger fra angitt kilde. Gyldig for &lt;ip&gt; er en enkelt IP (f. eks. 1.2.3.4), et nettverk/nettmaske (f. eks. 1.2.3.4/255.255.255.0) eller et nettverk/CIDR (f. eks. 1.2.3.4/24). Dette alternativet kan angis flere ganger</translation>
     </message>
@@ -3210,6 +3194,10 @@
     <message>
         <source>Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)</source>
         <translation>Utfør kommando når et relevant varsel er mottatt eller vi ser en veldig lang gaffel (%s i kommando er erstattet med melding)</translation>
+    </message>
+    <message>
+        <source>Fees (in %s/kB) smaller than this are considered zero fee for relaying, mining and transaction creation (default: %s)</source>
+        <translation>Gebyrer (i %s/kB) mindre enn dette anses som null gebyr for videresending, graving og laging av transaksjoner (standardverdi: %s)</translation>
     </message>
     <message>
         <source>If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks (default: %u)</source>
@@ -3268,6 +3256,18 @@
         <translation>Aktiverer beste kjede...</translation>
     </message>
     <message>
+        <source>Always relay transactions received from whitelisted peers (default: %d)</source>
+        <translation>Alltid videresend transaksjoner mottatt fra hvitlistede noder (standardverdi: %d)</translation>
+    </message>
+    <message>
+        <source>Attempt to recover private keys from a corrupt wallet.dat on startup</source>
+        <translation>Forsøk å berge private nøkler fra en korrupt wallet.dat ved oppstart</translation>
+    </message>
+    <message>
+        <source>Automatically create Tor hidden service (default: %d)</source>
+        <translation>Automatisk opprette Tor skjult tjeneste (standardverdi: %d)</translation>
+    </message>
+    <message>
         <source>Cannot resolve -whitebind address: '%s'</source>
         <translation>Kan ikke løse -whitebind-adresse: '%s'</translation>
     </message>
@@ -3290,6 +3290,10 @@
     <message>
         <source>Error reading from database, shutting down.</source>
         <translation>Feil ved lesing fra database, stenger ned.</translation>
+    </message>
+    <message>
+        <source>Imports blocks from external blk000??.dat file on startup</source>
+        <translation>Importerer blokker fra ekstern fil blk000??.dat ved oppstart</translation>
     </message>
     <message>
         <source>Information</source>
@@ -3348,6 +3352,10 @@
         <translation>Reduserer -maxconnections fra %d til %d, pga. systembegrensninger.</translation>
     </message>
     <message>
+        <source>Rescan the block chain for missing wallet transactions on startup</source>
+        <translation>Se gjennom blokkjeden etter manglende lommeboktransaksjoner ved oppstart</translation>
+    </message>
+    <message>
         <source>Send trace/debug info to console instead of debug.log file</source>
         <translation>Send spor-/feilsøkingsinformasjon til konsollen istedenfor filen debug.log</translation>
     </message>
@@ -3392,6 +3400,14 @@
         <translation>Dette er eksperimentell programvare.</translation>
     </message>
     <message>
+        <source>Tor control port password (default: empty)</source>
+        <translation>Passord for Tor-kontrollport (standardverdi: tom)</translation>
+    </message>
+    <message>
+        <source>Tor control port to use if onion listening enabled (default: %s)</source>
+        <translation>Tor-kontrollport å bruke hvis onion-lytting er aktivert (standardverdi: %s)</translation>
+    </message>
+    <message>
         <source>Transaction amount too small</source>
         <translation>Transaksjonen er for liten</translation>
     </message>
@@ -3416,6 +3432,10 @@
         <translation>Kan ikke binde til %s på denne datamaskinen (binding returnerte feilen %s)</translation>
     </message>
     <message>
+        <source>Upgrade wallet to latest format on startup</source>
+        <translation>Oppgrader lommebok til nyeste format ved oppstart</translation>
+    </message>
+    <message>
         <source>Username for JSON-RPC connections</source>
         <translation>Brukernavn for JSON-RPC forbindelser</translation>
     </message>
@@ -3428,16 +3448,16 @@
         <translation>Advarsel</translation>
     </message>
     <message>
+        <source>Whether to operate in a blocks only mode (default: %u)</source>
+        <translation>Hvorvidt å operere i modus med kun blokker (standardverdi: %u)</translation>
+    </message>
+    <message>
         <source>Zapping all transactions from wallet...</source>
         <translation>Zapper alle transaksjoner fra lommeboken...</translation>
     </message>
     <message>
         <source>ZeroMQ notification options:</source>
         <translation>Valg for ZeroMQ-meldinger:</translation>
-    </message>
-    <message>
-        <source>on startup</source>
-        <translation>ved oppstart</translation>
     </message>
     <message>
         <source>wallet.dat corrupt, salvage failed</source>
@@ -3450,14 +3470,6 @@
     <message>
         <source>Execute command when the best block changes (%s in cmd is replaced by block hash)</source>
         <translation>Utfør kommando når beste blokk endrer seg (%s i kommandoen erstattes med blokkens hash)</translation>
-    </message>
-    <message>
-        <source>Upgrade wallet to latest format</source>
-        <translation>Oppgrader lommebok til nyeste format</translation>
-    </message>
-    <message>
-        <source>Rescan the block chain for missing wallet transactions</source>
-        <translation>Se gjennom blokkjeden etter manglende lommeboktransaksjoner</translation>
     </message>
     <message>
         <source>This help message</source>
