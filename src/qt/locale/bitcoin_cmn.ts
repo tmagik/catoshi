@@ -1,12 +1,19 @@
 <TS language="cmn" version="2.1">
 <context>
     <name>AddressBookPage</name>
+    <message>
+        <source>Create a new address</source>
+        <translation>创建新地址</translation>
+    </message>
     </context>
 <context>
     <name>AddressTableModel</name>
     </context>
 <context>
     <name>AskPassphraseDialog</name>
+    </context>
+<context>
+    <name>BanTableModel</name>
     </context>
 <context>
     <name>BitcoinGUI</name>

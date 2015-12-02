@@ -37,8 +37,8 @@ namespace GUIUtil
     QString dateTimeStr(const QDateTime &datetime);
     QString dateTimeStr(qint64 nTime);
 
-    // Render Bitcoin addresses in monospace font
-    QFont bitcoinAddressFont();
+    // Return a monospace font
+    QFont fixedPitchFont();
 
     // Set up widgets for address and amounts
     void setupAddressWidget(QValidatedLineEdit *widget, QWidget *parent);
@@ -169,7 +169,7 @@ namespace GUIUtil
             void setViewHeaderResizeMode(int logicalIndex, QHeaderView::ResizeMode resizeMode);
             void resizeColumn(int nColumnIndex, int width);
 
-        private slots:
+        private Q_SLOTS:
             void on_sectionResized(int logicalIndex, int oldSize, int newSize);
             void on_geometriesChanged();
     };
