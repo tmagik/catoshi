@@ -350,7 +350,7 @@ Value getworkex(const Array& params, bool fHelp)
 			CDataStream(coinbase, SER_NETWORK, PROTOCOL_VERSION) >> pblock->vtx[0];
 
 		pblock->hashMerkleRoot = pblock->BuildMerkleTree();
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 		if (!pblock->SignBlock(*pwalletMain))
 			throw JSONRPCError(-100, "Unable to sign block, wallet locked?");
 #endif
@@ -468,6 +468,10 @@ Value getwork(const Array& params, bool fHelp)
 		pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
 		assert(pwalletMain != NULL);
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+		if (!pblock->SignBlock(*pwalletMain))
+			throw JSONRPCError(-100, "Unable to sign block, wallet locked?");
+#endif
 		return CheckWork(pblock, *pwalletMain, *pMiningKey);
 	}
 }
