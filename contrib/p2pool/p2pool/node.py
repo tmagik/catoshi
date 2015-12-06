@@ -145,6 +145,9 @@ class P2PNode(p2p.Node):
         
         @self.node.tracker.verified.added.watch
         def _(share):
+            if share.timestamp < share.min_header['timestamp']:
+                return
+
             if not (share.pow_hash <= share.header['bits'].target):
                 return
             
@@ -195,7 +198,11 @@ class Node(object):
         # PEER WORK
         
         self.best_block_header = variable.Variable(None)
+        self.pow_subsidy = 0
         def handle_header(new_header):
+            self.pow_bits = self.bitcoind_work.value['bits']
+            self.pow_subsidy = self.bitcoind_work.value['subsidy']
+
             # check that header matches current target
             if not (self.net.PARENT.POW_FUNC(bitcoin_data.block_header_type.pack(new_header)) <= self.bitcoind_work.value['bits'].target):
                 return
@@ -245,6 +252,10 @@ class Node(object):
         # add p2p transactions from bitcoind to known_txs
         @self.factory.new_tx.watch
         def _(tx):
+            if tx.timestamp > time.time() + 3600:
+                return
+            if tx.timestamp > self.bitcoind_work.value['txn_timestamp']:
+                self.bitcoind_work.value['txn_timestamp'] = tx.timestamp
             new_known_txs = dict(self.known_txs_var.value)
             new_known_txs[bitcoin_data.hash256(bitcoin_data.tx_type.pack(tx))] = tx
             self.known_txs_var.set(new_known_txs)

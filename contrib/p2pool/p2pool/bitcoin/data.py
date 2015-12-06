@@ -15,6 +15,9 @@ def hash160(data):
         return 0x384f570ccc88ac2e7e00b026d1690a3fca63dd0 # hack for people who don't have openssl - this is the only value that p2pool ever hashes
     return pack.IntType(160).unpack(hashlib.new('ripemd160', hashlib.sha256(data).digest()).digest())
 
+def scrypt(data):
+    return pack.IntType(256).unpack(__import__('ltc_scrypt').getPoWHash(data))
+
 class ChecksummedType(pack.Type):
     def __init__(self, inner, checksum_func=lambda data: hashlib.sha256(hashlib.sha256(data).digest()).digest()[:4]):
         self.inner = inner
@@ -91,8 +94,26 @@ address_type = pack.ComposedType([
     ('port', pack.IntType(16, 'big')),
 ])
 
+tx_type_notimestamp = pack.ComposedType([
+    ('version', pack.IntType(32)),
+    ('tx_ins', pack.ListType(pack.ComposedType([
+        ('previous_output', pack.PossiblyNoneType(dict(hash=0, index=2**32 - 1), pack.ComposedType([
+            ('hash', pack.IntType(256)),
+            ('index', pack.IntType(32)),
+        ]))),
+        ('script', pack.VarStrType()),
+        ('sequence', pack.PossiblyNoneType(2**32 - 1, pack.IntType(32))),
+    ]))),
+    ('tx_outs', pack.ListType(pack.ComposedType([
+        ('value', pack.IntType(64)),
+        ('script', pack.VarStrType()),
+    ]))),
+    ('lock_time', pack.IntType(32)),
+])
+
 tx_type = pack.ComposedType([
     ('version', pack.IntType(32)),
+    ('timestamp', pack.IntType(32)), # txn timestamp
     ('tx_ins', pack.ListType(pack.ComposedType([
         ('previous_output', pack.PossiblyNoneType(dict(hash=0, index=2**32 - 1), pack.ComposedType([
             ('hash', pack.IntType(256)),
@@ -128,9 +149,15 @@ block_header_type = pack.ComposedType([
     ('nonce', pack.IntType(32)),
 ])
 
+block_type_nosignature = pack.ComposedType([
+    ('header', block_header_type),
+    ('txs', pack.ListType(tx_type)),
+])
+
 block_type = pack.ComposedType([
     ('header', block_header_type),
     ('txs', pack.ListType(tx_type)),
+    ('signature', pack.VarStrType()), # header signature field
 ])
 
 # merged mining
@@ -261,6 +288,16 @@ def address_to_pubkey_hash(address, net):
     if x['version'] != net.ADDRESS_VERSION:
         raise ValueError('address not for this net!')
     return x['pubkey_hash']
+
+def address_to_script(address, net):
+    x = human_address_type.unpack(base58_decode(address))
+
+    print x['pubkey_hash']
+
+    if x['version'] != net.ADDRESS_VERSION:
+        raise ValueError('address not for this net!')
+    return '\x76\xa9' + ('\x14' + pack.IntType(160).pack(x['pubkey_hash'])) + '\x88\xac'
+
 
 # transactions
 

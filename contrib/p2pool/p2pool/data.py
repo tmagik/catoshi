@@ -139,6 +139,8 @@ class Share(object):
                 this = tx_hash_to_this[tx_hash]
             else:
                 if known_txs is not None:
+                    if known_txs[tx_hash]['timestamp'] > desired_timestamp - 30:
+                        continue
                     this_size = bitcoin_data.tx_type.packed_size(known_txs[tx_hash])
                     if new_transaction_size + this_size > 50000: # only allow 50 kB of new txns/share
                         break
@@ -190,6 +192,9 @@ class Share(object):
         
         gentx = dict(
             version=1,
+            # coinbase timestamp must be older than share/block timestamp
+            # maybe there are more elegant solution, but this hack works quite well for now
+            timestamp=share_info['timestamp'],
             tx_ins=[dict(
                 previous_output=None,
                 sequence=None,
@@ -369,7 +374,7 @@ class Share(object):
         other_txs = self._get_other_txs(tracker, known_txs)
         if other_txs is None:
             return None # not all txs present
-        return dict(header=self.header, txs=[self.check(tracker)] + other_txs)
+        return dict(header=self.header, txs=[self.check(tracker)] + other_txs, signature='')
 
 
 class WeightsSkipList(forest.TrackerSkipList):
