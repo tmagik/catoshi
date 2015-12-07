@@ -2195,7 +2195,11 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 #endif
 
 	// Check timestamp TODO: should this use nMaxClockDrift, or something else?
+#if defined(FEATURE_CFG_MAXFUTURE)
+	if (GetBlockTime() > GetAdjustedTime() + nMaxFutureTime)
+#else
 	if (GetBlockTime() > GetAdjustedTime() + nMaxClockDrift)
+#endif
 		return state.Invalid(error("CheckBlock() : block timestamp too far in the future"));
 
 	#warning "debug for givecoin"

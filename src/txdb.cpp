@@ -248,7 +248,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 					setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
 #elif defined(FEATURE_MONEYSUPPLY)
 				pindexNew->nMoneySupply   = diskindex.nMoneySupply;
-#if 1
+#if 0
 				printf("load nHeight=%d moneysupply=%" PRId64 "\n", pindexNew->nHeight, pindexNew->nMoneySupply);
 #endif
 #endif

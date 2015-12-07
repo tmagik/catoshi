@@ -671,11 +671,11 @@ bool AppInit2(boost::thread_group& threadGroup)
 		if (nNewTimeout > 0 && nNewTimeout < 600000)
 			nConnectTimeout = nNewTimeout;
 	}
-#if defined(ENABLE_MAXFUTURE)
+#if defined(FEATURE_CFG_MAXFUTURE)
 	if (mapArgs.count("-maxfuture"))
 	{
-		int nNewFuture = GetArg("-maxfuture", 30);
-		if (nNewFuture > 0 && nNewFuture < 6000){
+		int nNewFuture = GetArg("-maxfuture", 7200);
+		if (nNewFuture > 0 && nNewFuture < 20000){
 			nMaxFutureTime = nNewFuture;
 			InitWarning(strprintf(_("maxfuture (nMaxFutureTime) set to %d"), nMaxFutureTime));
 		}

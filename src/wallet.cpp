@@ -1121,7 +1121,7 @@ int64_t CWallet::GetNewMint() const
 }
 #endif
 
-bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs,
+bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, const uint32_t nSpendTime, int nConfMine, int nConfTheirs,
 	vector<COutput> vCoins, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const
 //#else
 //bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, int nConfMine, int nConfTheirs, vector<COutput> vCoins,
@@ -1231,8 +1231,8 @@ bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, 
     return true;
 }
 
-bool CWallet::SelectCoins(int64_t nTargetValue, unsigned int nSpendTime, set<pair<const CWalletTx*,
-		unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl* coinControl) const
+bool CWallet::SelectCoins(int64_t nTargetValue, set<pair<const CWalletTx*, unsigned int> >& setCoinsRet, 
+		int64_t& nValueRet, const CCoinControl* coinControl, const uint32_t nSpendTime) const
 {
     vector<COutput> vCoins;
     AvailableCoins(vCoins, true, coinControl);
@@ -1304,7 +1304,11 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64_t> >& vecSend,
                 // Choose coins to use
                 set<pair<const CWalletTx*,unsigned int> > setCoins;
                 int64_t nValueIn = 0;
-                if (!SelectCoins(nTotalValue, wtxNew.nTime, setCoins, nValueIn, coinControl))
+#if defined(PPCOINSTAKE)
+                if (!SelectCoins(nTotalValue, setCoins, nValueIn, coinControl wtxNew.nTime))
+#else
+                if (!SelectCoins(nTotalValue, setCoins, nValueIn, coinControl))
+#endif
                 {
                     strFailReason = _("Insufficient funds");
                     return false;
@@ -1479,7 +1483,11 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     set<pair<const CWalletTx*,unsigned int> > setCoins;
     vector<const CWalletTx*> vwtxPrev;
     int64_t nValueIn = 0;
-    if (!SelectCoins(nBalance - nReserveBalance, txNew.nTime, setCoins, nValueIn))
+#if defined(PPCOINSTAKE)
+    if (!SelectCoins(nBalance - nReserveBalance, setCoins, nValueIn, NULL, txNew.nTime))
+#else
+    if (!SelectCoins(nBalance - nReserveBalance, setCoins, nValueIn))
+#endif
         return false;
     if (setCoins.empty())
         return false;
