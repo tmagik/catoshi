@@ -27,7 +27,7 @@ inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MO
 static const int COINBASE_MATURITY = 100;
 
 /** Minimum block time spacing (hard limit) **/
-static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
+static const int64_t MINIMUM_BLOCK_SPACING = 30;	// Absolute minimum spacing
 
 /** really only used in rpcmining.cpp **/
 static const int RETARGET_INTERVAL = 15;
@@ -43,12 +43,34 @@ extern const unsigned int nMaxClockDrift;
 #define CUTOFF_POS_BLOCK nCutoff_Pos_Block
 extern const int CUTOFF_POS_BLOCK;
 
+#if defined(FEATURE_SOMEDAY_CodecoinAddress)
+class GivecoinAddress : public CodecoinAddress
+{
+public:
+	enum
+	{
+        PUBKEY_ADDRESS = 15, // Givecoin addresses start with L
+        SCRIPT_ADDRESS = 5,
+        PUBKEY_ADDRESS_TEST = 111,
+        SCRIPT_ADDRESS_TEST = 196,
+	}
+};
+
+typedef GivecoinAddressVisitor CBitcoinAddressVisitor;
+typedef GivecoinAddress CBitcoinAddress;
+#endif
+
+#define FEATURE_MONEYSUPPLY
+#define FEATURE_CFG_MAXFUTURE
+
 #define BRAND "Givecoin"
 #define BRAND_upper "GiveCoin"
 #define BRAND_lower "givecoin"
 #define BRAND_domain "givecoin.org"
 #define BRAND_CODE "GIVE"
 
+#if defined(BRAND_givestake)
 #define PPCOINSTAKE
+#endif
 
 #endif

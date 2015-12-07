@@ -263,27 +263,47 @@ public:
  * Script-hash-addresses have version 5 (or 196 testnet).
  * The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script.
  */
-class CBitcoinAddress;
-class CBitcoinAddressVisitor : public boost::static_visitor<bool>
+class CodecoinAddress;
+class CodecoinAddressVisitor : public boost::static_visitor<bool>
 {
 private:
-	CBitcoinAddress *addr;
+	CodecoinAddress *addr;
 public:
-	CBitcoinAddressVisitor(CBitcoinAddress *addrIn) : addr(addrIn) { }
+	CodecoinAddressVisitor(CodecoinAddress *addrIn) : addr(addrIn) { }
 	bool operator()(const CKeyID &id) const;
 	bool operator()(const CScriptID &id) const;
 	bool operator()(const CNoDestination &no) const;
 };
 
-class CBitcoinAddress : public CBase58Data
+class CodecoinAddress : public CBase58Data
 {
 public:
     enum
     {
+// TODO: put this in codecoin.h
+#if defined(BRAND_bluecoin)
+        PUBKEY_ADDRESS = 26,  // BlueCoin: address begin with 'M'
+        SCRIPT_ADDRESS = 28, 
+        PUBKEY_ADDRESS_TEST = 85,
+        SCRIPT_ADDRESS_TEST = 87,
+#elif defined(BRAND_givecoin) || defined(BRAND_givestake)
+        PUBKEY_ADDRESS = 15, // Givecoin addresses start with L
+        SCRIPT_ADDRESS = 5,
+        PUBKEY_ADDRESS_TEST = 111,
+        SCRIPT_ADDRESS_TEST = 196,
+#elif defined(BRAND_catcoin)
+        PUBKEY_ADDRESS = 21, // Catcoin addresses start with 9, because cats has 9 lives
+        SCRIPT_ADDRESS = 88,
+        PUBKEY_ADDRESS_TEST = 23,
+        SCRIPT_ADDRESS_TEST = 83,
+#elif defined(BRAND_grantcoin) || defined(BRAND_grantstake)
         PUBKEY_ADDRESS = 38,  // grantcoin: addresses begin with 'G'
         SCRIPT_ADDRESS = 97, // grantcoin: addresses begin with 'g'
         PUBKEY_ADDRESS_TEST = 65,  // grantcoin test blockchain: addresses begin with 'T'
         SCRIPT_ADDRESS_TEST = 127, // grantcoin test blockchain: addresses begin with 't'
+#else
+	#error "Your coin does not have base58 address prefixes defined"
+#endif
     };
 
 	bool Set(const CKeyID &id) {
@@ -298,7 +318,7 @@ public:
 
 	bool Set(const CTxDestination &dest)
 	{
-		return boost::apply_visitor(CBitcoinAddressVisitor(this), dest);
+		return boost::apply_visitor(CodecoinAddressVisitor(this), dest);
 	}
 
 	bool IsValid() const
@@ -331,21 +351,21 @@ public:
 		return fExpectTestNet == fTestNet && vchData.size() == nExpectedSize;
 	}
 
-	CBitcoinAddress()
+	CodecoinAddress()
 	{
 	}
 
-	CBitcoinAddress(const CTxDestination &dest)
+	CodecoinAddress(const CTxDestination &dest)
 	{
 		Set(dest);
 	}
 
-	CBitcoinAddress(const std::string& strAddress)
+	CodecoinAddress(const std::string& strAddress)
 	{
 		SetString(strAddress);
 	}
 
-	CBitcoinAddress(const char* pszAddress)
+	CodecoinAddress(const char* pszAddress)
 	{
 		SetString(pszAddress);
 	}
@@ -398,9 +418,12 @@ public:
 	}
 };
 
-bool inline CBitcoinAddressVisitor::operator()(const CKeyID &id) const		   { return addr->Set(id); }
-bool inline CBitcoinAddressVisitor::operator()(const CScriptID &id) const	   { return addr->Set(id); }
-bool inline CBitcoinAddressVisitor::operator()(const CNoDestination &id) const { return false; }
+bool inline CodecoinAddressVisitor::operator()(const CKeyID &id) const		   { return addr->Set(id); }
+bool inline CodecoinAddressVisitor::operator()(const CScriptID &id) const	   { return addr->Set(id); }
+bool inline CodecoinAddressVisitor::operator()(const CNoDestination &id) const { return false; }
+
+typedef CodecoinAddressVisitor CBitcoinAddressVisitor;
+typedef CodecoinAddress CBitcoinAddress;
 
 /** A base58-encoded secret key */
 class CBitcoinSecret : public CBase58Data
@@ -408,8 +431,8 @@ class CBitcoinSecret : public CBase58Data
 public:
 	enum
 	{
-		PRIVKEY_ADDRESS = CBitcoinAddress::PUBKEY_ADDRESS + 128,
-		PRIVKEY_ADDRESS_TEST = CBitcoinAddress::PUBKEY_ADDRESS_TEST + 128,
+		PRIVKEY_ADDRESS = CodecoinAddress::PUBKEY_ADDRESS + 128,
+		PRIVKEY_ADDRESS_TEST = CodecoinAddress::PUBKEY_ADDRESS_TEST + 128,
 	};
 
 	void SetKey(const CKey& vchSecret)

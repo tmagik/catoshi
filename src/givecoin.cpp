@@ -63,10 +63,7 @@ int64_t CTransaction::nMinRelayTxFee = CENT;
  */
 const char *strMainNetDNSSeed[][2] = 
 {
-   // {"weminemnc.com", "dnsseed.weminemnc.com"},
-   {"testrelay.com", "givecoin.no-ip.biz"},
-   {"primarySEED.com", "5.250.177.28"},
-   {"givecoinSecondarySeed.com", "66.172.12.54"},
+   {"xtc.inter.com", "xtc.inter.com"},
    {NULL, NULL}
 };
 
@@ -145,8 +142,33 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, const CBlockHeade
 	return bnResult.GetCompact();
 }
 
+static int minimum_time_fork = 225225;  	// minimum time fork
+static int minimum_time_fork_2 = 250000;        // minimum time fork to drop peers immediately
+
+//Checks for 'hardcoded' block timestamps
 bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock)
 {
+	int64_t time_allow = -30;
+	int64_t time_warn = MINIMUM_BLOCK_SPACING;
+	int64_t delta = pblock->GetBlockTime() - pindexPrev->GetBlockTime();
+	int nHeight = pindexPrev->nHeight + 1;
+
+	if (nHeight > minimum_time_fork_2){
+		time_allow = 30;
+	}
+	
+	if (delta < time_warn){
+		printf("WARNING blocktime nHeight %d time_allow %" PRId64" time_warn %" PRId64" time delta %" PRId64"\n", nHeight, time_allow, time_warn, delta);
+	}
+
+	if (nHeight >= minimum_time_fork_2) {
+		if (delta <= time_allow) // see above, from first hard limit
+			return state.Invalid(error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta));
+	}
+	if (nHeight >= minimum_time_fork) { /* don't forward these */
+		if (delta <= MINIMUM_BLOCK_SPACING)
+			return state.DoS(10, (error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta)));
+	}
 	return true;	
 }
 
