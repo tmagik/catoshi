@@ -74,11 +74,7 @@ public:
 class CWallet : public CCryptoKeyStore
 {
 private:
-//#if defined(PPCOINSTAKE)
-    bool SelectCoins(int64_t nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL) const;
-//#else
-//    bool SelectCoins(int64_t nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL) const;
-//#endif
+    bool SelectCoins(int64_t nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL, const uint32_t nSpendTime=UINT32_MAX) const;
 
     CWalletDB *pwalletdbEncryption;
 

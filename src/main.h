@@ -105,7 +105,7 @@ extern unsigned int nCoinCacheSize;
 extern int64_t nTransactionFee;
 extern int64_t nMinimumInputValue;
 
-#if defined(ENABLE_MAXFUTURE)
+#if defined(FEATURE_CFG_MAXFUTURE)
 // Maximum future timestamp we will accept in ProcessBlock
 extern int64_t nMaxFutureTime;
 #endif
@@ -504,14 +504,14 @@ class CTransaction
 public:
 	static int64_t nMinTxFee;
 	static int64_t nMinRelayTxFee;
-#if defined(BRAND_givecoin) //|| defined(BRAND_hamburger)
+#if defined(BRAND_givestake) //|| defined(BRAND_hamburger)
 	/* for now we leave VERSION_nTime at 3, and generate version 1 blocks to be compatible when mining */
 	static const int CURRENT_VERSION = 1, VERSION_nTime = 3;
 	static const int LEGACY_VERSION=2;	/* work around bogus v2 ctx in block 168521 */
 #elif defined(BRAND_hamburger)
 	static const int CURRENT_VERSION = 2, VERSION_nTime = 2;
 	static const int LEGACY_VERSION=1;
-#elif defined(BRAND_grantcoin)
+#elif defined(BRAND_grantcoin) || defined(BRAND_givecoin)
 	static const int CURRENT_VERSION = 1;
 #elif defined(BRAND_solarcoin)
 	static const int CURRENT_VERSION_1 = 3, VERSION_nTime = 2;
@@ -538,7 +538,7 @@ public:
 		READWRITE(this->nVersion);
 		nVersion = this->nVersion;
 #if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
-#if defined(BRAND_givecoin)
+#if defined(BRAND_givestake)
 		if(this->nVersion > LEGACY_VERSION) { 
 			READWRITE(nTime);
 		}
@@ -641,7 +641,7 @@ public:
 		// givecoin: Do we want this, or something else?
 		return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
 	}
-#if !defined(BRAND_givecoin)
+#if !defined(BRAND_givestake)
 	bool has_nTime() const { return true; };
 #else
 #warning "this is rather a hack, and it still doesn't work yet"
@@ -1464,9 +1464,8 @@ public:
 	IMPLEMENT_SERIALIZE
 	(
 		READWRITE(*(CBlockHeader*)this);
+		READWRITE(vtx);
 // TODO: determine correct way to manage vchBlockSig 
-//		READWRITE(vtx);
-//  
 //#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 //#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
 //		if ((this->nVersion | 0x1) == 1) /* overload bit 0 of version as PoS indicator */
