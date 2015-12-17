@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(compress_amounts)
 {
     BOOST_CHECK(TestPair(            0,       0x0));
     BOOST_CHECK(TestPair(            1,       0x1));
-#if defined(BRAND_grantcoin)  // TODO: fix this better
+#if defined(BRAND_grantcoin) || defined(PPCOINSTAKE)  // TODO: fix this better
     BOOST_CHECK(TestPair(         CENT,       0x5));
     BOOST_CHECK(TestPair(         COIN,       0x7));
     BOOST_CHECK(TestPair(      50*COIN,      0x30));

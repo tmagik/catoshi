@@ -1530,10 +1530,11 @@ public:
 			return false;	/* bit 0==0 is proof-of-work */
 #elif defined(BRAND_grantcoin)
 		return false;		// no stake for now
-#else
-#error "Your chosen coin brand needs IsProofOfStake implemented"
+#elif defined(BRAND_cleanwatercoin)
 		//ppcoin did it this way:
 		return (vtx.size() > 1 && vtx[1].IsCoinStake());
+#else
+#error "Your chosen coin brand needs IsProofOfStake implemented"
 #endif
 	}
 
@@ -2697,7 +2698,11 @@ extern int64_t GetPoW_seigniorage(CBlockIndex *block, int64_t nFees);
 extern unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, const CBlockHeader* pblock = NULL);
 bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock);
 /* takes the last block, and the current block header, returns nbits of trust */
+#if defined(PPCOINSTAKE)
+extern unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlock *pblock);
+#else
 extern unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock);
+#endif
 extern bool LoadBlockIndex(); 
 extern bool InitBlockIndex();
 

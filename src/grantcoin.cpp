@@ -229,10 +229,17 @@ unsigned int static GetNextTargetRequired(const CBlockIndex* pindexLast, bool fP
     return bnNew.GetCompact();
 }
 
+#if defined(PPCOINSTAKE)
+unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlock *pblock)
+{
+	return GetNextTargetRequired(pindexLast, pblock->IsProofOfStake());	
+}
+#else
 unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
 	return GetNextTargetRequired(pindexLast, false);	
 }
+#endif
 
 static int minimum_time_fork = 250000;	// minimum time fork
 static int minimum_time_fork_2 = 250000;	// minimum time fork

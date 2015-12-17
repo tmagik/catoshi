@@ -1305,7 +1305,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64_t> >& vecSend,
                 set<pair<const CWalletTx*,unsigned int> > setCoins;
                 int64_t nValueIn = 0;
 #if defined(PPCOINSTAKE)
-                if (!SelectCoins(nTotalValue, setCoins, nValueIn, coinControl wtxNew.nTime))
+                if (!SelectCoins(nTotalValue, setCoins, nValueIn, coinControl, wtxNew.nTime))
 #else
                 if (!SelectCoins(nTotalValue, setCoins, nValueIn, coinControl))
 #endif

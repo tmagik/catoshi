@@ -1232,9 +1232,11 @@ void CBlockHeader::UpdateTime(const CBlockIndex* pindexPrev)
 	nTime = max(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1, GetBlockTime());
 	nTime = max(GetAdjustedTime(), GetBlockTime());
 
+#if !defined(PPCOINSTAKE)
 	// Updating time can change work required on testnet:
 	if (fTestNet)
 		nBits = GetNextTrustRequired(pindexPrev, this);
+#endif
 }
 
 const CTxOut &CTransaction::GetOutputFor(const CTxIn& input, CCoinsViewCache& view)

@@ -301,6 +301,11 @@ public:
         SCRIPT_ADDRESS = 97, // grantcoin: addresses begin with 'g'
         PUBKEY_ADDRESS_TEST = 65,  // grantcoin test blockchain: addresses begin with 'T'
         SCRIPT_ADDRESS_TEST = 127, // grantcoin test blockchain: addresses begin with 't'
+#elif defined(BRAND_cleanwatercoin)
+        PUBKEY_ADDRESS = 11,  // cleanwatercoin: address begin with '5'
+        SCRIPT_ADDRESS = 8,
+        PUBKEY_ADDRESS_TEST = 113,
+        SCRIPT_ADDRESS_TEST = 196
 #else
 	#error "Your coin does not have base58 address prefixes defined"
 #endif
