@@ -33,6 +33,8 @@ extern const CBigNum bnProofOfStakeLimit;
 #include "givecoin.h"
 #elif defined(BRAND_hamburger)
 #include "hamburger.h"
+#elif defined(BRAND_cleanwatercoin)
+#include "cleanwatercoin.h"
 #else
 #error "No BRAND_*COIN defined!!"
 #endif

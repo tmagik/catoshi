@@ -210,6 +210,9 @@ endif
 ifeq ($(COIN_BRAND),bluecoin)
 OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
 endif
+ifeq ($(COIN_BRAND),cleanwatercoin)
+OBJS += $(SCRYPT_OBJS) $(STAKE_OBJS)
+endif
 
 all: $(TESTDIR) $(COIN_BRAND)d
 
@@ -219,6 +222,7 @@ test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
 regression: test FORCE
 	$(MAKE) COIN_BRAND=givecoin test
 	$(MAKE) COIN_BRAND=grantstake test
+	$(MAKE) COIN_BRAND=cleanwatercoin test
 	$(MAKE) COIN_BRAND=hamburger test
 	$(MAKE) COIN_BRAND=kittycoin test
 	

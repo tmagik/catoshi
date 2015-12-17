@@ -106,7 +106,12 @@ Value getestnextdiff(const Array& params, bool fHelp)
 	if (timestamp < GetTime()) timestamp = GetTime();
 
 	/* make a fake block so we can fake a timestamp and nbits */
+#if defined(PPCOINSTAKE)
+	#warning "probably broken"
+	CBlock dummyblock;
+#else
 	CBlockHeader dummyblock;
+#endif
 	CBlockIndex* dummyindex;
 	uint64_t nextWork = GetNextTrustRequired(pindexBest, &dummyblock);
 
