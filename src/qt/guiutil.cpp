@@ -681,7 +681,10 @@ boost::filesystem::path static GetAutostartDir()
 
 boost::filesystem::path static GetAutostartFilePath()
 {
-    return GetAutostartDir() / "bitcoin.desktop";
+    std::string chain = ChainNameFromCommandLine();
+    if (chain == CBaseChainParams::MAIN)
+        return GetAutostartDir() / "bitcoin.desktop";
+    return GetAutostartDir() / strprintf("bitcoin-%s.lnk", chain);
 }
 
 bool GetStartOnSystemStartup()
@@ -894,6 +897,9 @@ QString formatServicesStr(quint64 mask)
                 break;
             case NODE_GETUTXO:
                 strList.append("GETUTXO");
+                break;
+            case NODE_BLOOM:
+                strList.append("BLOOM");
                 break;
             default:
                 strList.append(QString("%1[%2]").arg("UNKNOWN").arg(check));
