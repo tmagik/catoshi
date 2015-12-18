@@ -40,7 +40,7 @@ static proxyType proxyInfo[NET_MAX];
 static proxyType nameProxy;
 static CCriticalSection cs_proxyInfos;
 int nConnectTimeout = DEFAULT_CONNECT_TIMEOUT;
-bool fNameLookup = false;
+bool fNameLookup = DEFAULT_NAME_LOOKUP;
 
 static const unsigned char pchIPv4[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };
 
@@ -227,10 +227,7 @@ bool LookupNumeric(const char *pszName, CService& addr, int portDefault)
     return Lookup(pszName, addr, portDefault, false);
 }
 
-/**
- * Convert milliseconds to a struct timeval for select.
- */
-struct timeval static MillisToTimeval(int64_t nTimeout)
+struct timeval MillisToTimeval(int64_t nTimeout)
 {
     struct timeval timeout;
     timeout.tv_sec  = nTimeout / 1000;

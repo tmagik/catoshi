@@ -62,6 +62,7 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     entry.push_back(Pair("txid", tx.GetHash().GetHex()));
+    entry.push_back(Pair("size", (int)::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION)));
     entry.push_back(Pair("version", tx.nVersion));
     entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
     UniValue vin(UniValue::VARR);
@@ -133,6 +134,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "{\n"
             "  \"hex\" : \"data\",       (string) The serialized, hex-encoded data for 'txid'\n"
             "  \"txid\" : \"id\",        (string) The transaction id (same as provided)\n"
+            "  \"size\" : n,             (numeric) The transaction size\n"
             "  \"version\" : n,          (numeric) The version\n"
             "  \"locktime\" : ttt,       (numeric) The lock time\n"
             "  \"vin\" : [               (array of json objects)\n"
@@ -186,7 +188,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
 
     CTransaction tx;
     uint256 hashBlock;
-    if (!GetTransaction(hash, tx, hashBlock, true))
+    if (!GetTransaction(hash, tx, Params().GetConsensus(), hashBlock, true))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
 
     string strHex = EncodeHexTx(tx);
@@ -256,7 +258,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
     if (pblockindex == NULL)
     {
         CTransaction tx;
-        if (!GetTransaction(oneTxid, tx, hashBlock, false) || hashBlock.IsNull())
+        if (!GetTransaction(oneTxid, tx, Params().GetConsensus(), hashBlock, false) || hashBlock.IsNull())
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Transaction not yet in block");
         if (!mapBlockIndex.count(hashBlock))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Transaction index corrupt");
@@ -264,7 +266,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
     }
 
     CBlock block;
-    if(!ReadBlockFromDisk(block, pblockindex))
+    if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     unsigned int ntxFound = 0;
@@ -351,7 +353,6 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             + HelpExampleRpc("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\", \"{\\\"data\\\":\\\"00010203\\\"}\"")
         );
 
-    LOCK(cs_main);
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VARR)(UniValue::VOBJ)(UniValue::VNUM), true);
     if (params[0].isNull() || params[1].isNull())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, arguments 1 and 2 must be non-null");
@@ -429,6 +430,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"txid\" : \"id\",        (string) The transaction id\n"
+            "  \"size\" : n,             (numeric) The transaction size\n"
             "  \"version\" : n,          (numeric) The version\n"
             "  \"locktime\" : ttt,       (numeric) The lock time\n"
             "  \"vin\" : [               (array of json objects)\n"
@@ -506,7 +508,6 @@ UniValue decodescript(const UniValue& params, bool fHelp)
             + HelpExampleRpc("decodescript", "\"hexstring\"")
         );
 
-    LOCK(cs_main);
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR));
 
     UniValue r(UniValue::VOBJ);
