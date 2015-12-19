@@ -291,7 +291,7 @@ public:
         SCRIPT_ADDRESS = 5,
         PUBKEY_ADDRESS_TEST = 111,
         SCRIPT_ADDRESS_TEST = 196,
-#elif defined(BRAND_catcoin)
+#elif defined(BRAND_catcoin) || defined(BRAND_kittycoin)
         PUBKEY_ADDRESS = 21, // Catcoin addresses start with 9, because cats has 9 lives
         SCRIPT_ADDRESS = 88,
         PUBKEY_ADDRESS_TEST = 23,
@@ -306,6 +306,12 @@ public:
         SCRIPT_ADDRESS = 8,
         PUBKEY_ADDRESS_TEST = 113,
         SCRIPT_ADDRESS_TEST = 196
+#elif defined(BRAND_hamburger)
+        PUBKEY_ADDRESS = 40,  // hamburger: address begin with 'H'
+        SCRIPT_ADDRESS = 43, 
+        PUBKEY_ADDRESS_TEST = 100,
+        SCRIPT_ADDRESS_TEST = 102,
+#elif defined(BRAND_givecoin) || defined(BRAND_givestake)
 #else
 	#error "Your coin does not have base58 address prefixes defined"
 #endif
