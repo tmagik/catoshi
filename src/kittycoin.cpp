@@ -24,6 +24,12 @@ using namespace boost;
 uint256 hashGenesisBlock = 0;			// TODO: objectize this for multicoin support
 const CBigNum bnProofOfWorkLimit(~uint256(0) >> 12);	// *coin: starting difficulty is 1 / 2^12
 
+/** TODO: this goes into src/policy/fees.cpp when latest bitcoin code is merged */
+/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
+int64_t CTransaction::nMinTxFee = CENT;
+/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
+int64_t CTransaction::nMinRelayTxFee = CENT;
+
 const string strMessageMagic = "Catcoin Signed Message:\n";
 /* value, in percent of what difficulty value we'll accept for orphans */
 const int ORPHAN_WORK_THRESHOLD = 1; // FIXME WAY TOO WIDE right now
@@ -41,16 +47,13 @@ const int ORPHAN_WORK_THRESHOLD = 1; // FIXME WAY TOO WIDE right now
 	  (a future) mailing list that we need to do it to fix the network
  */
 const char *strMainNetDNSSeed[][2] = {
-	{"thepeeps.net", "p2pool.thepeeps.net"},
+	{"catcoin.org", "seed.catcoin.org"},
 	{"catstat.info", "seed.catstat.info"},
-	{"catcoinwallets.com", "seed.catcoinwallets.com"},
-	{"geekhash.org", "cat.geekhash.org"},
 	{NULL, NULL}
 };
 
 const char *strTestNetDNSSeed[][2] = {
 	{"catstat.info", "testnet-seed.catstat.info"},
-	{"catcoinwallets.com", "seed.catcoinwallets.com"},
 	{NULL, NULL}
 };
 

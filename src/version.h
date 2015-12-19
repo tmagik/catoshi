@@ -38,10 +38,10 @@ static const int MIN_PEER_PROTO_VERSION = 70002;
 #elif defined(BRAND_uro)
 static const int PROTOCOL_VERSION = 70013;
 static const int MIN_PEER_PROTO_VERSION = 70012;
-#elif defined(BRAND_grantcoin) 
+#elif defined(BRAND_grantcoin) || defined(BRAND_cleanwatercoin)
 /* grantstake should probably actually use 70002 */
 static const int PROTOCOL_VERSION = 70001;
-static const int MIN_PEER_PROTO_VERSION = 60004;
+static const int MIN_PEER_PROTO_VERSION = 60006;
 #else
 static const int PROTOCOL_VERSION = 70002;
 // disconnect from peers older than this proto version

@@ -4,10 +4,10 @@
 #ifndef CODECOIN_cleanwatercoin_H
 #define CODECOIN_cleanwatercoin_H
 
-static const int RPC_PORT = 53591;
-static const int RPC_PORT_TESTNET =43591;
-static const int P2P_PORT = 53590;
-static const int P2P_PORT_TESTNET = 43590;
+static const int RPC_PORT = 53590;
+static const int RPC_PORT_TESTNET =43590;
+static const int P2P_PORT = 53591;
+static const int P2P_PORT_TESTNET = 43591;
 
 static const int64_t COIN = 1000000;
 static const int64_t CENT = 10000;

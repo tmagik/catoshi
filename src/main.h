@@ -517,8 +517,8 @@ public:
 	static const int CURRENT_VERSION_1 = 3, VERSION_nTime = 2;
 	static const int LEGACY_VERSION_1 = 1;
 	std::string strTxComment;
-#else
-	static const int CURRENT_VERSION = 1, VERSION_nTime = 1;
+#else /* generic */
+	static const int CURRENT_VERSION = 1;
 #endif
 	int nVersion;
 #if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
@@ -1345,13 +1345,13 @@ public:
 	static const int CURRENT_VERSION=2;
 	static const int CURRENT_VERSION_PoW = CURRENT_VERSION;
 	static const int CURRENT_VERSION_PoS = CURRENT_VERSION | 1;
-#elif defined(BRAND_bluecoin)
-	static const int CURRENT_VERSION=4;
 #elif defined(BRAND_grantcoin)
 	// TODO: re-endianize when we go to version 2/4 for GRT
 	static const int VERSION_STAKE_START=2;
 	static const int CURRENT_VERSION=1;
-#else
+#elif defined(PPCOINSTAKE) /* Generic ppcoin derivatives */
+	static const int CURRENT_VERSION=4;
+#else /* Generic non-stake */
 	static const int CURRENT_VERSION=2;
 #endif
 
@@ -1413,6 +1413,10 @@ public:
 		{
 			return Hash11(BEGIN(nVersion), END(nNonce));
 		}
+#elif defined(BRAND_cleanwatercoin) /* ugh, slow */
+		uint256 thash;
+		scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
+		return thash;
 #else /* Generic 'Hash' function, which should be fast */
 		return Hash(BEGIN(nVersion), END(nNonce));
 #endif
@@ -1466,25 +1470,11 @@ public:
 		READWRITE(*(CBlockHeader*)this);
 		READWRITE(vtx);
 // TODO: determine correct way to manage vchBlockSig 
-//#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
-//#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
-//		if ((this->nVersion | 0x1) == 1) /* overload bit 0 of version as PoS indicator */
-//#endif
-//		READWRITE(vchBlockSig);
-//#endif
-//
-#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin) // Was moved from CBlockHeader
-		// ConnectBlock depends on vtx following header to generate CDiskTxPos
-		if (!(nType & (SER_GETHASH|SER_BLOCKHEADERONLY)))
-		{
-			READWRITE(vtx);
-			READWRITE(vchBlockSig);
-		}
-		else if (fRead)
-		{
-			const_cast<CBlock*>(this)->vtx.clear();
-			const_cast<CBlock*>(this)->vchBlockSig.clear();
-		}
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger)
+		if ((this->nVersion | 0x1) == 1) /* overload bit 0 of version as PoS indicator */
+#endif
+		READWRITE(vchBlockSig);
 #endif
 	)
 
