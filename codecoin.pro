@@ -47,7 +47,7 @@ contains(COIN_BRAND, hamburger) {
     STAKE = 1
 } else {
 contains(COIN_BRAND, givestake) { # for testing, for now
-    DEFINES += BRAND_givecoin PPCOINSTAKE
+    DEFINES += BRAND_givecoin 
     TARGET = givestake
     STAKE = 1
     HASHSCRYPT = 1
@@ -59,16 +59,24 @@ contains(COIN_BRAND, bluecoin) {
     HASHSCRYPT = 1
     HASHX11 = 1
 } else {
+contains(COIN_BRAND, cleanwatercoin) {
+    message(Building for cleanwatercoin)
+    DEFINES += BRAND_cleanwatercoin
+    TARGET = cleanwatercoin
+    STAKE = 1
+    HASHSCRYPT = 1
+} else {
     DEFINES += BRAND_codecoin
     TARGET = codecoin
 	warning ("Building GENERIC codecoin, probably will not work")
-}}}}}}}
+}}}}}}}}
 
 #Set up a symlink so QT designer doesn't get confused when editing UI files
 #will error on windows build without cygwin.
-system("ln -sf $$TARGET/codecoin.qrc src/qt/res/codecoin.qrc")
+#This is rather a hack. FIXME
+system("ln -sfT $$TARGET/codecoin.qrc src/qt/res/codecoin.qrc")
 #same thing for icons
-system("ln -sf $$TARGET/icons src/qt/res/icons")
+system("ln -sfT $$TARGET/icons src/qt/res/icons")
 
 # for boost 1.37, add -mt to the boost libraries
 # use: qmake BOOST_LIB_SUFFIX=-mt
