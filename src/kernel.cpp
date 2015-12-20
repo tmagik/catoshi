@@ -15,11 +15,12 @@
 
 using namespace std;
 
+#if defined(PPCOIN_PROTOCOL_SWITCH)
 // Protocol switch time of v0.3 kernel protocol
-unsigned int nProtocolV03SwitchTime     = 1451606400; // 2016-01-01 00:00:00 UTC
+unsigned int nProtocolV03SwitchTime     = 1363800000;
 unsigned int nProtocolV03TestSwitchTime = 1359781000;
 // Protocol switch time of v0.4 kernel protocol
-unsigned int nProtocolV04SwitchTime     = 1452211200; // 2016-01-08 00:00:00 UTC
+unsigned int nProtocolV04SwitchTime     = 1399300000;
 unsigned int nProtocolV04TestSwitchTime = 1395700000;
 // TxDB upgrade time for v0.4 protocol
 // Note: v0.4 upgrade does not require block chain re-download. However,
@@ -27,6 +28,19 @@ unsigned int nProtocolV04TestSwitchTime = 1395700000;
 //       re-download of blockchain is required. The timestamp of upgrade
 //       is recorded in transaction database to alert user of the requirement.
 unsigned int nProtocolV04UpgradeTime    = 0;
+
+// Whether the given coinstake is subject to new v0.3 protocol
+bool IsProtocolV03(unsigned int nTimeCoinStake)
+{
+    return (nTimeCoinStake >= (fTestNet? nProtocolV03TestSwitchTime : nProtocolV03SwitchTime));
+}
+
+// Whether the given block is subject to new v0.4 protocol
+bool IsProtocolV04(unsigned int nTimeBlock)
+{
+    return (nTimeBlock >= (fTestNet? nProtocolV04TestSwitchTime : nProtocolV04SwitchTime));
+}
+#endif /* PPCOIN_PROTOCOL_SWITCH */
 
 // Modifier interval: time to elapse before new modifier is computed
 // Set to 3-hour for production network and 20-minute for test network
@@ -41,18 +55,6 @@ static std::map<int, unsigned int> mapStakeModifierCheckpoints =
     // ( 30583, 0xdc7bf136u )
     // ( 99999, 0xf555cfd2u )
     ;
-
-// Whether the given coinstake is subject to new v0.3 protocol
-bool IsProtocolV03(unsigned int nTimeCoinStake)
-{
-    return (nTimeCoinStake >= (fTestNet? nProtocolV03TestSwitchTime : nProtocolV03SwitchTime));
-}
-
-// Whether the given block is subject to new v0.4 protocol
-bool IsProtocolV04(unsigned int nTimeBlock)
-{
-    return (nTimeBlock >= (fTestNet? nProtocolV04TestSwitchTime : nProtocolV04SwitchTime));
-}
 
 #if defined(PPCOINSTAKE)
 

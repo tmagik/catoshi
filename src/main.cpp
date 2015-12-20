@@ -580,8 +580,13 @@ bool CTransaction::CheckTransaction(CValidationState &state) const
 			return state.DoS(100, error("CTransaction::CheckTransaction() : txout.nValue too high"));
 		if (!MoneyRange(txout.nValue))
 			return state.DoS(100, error("CTransaction::CheckTransaction() : MoneyRange(0x%" PRIx64") check failed", txout.nValue));
-#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
-		if ((!txout.IsEmpty()) && txout.nValue < CENT)
+#if defined(BRAND_cleanwatercoin)
+		#warning "legacy cleanwatercoin only prints a warning, and doesn't reject this, why??"		
+		if ((!txout.IsEmpty()) && txout.nValue < CTransaction::nMinTxFee) // CENT
+			printf ("ERROR:: CTransaction::CheckTransaction() : txout.nValue below minimum. %" PRId64 " < % " PRId64 "\n",
+				txout.nValue, CTransaction::nMinTxFee);
+#elif defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+		if ((!txout.IsEmpty()) && txout.nValue < CENT) // Cent || CTransaction::nMinTxFee
 			return state.DoS(100, error("CTransaction::CheckTransaction() : txout.nValue below minimum"));
 #endif
 		nValueOut += txout.nValue;
@@ -619,9 +624,16 @@ int64_t CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
 	// Base fee is either nMinTxFee or nMinRelayTxFee
 	int64_t nBaseFee = (mode == GMF_RELAY) ? nMinRelayTxFee : nMinTxFee;
 
+// here be dragons. put on fireproof regression tests before taunting this code
+#if defined(BRAND_cleanwatercoin)
+	unsigned int nBytes = optnBytes;
+#elif defined(BRAND_kittycoin)
+	unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
+#else
 #warning "hack for coincontroldialog.cpp that needs nBytes" 
 	unsigned int nBytes = max(optnBytes,
 		::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION));
+#endif
 	unsigned int nNewBlockSize = nBlockSize + nBytes;
 	int64_t nMinFee = (1 + (int64_t)nBytes / 1000) * nBaseFee;
 
@@ -1376,7 +1388,12 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 			if (!GetCoinAge(state, inputs, nCoinAge))
 				return error("CheckInputs() : %s unable to get coin age for coinstake", GetHash().ToString().c_str());
 			int64_t nStakeReward = GetValueOut() - nValueIn;
+#if defined(BRAND_cleanwatercoin)
+			#warning "check this further"
+			if (nStakeReward > GetProofOfStakeReward(nCoinAge, pindexprev))
+#else
 			if (nStakeReward > GetProofOfStakeReward(nCoinAge, pindexprev) - GetMinFee() + CTransaction::nMinTxFee)
+#endif
 				return state.DoS(100, error("CheckInputs() : %s stake reward exceeded", GetHash().ToString().c_str()));
 		}
 		else

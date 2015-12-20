@@ -15,9 +15,9 @@ static const int COIN_DECIMALS = 6; /* decimal places for coin */
 #define COIN_DECIMALS_FMT "06"
 
 /** Dust Soft Limit, allowed with additional fee per output */
-static const int64_t DUST_SOFT_LIMIT = 100000; // 0.001 GIVE
+static const int64_t DUST_SOFT_LIMIT = 10000; // 0.01 WATER
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */
-static const int64_t DUST_HARD_LIMIT = 1000;   // 0.00001 GIVE mininput
+static const int64_t DUST_HARD_LIMIT = 100;   // 0.0001 GIVE mininput
 /** Minimum criteria for AllowFree */
 static const int64_t MIN_FREE_PRIORITY = COIN * 576/250;
 /** No amount larger than this (in catoshi) is valid */
