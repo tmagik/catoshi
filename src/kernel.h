@@ -15,6 +15,7 @@ extern unsigned int nModifierInterval;
 // ratio of group interval length between the last group and the first group
 static const int MODIFIER_INTERVAL_RATIO = 3;
 
+#if defined(PPCOIN_PROTOCOL_SWITCH) /* legacy compatibility */
 // Protocol switch time of v0.3 kernel protocol
 extern unsigned int nProtocolV03SwitchTime;
 extern unsigned int nProtocolV03TestSwitchTime;
@@ -25,6 +26,12 @@ extern unsigned int nProtocolV04UpgradeTime;
 bool IsProtocolV03(unsigned int nTimeCoinStake);
 // Whether a given block is subject to new v0.4 protocol
 bool IsProtocolV04(unsigned int nTimeBlock);
+#else
+// Whether a given coinstake is subject to new v0.3 protocol
+inline bool IsProtocolV03(unsigned int nTimeCoinStake){ return true; };
+// Whether a given block is subject to new v0.4 protocol
+inline bool IsProtocolV04(unsigned int nTimeBlock){ return true; };
+#endif
 
 // Compute the hash modifier for proof-of-stake
 bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64_t& nStakeModifier, bool& fGeneratedStakeModifier);

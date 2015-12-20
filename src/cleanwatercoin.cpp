@@ -40,7 +40,7 @@ const unsigned int nMaxClockDrift = 45 * 60; 		// 45 minutes
 
 // fixme make unsigned?
 int nCoinbaseMaturity = 30;
-const int nCutoff_Pos_Block = 1000000000;	// Temp max height. May need to be forked based on varied reward system
+const int nCutoff_Pos_Block = 14628; /* first PoS block */
 
 /** TODO: this goes into src/policy/fees.cpp when latest bitcoin code is merged */
 /** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
