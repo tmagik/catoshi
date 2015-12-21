@@ -14,6 +14,9 @@ static const int64_t CENT = 10000;
 static const int COIN_DECIMALS = 6; /* decimal places for coin */
 #define COIN_DECIMALS_FMT "06"
 
+/** The maximum allowed size for a serialized block, in bytes (network rule) */
+static const unsigned int MAX_BLOCK_SIZE = 1500000;
+
 /** Dust Soft Limit, allowed with additional fee per output */
 static const int64_t DUST_SOFT_LIMIT = 10000; // 0.01 WATER
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */
@@ -39,6 +42,14 @@ static const int RETARGET_INTERVAL = 15;
 #define STAKE_TARGET_SPACING nStakeTargetSpacing
 #define COINBASE_MATURITY nCoinbaseMaturity
 
+// MODIFIER_INTERVAL: time to elapse before new modifier is computed
+static const unsigned int MODIFIER_INTERVAL = 6 * 60 * 60;  // 3 hours
+extern unsigned int nModifierInterval;
+
+// MODIFIER_INTERVAL_RATIO:
+// ratio of group interval length between the last group and the first group
+static const int MODIFIER_INTERVAL_RATIO = 3;
+
 extern unsigned int nStakeMinAge;
 extern unsigned int nStakeMaxAge;
 extern unsigned int nStakeTargetSpacing;
@@ -59,6 +70,9 @@ extern const int CUTOFF_POS_BLOCK;
 #define BRAND_CODE "WATER"
 
 #define PPCOINSTAKE
+#define PPCOINSTAKE_DEBUG
+
+/* cleanwatercoin uses scrypt directly, not just for the POWhash */
 #define LITECOIN_SCRYPT_POWHASH
 
 #endif

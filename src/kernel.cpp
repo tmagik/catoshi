@@ -46,15 +46,7 @@ bool IsProtocolV04(unsigned int nTimeBlock)
 // Set to 3-hour for production network and 20-minute for test network
 unsigned int nModifierInterval = MODIFIER_INTERVAL;
 
-// Hard checkpoints of stake modifiers to ensure they are deterministic
-static std::map<int, unsigned int> mapStakeModifierCheckpoints =
-    boost::assign::map_list_of
-    ( 0, 0x0e00670bu )
-    // Removed Peercoin checkpoints:
-    // ( 19080, 0xad4e4d29u )
-    // ( 30583, 0xdc7bf136u )
-    // ( 99999, 0xf555cfd2u )
-    ;
+extern std::map<int, uint32_t> mapStakeModifierCheckpoints;
 
 #if defined(PPCOINSTAKE)
 

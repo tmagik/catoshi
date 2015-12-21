@@ -36,7 +36,7 @@ unsigned int nStakeMinAge = 60 * 60 * 24 * 1;	// After height 120,000 minimum ag
 unsigned int nStakeMinAgeOld = 60 * 60 * 24 * 20;	// Before height 120,000 minimum age for coin age: 20d
 unsigned int nStakeMaxAge = 60 * 60 * 24 * 90;	// stake age of full weight: 90d
 unsigned int nStakeTargetSpacing = 120;			// 120 sec block spacing
-const unsigned int nMaxClockDrift = 45 * 60; 		// 45 minutes
+const unsigned int nMaxClockDrift = 90 * 60; 		// 90 minutes
 
 // fixme make unsigned?
 int nCoinbaseMaturity = 30;
@@ -442,4 +442,16 @@ namespace Checkpoints
 		37581,
 		300
 	}; /* estimated number of transactions per day after checkpoint */
+
+
+	/* TODO enable this someday */
+
+	// Hard checkpoints of stake modifiers to ensure they are deterministic
+	static std::map<int, unsigned int> mapStakeModifierCheckpoints =
+		boost::assign::map_list_of
+		//( 0, 0x0e00670bu )
+		(5516, 0xdeadbeefu)
+		(16665, 0xdeadbeefu)
+		;
+
 }
