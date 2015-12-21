@@ -35,6 +35,14 @@ static const int RETARGET_INTERVAL = 15;
 
 #define STAKE_TARGET_SPACING nStakeTargetSpacing
 
+// MODIFIER_INTERVAL: time to elapse before new modifier is computed
+static const unsigned int MODIFIER_INTERVAL = 3 * 60 * 60;  // 3 hours
+extern unsigned int nModifierInterval;
+
+// MODIFIER_INTERVAL_RATIO:
+// ratio of group interval length between the last group and the first group
+static const int MODIFIER_INTERVAL_RATIO = 3;
+
 extern const unsigned int nStakeMinAge;
 extern const unsigned int nStakeMaxAge;
 extern const unsigned int nStakeTargetSpacing;

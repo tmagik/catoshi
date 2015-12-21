@@ -318,6 +318,10 @@ std::string HelpMessage()
         "  -pid=<file>            " + _("Specify pid file (default: " BRAND_lower ".pid)") + "\n" +
         "  -gen                   " + _("Generate coins") + "\n" +
         "  -gen=0                 " + _("Don't generate coins") + "\n" +
+#if defined(PPCOINSTAKE)
+	"  -mint                  " + _("Enable proof-of-stake minting") + "\n" +
+	"  -mint=0                " + _("Disable proof-of-stake minting") + "\n" +
+#endif
         "  -datadir=<dir>         " + _("Specify data directory") + "\n" +
         "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 25)") + "\n" +
         "  -dblogsize=<n>         " + _("Set database disk log size in megabytes (default: 100)") + "\n" +

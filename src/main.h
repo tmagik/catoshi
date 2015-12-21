@@ -36,8 +36,6 @@ class CNode;
 
 struct CBlockIndexWorkComparator;
 
-/** The maximum allowed size for a serialized block, in bytes (network rule) */
-static const unsigned int MAX_BLOCK_SIZE = 1000000;						 // 1000KB block hard limit
 /** Obsolete: maximum size for mined blocks */
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/4;		 // 250KB  block soft limit
 /** Default for -blockmaxsize, maximum size for mined blocks **/
@@ -539,6 +537,7 @@ public:
 		nVersion = this->nVersion;
 #if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 #if defined(BRAND_givestake)
+		#warning "not working yet"
 		if(this->nVersion > LEGACY_VERSION) { 
 			READWRITE(nTime);
 		}
@@ -951,9 +950,8 @@ public:
 				a.nVersion == b.nVersion &&
 				a.vout == b.vout
 #if defined(PPCOINSTAKE)
-				&& a.vout == b.vout &&
-				a.fCoinStake == b.fCoinStake &&
-				a.nTime == b.nTime
+				&& a.fCoinStake == b.fCoinStake
+				&& a.nTime == b.nTime
 #endif
 				;
 	}
@@ -1059,8 +1057,7 @@ public:
 	}
 
 	template<typename Stream>
-	void Unserialize(Stream 
-&s, int nType, int nVersion) {
+	void Unserialize(Stream &s, int nType, int nVersion) {
 		unsigned int nCode = 0;
 		// version
 		::Unserialize(s, VARINT(this->nVersion), nType, nVersion);
@@ -1117,6 +1114,10 @@ public:
 #if defined(PPCOINSTAKE)
 			undo.fCoinStake = fCoinStake;  // ppcoin
 			undo.nTime = nTime;            // ppcoin
+#if defined(PPCOINSTAKE_DEBUG)
+			assert(undo.nTime > 0);
+			assert(nTime > 0);
+#endif
 #endif
 		}
 		return true;
@@ -1878,9 +1879,11 @@ public:
 	// Verification status of this block. See enum BlockStatus
 	unsigned int nStatus;
 
+#if defined(FEATURE_MONEYSUPPLY)
+	int64_t nMoneySupply;
+#endif
 #if defined(PPCOINSTAKE)
 	int64_t nMint;
-	int64_t nMoneySupply;
 
 	// ppcoin: proof-of-stake related block index fields
 	unsigned int nFlags;  // ppcoin: block index flags
@@ -1896,8 +1899,6 @@ public:
 	COutPoint prevoutStake;
 	unsigned int nStakeTime;
 	uint256 hashProofOfStake;
-#elif defined(FEATURE_MONEYSUPPLY)
-	int64_t nMoneySupply;
 #endif
 	// block header
 	int nVersion;
@@ -1917,17 +1918,17 @@ public:
 		nDataPos = 0;
 		nUndoPos = 0;
 		nChainTrust = 0;
+#if defined(FEATURE_MONEYSUPPLY)
+		nMoneySupply = 0;
+#endif
 #if defined(PPCOINSTAKE)
 		nMint = 0;
-		nMoneySupply = 0;
 		nFlags = 0;
 		nStakeModifier = 0;
 		nStakeModifierChecksum = 0;
 		hashProofOfStake = 0;
 		prevoutStake.SetNull();
 		nStakeTime = 0;
-#elif defined(FEATURE_MONEYSUPPLY)
-		nMoneySupply = 0;
 #endif
 		nTx = 0;
 		nChainTx = 0;
@@ -1950,9 +1951,11 @@ public:
 		nDataPos = 0;
 		nUndoPos = 0;
 		nChainTrust = 0;
+#if defined(FEATURE_MONEYSUPPLY)
+		nMoneySupply = 0;
+#endif
 #if defined(PPCOINSTAKE)
 		nMint = 0;
-		nMoneySupply = 0;
 		nFlags = 0;
 		nStakeModifier = 0;
 		nStakeModifierChecksum = 0;
@@ -1968,8 +1971,6 @@ public:
 			prevoutStake.SetNull();
 			nStakeTime = 0;
 		}
-#elif defined(FEATURE_MONEYSUPPLY)
-		nMoneySupply = 0;
 #endif
 		nTx = 0;
 		nChainTx = 0;
@@ -2228,7 +2229,9 @@ public:
 
 #if defined(PPCOINSTAKE) // TODO: is needed for grantcoin?
 		READWRITE(nMint);
+#if defined(FEATURE_MONEYSUPPLY)
 		READWRITE(nMoneySupply);
+#endif
 		READWRITE(nFlags);
 		READWRITE(nStakeModifier);
 		if (IsProofOfStake())

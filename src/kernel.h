@@ -1,19 +1,17 @@
 // Copyright (c) 2012-2013 The PPCoin developers
-// Copyright (c) 2015 The Grantcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2015 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef GRANTCOIN_KERNEL_H
 #define GRANTCOIN_KERNEL_H
 
+#include "codecoin.h"
 #include "main.h"
 
-// MODIFIER_INTERVAL: time to elapse before new modifier is computed
-static const unsigned int MODIFIER_INTERVAL = 3 * 60 * 60;  // 3 hours
-extern unsigned int nModifierInterval;
-
-// MODIFIER_INTERVAL_RATIO:
-// ratio of group interval length between the last group and the first group
-static const int MODIFIER_INTERVAL_RATIO = 3;
 
 #if defined(PPCOIN_PROTOCOL_SWITCH) /* legacy compatibility */
 // Protocol switch time of v0.3 kernel protocol

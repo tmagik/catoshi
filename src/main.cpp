@@ -583,7 +583,7 @@ bool CTransaction::CheckTransaction(CValidationState &state) const
 #if defined(BRAND_cleanwatercoin)
 		#warning "legacy cleanwatercoin only prints a warning, and doesn't reject this, why??"		
 		if ((!txout.IsEmpty()) && txout.nValue < CTransaction::nMinTxFee) // CENT
-			printf ("ERROR:: CTransaction::CheckTransaction() : txout.nValue below minimum. %" PRId64 " < % " PRId64 "\n",
+			printf ("WARN:(soft error) CTransaction::CheckTransaction() : txout.nValue below minimum. %" PRId64 " < % " PRId64 "\n",
 				txout.nValue, CTransaction::nMinTxFee);
 #elif defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 		if ((!txout.IsEmpty()) && txout.nValue < CENT) // Cent || CTransaction::nMinTxFee
@@ -649,11 +649,21 @@ int64_t CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
 			nMinFee = 0;
 	}
 
+#if defined(BRAND_cleanwatercoin)
+	// To limit dust spam, require MIN_TX_FEE/MIN_RELAY_TX_FEE if any output is less than 0.01
+	if (nMinFee < nBaseFee)
+	{
+		BOOST_FOREACH(const CTxOut& txout, vout)
+			if (txout.nValue < CENT)
+				nMinFee = nBaseFee;
+	}
+#else
 	// Codecoin
 	// To limit dust spam, add nBaseFee for each output less than DUST_SOFT_LIMIT
 	BOOST_FOREACH(const CTxOut& txout, vout)
 		if (txout.nValue < DUST_SOFT_LIMIT)
 			nMinFee += nBaseFee;
+#endif
 
 	// Raise the price as the block approaches full
 	if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN/2)
@@ -1495,7 +1505,8 @@ bool CBlock::DisconnectBlock(CValidationState &state, CBlockIndex *pindex, CCoin
 		if (outsBlock.nVersion < 0)
 			outs.nVersion = outsBlock.nVersion;
 		if (outs != outsBlock)
-			fClean = fClean && error("DisconnectBlock() : added transaction mismatch? database corrupted");
+			fClean = fClean && error("DisconnectBlock(nHeight=%d) : added transaction mismatch? database corrupted",
+				pindex->nHeight);
 
 		// remove outputs
 		outs = CCoins();
@@ -1669,6 +1680,10 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 			nValueOut += nTxValueOut;
 			if (!tx.IsCoinStake())
 				nFees += nTxValueIn - nTxValueOut;
+#if defined(PPCOINSTAKE_DEBUG)
+			int txtime = tx.nTime;
+			assert(txtime);
+#endif
 #else
 			nFees += tx.GetValueIn(view)-tx.GetValueOut();
 #endif
@@ -1704,17 +1719,16 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 	if (fJustCheck)
 		return true;
 
-#if defined(PPCOINSTAKE)
-    // ppcoin: track money supply and mint amount info
-    pindex->nMint = nValueOut - nValueIn + nFees;
+#if defined(FEATURE_MONEYSUPPLY)
     pindex->nMoneySupply = (pindex->pprev? pindex->pprev->nMoneySupply : 0) + nValueOut - nValueIn;
+#endif
+#if defined(PPCOINSTAKE)
+    pindex->nMint = nValueOut - nValueIn + nFees;
 
     // ppcoin: fees are not collected by miners as in bitcoin
     // ppcoin: fees are destroyed to compensate the entire network
     if (fDebug && GetBoolArg("-printcreation"))
         printf("ConnectBlock() : destroy=%s nFees=%" PRId64"\n", FormatMoney(nFees).c_str(), nFees);
-#elif defined(FEATURE_MONEYSUPPLY)
-    pindex->nMoneySupply = (pindex->pprev? pindex->pprev->nMoneySupply : 0) + nValueOut - nValueIn;
 #endif
 
 	// Write undo information to disk
@@ -2311,7 +2325,8 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 #if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 	// ppcoin: check block signature
 	// Only check block signature if check merkle root, c.f. commit 3cd01fdf
-#if defined(BRAND_givecoin) || defined(BRAND_hamburger) 
+	// TODO: check this better for cleanwatercoin later.
+#if defined(BRAND_givecoin) || defined(BRAND_hamburger) || defined(BRAND_cleanwatercoin)
 	if (fCheckMerkleRoot && IsProofOfStake() && !CheckBlockSignature())
 #else 
 	if (fCheckMerkleRoot && !CheckBlockSignature())
@@ -5297,7 +5312,6 @@ void CodecoinMiner(CWallet *pwallet, bool fProofOfStake)
 			pblock->nTime = max(pblock->GetBlockTime(), pindexPrev->GetBlockTime() - nMaxClockDrift);
 #endif
 			pblock->UpdateTime(pindexPrev);
-			#warning little-endian-ism
 			nBlockTime = ByteReverse(pblock->nTime);
 			if (fTestNet)
 			{
@@ -5334,21 +5348,18 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 
 	if (fGenerate || pwallet)
 		minerThreads = new boost::thread_group();
+
 #if defined(PPCOINSTAKE)
-	if (pwallet){
+	if (GetBoolArg("-mint", true) && pwallet){
 		/* generate a stake thread */
 		minerThreads->create_thread(boost::bind(&CodecoinMiner, pwallet, true));
 	}
 #endif	
 
-#if defined(BRAND_uro)
-	return;
-#else
 	if (fGenerate)
 		for (int i = 0; i < nThreads; i++)
 			minerThreads->create_thread(boost::bind(&CodecoinMiner, pwallet, false));
 
-#endif
 }
 
 // Amount compression:
