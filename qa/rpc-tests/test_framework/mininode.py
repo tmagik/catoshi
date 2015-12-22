@@ -36,6 +36,7 @@ MY_VERSION = 60001  # past bip-31 for ping/pong
 MY_SUBVERSION = "/python-mininode-tester:0.0.1/"
 
 MAX_INV_SZ = 50000
+MAX_BLOCK_SIZE = 1000000
 
 # Keep our own socket map for asyncore, so that we can track disconnects
 # ourselves (to workaround an issue with closing an asyncore socket when 
@@ -1015,32 +1016,10 @@ class NodeConnCB(object):
                     return
             time.sleep(0.05)
 
-    # Derived classes should call this function once to set the message map
-    # which associates the derived classes' functions to incoming messages
-    def create_callback_map(self):
-        self.cbmap = {
-            "version": self.on_version,
-            "verack": self.on_verack,
-            "addr": self.on_addr,
-            "alert": self.on_alert,
-            "inv": self.on_inv,
-            "getdata": self.on_getdata,
-            "getblocks": self.on_getblocks,
-            "tx": self.on_tx,
-            "block": self.on_block,
-            "getaddr": self.on_getaddr,
-            "ping": self.on_ping,
-            "pong": self.on_pong,
-            "headers": self.on_headers,
-            "getheaders": self.on_getheaders,
-            "reject": self.on_reject,
-            "mempool": self.on_mempool
-        }
-
     def deliver(self, conn, message):
         with mininode_lock:
             try:
-                self.cbmap[message.command](conn, message)
+                getattr(self, 'on_' + message.command)(conn, message)
             except:
                 print "ERROR delivering %s (%s)" % (repr(message),
                                                     sys.exc_info()[0])
