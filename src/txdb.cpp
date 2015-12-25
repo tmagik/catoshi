@@ -248,7 +248,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 
 				// ppcoin: build setStakeSeen
 				if (pindexNew->IsProofOfStake()){
-					printf("pindexNew->nStakeTime %d\n", pindexNew->nStakeTime);
+					//printf("blk %d StakeTime %d\n", pindexNew->nHeight, pindexNew->nStakeTime);
 					setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
 				}
 #endif

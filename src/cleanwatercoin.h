@@ -43,7 +43,7 @@ static const int RETARGET_INTERVAL = 15;
 #define COINBASE_MATURITY nCoinbaseMaturity
 
 // MODIFIER_INTERVAL: time to elapse before new modifier is computed
-static const unsigned int MODIFIER_INTERVAL = 6 * 60 * 60;  // 3 hours
+static const unsigned int MODIFIER_INTERVAL = 6 * 60 * 60; 
 extern unsigned int nModifierInterval;
 
 // MODIFIER_INTERVAL_RATIO:
