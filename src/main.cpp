@@ -583,7 +583,7 @@ bool CTransaction::CheckTransaction(CValidationState &state) const
 #if defined(BRAND_cleanwatercoin)
 		#warning "legacy cleanwatercoin only prints a warning, and doesn't reject this, why??"		
 		if ((!txout.IsEmpty()) && txout.nValue < CTransaction::nMinTxFee) // CENT
-			printf ("WARN:(soft error) CTransaction::CheckTransaction() : txout.nValue below minimum. %" PRId64 " < % " PRId64 "\n",
+			printf ("WARN(softerr): CTransaction::CheckTransaction() : txout.nValue below minimum. %" PRId64 " < % " PRId64 "\n",
 				txout.nValue, CTransaction::nMinTxFee);
 #elif defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 		if ((!txout.IsEmpty()) && txout.nValue < CENT) // Cent || CTransaction::nMinTxFee
@@ -703,6 +703,9 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
 	// Coinbase is only valid in a block, not as a loose transaction
 	if (tx.IsCoinBase())
 		return state.DoS(100, error("CTxMemPool::accept() : coinbase as individual tx"));
+	// ppcoin: coinstake is also only valid in a block, not as a loose transaction
+	if (tx.IsCoinStake())
+		return state.DoS(100, error("CTxMemPool::accept() : coinstake as individual tx"));
 
 	// To help v0.1.5 clients who would see it as a negative number
 	if ((int64_t)tx.nLockTime > std::numeric_limits<int32_t>::max())
@@ -987,7 +990,7 @@ bool CWalletTx::AcceptWalletTransaction(bool fCheckInputs)
 		// Add previous supporting transactions first
 		BOOST_FOREACH(CMerkleTx& tx, vtxPrev)
 		{
-			if (!tx.IsCoinBase())
+			if (!tx.IsGenerated())
 			{
 				uint256 hash = tx.GetHash();
 				if (!mempool.exists(hash) && pcoinsTip->HaveCoins(hash))
@@ -1351,7 +1354,7 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 		if (pvChecks)
 			pvChecks->reserve(vin.size());
 
-			// Check for conflicts (double-spend)
+		// Check for conflicts (double-spend)
 		// This doesn't trigger the DoS code on purpose; if it did, it would make it easier
 		// for an attacker to attempt to split the network.
 		if (!HaveInputs(inputs))
@@ -1398,13 +1401,18 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 			if (!GetCoinAge(state, inputs, nCoinAge))
 				return error("CheckInputs() : %s unable to get coin age for coinstake", GetHash().ToString().c_str());
 			int64_t nStakeReward = GetValueOut() - nValueIn;
+			CBlockIndex indexDummy;
+			indexDummy.nHeight = nSpendHeight; /* hack */
+			indexDummy.SetProofOfStake();  /* hack2 */
 #if defined(BRAND_cleanwatercoin)
 			#warning "check this further"
-			if (nStakeReward > GetProofOfStakeReward(nCoinAge, pindexprev))
+			int64_t nStakeLimit = indexDummy.GetSeigniorage(0, nCoinAge);
 #else
-			if (nStakeReward > GetProofOfStakeReward(nCoinAge, pindexprev) - GetMinFee() + CTransaction::nMinTxFee)
+			int64_t nStakeLimit = indexDummy.GetSeigniorage(0, nCoinAge) - GetMinFee() + CTransaction::nMinTxFee;
 #endif
-				return state.DoS(100, error("CheckInputs() : %s stake reward exceeded", GetHash().ToString().c_str()));
+			if (nStakeReward > nStakeLimit)
+				return state.DoS(100, error("CheckInputs() : %s stake reward %" PRId64 " exceeds limit %" PRId64 ,
+					GetHash().ToString().c_str(), nStakeReward, indexDummy.GetSeigniorage(0,nCoinAge) ));
 		}
 		else
 #endif
@@ -1529,6 +1537,10 @@ bool CBlock::DisconnectBlock(CValidationState &state, CBlockIndex *pindex, CCoin
 					coins.fCoinBase = undo.fCoinBase;
 					coins.nHeight = undo.nHeight;
 					coins.nVersion = undo.nVersion;
+#if defined(PPCOINSTAKE)
+					coins.fCoinStake = undo.fCoinStake; // ppcoin
+					coins.nTime = undo.nTime;           // ppcoin
+#endif
 				} else {
 					if (coins.IsPruned())
 						fClean = fClean && error("DisconnectBlock() : undo data adding output to missing transaction");
@@ -1546,7 +1558,11 @@ bool CBlock::DisconnectBlock(CValidationState &state, CBlockIndex *pindex, CCoin
 
 	// move best block pointer to prevout block
 	view.SetBestBlock(pindex->pprev);
-
+#if defined(PPCOINSTAKE)
+	// ppcoin: clean up wallet after disconnecting coinstake
+	BOOST_FOREACH(CTransaction& tx, vtx)
+		SyncWithWallets(tx.GetHash(), tx, this, false, false);
+#endif
 	if (pfClean) {
 		*pfClean = fClean;
 		return true;
@@ -1705,9 +1721,11 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 	if (fBenchmark)
 		printf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)vtx.size(), 0.001 * nTime, 0.001 * nTime / vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
 
-#if !defined(PPCOINSTAKE)
-	if (vtx[0].GetValueOut() > GetBlockValue(pindex, nFees))
-		return state.DoS(100, error("ConnectBlock() : coinbase pays too much (actual=%" PRId64" vs limit=%" PRId64")", vtx[0].GetValueOut(), GetBlockValue(pindex, nFees)));
+#if defined(PPCOINSTAKE)
+	// relocated to Checkblock (need isProofOfWork)
+#else
+		if (vtx[0].GetValueOut() > GetBlockValue(pindex, nFees))
+			return state.DoS(100, error("ConnectBlock() : coinbase pays too much (actual=%" PRId64" vs limit=%" PRId64")", vtx[0].GetValueOut(), GetBlockValue(pindex, nFees)));
 #endif
 
 	if (!control.Wait())
@@ -2269,13 +2287,12 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 	// Check coinstake timestamp
 	if (IsProofOfStake() && !CheckCoinStakeTimestamp(GetBlockTime(), (int64_t)vtx[1].nTime))
 		return state.DoS(50, error("CheckBlock() : coinstake timestamp violation nTimeBlock=%" PRIu64" nTimeTx=%u", GetBlockTime(), vtx[1].nTime));
-
-#if defined(PPCOIN_EXTRA_CHECKS)
-	// Check coinbase reward
-	if (vtx[0].GetValueOut() > (IsProofOfWork()? (GetProofOfWorkReward() - vtx[0].GetMinFee() + CTransaction::nMinTxFee) : 0))
-		return state.DoS(50, error("CheckBlock() : coinbase reward exceeded %s > %s", 
-					FormatMoney(vtx[0].GetValueOut()).c_str(),
-					FormatMoney(IsProofOfWork()? GetProofOfWorkReward(nBits) : 0).c_str()));
+#if defined(PPCOIN_REWARD_CHECKS)
+       // Check coinbase reward   --- FIXME so this actually works with ppcoin 
+       if (vtx[0].GetValueOut() > (IsProofOfWork()? (GetSeignorage() - vtx[0].GetMinFee() + CTransaction::nMinTxFee) : 0))
+               return state.DoS(50, error("CheckBlock() : coinbase reward exceeded %s > %s", 
+                                       FormatMoney(vtx[0].GetValueOut()).c_str(),
+                                       FormatMoney(IsProofOfWork()? GetSeigniorage() : 0).c_str()));
 #else
 #warning "extra ppcoin ProofOfWork reward checks disabled!!"
 #endif

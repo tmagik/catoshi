@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2012 *coin developers
-// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, Grant ...)
+// where * = (Nu, Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, Grant ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
@@ -158,6 +158,8 @@ static bool SelectBlockFromCandidates(
 // blocks.
 bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64_t& nStakeModifier, bool& fGeneratedStakeModifier)
 {
+    //LOCK(mapBlockIndex.cs_cleanup);  /* from nubits */
+    LOCK(cs_main); /* just in case */
     const CBlockIndex* pindexPrev = pindexCurrent->pprev;
     nStakeModifier = 0;
     fGeneratedStakeModifier = false;
@@ -280,7 +282,9 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifi
 {
     nStakeModifier = 0;
     if (!mapBlockIndex.count(hashBlockFrom))
+    {
         return error("GetKernelStakeModifier() : block not indexed");
+    }
     const CBlockIndex* pindexFrom = mapBlockIndex[hashBlockFrom];
     nStakeModifierHeight = pindexFrom->nHeight;
     nStakeModifierTime = pindexFrom->GetBlockTime();

@@ -1137,7 +1137,6 @@ bool CWallet::SelectCoinsMinConf(int64_t nTargetValue, const uint32_t nSpendTime
     coinLowestLarger.second.first = NULL;
     vector<pair<int64_t, pair<const CWalletTx*,unsigned int> > > vValue;
     int64_t nTotalLower = 0;
-    int64_t n = 0;
 
     random_shuffle(vCoins.begin(), vCoins.end(), GetRandInt);
 
@@ -1457,7 +1456,14 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     
     /* There is probably something that blows up security wise by ignoring 
      * fees from the last proof of work block here... */
+#if defined(BRAND_cleanwatercoin)
+	const CBlockIndex* pindex0 = GetLastBlockIndex(pindexBest, false);
+	int64_t nCombineThreshold = 0;
+	if(pindex0->pprev)
+		nCombineThreshold = pindex0->GetSeigniorage(CTransaction::nMinTxFee, 0) / 3;
+#else
     int64_t nCombineThreshold = GetProofOfWorkReward(GetLastBlockIndex(pindexBest,false), 0) / 3;
+#endif
 
     CBigNum bnTargetPerCoinDay;
     bnTargetPerCoinDay.SetCompact(nBits);
@@ -1619,7 +1625,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         CValidationState state;
         if (!txNew.GetCoinAge(state, view, nCoinAge))
             return error("CreateCoinStake : failed to calculate coin age");
-        nCredit += GetProofOfStakeReward(nCoinAge);
+        nCredit += pindex0->GetSeigniorage(0, nCoinAge);
     }
 
     int64_t nMinFee = 0;

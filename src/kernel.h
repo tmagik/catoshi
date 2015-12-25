@@ -1,13 +1,13 @@
 // Copyright (c) 2012-2013 The PPCoin developers
 // Copyright (c) 2009-2015 The *coin developers
-// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// where * = (Nu, Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-#ifndef GRANTCOIN_KERNEL_H
-#define GRANTCOIN_KERNEL_H
+#ifndef CODECOIN_KERNEL_H
+#define CODECOIN_KERNEL_H
 
 #include "codecoin.h"
 #include "main.h"
@@ -55,4 +55,4 @@ bool CheckStakeModifierCheckpoints(int nHeight, unsigned int nStakeModifierCheck
 // TODO: actually use this
 int64_t GetWeight(int64_t nIntervalBeginning, int64_t nIntervalEnd);
 
-#endif // GRANTCOIN_KERNEL_H
+#endif // CODECOIN_KERNEL_H

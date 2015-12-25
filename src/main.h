@@ -2113,6 +2113,11 @@ public:
 	 */
 	static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart,
 								unsigned int nRequired, unsigned int nToCheck);
+	
+	
+	/* eventually should be overloadable/subclass/derived for various coins */
+	int64_t GetSeigniorage(const int64_t nFees=0, const int64_t CoinAge=0) const;
+
 
 #if defined(PPCOINSTAKE)
 	bool IsProofOfWork() const
@@ -2676,16 +2681,15 @@ bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAdd
 
 /** *coin.cpp functions **/ 
 // FIXME DOXYGEN THIS
-extern int64_t GetSeigniorage(const CBlockIndex * pPrev, int64_t nFees, int64_t CoinAge=0);
-inline static int64_t GetProofOfWorkReward(const CBlockIndex* pPrev, int64_t nFees){
-	return GetSeigniorage(pPrev, nFees, 0);
+inline static int64_t GetProofOfWorkReward(CBlockIndex * block, int64_t nFees){
+	return block->GetSeigniorage(nFees, 0);
 };
-inline static int64_t GetBlockValue(const CBlockIndex * pPrev, int64_t nFees){
-	return GetSeigniorage(pPrev, nFees, 0);
+inline static int64_t GetBlockValue(const CBlockIndex * block, int64_t nFees){
+	return block->GetSeigniorage(nFees, 0);
 }; 
-inline static int64_t GetProofOfStakeReward(int64_t nCoinAge, const CBlockIndex* pPrev=NULL){
+inline static int64_t GetProofOfStakeReward(int64_t nCoinAge, const CBlockIndex* block){
 	assert(nCoinAge > 0);
-	return GetSeigniorage(pPrev, 0, nCoinAge);
+	return block->GetSeigniorage(0, nCoinAge);
 };
 extern int64_t GetPoW_seigniorage(CBlockIndex *block, int64_t nFees);
 extern unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, const CBlockHeader* pblock = NULL);

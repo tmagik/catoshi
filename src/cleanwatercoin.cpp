@@ -154,12 +154,12 @@ static const int64_t nTargetSpacingWorkMax = 3 * nStakeTargetSpacing;
  * Get the allow Seigniorage (money creation, or reward) of the current
  * block. If CoinAge is > 0, this is a proof of stake block.
  */
-int64_t GetSeigniorage(const CBlockIndex *block, int64_t nFees, int64_t CoinAge)
+int64_t CBlockIndex::GetSeigniorage(int64_t nFees, int64_t CoinAge) const
 {
-	if(CoinAge == 0){
-		return CleanWaterCoinWorkReward(block->nHeight, nFees);
+	if(IsProofOfWork()){
+		return CleanWaterCoinWorkReward(nHeight, nFees);
 	} else {
-		return CleanWaterCoinStakeReward(CoinAge, block->nHeight);
+		return CleanWaterCoinStakeReward(CoinAge, nHeight);
 	}
 }
 
