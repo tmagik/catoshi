@@ -36,8 +36,6 @@ class CNode;
 
 struct CBlockIndexWorkComparator;
 
-/** Obsolete: maximum size for mined blocks */
-static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/4;		 // 250KB  block soft limit
 /** Default for -blockmaxsize, maximum size for mined blocks **/
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 250000;
 /** Default for -blockprioritysize, maximum space for zero/low-fee transactions **/

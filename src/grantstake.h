@@ -13,6 +13,11 @@ static const int64_t COIN = 1000000;
 static const int64_t CENT = 10000;
 static const int COIN_DECIMALS = 6; /* decimal places for coin */
 #define COIN_DECIMALS_FMT "06"
+
+/** The maximum allowed size for a serialized block, in bytes (network rule) */
+static const unsigned int MAX_BLOCK_SIZE = 1000000;
+static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
+
 /** No amount larger than this (in satoshi) is valid */
 static const int64_t MAX_MONEY = 50000000000 * COIN;
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
@@ -45,6 +50,14 @@ static const int RETARGET_INTERVAL = 36;
 /** Minimum block time spacing (hard limit) **/
 static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 
+// MODIFIER_INTERVAL: time to elapse before new modifier is computed
+static const unsigned int MODIFIER_INTERVAL = 6 * 60 * 60; 
+extern unsigned int nModifierInterval;
+
+// MODIFIER_INTERVAL_RATIO:
+// ratio of group interval length between the last group and the first group
+static const int MODIFIER_INTERVAL_RATIO = 3;
+
 #define BRAND "GrantStake"
 #define BRAND_upper "GrantStake"
 #define BRAND_lower "grantstake"
@@ -53,6 +66,7 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 
 //Use ppcoinstake
 #define PPCOINSTAKE
+#define FEATURE_MONEYSUPPLY
 // Faster bootstraps with xz. Probably only works on mac/linux
 #define USE_BOOTSTRAP_XZ
 #define USE_BOOTSTRAP_GZ	// might work on android too

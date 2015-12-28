@@ -16,6 +16,7 @@ static const int COIN_DECIMALS = 6; /* decimal places for coin */
 
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
 static const unsigned int MAX_BLOCK_SIZE = 1500000;
+static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 
 /** Dust Soft Limit, allowed with additional fee per output */
 static const int64_t DUST_SOFT_LIMIT = 10000; // 0.01 WATER
