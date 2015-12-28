@@ -57,7 +57,7 @@ const char *strTestNetDNSSeed[][2] = {
 	{NULL, NULL}
 };
 
-int64_t GetBlockValue(CBlockIndex *block, int64_t nFees)
+inline int64_t KittyCoinBlockValue(int64_t nHeight, int64_t nFees)
 {
 	int64_t nSubsidy = 50 * COIN;
 
@@ -87,11 +87,17 @@ static const int64_t nInterval = nTargetTimespan / nTargetSpacing;
 static const int64_t nTargetTimespanOld = 14 * 24 * 60 * 60; // two weeks
 static const int64_t nIntervalOld = nTargetTimespanOld / nTargetSpacing;
 
+int64_t CBlockIndex::GetSeigniorage(int64_t nFees, int64_t CoinAge) const
+{
+	return KittyCoinBlockValue(nHeight, nFees);
+}
+
+
 //
 // minimum amount of work that could possibly be required nTime after
 // minimum work required was nBase
 //
-unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
+unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, const CBlockHeader* pblock)
 {
 	// Testnet has min-difficulty blocks
 	// after nTargetSpacing*2 time between blocks:
@@ -144,7 +150,7 @@ bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, cons
 	return true;	
 }
 
-unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
+unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
 	int64_t nTargetTimespanLocal = 0;
 	int64_t nIntervalLocal = 0;

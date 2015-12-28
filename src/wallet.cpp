@@ -1456,13 +1456,13 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     
     /* There is probably something that blows up security wise by ignoring 
      * fees from the last proof of work block here... */
-#if defined(BRAND_cleanwatercoin)
 	const CBlockIndex* pindex0 = GetLastBlockIndex(pindexBest, false);
+#if defined(BRAND_cleanwatercoin)
 	int64_t nCombineThreshold = 0;
 	if(pindex0->pprev)
 		nCombineThreshold = pindex0->GetSeigniorage(CTransaction::nMinTxFee, 0) / 3;
 #else
-    int64_t nCombineThreshold = GetProofOfWorkReward(GetLastBlockIndex(pindexBest,false), 0) / 3;
+    int64_t nCombineThreshold = pindex0->GetSeigniorage(0,0) / 3;
 #endif
 
     CBigNum bnTargetPerCoinDay;

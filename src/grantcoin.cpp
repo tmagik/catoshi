@@ -168,10 +168,10 @@ int64_t Grantcoin_StakeReward(int64_t nCoinAge)
  * Get the allow Seigniorage (money creation, or reward) of the current
  * block. If CoinAge is > 0, this is a proof of stake block.
  */
-int64_t GetSeigniorage(const CBlockIndex *block, int64_t nFees, int64_t CoinAge)
+int64_t CBlockIndex::GetSeigniorage(int64_t nFees, int64_t CoinAge) const
 {
-	if(CoinAge == 0){
-		return Grantcoin_PoWReward(block->nHeight);
+	if(IsProofOfWork()){
+		return Grantcoin_PoWReward(nHeight);
 	} else {
 		return Grantcoin_StakeReward(CoinAge);
 	}

@@ -14,6 +14,9 @@ static const int64_t CENT = 1000000;
 static const int COIN_DECIMALS = 8; /* decimal places for coin */
 #define COIN_DECIMALS_FMT "08"
 
+static const unsigned int MAX_BLOCK_SIZE = 1000000;                      // 1000KB block hard limit
+static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/4;         // 250KB  block soft limit
+
 /** Dust Soft Limit, allowed with additional fee per output */
 static const int64_t DUST_SOFT_LIMIT = 100000; // 0.001 GIVE
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */

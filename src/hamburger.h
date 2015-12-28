@@ -14,6 +14,10 @@ static const int64_t CENT = 10000;
 static const int COIN_DECIMALS = 6; /* decimal places for coin */
 #define COIN_DECIMALS_FMT "06"
 
+/** The maximum allowed size for a serialized block, in bytes (network rule) */
+static const unsigned int MAX_BLOCK_SIZE = 1000000;
+static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
+
 /** Dust Soft Limit, allowed with additional fee per output */
 static const int64_t DUST_SOFT_LIMIT = 10000; // 0.001 HAM
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */
@@ -59,5 +63,6 @@ extern const int CUTOFF_POS_BLOCK;
 #define BRAND_CODE "HAM"
 
 #define PPCOINSTAKE
+#define FEATURE_MONEYSUPPLY
 
 #endif

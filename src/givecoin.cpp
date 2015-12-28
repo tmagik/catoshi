@@ -104,10 +104,10 @@ int64_t static GivecoinBlockValue_v1(int nHeight, int64_t nFees)
  * Get the allow Seigniorage (money creation, or reward) of the current
  * block. If CoinAge is > 0, this is a proof of stake block.
  */
-int64_t GetSeigniorage(const CBlockIndex *block, int64_t nFees, int64_t CoinAge)
+int64_t CBlockIndex::GetSeigniorage(int64_t nFees, int64_t CoinAge) const
 {
-	if(CoinAge == 0){
-		return GivecoinBlockValue_v1(block->nHeight, nFees);
+	if(IsProofOfWork()){
+		return GivecoinBlockValue_v1(nHeight, nFees);
 	} else {
 		return PPcoinStakeReward(CoinAge);
 	}
