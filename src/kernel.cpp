@@ -188,6 +188,12 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64_t& nStake
         }
         return true;
     }
+#if defined(BRAND_cleanwatercoin)
+    // Not quite the same as ppcoin v0.4 protocol. 
+    // TODO: figure out how this is exploitable
+    if (nModifierTime / nModifierInterval >= pindexPrev->GetBlockTime() / nModifierInterval)
+        return true;
+#else
     if (nModifierTime / nModifierInterval >= pindexCurrent->GetBlockTime() / nModifierInterval)
     {
         // v0.4+ requires current block timestamp also be in a different modifier interval
@@ -207,6 +213,7 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64_t& nStake
             }
         }
     }
+#endif
 
     // Sort candidate blocks by timestamp
     vector<pair<int64_t, uint256> > vSortedByTimestamp;
