@@ -1,41 +1,52 @@
 (note: this is a temporary file, to be added-to by anybody, and moved to
 release-notes at release time)
 
-Transaction fee changes
-=======================
-
-This release automatically estimates how high a transaction fee (or how
-high a priority) transactions require to be confirmed quickly. The default
-settings will create transactions that confirm quickly; see the new
-'txconfirmtarget' setting to control the tradeoff between fees and
-confirmation times.
-
-Prior releases used hard-coded fees (and priorities), and would
-sometimes create transactions that took a very long time to confirm.
-
-
-New Command Line Options
-========================
-
--txconfirmtarget=n : create transactions that have enough fees (or priority)
-so they are likely to confirm within n blocks (default: 1). This setting
-is over-ridden by the -paytxfee option.
-
-New RPC methods
+Notable changes
 ===============
 
-Fee/Priority estimation
------------------------
+Example item
+----------------
 
-estimatefee nblocks : Returns approximate fee-per-1,000-bytes needed for
-a transaction to be confirmed within nblocks. Returns -1 if not enough
-transactions have been observed to compute a good estimate.
 
-estimatepriority nblocks : Returns approximate priority needed for
-a zero-fee transaction to confirm within nblocks. Returns -1 if not
-enough free transactions have been observed to compute a good
-estimate.
+0.13.0 Change log
+=================
 
-Statistics used to estimate fees and priorities are saved in the
-data directory in the 'fee_estimates.dat' file just before
-program shutdown, and are read in at startup.
+Detailed release notes follow. This overview includes changes that affect
+behavior, not code moves, refactors and string updates. For convenience in locating
+the code changes and accompanying discussion, both the pull request and
+git merge commit are mentioned.
+
+### RPC and REST
+
+Asm script outputs now contain OP_CHECKLOCKTIMEVERIFY in place of OP_NOP2
+-------------------------------------------------------------------------
+
+OP_NOP2 has been renamed to OP_CHECKLOCKTIMEVERIFY by [BIP 
+65](https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki)
+
+The following outputs are affected by this change:
+- RPC `getrawtransaction` (in verbose mode)
+- RPC `decoderawtransaction`
+- RPC `decodescript`
+- REST `/rest/tx/` (JSON format)
+- REST `/rest/block/` (JSON format when including extended tx details)
+- `bitcoin-tx -json`
+
+### Configuration and command-line options
+
+### Block and transaction handling
+
+### P2P protocol and network code
+
+### Validation
+
+### Build system
+
+### Wallet
+
+### GUI
+
+### Tests
+
+### Miscellaneous
+
