@@ -1034,7 +1034,8 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
 
         // In either case, we need to get the destination address
         CTxDestination address;
-        if (!ExtractDestination(txout.scriptPubKey, address))
+
+        if (!ExtractDestination(txout.scriptPubKey, address) && !txout.scriptPubKey.IsUnspendable())
         {
             LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
                      this->GetHash().ToString());
@@ -1630,6 +1631,16 @@ static void ApproximateBestSubset(vector<pair<CAmount, pair<const CWalletTx*,uns
                     }
                 }
             }
+        }
+    }
+
+    //Reduces the approximate best subset by removing any inputs that are smaller than the surplus of nTotal beyond nTargetValue. 
+    for (unsigned int i = 0; i < vValue.size(); i++)
+    {                        
+        if (vfBest[i] && (nBest - vValue[i].first) >= nTargetValue )
+        {
+            vfBest[i] = false;
+            nBest -= vValue[i].first;
         }
     }
 }
