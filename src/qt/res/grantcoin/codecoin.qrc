@@ -42,9 +42,9 @@
         <file alias="debugwindow">../icons/debugwindow.png</file>
     </qresource>
     <qresource prefix="/images">
-        <file alias="about">../images/about.png</file>
-        <file alias="splash">splash.png</file>
-        <file alias="splash_testnet">../images/splash_testnet.png</file>
+        <file alias="about">images/about.png</file>
+        <file alias="splash">images/grantcoin_splash.png</file>
+        <file alias="splash_testnet">images/splash_testnet.png</file>
     </qresource>
     <qresource prefix="/movies">
         <file alias="update_spinner">../movies/update_spinner.mng</file>
