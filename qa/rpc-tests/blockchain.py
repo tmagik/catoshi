@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,7 +8,7 @@
 # rpcblockchain.cpp.
 #
 
-import decimal
+from decimal import Decimal
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
@@ -49,7 +49,7 @@ class BlockchainTest(BitcoinTestFramework):
         node = self.nodes[0]
         res = node.gettxoutsetinfo()
 
-        assert_equal(res[u'total_amount'], decimal.Decimal('8725.00000000'))
+        assert_equal(res[u'total_amount'], Decimal('8725.00000000'))
         assert_equal(res[u'transactions'], 200)
         assert_equal(res[u'height'], 200)
         assert_equal(res[u'txouts'], 200)
