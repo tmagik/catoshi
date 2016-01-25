@@ -50,6 +50,7 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 
 #define FEATURE_MONEYSUPPLY
 #define FEATURE_CFG_MAXFUTURE
+#define FEATURE_FUTURE_IS_HARDER
 
 #define BRAND "Grantcoin"
 #define BRAND_upper "Grantcoin"

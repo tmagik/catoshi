@@ -2251,19 +2251,11 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
 #else
 	if (GetBlockTime() > GetAdjustedTime() + nMaxClockDrift)
 #endif
-		return state.Invalid(error("CheckBlock() : block timestamp too far in the future"));
-
-	#warning "debug for givecoin"
-	if (vtx.empty()){
-		printf("EMPTY VTX in\n");
-		print();
-	}
+		return state.DoS(25, error("CheckBlock() : block timestamp is %" PRId64 "s in future",
+			GetBlockTime() - GetAdjustedTime()));
 
 	// First transaction must be coinbase, the rest must not be
 	if (vtx.empty() || !vtx[0].IsCoinBase()){
-#warning more debug than we really need
-		printf("first tx not coinbase in\n");
-		print();
 		return state.DoS(100, error("CheckBlock() : first tx is not coinbase"));
 	}
 	for (unsigned int i = 1; i < vtx.size(); i++)
