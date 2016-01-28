@@ -78,6 +78,7 @@ bool fAlerts = DEFAULT_ALERTS;
 /* If the tip is older than this (in seconds), the node is considered to be in initial block download.
  */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
+bool fPermitReplacement = DEFAULT_PERMIT_REPLACEMENT;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying, mining and transaction creation) */
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
@@ -868,12 +869,15 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
                 // unconfirmed ancestors anyway; doing otherwise is hopelessly
                 // insecure.
                 bool fReplacementOptOut = true;
-                BOOST_FOREACH(const CTxIn &txin, ptxConflicting->vin)
+                if (fPermitReplacement)
                 {
-                    if (txin.nSequence < std::numeric_limits<unsigned int>::max()-1)
+                    BOOST_FOREACH(const CTxIn &txin, ptxConflicting->vin)
                     {
-                        fReplacementOptOut = false;
-                        break;
+                        if (txin.nSequence < std::numeric_limits<unsigned int>::max()-1)
+                        {
+                            fReplacementOptOut = false;
+                            break;
+                        }
                     }
                 }
                 if (fReplacementOptOut)
@@ -1542,17 +1546,9 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
                 undo.nVersion = coins->nVersion;
             }
         }
-        // add outputs
-        inputs.ModifyNewCoins(tx.GetHash())->FromTx(tx, nHeight);
     }
-    else {
-        // add outputs for coinbase tx
-        // In this case call the full ModifyCoins which will do a database
-        // lookup to be sure the coins do not already exist otherwise we do not
-        // know whether to mark them fresh or not.  We want the duplicate coinbases
-        // before BIP30 to still be properly overwritten.
-        inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
-    }
+    // add outputs
+    inputs.ModifyNewCoins(tx.GetHash(), tx.IsCoinBase())->FromTx(tx, nHeight);
 }
 
 void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, int nHeight)
