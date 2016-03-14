@@ -459,7 +459,7 @@ void RPCConsole::setClientModel(ClientModel *model)
         autoCompleter = new QCompleter(wordList, this);
         ui->lineEdit->setCompleter(autoCompleter);
 
-        }
+    }
 }
 
 static QString categoryClass(int category)
