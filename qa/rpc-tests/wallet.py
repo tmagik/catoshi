@@ -252,7 +252,7 @@ class WalletTest (BitcoinTestFramework):
         except JSONRPCException,e:
             errorString = e.error['message']
 
-        assert_equal("Invalid amount" in errorString, True)
+        assert("Invalid amount" in errorString)
 
         errorString = ""
         try:
@@ -260,13 +260,26 @@ class WalletTest (BitcoinTestFramework):
         except JSONRPCException,e:
             errorString = e.error['message']
 
-        assert_equal("not an integer" in errorString, True)
+        assert("not an integer" in errorString)
+
+        # Mine a block from node0 to an address from node1
+        cbAddr = self.nodes[1].getnewaddress()
+        blkHash = self.nodes[0].generatetoaddress(1, cbAddr)[0]
+        cbTxId = self.nodes[0].getblock(blkHash)['tx'][0]
+        self.sync_all()
+
+        # Check that the txid and balance is found by node1
+        try:
+            self.nodes[1].gettransaction(cbTxId)
+        except JSONRPCException,e:
+            assert("Invalid or non-wallet transaction id" not in e.error['message'])
 
         #check if wallet or blochchain maintenance changes the balance
         self.sync_all()
         blocks = self.nodes[0].generate(2)
         self.sync_all()
         balance_nodes = [self.nodes[i].getbalance() for i in range(3)]
+        block_count = self.nodes[0].getblockcount()
 
         maintenance = [
             '-rescan',
@@ -280,6 +293,9 @@ class WalletTest (BitcoinTestFramework):
             stop_nodes(self.nodes)
             wait_bitcoinds()
             self.nodes = start_nodes(3, self.options.tmpdir, [[m]] * 3)
+            while m == '-reindex' and [block_count] * 3 != [self.nodes[i].getblockcount() for i in range(3)]:
+                # reindex will leave rpc warm up "early"; Wait for it to finish
+                time.sleep(0.1)
             assert_equal(balance_nodes, [self.nodes[i].getbalance() for i in range(3)])
 
         # Exercise listsinceblock with the last two blocks
