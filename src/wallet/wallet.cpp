@@ -1580,7 +1580,7 @@ CAmount CWallet::GetUnconfirmedBalance() const
         for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
         {
             const CWalletTx* pcoin = &(*it).second;
-            if (!CheckFinalTx(*pcoin) || (!pcoin->IsTrusted() && pcoin->GetDepthInMainChain() == 0))
+            if (!pcoin->IsTrusted() && pcoin->GetDepthInMainChain() == 0 && pcoin->InMempool())
                 nTotal += pcoin->GetAvailableCredit();
         }
     }
@@ -1625,7 +1625,7 @@ CAmount CWallet::GetUnconfirmedWatchOnlyBalance() const
         for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
         {
             const CWalletTx* pcoin = &(*it).second;
-            if (!CheckFinalTx(*pcoin) || (!pcoin->IsTrusted() && pcoin->GetDepthInMainChain() == 0))
+            if (!pcoin->IsTrusted() && pcoin->GetDepthInMainChain() == 0 && pcoin->InMempool())
                 nTotal += pcoin->GetAvailableWatchOnlyCredit();
         }
     }
@@ -1670,11 +1670,16 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
             if (nDepth < 0)
                 continue;
 
+            // We should not consider coins which aren't at least in our mempool
+            // It's possible for these to be conflicted via ancestors which we may never be able to detect
+            if (nDepth == 0 && !pcoin->InMempool())
+                continue;
+
             for (unsigned int i = 0; i < pcoin->vout.size(); i++) {
                 isminetype mine = IsMine(pcoin->vout[i]);
                 if (!(IsSpent(wtxid, i)) && mine != ISMINE_NO &&
                     !IsLockedCoin((*it).first, i) && (pcoin->vout[i].nValue > 0 || fIncludeZeroValue) &&
-                    (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected((*it).first, i)))
+                    (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected(COutPoint((*it).first, i))))
                         vCoins.push_back(COutput(pcoin, i, nDepth,
                                                  ((mine & ISMINE_SPENDABLE) != ISMINE_NO) ||
                                                   (coinControl && coinControl->fAllowWatchOnly && (mine & ISMINE_WATCH_SOLVABLE) != ISMINE_NO)));
@@ -1931,16 +1936,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
     // Add new txins (keeping original txin scriptSig/order)
     BOOST_FOREACH(const CTxIn& txin, wtx.vin)
     {
-        bool found = false;
-        BOOST_FOREACH(const CTxIn& origTxIn, tx.vin)
-        {
-            if (txin.prevout.hash == origTxIn.prevout.hash && txin.prevout.n == origTxIn.prevout.n)
-            {
-                found = true;
-                break;
-            }
-        }
-        if (!found)
+        if (!coinControl.IsSelected(txin.prevout))
             tx.vin.push_back(txin);
     }
 
