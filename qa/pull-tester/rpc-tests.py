@@ -116,6 +116,7 @@ testScripts = [
     'invalidtxrequest.py',
     'abandonconflict.py',
     'p2p-versionbits-warning.py',
+    'importprunedfunds.py',
 ]
 testScriptsExt = [
     'bip65-cltv.py',
