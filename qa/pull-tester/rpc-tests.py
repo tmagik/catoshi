@@ -83,6 +83,7 @@ if EXEEXT == ".exe" and "-win" not in opts:
 
 #Tests
 testScripts = [
+    'bip68-112-113-p2p.py',
     'wallet.py',
     'listtransactions.py',
     'receivedby.py',
@@ -116,8 +117,10 @@ testScripts = [
     'invalidtxrequest.py',
     'abandonconflict.py',
     'p2p-versionbits-warning.py',
+    'importprunedfunds.py',
 ]
 testScriptsExt = [
+    'bip9-softforks.py',
     'bip65-cltv.py',
     'bip65-cltv-p2p.py',
     'bip68-sequence.py',
