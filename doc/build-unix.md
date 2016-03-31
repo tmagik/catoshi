@@ -7,11 +7,11 @@ Some notes on how to build Bitcoin Core in Unix.
 Note
 ---------------------
 Always use absolute paths to configure and compile bitcoin and the dependencies,
-for example, when specifying the the path of the dependency:
+for example, when specifying the path of the dependency:
 
 	../dist/configure --enable-cxx --disable-shared --with-pic --prefix=$BDB_PREFIX
 
-Here BDB_PREFIX must absolute path - it is defined using $(pwd) which ensures
+Here BDB_PREFIX must be an absolute path - it is defined using $(pwd) which ensures
 the usage of the absolute path.
 
 To Build
@@ -67,15 +67,17 @@ Build requirements:
 
     sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
 
-On at least Ubuntu 14.04+ and Debian 7+ there are generic names for the
+Options when installing required Boost library files:
+
+1. On at least Ubuntu 14.04+ and Debian 7+ there are generic names for the
 individual boost development packages, so the following can be used to only
 install necessary parts of boost:
 
-    sudo apt-get install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
+        sudo apt-get install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
 
-If that doesn't work, you can install all boost development packages with:
+2. If that doesn't work, you can install all boost development packages with:
 
-    sudo apt-get install libboost-all-dev
+        sudo apt-get install libboost-all-dev
 
 BerkeleyDB is required for the wallet. db4.8 packages are available [here](https://launchpad.net/~bitcoin/+archive/bitcoin).
 You can add the repository and install using the following commands:
@@ -246,3 +248,26 @@ Additional Configure Flags
 A list of additional configure flags can be displayed with:
 
     ./configure --help
+
+
+
+ARM Cross-compilation
+-------------------
+These steps can be performed on, for example, an Ubuntu VM. The depends system
+will also work on other Linux distributions, however the commands for
+installing the toolchain will be different.
+
+First install the toolchain:
+
+    sudo apt-get install g++-arm-linux-gnueabihf
+
+To build executables for ARM:
+
+    cd depends
+    make HOST=arm-linux-gnueabihf NO_QT=1
+    cd ..
+    ./configure --prefix=$PWD/depends/arm-linux-gnueabihf --enable-glibc-back-compat --enable-reduce-exports LDFLAGS=-static-libstdc++
+    make
+
+
+For further documentation on the depends system see [README.md](../depends/README.md) in the depends directory.
