@@ -40,6 +40,15 @@ if not vars().has_key('ENABLE_UTILS'):
     ENABLE_UTILS=0
 if not vars().has_key('ENABLE_ZMQ'):
     ENABLE_ZMQ=0
+    
+# python-zmq may not be installed. Handle this gracefully and with some helpful info
+if ENABLE_ZMQ:
+    try:
+        import zmq
+    except ImportError:
+        print("WARNING: \"import zmq\" failed. Setting ENABLE_ZMQ=0. " \
+            "To run zmq tests, see dependency info in /qa/README.md.")
+        ENABLE_ZMQ=0
 
 ENABLE_COVERAGE=0
 
@@ -74,6 +83,7 @@ if EXEEXT == ".exe" and "-win" not in opts:
 
 #Tests
 testScripts = [
+    'bip68-112-113-p2p.py',
     'wallet.py',
     'listtransactions.py',
     'receivedby.py',
@@ -106,17 +116,20 @@ testScripts = [
     'invalidblockrequest.py',
     'invalidtxrequest.py',
     'abandonconflict.py',
+    'p2p-versionbits-warning.py',
+    'importprunedfunds.py',
 ]
 testScriptsExt = [
+    'bip9-softforks.py',
     'bip65-cltv.py',
     'bip65-cltv-p2p.py',
+    'bip68-sequence.py',
     'bipdersig-p2p.py',
     'bipdersig.py',
     'getblocktemplate_longpoll.py',
     'getblocktemplate_proposals.py',
     'txn_doublespend.py',
     'txn_clone.py --mineblock',
-    'pruning.py',
     'forknotify.py',
     'invalidateblock.py',
 #    'rpcbind_test.py', #temporary, bug in libevent, see #6655
@@ -126,6 +139,8 @@ testScriptsExt = [
     'mempool_packages.py',
     'maxuploadtarget.py',
     'replace-by-fee.py',
+    'p2p-feefilter.py',
+    'pruning.py', # leave pruning last as it takes a REALLY long time
 ]
 
 #Enable ZMQ tests
