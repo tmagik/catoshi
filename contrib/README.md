@@ -42,15 +42,14 @@ Various PGP files of core developers.
 ### [MacDeploy](/contrib/macdeploy) ###
 Scripts and notes for Mac builds. 
 
+### [RPM](/contrib/rpm) ###
+RPM spec file for building bitcoin-core on RPM based distributions
+
 Test and Verify Tools 
 ---------------------
 
 ### [TestGen](/contrib/testgen) ###
 Utilities to generate test vectors for the data-driven Bitcoin tests.
-
-### [Test Patches](/contrib/test-patches) ###
-These patches are applied when the automated pull-tester
-tests each pull and when master is tested using jenkins.
 
 ### [Verify SF Binaries](/contrib/verifysfbinaries) ###
 This script attempts to download and verify the signature file SHA256SUMS.asc from SourceForge.

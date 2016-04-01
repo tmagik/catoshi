@@ -8,6 +8,19 @@ Example item
 ----------------
 
 
+bitcoin-cli: arguments privacy
+--------------------------------
+
+The RPC command line client gained a new argument, `-stdin`
+to read extra arguments from standard input, one per line until EOF/Ctrl-D.
+For example:
+
+    $ echo -e "mysecretcode\n120" | src/bitcoin-cli -stdin walletpassphrase
+
+It is recommended to use this for sensitive information such as wallet
+passphrases, as command-line arguments can usually be read from the process
+table by any user on the system.
+
 0.13.0 Change log
 =================
 
@@ -37,6 +50,17 @@ The following outputs are affected by this change:
 ### Block and transaction handling
 
 ### P2P protocol and network code
+
+The p2p alert system has been removed in #7692 and the 'alert' message is no longer supported.
+
+
+Fee filtering of invs (BIP 133)
+------------------------------------
+
+The optional new p2p message "feefilter" is implemented and the protocol
+version is bumped to 70013. Upon receiving a feefilter message from a peer,
+a node will not send invs for any transactions which do not meet the filter
+feerate. [BIP 133](https://github.com/bitcoin/bips/blob/master/bip-0133.mediawiki)
 
 ### Validation
 
