@@ -17,11 +17,14 @@
 #include "txdb.h"
 #include "txmempool.h"
 #include "ui_interface.h"
-#include "util.h"
+#include "rpc/server.h"
+#include "rpc/register.h"
 #ifdef ENABLE_WALLET
 #include "wallet/db.h"
 #include "wallet/wallet.h"
 #endif
+
+#include "test/testutil.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
@@ -52,9 +55,12 @@ BasicTestingSetup::~BasicTestingSetup()
 TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(chainName)
 {
     const CChainParams& chainparams = Params();
+        // Ideally we'd move all the RPC tests to the functional testing framework
+        // instead of unit tests, but for now we need these here.
+        RegisterAllCoreRPCCommands(tableRPC);
 #ifdef ENABLE_WALLET
         bitdb.MakeMock();
-        walletRegisterRPCCommands();
+        RegisterWalletRPCCommands(tableRPC);
 #endif
         ClearDatadirCache();
         pathTemp = GetTempPath() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
@@ -151,7 +157,7 @@ CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPo
     CAmount inChainValue = hasNoDependencies ? txn.GetValueOut() : 0;
 
     return CTxMemPoolEntry(txn, nFee, nTime, dPriority, nHeight,
-                           hasNoDependencies, inChainValue, spendsCoinbase, sigOpCount);
+                           hasNoDependencies, inChainValue, spendsCoinbase, sigOpCount, lp);
 }
 
 void Shutdown(void* parg)
