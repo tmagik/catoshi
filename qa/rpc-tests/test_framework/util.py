@@ -545,3 +545,7 @@ def create_lots_of_big_transactions(node, txouts, utxos, fee):
         txid = node.sendrawtransaction(signresult["hex"], True)
         txids.append(txid)
     return txids
+
+def get_bip9_status(node, key):
+    info = node.getblockchaininfo()
+    return info['bip9_softforks'][key]
