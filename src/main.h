@@ -106,6 +106,10 @@ static const unsigned int AVG_INVENTORY_BROADCAST_INTERVAL = 5;
 static const unsigned int AVG_FEEFILTER_BROADCAST_INTERVAL = 10 * 60;
 /** Maximum feefilter broadcast delay after significant change. */
 static const unsigned int MAX_FEEFILTER_CHANGE_DELAY = 5 * 60;
+/** Block download timeout base, expressed in millionths of the block interval (i.e. 10 min) */
+static const int64_t BLOCK_DOWNLOAD_TIMEOUT_BASE = 1000000;
+/** Additional block download timeout per parallel downloading peer (i.e. 5 min) */
+static const int64_t BLOCK_DOWNLOAD_TIMEOUT_PER_PEER = 500000;
 
 static const unsigned int DEFAULT_LIMITFREERELAY = 15;
 static const bool DEFAULT_RELAYPRIORITY = true;
@@ -454,7 +458,8 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins.
  *  Validity checks that depend on the UTXO set are also done; ConnectBlock()
  *  can fail if those validity checks fail (among other reasons). */
-bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins, bool fJustCheck = false);
+bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins,
+                  const CChainParams& chainparams, bool fJustCheck = false);
 
 /** Undo the effects of this block (with given index) on the UTXO set represented by coins.
  *  In case pfClean is provided, operation will try to be tolerant about errors, and *pfClean
@@ -469,13 +474,13 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
 class CBlockFileInfo
 {
 public:
-    unsigned int nBlocks;      //! number of blocks stored in file
-    unsigned int nSize;        //! number of used bytes of block file
-    unsigned int nUndoSize;    //! number of used bytes in the undo file
-    unsigned int nHeightFirst; //! lowest height of block in file
-    unsigned int nHeightLast;  //! highest height of block in file
-    uint64_t nTimeFirst;         //! earliest time of block in file
-    uint64_t nTimeLast;          //! latest time of block in file
+    unsigned int nBlocks;      //!< number of blocks stored in file
+    unsigned int nSize;        //!< number of used bytes of block file
+    unsigned int nUndoSize;    //!< number of used bytes in the undo file
+    unsigned int nHeightFirst; //!< lowest height of block in file
+    unsigned int nHeightLast;  //!< highest height of block in file
+    uint64_t nTimeFirst;       //!< earliest time of block in file
+    uint64_t nTimeLast;        //!< latest time of block in file
 
     ADD_SERIALIZE_METHODS;
 
@@ -532,7 +537,7 @@ public:
 CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& locator);
 
 /** Mark a block as invalid. */
-bool InvalidateBlock(CValidationState& state, const Consensus::Params& consensusParams, CBlockIndex *pindex);
+bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, CBlockIndex *pindex);
 
 /** Remove invalidity status from a block and its descendants. */
 bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex);

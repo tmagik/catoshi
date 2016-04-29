@@ -32,6 +32,12 @@ class WalletTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
+
+        # Check that there's no UTXO on none of the nodes
+        assert_equal(len(self.nodes[0].listunspent()), 0)
+        assert_equal(len(self.nodes[1].listunspent()), 0)
+        assert_equal(len(self.nodes[2].listunspent()), 0)
+
         print "Mining blocks..."
 
         self.nodes[0].generate(1)
@@ -47,6 +53,11 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[0].getbalance(), 50)
         assert_equal(self.nodes[1].getbalance(), 50)
         assert_equal(self.nodes[2].getbalance(), 0)
+
+        # Check that only first and second nodes have UTXOs
+        assert_equal(len(self.nodes[0].listunspent()), 1)
+        assert_equal(len(self.nodes[1].listunspent()), 1)
+        assert_equal(len(self.nodes[2].listunspent()), 0)
 
         # Send 21 BTC from 0 to 2 using sendtoaddress call.
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 11)
@@ -245,22 +256,46 @@ class WalletTest (BitcoinTestFramework):
         txObj = self.nodes[0].gettransaction(txId)
         assert_equal(txObj['amount'], Decimal('-0.0001'))
 
-        #this should fail
-        errorString = ""
         try:
             txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "1f-4")
         except JSONRPCException as e:
-            errorString = e.error['message']
+            assert("Invalid amount" in e.error['message'])
+        else:
+            raise AssertionError("Must not parse invalid amounts")
 
-        assert("Invalid amount" in errorString)
 
-        errorString = ""
         try:
-            self.nodes[0].generate("2") #use a string to as block amount parameter must fail because it's not interpreted as amount
+            self.nodes[0].generate("2")
+            raise AssertionError("Must not accept strings as numeric")
         except JSONRPCException as e:
-            errorString = e.error['message']
+            assert("not an integer" in e.error['message'])
 
-        assert("not an integer" in errorString)
+        # Import address and private key to check correct behavior of spendable unspents
+        # 1. Send some coins to generate new UTXO
+        address_to_import = self.nodes[2].getnewaddress()
+        txid = self.nodes[0].sendtoaddress(address_to_import, 1)
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # 2. Import address from node2 to node1
+        self.nodes[1].importaddress(address_to_import)
+
+        # 3. Validate that the imported address is watch-only on node1
+        assert(self.nodes[1].validateaddress(address_to_import)["iswatchonly"])
+
+        # 4. Check that the unspents after import are not spendable
+        assert_array_result(self.nodes[1].listunspent(),
+                           {"address": address_to_import},
+                           {"spendable": False})
+
+        # 5. Import private key of the previously imported address on node1
+        priv_key = self.nodes[2].dumpprivkey(address_to_import)
+        self.nodes[1].importprivkey(priv_key)
+
+        # 6. Check that the unspents are now spendable on node1
+        assert_array_result(self.nodes[1].listunspent(),
+                           {"address": address_to_import},
+                           {"spendable": True})
 
         # Mine a block from node0 to an address from node1
         cbAddr = self.nodes[1].getnewaddress()
@@ -269,10 +304,7 @@ class WalletTest (BitcoinTestFramework):
         self.sync_all()
 
         # Check that the txid and balance is found by node1
-        try:
-            self.nodes[1].gettransaction(cbTxId)
-        except JSONRPCException as e:
-            assert("Invalid or non-wallet transaction id" not in e.error['message'])
+        self.nodes[1].gettransaction(cbTxId)
 
         #check if wallet or blochchain maintenance changes the balance
         self.sync_all()
