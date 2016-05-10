@@ -1593,7 +1593,7 @@ bool fLargeWorkForkFound = false;
 bool fLargeWorkInvalidChainFound = false;
 CBlockIndex *pindexBestForkTip = NULL, *pindexBestForkBase = NULL;
 
-static void AlertNotify(const std::string& strMessage, bool fThread)
+static void AlertNotify(const std::string& strMessage)
 {
     uiInterface.NotifyAlertChanged();
     std::string strCmd = GetArg("-alertnotify", "");
@@ -1607,10 +1607,7 @@ static void AlertNotify(const std::string& strMessage, bool fThread)
     safeStatus = singleQuote+safeStatus+singleQuote;
     boost::replace_all(strCmd, "%s", safeStatus);
 
-    if (fThread)
-        boost::thread t(runCommand, strCmd); // thread runs free
-    else
-        runCommand(strCmd);
+    boost::thread t(runCommand, strCmd); // thread runs free
 }
 
 void CheckForkWarningConditions()
@@ -1632,7 +1629,7 @@ void CheckForkWarningConditions()
         {
             std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
                 pindexBestForkBase->phashBlock->ToString() + std::string("'");
-            AlertNotify(warning, true);
+            AlertNotify(warning);
         }
         if (pindexBestForkTip && pindexBestForkBase)
         {
@@ -1744,7 +1741,7 @@ void static InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state
     }
 }
 
-void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
+void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txundo, int nHeight)
 {
     // mark inputs spent
     if (!tx.IsCoinBase()) {
@@ -1770,10 +1767,10 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
     inputs.ModifyNewCoins(tx.GetHash(), tx.IsCoinBase())->FromTx(tx, nHeight);
 }
 
-void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, int nHeight)
+void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight)
 {
     CTxUndo txundo;
-    UpdateCoins(tx, state, inputs, txundo, nHeight);
+    UpdateCoins(tx, inputs, txundo, nHeight);
 }
 
 bool CScriptCheck::operator()() {
@@ -2163,7 +2160,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const 
     if (!strWarning.empty())
     {
         strMiscWarning = strWarning;
-        AlertNotify(strWarning, true);
+        AlertNotify(strWarning);
         lastAlertTime = now;
     }
 }
@@ -2385,7 +2382,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (i > 0) {
             blockundo.vtxundo.push_back(CTxUndo());
         }
-        UpdateCoins(tx, state, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
+        UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
@@ -2598,7 +2595,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
                 if (state == THRESHOLD_ACTIVE) {
                     strMiscWarning = strprintf(_("Warning: unknown new rules activated (versionbit %i)"), bit);
                     if (!fWarned) {
-                        AlertNotify(strMiscWarning, true);
+                        AlertNotify(strMiscWarning);
                         fWarned = true;
                     }
                 } else {
@@ -2620,7 +2617,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
             // strMiscWarning is read by GetWarnings(), called by Qt and the JSON-RPC code to warn the user:
             strMiscWarning = _("Warning: Unknown block versions being mined! It's possible unknown rules are in effect");
             if (!fWarned) {
-                AlertNotify(strMiscWarning, true);
+                AlertNotify(strMiscWarning);
                 fWarned = true;
             }
         }
@@ -3011,7 +3008,7 @@ bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, C
     return true;
 }
 
-bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
+bool ResetBlockFailureFlags(CBlockIndex *pindex) {
     AssertLockHeld(cs_main);
 
     int nHeight = pindex->nHeight;
