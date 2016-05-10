@@ -102,7 +102,7 @@ class BitcoinTestFramework(object):
                           help="Leave bitcoinds and test.* datadir on exit or error")
         parser.add_option("--noshutdown", dest="noshutdown", default=False, action="store_true",
                           help="Don't stop bitcoinds after the test execution")
-        parser.add_option("--srcdir", dest="srcdir", default="../../src",
+        parser.add_option("--srcdir", dest="srcdir", default=os.path.normpath(os.path.dirname(os.path.realpath(__file__))+"/../../../src"),
                           help="Source directory containing bitcoind/bitcoin-cli (default: %default)")
         parser.add_option("--tmpdir", dest="tmpdir", default=tempfile.mkdtemp(prefix="test"),
                           help="Root directory for datadirs")
@@ -115,7 +115,7 @@ class BitcoinTestFramework(object):
 
         if self.options.trace_rpc:
             import logging
-            logging.basicConfig(level=logging.DEBUG)
+            logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
         if self.options.coveragedir:
             enable_coverage(self.options.coveragedir)
@@ -148,6 +148,8 @@ class BitcoinTestFramework(object):
         except Exception as e:
             print("Unexpected exception caught during testing: " + repr(e))
             traceback.print_tb(sys.exc_info()[2])
+        except KeyboardInterrupt as e:
+            print("Exiting after " + repr(e))
 
         if not self.options.noshutdown:
             print("Stopping nodes")
