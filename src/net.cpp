@@ -1729,7 +1729,6 @@ void ThreadMessageHandler()
     boost::mutex condition_mutex;
     boost::unique_lock<boost::mutex> lock(condition_mutex);
 
-    SetThreadPriority(THREAD_PRIORITY_BELOW_NORMAL);
     while (true)
     {
         vector<CNode*> vNodesCopy;
@@ -2088,20 +2087,7 @@ void RelayTransaction(const CTransaction& tx, CFeeRate feerate)
     LOCK(cs_vNodes);
     BOOST_FOREACH(CNode* pnode, vNodes)
     {
-        if(!pnode->fRelayTxes)
-            continue;
-        {
-            LOCK(pnode->cs_feeFilter);
-            if (feerate.GetFeePerK() < pnode->minFeeFilter)
-                continue;
-        }
-        LOCK(pnode->cs_filter);
-        if (pnode->pfilter)
-        {
-            if (pnode->pfilter->IsRelevantAndUpdate(tx))
-                pnode->PushInventory(inv);
-        } else
-            pnode->PushInventory(inv);
+        pnode->PushInventory(inv);
     }
 }
 
@@ -2387,6 +2373,7 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     hashContinue = uint256();
     nStartingHeight = -1;
     filterInventoryKnown.reset();
+    fSendMempool = false;
     fGetAddr = false;
     nNextLocalAddrSend = 0;
     nNextAddrSend = 0;

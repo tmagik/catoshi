@@ -1,5 +1,5 @@
-#!/usr/bin/env python2
-# Copyright (c) 2014-2015 The Bitcoin Core developers
+#!/usr/bin/env python3
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -31,6 +31,14 @@ import re
 
 from tests_config import *
 
+BOLD = ("","")
+if os.name == 'posix':
+    # primitive formatting on supported
+    # terminal via ANSI escape sequences:
+    BOLD = ('\033[0m', '\033[1m')
+
+RPC_TESTS_DIR = BUILDDIR + '/qa/rpc-tests/'
+
 #If imported values are not defined then set to zero (or disabled)
 if 'ENABLE_WALLET' not in vars():
     ENABLE_WALLET=0
@@ -43,48 +51,48 @@ if 'ENABLE_ZMQ' not in vars():
 
 ENABLE_COVERAGE=0
 
-#Create a set to store arguments and create the passOn string
+#Create a set to store arguments and create the passon string
 opts = set()
-passOn = ""
-p = re.compile("^--")
+passon_args = ""
+PASSON_REGEX = re.compile("^--")
 
-bold = ("","")
-if (os.name == 'posix'):
-    bold = ('\033[0m', '\033[1m')
+print_help = False
 
 for arg in sys.argv[1:]:
+    if arg == "--help" or arg == "-h" or arg == "-?":
+        print_help = True
+        break
     if arg == '--coverage':
         ENABLE_COVERAGE = 1
-    elif (p.match(arg) or arg == "-h"):
-        passOn += " " + arg
+    elif PASSON_REGEX.match(arg):
+        passon_args += " " + arg
     else:
         opts.add(arg)
 
 #Set env vars
-buildDir = BUILDDIR
 if "BITCOIND" not in os.environ:
-    os.environ["BITCOIND"] = buildDir + '/src/bitcoind' + EXEEXT
+    os.environ["BITCOIND"] = BUILDDIR + '/src/bitcoind' + EXEEXT
 if "BITCOINCLI" not in os.environ:
-    os.environ["BITCOINCLI"] = buildDir + '/src/bitcoin-cli' + EXEEXT
+    os.environ["BITCOINCLI"] = BUILDDIR + '/src/bitcoin-cli' + EXEEXT
 
 if EXEEXT == ".exe" and "-win" not in opts:
     # https://github.com/bitcoin/bitcoin/commit/d52802551752140cf41f0d9a225a43e84404d3e9
     # https://github.com/bitcoin/bitcoin/pull/5677#issuecomment-136646964
-    print "Win tests currently disabled by default.  Use -win option to enable"
+    print("Win tests currently disabled by default.  Use -win option to enable")
     sys.exit(0)
 
 if not (ENABLE_WALLET == 1 and ENABLE_UTILS == 1 and ENABLE_BITCOIND == 1):
-    print "No rpc tests to run. Wallet, utils, and bitcoind must all be enabled"
+    print("No rpc tests to run. Wallet, utils, and bitcoind must all be enabled")
     sys.exit(0)
 
-# python-zmq may not be installed. Handle this gracefully and with some helpful info
+# python3-zmq may not be installed. Handle this gracefully and with some helpful info
 if ENABLE_ZMQ:
     try:
         import zmq
     except ImportError as e:
-        print("ERROR: \"import zmq\" failed. Set ENABLE_ZMQ=0 or " \
+        print("WARNING: \"import zmq\" failed. Set ENABLE_ZMQ=0 or " \
             "to run zmq tests, see dependency info in /qa/README.md.")
-        raise e
+        ENABLE_ZMQ=0
 
 #Tests
 testScripts = [
@@ -123,6 +131,7 @@ testScripts = [
     'abandonconflict.py',
     'p2p-versionbits-warning.py',
     'importprunedfunds.py',
+    'signmessages.py'
 ]
 if ENABLE_ZMQ:
     testScripts.append('zmq_test.py')
@@ -152,48 +161,34 @@ testScriptsExt = [
 ]
 
 def runtests():
+    test_list = []
+    if '-extended' in opts:
+        test_list = testScripts + testScriptsExt
+    elif len(opts) == 0 or (len(opts) == 1 and "-win" in opts):
+        test_list = testScripts
+    else:
+        for t in testScripts + testScriptsExt:
+            if t in opts or re.sub(".py$", "", t) in opts:
+                test_list.append(t)
+
+    if print_help:
+        # Only print help of the first script and exit
+        subprocess.check_call(RPC_TESTS_DIR + test_list[0] + ' -h', shell=True)
+        sys.exit(0)
+
     coverage = None
 
     if ENABLE_COVERAGE:
         coverage = RPCCoverage()
         print("Initializing coverage directory at %s\n" % coverage.dir)
-
-    rpcTestDir = buildDir + '/qa/rpc-tests/'
-    run_extended = '-extended' in opts
-    cov_flag = coverage.flag if coverage else ''
-    flags = " --srcdir %s/src %s %s" % (buildDir, cov_flag, passOn)
+    flags = " --srcdir %s/src %s %s" % (BUILDDIR, coverage.flag if coverage else '', passon_args)
 
     #Run Tests
-    for i in range(len(testScripts)):
-        if (len(opts) == 0
-                or (len(opts) == 1 and "-win" in opts )
-                or run_extended
-                or testScripts[i] in opts
-                or re.sub(".py$", "", testScripts[i]) in opts ):
-
-            print("Running testscript %s%s%s ..." % (bold[1], testScripts[i], bold[0]))
+    for t in test_list:
+            print("Running testscript %s%s%s ..." % (BOLD[1], t, BOLD[0]))
             time0 = time.time()
             subprocess.check_call(
-                rpcTestDir + testScripts[i] + flags, shell=True)
-            print("Duration: %s s\n" % (int(time.time() - time0)))
-
-            # exit if help is called so we print just one set of
-            # instructions
-            p = re.compile(" -h| --help")
-            if p.match(passOn):
-                sys.exit(0)
-
-    # Run Extended Tests
-    for i in range(len(testScriptsExt)):
-        if (run_extended or testScriptsExt[i] in opts
-                or re.sub(".py$", "", testScriptsExt[i]) in opts):
-
-            print(
-                "Running 2nd level testscript "
-                + "%s%s%s ..." % (bold[1], testScriptsExt[i], bold[0]))
-            time0 = time.time()
-            subprocess.check_call(
-                rpcTestDir + testScriptsExt[i] + flags, shell=True)
+                RPC_TESTS_DIR + t + flags, shell=True)
             print("Duration: %s s\n" % (int(time.time() - time0)))
 
     if coverage:
