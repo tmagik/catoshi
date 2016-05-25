@@ -97,9 +97,9 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
             "    \"bytesrecv\": n,            (numeric) The total bytes received\n"
             "    \"conntime\": ttt,           (numeric) The connection time in seconds since epoch (Jan 1 1970 GMT)\n"
             "    \"timeoffset\": ttt,         (numeric) The time offset in seconds\n"
-            "    \"pingtime\": n,             (numeric) ping time\n"
-            "    \"minping\": n,              (numeric) minimum observed ping time\n"
-            "    \"pingwait\": n,             (numeric) ping wait\n"
+            "    \"pingtime\": n,             (numeric) ping time (if available)\n"
+            "    \"minping\": n,              (numeric) minimum observed ping time (if any at all)\n"
+            "    \"pingwait\": n,             (numeric) ping wait (if non-zero)\n"
             "    \"version\": v,              (numeric) The peer version, such as 7001\n"
             "    \"subver\": \"/Satoshi:0.8.5/\",  (string) The string version\n"
             "    \"inbound\": true|false,     (boolean) Inbound (true) or Outbound (false)\n"
@@ -150,8 +150,10 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
         obj.push_back(Pair("bytesrecv", stats.nRecvBytes));
         obj.push_back(Pair("conntime", stats.nTimeConnected));
         obj.push_back(Pair("timeoffset", stats.nTimeOffset));
-        obj.push_back(Pair("pingtime", stats.dPingTime));
-        obj.push_back(Pair("minping", stats.dPingMin));
+        if (stats.dPingTime > 0.0)
+            obj.push_back(Pair("pingtime", stats.dPingTime));
+        if (stats.dPingMin < std::numeric_limits<int64_t>::max()/1e6)
+            obj.push_back(Pair("minping", stats.dPingMin));
         if (stats.dPingWait > 0.0)
             obj.push_back(Pair("pingwait", stats.dPingWait));
         obj.push_back(Pair("version", stats.nVersion));
@@ -345,6 +347,7 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("connected", false));
             UniValue addresses(UniValue::VARR);
             obj.push_back(Pair("addresses", addresses));
+            ret.push_back(obj);
         }
     }
 
@@ -562,20 +565,12 @@ UniValue setban(const UniValue& params, bool fHelp)
             absolute = true;
 
         isSubnet ? CNode::Ban(subNet, BanReasonManuallyAdded, banTime, absolute) : CNode::Ban(netAddr, BanReasonManuallyAdded, banTime, absolute);
-
-        //disconnect possible nodes
-        while(CNode *bannedNode = (isSubnet ? FindNode(subNet) : FindNode(netAddr)))
-            bannedNode->fDisconnect = true;
     }
     else if(strCommand == "remove")
     {
         if (!( isSubnet ? CNode::Unban(subNet) : CNode::Unban(netAddr) ))
             throw JSONRPCError(RPC_MISC_ERROR, "Error: Unban failed");
     }
-
-    DumpBanlist(); //store banlist to disk
-    uiInterface.BannedListChanged();
-
     return NullUniValue;
 }
 
@@ -621,8 +616,6 @@ UniValue clearbanned(const UniValue& params, bool fHelp)
                             );
 
     CNode::ClearBanned();
-    DumpBanlist(); //store banlist to disk
-    uiInterface.BannedListChanged();
 
     return NullUniValue;
 }
