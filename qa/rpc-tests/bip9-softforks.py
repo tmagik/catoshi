@@ -1,17 +1,16 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2015 The Bitcoin Core developers
-# Distributed under the MIT/X11 software license, see the accompanying
+# Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#
 
+from test_framework.blockstore import BlockStore
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import *
 from test_framework.mininode import CTransaction, NetworkThread
 from test_framework.blocktools import create_coinbase, create_block
 from test_framework.comptool import TestInstance, TestManager
 from test_framework.script import CScript, OP_1NEGATE, OP_NOP3, OP_DROP
-from binascii import hexlify, unhexlify
-import cStringIO
+from io import BytesIO
 import time
 import itertools
 
@@ -30,14 +29,14 @@ test that enforcement has triggered
 '''
 
 
-
 class BIP9SoftForksTest(ComparisonTestFramework):
 
     def __init__(self):
+        super().__init__()
         self.num_nodes = 1
 
     def setup_network(self):
-        self.nodes = start_nodes(1, self.options.tmpdir,
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir,
                                  extra_args=[['-debug', '-whitelist=127.0.0.1']],
                                  binary=[self.options.testbinary])
 
@@ -53,20 +52,20 @@ class BIP9SoftForksTest(ComparisonTestFramework):
         outputs = { to_address : amount }
         rawtx = node.createrawtransaction(inputs, outputs)
         tx = CTransaction()
-        f = cStringIO.StringIO(unhexlify(rawtx))
+        f = BytesIO(hex_str_to_bytes(rawtx))
         tx.deserialize(f)
         tx.nVersion = 2
         return tx
 
     def sign_transaction(self, node, tx):
-        signresult = node.signrawtransaction(hexlify(tx.serialize()))
+        signresult = node.signrawtransaction(bytes_to_hex_str(tx.serialize()))
         tx = CTransaction()
-        f = cStringIO.StringIO(unhexlify(signresult['hex']))
+        f = BytesIO(hex_str_to_bytes(signresult['hex']))
         tx.deserialize(f)
         return tx
 
     def generate_blocks(self, number, version, test_blocks = []):
-        for i in xrange(number):
+        for i in range(number):
             block = create_block(self.tip, create_coinbase(self.height), self.last_block_time + 1)
             block.nVersion = version
             block.rehash()
@@ -79,19 +78,15 @@ class BIP9SoftForksTest(ComparisonTestFramework):
 
     def get_bip9_status(self, key):
         info = self.nodes[0].getblockchaininfo()
-        for row in info['bip9_softforks']:
-            if row['id'] == key:
-                return row
-        raise IndexError ('key:"%s" not found' % key)
-
+        return info['bip9_softforks'][key]
 
     def test_BIP(self, bipName, activated_version, invalidate, invalidatePostSignature):
         # generate some coins for later
         self.coinbase_blocks = self.nodes[0].generate(2)
         self.height = 3  # height of the next block to build
-        self.tip = int ("0x" + self.nodes[0].getbestblockhash() + "L", 0)
+        self.tip = int("0x" + self.nodes[0].getbestblockhash(), 0)
         self.nodeaddress = self.nodes[0].getnewaddress()
-        self.last_block_time = time.time()
+        self.last_block_time = int(time.time())
 
         assert_equal(self.get_bip9_status(bipName)['status'], 'defined')
 
@@ -174,15 +169,16 @@ class BIP9SoftForksTest(ComparisonTestFramework):
         yield TestInstance([[block, False]])
 
         # Restart all
+        self.test.block_store.close()
         stop_nodes(self.nodes)
         wait_bitcoinds()
         shutil.rmtree(self.options.tmpdir)
         self.setup_chain()
         self.setup_network()
+        self.test.block_store = BlockStore(self.options.tmpdir)
         self.test.clear_all_connections()
         self.test.add_all_connections(self.nodes)
         NetworkThread().start() # Start up network handling in another thread
-
 
 
     def get_tests(self):
