@@ -15,7 +15,6 @@ import traceback
 
 from .util import (
     initialize_chain,
-    assert_equal,
     start_nodes,
     connect_nodes_bi,
     sync_blocks,
@@ -32,21 +31,26 @@ from .authproxy import JSONRPCException
 
 class BitcoinTestFramework(object):
 
-    # These may be over-ridden by subclasses:
+    def __init__(self):
+        self.num_nodes = 4
+        self.setup_clean_chain = False
+        self.nodes = None
+
     def run_test(self):
-        for node in self.nodes:
-            assert_equal(node.getblockcount(), 200)
-            assert_equal(node.getbalance(), 25*50)
+        raise NotImplementedError
 
     def add_options(self, parser):
         pass
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain(self.options.tmpdir)
+        if self.setup_clean_chain:
+            initialize_chain_clean(self.options.tmpdir, self.num_nodes)
+        else:
+            initialize_chain(self.options.tmpdir, self.num_nodes)
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir)
+        return start_nodes(self.num_nodes, self.options.tmpdir)
 
     def setup_network(self, split = False):
         self.nodes = self.setup_nodes()
@@ -163,9 +167,11 @@ class BitcoinTestFramework(object):
         else:
             print("Note: bitcoinds were not stopped and may still be running")
 
-        if not self.options.nocleanup and not self.options.noshutdown:
+        if not self.options.nocleanup and not self.options.noshutdown and success:
             print("Cleaning up")
             shutil.rmtree(self.options.tmpdir)
+        else:
+            print("Not cleaning up dir %s" % self.options.tmpdir)
 
         if success:
             print("Tests successful")
@@ -183,9 +189,10 @@ class BitcoinTestFramework(object):
 
 class ComparisonTestFramework(BitcoinTestFramework):
 
-    # Can override the num_nodes variable to indicate how many nodes to run.
     def __init__(self):
+        super().__init__()
         self.num_nodes = 2
+        self.setup_clean_chain = True
 
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
@@ -194,10 +201,6 @@ class ComparisonTestFramework(BitcoinTestFramework):
         parser.add_option("--refbinary", dest="refbinary",
                           default=os.getenv("BITCOIND", "bitcoind"),
                           help="bitcoind binary to use for reference nodes (if any)")
-
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 
     def setup_network(self):
         self.nodes = start_nodes(
