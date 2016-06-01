@@ -17,6 +17,7 @@
 #include "sync.h"
 #include "uint256.h"
 
+#include <atomic>
 #include <deque>
 #include <stdint.h>
 
@@ -83,7 +84,6 @@ CNode* FindNode(const CNetAddr& ip);
 CNode* FindNode(const CSubNet& subNet);
 CNode* FindNode(const std::string& addrName);
 CNode* FindNode(const CService& ip);
-CNode* ConnectNode(CAddress addrConnect, const char *pszDest = NULL);
 bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound = NULL, const char *strDest = NULL, bool fOneShot = false);
 void MapPort(bool fUseUPnP);
 unsigned short GetListenPort();
@@ -153,6 +153,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
 extern bool fDiscover;
 extern bool fListen;
 extern uint64_t nLocalServices;
+extern bool fRelayTxes;
 extern uint64_t nLocalHostNonce;
 extern CAddrMan addrman;
 
@@ -161,9 +162,6 @@ extern int nMaxConnections;
 
 extern std::vector<CNode*> vNodes;
 extern CCriticalSection cs_vNodes;
-extern std::map<uint256, CTransaction> mapRelay;
-extern std::deque<std::pair<int64_t, uint256> > vRelayExpiration;
-extern CCriticalSection cs_mapRelay;
 extern limitedmap<uint256, int64_t> mapAlreadyAskedFor;
 
 extern std::vector<std::string> vAddedNodes;
@@ -414,6 +412,8 @@ public:
     // Used for BIP35 mempool sending, also protected by cs_inventory
     bool fSendMempool;
 
+    // Last time a "MEMPOOL" request was serviced.
+    std::atomic<int64_t> timeLastMempoolReq;
     // Ping time measurement:
     // The pong reply we're expecting, or 0 if no pong expected.
     uint64_t nPingNonceSent;
@@ -783,7 +783,7 @@ public:
 
 
 class CTransaction;
-void RelayTransaction(const CTransaction& tx, CFeeRate feerate);
+void RelayTransaction(const CTransaction& tx);
 
 /** Access to the (IP) address database (peers.dat) */
 class CAddrDB
@@ -794,6 +794,7 @@ public:
     CAddrDB();
     bool Write(const CAddrMan& addr);
     bool Read(CAddrMan& addr);
+    bool Read(CAddrMan& addr, CDataStream& ssPeers);
 };
 
 /** Access to the banlist database (banlist.dat) */
@@ -806,8 +807,6 @@ public:
     bool Write(const banmap_t& banSet);
     bool Read(banmap_t& banSet);
 };
-
-void DumpBanlist();
 
 /** Return a timestamp in the future (in microseconds) for exponentially distributed events. */
 int64_t PoissonNextSend(int64_t nNow, int average_interval_seconds);
