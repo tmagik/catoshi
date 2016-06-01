@@ -17,6 +17,7 @@
 #include "sync.h"
 #include "uint256.h"
 
+#include <atomic>
 #include <deque>
 #include <stdint.h>
 
@@ -152,6 +153,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
 extern bool fDiscover;
 extern bool fListen;
 extern uint64_t nLocalServices;
+extern bool fRelayTxes;
 extern uint64_t nLocalHostNonce;
 extern CAddrMan addrman;
 
@@ -160,9 +162,6 @@ extern int nMaxConnections;
 
 extern std::vector<CNode*> vNodes;
 extern CCriticalSection cs_vNodes;
-extern std::map<uint256, CTransaction> mapRelay;
-extern std::deque<std::pair<int64_t, uint256> > vRelayExpiration;
-extern CCriticalSection cs_mapRelay;
 extern limitedmap<uint256, int64_t> mapAlreadyAskedFor;
 
 extern std::vector<std::string> vAddedNodes;
@@ -413,6 +412,8 @@ public:
     // Used for BIP35 mempool sending, also protected by cs_inventory
     bool fSendMempool;
 
+    // Last time a "MEMPOOL" request was serviced.
+    std::atomic<int64_t> timeLastMempoolReq;
     // Ping time measurement:
     // The pong reply we're expecting, or 0 if no pong expected.
     uint64_t nPingNonceSent;

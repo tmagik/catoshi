@@ -76,6 +76,7 @@ const static std::string NET_MESSAGE_COMMAND_OTHER = "*other*";
 bool fDiscover = true;
 bool fListen = true;
 uint64_t nLocalServices = NODE_NETWORK;
+bool fRelayTxes = true;
 CCriticalSection cs_mapLocalHost;
 std::map<CNetAddr, LocalServiceInfo> mapLocalHost;
 static bool vfLimited[NET_MAX] = {};
@@ -89,9 +90,6 @@ std::string strSubVersion;
 
 std::vector<CNode*> vNodes;
 CCriticalSection cs_vNodes;
-std::map<uint256, CTransaction> mapRelay;
-std::deque<std::pair<int64_t, uint256> > vRelayExpiration;
-CCriticalSection cs_mapRelay;
 limitedmap<uint256, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
 
 static std::deque<std::string> vOneShots;
@@ -470,7 +468,7 @@ void CNode::PushVersion()
     else
         LogPrint("net", "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), id);
     PushMessage(NetMsgType::VERSION, PROTOCOL_VERSION, nLocalServices, nTime, addrYou, addrMe,
-                nLocalHostNonce, strSubVersion, nBestHeight, !GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY));
+                nLocalHostNonce, strSubVersion, nBestHeight, ::fRelayTxes);
 }
 
 
@@ -2080,18 +2078,6 @@ instance_of_cnetcleanup;
 void RelayTransaction(const CTransaction& tx)
 {
     CInv inv(MSG_TX, tx.GetHash());
-    {
-        LOCK(cs_mapRelay);
-        // Expire old relay messages
-        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < GetTime())
-        {
-            mapRelay.erase(vRelayExpiration.front().second);
-            vRelayExpiration.pop_front();
-        }
-
-        mapRelay.insert(std::make_pair(inv.hash, tx));
-        vRelayExpiration.push_back(std::make_pair(GetTime() + 15 * 60, inv.hash));
-    }
     LOCK(cs_vNodes);
     BOOST_FOREACH(CNode* pnode, vNodes)
     {
@@ -2396,6 +2382,7 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     fRelayTxes = false;
     fSentAddr = false;
     pfilter = new CBloomFilter();
+    timeLastMempoolReq = 0;
     nPingNonceSent = 0;
     nPingUsecStart = 0;
     nPingUsecTime = 0;
