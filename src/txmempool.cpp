@@ -720,7 +720,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         else {
             CValidationState state;
             assert(CheckInputs(tx, state, mempoolDuplicate, false, 0, false, NULL));
-            UpdateCoins(tx, state, mempoolDuplicate, 1000000);
+            UpdateCoins(tx, mempoolDuplicate, 1000000);
         }
     }
     unsigned int stepsSinceLastRemove = 0;
@@ -734,7 +734,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             assert(stepsSinceLastRemove < waitingOnDependants.size());
         } else {
             assert(CheckInputs(entry->GetTx(), state, mempoolDuplicate, false, 0, false, NULL));
-            UpdateCoins(entry->GetTx(), state, mempoolDuplicate, 1000000);
+            UpdateCoins(entry->GetTx(), mempoolDuplicate, 1000000);
             stepsSinceLastRemove = 0;
         }
     }
@@ -789,13 +789,21 @@ void CTxMemPool::queryHashes(vector<uint256>& vtxid)
     std::sort(vtxid.begin(), vtxid.end(), DepthAndScoreComparator(this));
 }
 
-bool CTxMemPool::lookup(uint256 hash, CTransaction& result) const
+
+bool CTxMemPool::lookup(uint256 hash, CTransaction& result, int64_t& time) const
 {
     LOCK(cs);
     indexed_transaction_set::const_iterator i = mapTx.find(hash);
     if (i == mapTx.end()) return false;
     result = i->GetTx();
+    time = i->GetTime();
     return true;
+}
+
+bool CTxMemPool::lookup(uint256 hash, CTransaction& result) const
+{
+    int64_t time;
+    return CTxMemPool::lookup(hash, result, time);
 }
 
 bool CTxMemPool::lookupFeeRate(const uint256& hash, CFeeRate& feeRate) const
