@@ -334,6 +334,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "       {\n"
             "         \"txid\":\"id\",    (string, required) The transaction id\n"
             "         \"vout\":n        (numeric, required) The output number\n"
+            "         \"sequence\":n    (numeric, optional) The sequence number\n"
             "       }\n"
             "       ,...\n"
             "     ]\n"
@@ -384,6 +385,12 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, vout must be positive");
 
         uint32_t nSequence = (rawTx.nLockTime ? std::numeric_limits<uint32_t>::max() - 1 : std::numeric_limits<uint32_t>::max());
+
+        // set the sequence number if passed in the parameters object
+        const UniValue& sequenceObj = find_value(o, "sequence");
+        if (sequenceObj.isNum())
+            nSequence = sequenceObj.get_int();
+
         CTxIn in(COutPoint(txid, nOutput), CScript(), nSequence);
 
         rawTx.vin.push_back(in);
@@ -743,6 +750,9 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     // Script verification errors
     UniValue vErrors(UniValue::VARR);
 
+    // Use CTransaction for the constant parts of the
+    // transaction to avoid rehashing.
+    const CTransaction txConst(mergedTx);
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
         CTxIn& txin = mergedTx.vin[i];
@@ -760,10 +770,10 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
 
         // ... and merge in other signatures:
         BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
-            txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
+            txin.scriptSig = CombineSignatures(prevPubKey, txConst, i, txin.scriptSig, txv.vin[i].scriptSig);
         }
         ScriptError serror = SCRIPT_ERR_OK;
-        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&mergedTx, i), &serror)) {
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, TransactionSignatureChecker(&txConst, i), &serror)) {
             TxInErrorToJSON(txin, vErrors, ScriptErrorString(serror));
         }
     }
