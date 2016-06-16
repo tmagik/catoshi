@@ -80,6 +80,13 @@ The following outputs are affected by this change:
 - REST `/rest/block/` (JSON format when including extended tx details)
 - `bitcoin-tx -json`
 
+New mempool information RPC calls
+---------------------------------
+
+RPC calls have been added to output detailed statistics for individual mempool
+entries, as well as to calculate the in-mempool ancestors or descendants of a
+transaction: see `getmempoolentry`, `getmempoolancestors`, `getmempooldescendants`.
+
 ### ZMQ
 
 Each ZMQ notification now contains an up-counting sequence number that allows
@@ -111,6 +118,24 @@ feerate. [BIP 133](https://github.com/bitcoin/bips/blob/master/bip-0133.mediawik
 ### Build system
 
 ### Wallet
+
+Hierarchical Deterministic Key Generation
+-----------------------------------------
+Newly created wallets will use hierarchical deterministic key generation
+according to BIP32 (keypath m/0'/0'/k').
+Existing wallets will still use traditional key generation.
+
+Backups of HD wallets, regardless of when they have been created, can
+therefore be used to re-generate all possible private keys, even the
+ones which haven't already been generated during the time of the backup.
+
+HD key generation for new wallets can be disabled by `-usehd=0`. Keep in
+mind that this flag only has affect on newly created wallets.
+You can't disable HD key generation once you have created a HD wallet.
+
+There is no distinction between internal (change) and external keys.
+
+[Pull request](https://github.com/bitcoin/bitcoin/pull/8035/files), [BIP 32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
 
 ### GUI
 

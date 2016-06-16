@@ -2181,7 +2181,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const 
 }
 
 // Protected by cs_main
-static VersionBitsCache versionbitscache;
+VersionBitsCache versionbitscache;
 
 int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params)
 {
@@ -3449,8 +3449,9 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
 }
 
 /** Store block on disk. If dbp is non-NULL, the file is known to already reside on disk */
-static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, const CDiskBlockPos* dbp)
+static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, const CDiskBlockPos* dbp, bool* fNewBlock)
 {
+    if (fNewBlock) *fNewBlock = false;
     AssertLockHeld(cs_main);
 
     CBlockIndex *pindexDummy = NULL;
@@ -3479,6 +3480,7 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
         if (!fHasMoreWork) return true;     // Don't process less-work chains
         if (fTooFarAhead) return true;      // Block height is too high
     }
+    if (fNewBlock) *fNewBlock = true;
 
     if ((!CheckBlock(block, state, chainparams.GetConsensus(), GetAdjustedTime())) || !ContextualCheckBlock(block, state, pindex->pprev)) {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
@@ -3526,7 +3528,7 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 }
 
 
-bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, const CNode* pfrom, const CBlock* pblock, bool fForceProcessing, const CDiskBlockPos* dbp)
+bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, CNode* pfrom, const CBlock* pblock, bool fForceProcessing, const CDiskBlockPos* dbp)
 {
     {
         LOCK(cs_main);
@@ -3535,9 +3537,11 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
 
         // Store to disk
         CBlockIndex *pindex = NULL;
-        bool ret = AcceptBlock(*pblock, state, chainparams, &pindex, fRequested, dbp);
+        bool fNewBlock = false;
+        bool ret = AcceptBlock(*pblock, state, chainparams, &pindex, fRequested, dbp, &fNewBlock);
         if (pindex && pfrom) {
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
+            if (fNewBlock) pfrom->nLastBlockTime = GetTime();
         }
         CheckBlockIndex(chainparams.GetConsensus());
         if (!ret)
@@ -4107,7 +4111,7 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                 if (mapBlockIndex.count(hash) == 0 || (mapBlockIndex[hash]->nStatus & BLOCK_HAVE_DATA) == 0) {
                     LOCK(cs_main);
                     CValidationState state;
-                    if (AcceptBlock(block, state, chainparams, NULL, true, dbp))
+                    if (AcceptBlock(block, state, chainparams, NULL, true, dbp, NULL))
                         nLoaded++;
                     if (state.IsError())
                         break;
@@ -4140,7 +4144,7 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                                     head.ToString());
                             LOCK(cs_main);
                             CValidationState dummy;
-                            if (AcceptBlock(block, dummy, chainparams, NULL, true, &it->second))
+                            if (AcceptBlock(block, dummy, chainparams, NULL, true, &it->second, NULL))
                             {
                                 nLoaded++;
                                 queue.push_back(block.GetHash());
@@ -4611,7 +4615,22 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         CAddress addrMe;
         CAddress addrFrom;
         uint64_t nNonce = 1;
-        vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrMe;
+        uint64_t nServiceInt;
+        vRecv >> pfrom->nVersion >> nServiceInt >> nTime >> addrMe;
+        pfrom->nServices = ServiceFlags(nServiceInt);
+        if (!pfrom->fInbound)
+        {
+            addrman.SetServices(pfrom->addr, pfrom->nServices);
+        }
+        if (pfrom->nServicesExpected & ~pfrom->nServices)
+        {
+            LogPrint("net", "peer=%d does not offer the expected services (%08x offered, %08x expected); disconnecting\n", pfrom->id, pfrom->nServices, pfrom->nServicesExpected);
+            pfrom->PushMessage(NetMsgType::REJECT, strCommand, REJECT_NONSTANDARD,
+                               strprintf("Expected to offer services %08x", pfrom->nServicesExpected));
+            pfrom->fDisconnect = true;
+            return false;
+        }
+
         if (pfrom->nVersion < MIN_PEER_PROTO_VERSION)
         {
             // disconnect from peers older than this proto version
@@ -4772,6 +4791,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         {
             boost::this_thread::interruption_point();
 
+            if ((addr.nServices & REQUIRED_SERVICES) != REQUIRED_SERVICES)
+                continue;
+
             if (addr.nTime <= 100000000 || addr.nTime > nNow + 10 * 60)
                 addr.nTime = nNow - 5 * 24 * 60 * 60;
             pfrom->AddAddressKnown(addr);
@@ -4783,11 +4805,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     LOCK(cs_vNodes);
                     // Use deterministic randomness to send to the same nodes for 24 hours
                     // at a time so the addrKnowns of the chosen nodes prevent repeats
-                    static uint64_t salt0 = 0, salt1 = 0;
-                    while (salt0 == 0 && salt1 == 0) {
-                        GetRandBytes((unsigned char*)&salt0, sizeof(salt0));
-                        GetRandBytes((unsigned char*)&salt1, sizeof(salt1));
-                    }
+                    static const uint64_t salt0 = GetRand(std::numeric_limits<uint64_t>::max());
+                    static const uint64_t salt1 = GetRand(std::numeric_limits<uint64_t>::max());
                     uint64_t hashAddr = addr.GetHash();
                     multimap<uint64_t, CNode*> mapMix;
                     const CSipHasher hasher = CSipHasher(salt0, salt1).Write(hashAddr << 32).Write((GetTime() + hashAddr) / (24*60*60));
@@ -5042,6 +5061,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             mempool.check(pcoinsTip);
             RelayTransaction(tx);
             vWorkQueue.push_back(inv.hash);
+
+            pfrom->nLastTXTime = GetTime();
 
             LogPrint("mempool", "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)\n",
                 pfrom->id,
@@ -5612,6 +5633,11 @@ bool ProcessMessages(CNode* pfrom)
                 // Allow exceptions from over-long size
                 LogPrintf("%s(%s, %u bytes): Exception '%s' caught\n", __func__, SanitizeString(strCommand), nMessageSize, e.what());
             }
+            else if (strstr(e.what(), "non-canonical ReadCompactSize()"))
+            {
+                // Allow exceptions from non-canonical encoding
+                LogPrintf("%s(%s, %u bytes): Exception '%s' caught\n", __func__, SanitizeString(strCommand), nMessageSize, e.what());
+            }
             else
             {
                 PrintExceptionContinue(&e, "ProcessMessages()");
@@ -5728,6 +5754,9 @@ bool SendMessages(CNode* pto)
             pto->vAddrToSend.clear();
             if (!vAddr.empty())
                 pto->PushMessage(NetMsgType::ADDR, vAddr);
+            // we only send the big addr message once
+            if (pto->vAddrToSend.capacity() > 40)
+                pto->vAddrToSend.shrink_to_fit();
         }
 
         CNodeState &state = *State(pto->GetId());
