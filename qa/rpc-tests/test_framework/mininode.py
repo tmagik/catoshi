@@ -836,6 +836,18 @@ class msg_block(object):
     def __repr__(self):
         return "msg_block(block=%s)" % (repr(self.block))
 
+# for cases where a user needs tighter control over what is sent over the wire
+# note that the user must supply the name of the command, and the data
+class msg_generic(object):
+    def __init__(self, command, data=None):
+        self.command = command
+        self.data = data
+
+    def serialize(self):
+        return self.data
+
+    def __repr__(self):
+        return "msg_generic()"
 
 class msg_getaddr(object):
     command = b"getaddr"
@@ -1303,7 +1315,7 @@ class NodeConn(asyncore.dispatcher):
 
     def send_message(self, message, pushbuf=False):
         if self.state != "connected" and not pushbuf:
-            return
+            raise IOError('Not connected, no pushbuf')
         self.show_debug_msg("Send %s" % repr(message))
         command = message.command
         data = message.serialize()
