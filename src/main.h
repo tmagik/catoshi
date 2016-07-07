@@ -152,6 +152,7 @@ typedef boost::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
 extern BlockMap mapBlockIndex;
 extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockSize;
+extern uint64_t nLastBlockCost;
 extern const std::string strMessageMagic;
 extern CWaitableCriticalSection csBestBlock;
 extern CConditionVariable cvBlockChange;
@@ -246,8 +247,6 @@ bool ProcessMessages(CNode* pfrom);
 bool SendMessages(CNode* pto);
 /** Run an instance of the script checking thread */
 void ThreadScriptCheck();
-/** Try to detect Partition (network isolation) attacks against us */
-void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const CBlockIndex *const &bestHeader, int64_t nPowTargetSpacing);
 /** Check whether we are doing an initial block download (synchronizing from disk or network) */
 bool IsInitialBlockDownload();
 /** Format a string that describes several potential problems detected by the core.
@@ -332,6 +331,14 @@ unsigned int GetLegacySigOpCount(const CTransaction& tx);
  */
 unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& mapInputs);
 
+/**
+ * Compute total signature operation cost of a transaction.
+ * @param[in] tx     Transaction for which we are computing the cost
+ * @param[in] inputs Map of previous transactions that have outputs we're spending
+ * @param[out] flags Script verification flags
+ * @return Total signature operation cost of tx
+ */
+int64_t GetTransactionSigOpCost(const CTransaction& tx, const CCoinsViewCache& inputs, int flags);
 
 /**
  * Check whether all inputs of this transaction are valid (no double spends, scripts & sigs, amounts)
@@ -394,6 +401,7 @@ class CScriptCheck
 {
 private:
     CScript scriptPubKey;
+    CAmount amount;
     const CTransaction *ptxTo;
     unsigned int nIn;
     unsigned int nFlags;
@@ -401,9 +409,9 @@ private:
     ScriptError error;
 
 public:
-    CScriptCheck(): ptxTo(0), nIn(0), nFlags(0), cacheStore(false), error(SCRIPT_ERR_UNKNOWN_ERROR) {}
+    CScriptCheck(): amount(0), ptxTo(0), nIn(0), nFlags(0), cacheStore(false), error(SCRIPT_ERR_UNKNOWN_ERROR) {}
     CScriptCheck(const CCoins& txFromIn, const CTransaction& txToIn, unsigned int nInIn, unsigned int nFlagsIn, bool cacheIn) :
-        scriptPubKey(txFromIn.vout[txToIn.vin[nInIn].prevout.n].scriptPubKey),
+        scriptPubKey(txFromIn.vout[txToIn.vin[nInIn].prevout.n].scriptPubKey), amount(txFromIn.vout[txToIn.vin[nInIn].prevout.n].nValue),
         ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR) { }
 
     bool operator()();
@@ -411,6 +419,7 @@ public:
     void swap(CScriptCheck &check) {
         scriptPubKey.swap(check.scriptPubKey);
         std::swap(ptxTo, check.ptxTo);
+        std::swap(amount, check.amount);
         std::swap(nIn, check.nIn);
         std::swap(nFlags, check.nFlags);
         std::swap(cacheStore, check.cacheStore);
@@ -429,13 +438,13 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
 /** Functions for validating blocks and updating the block tree */
 
 /** Context-independent validity checks */
-bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, int64_t nAdjustedTime, bool fCheckPOW = true);
-bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::Params& consensusParams, int64_t nAdjustedTime, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
+bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true);
+bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 
 /** Context-dependent validity checks.
  *  By "context", we mean only the previous block headers, but not the UTXO
  *  set; UTXO-related validity checks are done in ConnectBlock(). */
-bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, CBlockIndex* pindexPrev);
+bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, CBlockIndex* pindexPrev, int64_t nAdjustedTime);
 bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIndex *pindexPrev);
 
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins.
@@ -452,6 +461,18 @@ bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockI
 
 /** Check a block is completely valid from start to finish (only works on top of our current best block, with cs_main held) */
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
+
+/** Check whether witness commitments are required for block. */
+bool IsWitnessEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params);
+
+/** When there are blocks in the active chain with missing data, rewind the chainstate and remove them from the block index */
+bool RewindBlockIndex(const CChainParams& params);
+
+/** Update uncommitted block structures (currently: only the witness nonce). This is safe for submitted blocks. */
+void UpdateUncommittedBlockStructures(CBlock& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
+
+/** Produce the necessary coinbase commitment for a block (modifies the hash, don't call for mined blocks). */
+std::vector<unsigned char> GenerateCoinbaseCommitment(CBlock& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
 
 /** RAII wrapper for VerifyDB: Verify consistency of the block and coin databases */
 class CVerifyDB {

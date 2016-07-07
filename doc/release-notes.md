@@ -16,12 +16,46 @@ To receive security and update notifications, please subscribe to:
 
   <https://bitcoincore.org/en/list/announcements/join/>
 
+Compatibility
+==============
+
+Microsoft ended support for Windows XP on [April 8th, 2014](https://www.microsoft.com/en-us/WindowsForBusiness/end-of-xp-support),
+an OS initially released in 2001. This means that not even critical security
+updates will be released anymore. Without security updates, using a bitcoin
+wallet on a XP machine is irresponsible at least.
+
+In addition to that, with 0.12.x there have been varied reports of Bitcoin Core
+randomly crashing on Windows XP. It is [not clear](https://github.com/bitcoin/bitcoin/issues/7681#issuecomment-217439891)
+what the source of these crashes is, but it is likely that upstream
+libraries such as Qt are no longer being tested on XP.
+
+We do not have time nor resources to provide support for an OS that is
+end-of-life. From 0.13.0 on, Windows XP is no longer supported. Users are
+suggested to upgrade to a newer verion of Windows, or install an alternative OS
+that is supported.
+
+No attempt is made to prevent installing or running the software on Windows XP,
+you can still do so at your own risk, but do not expect it to work: do not
+report issues about Windows XP to the issue tracker.
+
 Notable changes
 ===============
 
-Example item
-----------------
+Database cache memory increased
+--------------------------------
 
+As a result of growth of the UTXO set, performance with the prior default
+database cache of 100 MiB has suffered.
+For this reason the default was changed to 300 MiB in this release.
+
+For nodes on low-memory systems, the database cache can be changed back to
+100 MiB (or to another value) by either:
+
+- Adding `dbcache=100` in bitcoin.conf
+- Changing it in the GUI under `Options → Size of database cache`
+
+Note that the database cache setting has the most performance impact
+during initial sync of a node, and when catching up after downtime.
 
 bitcoin-cli: arguments privacy
 --------------------------------
@@ -60,6 +94,26 @@ When cross-compiling for a target that doesn't have C++11 libraries, configure w
 
 For running the functional tests in `qa/rpc-tests`, Python3.4 or higher is now
 required.
+
+Linux ARM builds
+------------------
+
+Due to popular request, Linux ARM builds have been added to the uploaded
+executables.
+
+The following extra files can be found in the download directory or torrent:
+
+- `bitcoin-${VERSION}-arm-linux-gnueabihf.tar.gz`: Linux binaries for the most
+  common 32-bit ARM architecture.
+- `bitcoin-${VERSION}-aarch64-linux-gnu.tar.gz`: Linux binaries for the most
+  common 64-bit ARM architecture.
+
+ARM builds are still experimental. If you have problems on a certain device or
+Linux distribution combination please report them on the bug tracker, it may be
+possible to resolve them.
+
+Note that Android is not considered ARM Linux in this context. The executables
+are not expected to work out of the box on Android.
 
 0.13.0 Change log
 =================
