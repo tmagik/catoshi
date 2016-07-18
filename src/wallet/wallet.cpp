@@ -126,6 +126,8 @@ CPubKey CWallet::GenerateNewKey()
             // childIndex | BIP32_HARDENED_KEY_LIMIT = derive childIndex in hardened child-index-range
             // example: 1 | BIP32_HARDENED_KEY_LIMIT == 0x80000001 == 2147483649
             externalChainChildKey.Derive(childKey, hdChain.nExternalChainCounter | BIP32_HARDENED_KEY_LIMIT);
+            metadata.hdKeypath     = "m/0'/0'/"+std::to_string(hdChain.nExternalChainCounter)+"'";
+            metadata.hdMasterKeyID = hdChain.masterKeyID;
             // increment childkey index
             hdChain.nExternalChainCounter++;
         } while(HaveKey(childKey.key.GetPubKey().GetID()));
@@ -3291,7 +3293,7 @@ bool CWallet::InitLoadWallet()
     if (fFirstRun)
     {
         // Create new keyUser and set as default key
-        if (GetBoolArg("-usehd", DEFAULT_USE_HD_WALLET)) {
+        if (GetBoolArg("-usehd", DEFAULT_USE_HD_WALLET) && walletInstance->hdChain.masterKeyID.IsNull()) {
             // generate a new master key
             CKey key;
             key.MakeNewKey(true);
