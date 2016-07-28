@@ -1143,13 +1143,14 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
     }
 
     // Reject transactions with witness before segregated witness activates (override with -prematurewitness)
-    if (!GetBoolArg("-prematurewitness",false) && !tx.wit.IsNull() && !IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus())) {
+    bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus());
+    if (!GetBoolArg("-prematurewitness",false) && !tx.wit.IsNull() && !witnessEnabled) {
         return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
     }
 
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     string reason;
-    if (fRequireStandard && !IsStandardTx(tx, reason))
+    if (fRequireStandard && !IsStandardTx(tx, reason, witnessEnabled))
         return state.DoS(0, false, REJECT_NONSTANDARD, reason);
 
     // Only accept nLockTime-using transactions that can be mined in the next
@@ -3566,7 +3567,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const CB
     //   {0xaa, 0x21, 0xa9, 0xed}, and the following 32 bytes are SHA256^2(witness root, witness nonce). In case there are
     //   multiple, the last one is used.
     bool fHaveWitness = false;
-    if (IsWitnessEnabled(pindexPrev, consensusParams)) {
+    if (VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE) {
         int commitpos = GetWitnessCommitmentIndex(block);
         if (commitpos != -1) {
             bool malleated = false;
