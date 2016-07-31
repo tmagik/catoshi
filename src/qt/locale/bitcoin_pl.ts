@@ -300,7 +300,7 @@
     </message>
     <message>
         <source>%1 behind</source>
-        <translation>%1 wstecz</translation>
+        <translation>%1 za</translation>
     </message>
     <message>
         <source>Last received block was generated %1 ago.</source>
@@ -993,10 +993,6 @@
 </context>
 <context>
     <name>RPCConsole</name>
-    <message>
-        <source>Client name</source>
-        <translation>Nazwa klienta</translation>
-    </message>
     <message>
         <source>N/A</source>
         <translation>NIEDOSTĘPNE</translation>
@@ -1838,14 +1834,6 @@ Zwróć uwagę, że poprawnie zweryfikowana wiadomość potwierdza to, że nadaw
     <message>
         <source>Use UPnP to map the listening port (default: 1 when listening and no -proxy)</source>
         <translation>Użyj UPnP do mapowania portu nasłuchu (domyślnie: 1 gdy nasłuchuje i brak -proxy)</translation>
-    </message>
-    <message>
-        <source>WARNING: abnormally high number of blocks generated, %d blocks received in the last %d hours (%d expected)</source>
-        <translation>UWAGA: nienaturalnie duża liczba wygenerowanych bloków, %d bloków otrzymano w ostatnich %d godzinach (%d oczekiwanych)</translation>
-    </message>
-    <message>
-        <source>WARNING: check your network connection, %d blocks received in the last %d hours (%d expected)</source>
-        <translation>UWAGA: sprawdź swoje połączenie sieciowe, %d bloków otrzymano w ostatnich %d godzinach (%d oczekiwanych)</translation>
     </message>
     <message>
         <source>Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.</source>
