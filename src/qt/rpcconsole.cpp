@@ -16,6 +16,7 @@
 #include "bantablemodel.h"
 
 #include "chainparams.h"
+#include "netbase.h"
 #include "rpc/server.h"
 #include "rpc/client.h"
 #include "util.h"
@@ -451,7 +452,6 @@ void RPCConsole::setClientModel(ClientModel *model)
         // Provide initial values
         ui->clientVersion->setText(model->formatFullVersion());
         ui->clientUserAgent->setText(model->formatSubVersion());
-        ui->clientName->setText(model->clientName());
         ui->dataDir->setText(model->dataDir());
         ui->startupTime->setText(model->formatClientStartupTime());
         ui->networkName->setText(QString::fromStdString(Params().NetworkIDString()));
@@ -899,7 +899,10 @@ void RPCConsole::banSelectedNode(int bantime)
         int port = 0;
         SplitHostPort(nStr, port, addr);
 
-        CNode::Ban(CNetAddr(addr), BanReasonManuallyAdded, bantime);
+        CNetAddr resolved;
+        if(!LookupHost(addr.c_str(), resolved, false))
+            return;
+        CNode::Ban(resolved, BanReasonManuallyAdded, bantime);
 
         clearSelectedNode();
         clientModel->getBanTableModel()->refresh();
@@ -913,8 +916,9 @@ void RPCConsole::unbanSelectedNode()
 
     // Get currently selected ban address
     QString strNode = GUIUtil::getEntryData(ui->banlistWidget, 0, BanTableModel::Address);
-    CSubNet possibleSubnet(strNode.toStdString());
+    CSubNet possibleSubnet;
 
+    LookupSubNet(strNode.toStdString().c_str(), possibleSubnet);
     if (possibleSubnet.IsValid())
     {
         CNode::Unban(possibleSubnet);
