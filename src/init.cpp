@@ -483,7 +483,7 @@ std::string LicenseInfo()
 {
     const std::string URL_SOURCE_CODE = "<https://github.com/bitcoin/bitcoin>";
     const std::string URL_WEBSITE = "<https://bitcoincore.org>";
-    // todo: remove urls from translations on next change
+
     return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2009, COPYRIGHT_YEAR) + " ") + "\n" +
            "\n" +
            strprintf(_("Please contribute if you find %s useful. "
@@ -495,9 +495,9 @@ std::string LicenseInfo()
            "\n" +
            "\n" +
            _("This is experimental software.") + "\n" +
-           _("Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.") + "\n" +
+           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING", "<https://opensource.org/licenses/MIT>") + "\n" +
            "\n" +
-           _("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.") +
+           strprintf(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit %s and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard."), "<https://www.openssl.org>") +
            "\n";
 }
 
@@ -1067,7 +1067,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("Using data directory %s\n", strDataDir);
     LogPrintf("Using config file %s\n", GetConfigFile().string());
     LogPrintf("Using at most %i connections (%i file descriptors available)\n", nMaxConnections, nFD);
-    std::ostringstream strErrors;
 
     LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
     if (nScriptCheckThreads) {
@@ -1271,7 +1270,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // cache size calculations
     int64_t nTotalCache = (GetArg("-dbcache", nDefaultDbCache) << 20);
     nTotalCache = std::max(nTotalCache, nMinDbCache << 20); // total cache cannot be less than nMinDbCache
-    nTotalCache = std::min(nTotalCache, nMaxDbCache << 20); // total cache cannot be greated than nMaxDbcache
+    nTotalCache = std::min(nTotalCache, nMaxDbCache << 20); // total cache cannot be greater than nMaxDbcache
     int64_t nBlockTreeDBCache = nTotalCache / 8;
     nBlockTreeDBCache = std::min(nBlockTreeDBCache, (GetBoolArg("-txindex", DEFAULT_TXINDEX) ? nMaxBlockDBAndTxIndexCache : nMaxBlockDBCache) << 20);
     nTotalCache -= nBlockTreeDBCache;
@@ -1491,9 +1490,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     // ********************************************************* Step 11: start node
-
-    if (!strErrors.str().empty())
-        return InitError(strErrors.str());
 
     //// debug print
     LogPrintf("mapBlockIndex.size() = %u\n",   mapBlockIndex.size());

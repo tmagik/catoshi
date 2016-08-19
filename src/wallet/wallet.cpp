@@ -1200,7 +1200,7 @@ CPubKey CWallet::GenerateNewHDMasterKey()
 
         // write the key&metadata to the database
         if (!AddKeyPubKey(key, pubkey))
-            throw std::runtime_error("CWallet::GenerateNewKey(): AddKey failed");
+            throw std::runtime_error(std::string(__func__)+": AddKeyPubKey failed");
     }
 
     return pubkey;
@@ -3138,7 +3138,7 @@ void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const {
             mapKeyBirth[it->first] = it->second.nCreateTime;
 
     // map in which we'll infer heights of other keys
-    CBlockIndex *pindexMax = chainActive[std::max(0, chainActive.Height() - 144)]; // the tip can be reorganised; use a 144-block safety margin
+    CBlockIndex *pindexMax = chainActive[std::max(0, chainActive.Height() - 144)]; // the tip can be reorganized; use a 144-block safety margin
     std::map<CKeyID, CBlockIndex*> mapKeyFirstBlock;
     std::set<CKeyID> setKeys;
     GetKeys(setKeys);
@@ -3329,7 +3329,6 @@ bool CWallet::InitLoadWallet()
         // Create new keyUser and set as default key
         if (GetBoolArg("-usehd", DEFAULT_USE_HD_WALLET) && !walletInstance->IsHDEnabled()) {
             // generate a new master key
-            CKey key;
             CPubKey masterPubKey = walletInstance->GenerateNewHDMasterKey();
             if (!walletInstance->SetHDMasterKey(masterPubKey))
                 throw std::runtime_error("CWallet::GenerateNewKey(): Storing master key failed");
