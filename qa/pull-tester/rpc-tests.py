@@ -77,8 +77,6 @@ for arg in sys.argv[1:]:
 #Set env vars
 if "BITCOIND" not in os.environ:
     os.environ["BITCOIND"] = BUILDDIR + '/src/bitcoind' + EXEEXT
-if "BITCOINCLI" not in os.environ:
-    os.environ["BITCOINCLI"] = BUILDDIR + '/src/bitcoin-cli' + EXEEXT
 
 if EXEEXT == ".exe" and "-win" not in opts:
     # https://github.com/bitcoin/bitcoin/commit/d52802551752140cf41f0d9a225a43e84404d3e9
@@ -112,6 +110,8 @@ testScripts = [
     'receivedby.py',
     'mempool_resurrect_test.py',
     'txn_doublespend.py --mineblock',
+    'p2p-segwit.py',
+    'segwit.py',
     'txn_clone.py',
     'getchaintips.py',
     'rawtransactions.py',
@@ -133,15 +133,15 @@ testScripts = [
     'disablewallet.py',
     'sendheaders.py',
     'keypool.py',
+    'p2p-mempool.py',
     'prioritise_transaction.py',
     'invalidblockrequest.py',
     'invalidtxrequest.py',
     'abandonconflict.py',
     'p2p-versionbits-warning.py',
-    'p2p-segwit.py',
-    'segwit.py',
     'importprunedfunds.py',
     'signmessages.py',
+    'p2p-compactblocks.py',
 ]
 if ENABLE_ZMQ:
     testScripts.append('zmq_test.py')
@@ -193,6 +193,7 @@ def runtests():
         coverage = RPCCoverage()
         print("Initializing coverage directory at %s\n" % coverage.dir)
     flags = ["--srcdir=%s/src" % BUILDDIR] + passon_args
+    flags.append("--cachedir=%s/qa/cache" % BUILDDIR)
     if coverage:
         flags.append(coverage.flag)
 
