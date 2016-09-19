@@ -448,7 +448,7 @@ void CNode::PushVersion()
 {
     int64_t nTime = (fInbound ? GetAdjustedTime() : GetTime());
     CAddress addrYou = (addr.IsRoutable() && !IsProxy(addr) ? addr : CAddress(CService(), addr.nServices));
-    CAddress addrMe = GetLocalAddress(&addr, nLocalServices);
+    CAddress addrMe = CAddress(CService(), nLocalServices);
     if (fLogIPs)
         LogPrint("net", "send version message: version %d, blocks=%d, us=%s, them=%s, peer=%d\n", PROTOCOL_VERSION, nMyStartingHeight, addrMe.ToString(), addrYou.ToString(), id);
     else
@@ -2046,9 +2046,7 @@ bool CConnman::Start(boost::thread_group& threadGroup, CScheduler& scheduler, st
 {
     nTotalBytesRecv = 0;
     nTotalBytesSent = 0;
-    nMaxOutboundLimit = 0;
     nMaxOutboundTotalBytesSentInCycle = 0;
-    nMaxOutboundTimeframe = 60*60*24; //1 day
     nMaxOutboundCycleStartTime = 0;
 
     nRelevantServices = connOptions.nRelevantServices;
@@ -2059,6 +2057,9 @@ bool CConnman::Start(boost::thread_group& threadGroup, CScheduler& scheduler, st
 
     nSendBufferMaxSize = connOptions.nSendBufferMaxSize;
     nReceiveFloodSize = connOptions.nSendBufferMaxSize;
+
+    nMaxOutboundLimit = connOptions.nMaxOutboundLimit;
+    nMaxOutboundTimeframe = connOptions.nMaxOutboundTimeframe;
 
     SetBestHeight(connOptions.nBestHeight);
 
