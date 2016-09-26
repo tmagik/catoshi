@@ -10,7 +10,6 @@
 #include "init.h"
 #include "main.h"
 #include "net.h"
-#include "netbase.h"
 #include "policy/rbf.h"
 #include "rpc/server.h"
 #include "timedata.h"
@@ -347,6 +346,9 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     if (nValue > curBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds");
 
+    if (pwalletMain->GetBroadcastTransactions() && !g_connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
     // Parse Bitcoin address
     CScript scriptPubKey = GetScriptForDestination(address);
 
@@ -363,7 +365,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
         throw JSONRPCError(RPC_WALLET_ERROR, strError);
     }
-    if (!pwalletMain->CommitTransaction(wtxNew, reservekey))
+    if (!pwalletMain->CommitTransaction(wtxNew, reservekey, g_connman.get()))
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of the wallet and coins were spent in the copy but not marked as spent here.");
 }
 
@@ -564,8 +566,8 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
     CScript scriptPubKey = GetScriptForDestination(address.Get());
-    if (!IsMine(*pwalletMain,scriptPubKey))
-        return (double)0.0;
+    if (!IsMine(*pwalletMain, scriptPubKey))
+        return ValueFromAmount(0);
 
     // Minimum confirmations
     int nMinDepth = 1;
@@ -643,7 +645,7 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
         }
     }
 
-    return (double)nAmount / (double)COIN;
+    return ValueFromAmount(nAmount);
 }
 
 
@@ -892,6 +894,9 @@ UniValue sendmany(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    if (pwalletMain->GetBroadcastTransactions() && !g_connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
     string strAccount = AccountFromValue(params[0]);
     UniValue sendTo = params[1].get_obj();
     int nMinDepth = 1;
@@ -954,7 +959,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     bool fCreated = pwalletMain->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, nChangePosRet, strFailReason);
     if (!fCreated)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strFailReason);
-    if (!pwalletMain->CommitTransaction(wtx, keyChange))
+    if (!pwalletMain->CommitTransaction(wtx, keyChange, g_connman.get()))
         throw JSONRPCError(RPC_WALLET_ERROR, "Transaction commit failed");
 
     return wtx.GetHash().GetHex();
@@ -1011,6 +1016,87 @@ UniValue addmultisigaddress(const UniValue& params, bool fHelp)
     return CBitcoinAddress(innerID).ToString();
 }
 
+class Witnessifier : public boost::static_visitor<bool>
+{
+public:
+    CScriptID result;
+
+    bool operator()(const CNoDestination &dest) const { return false; }
+
+    bool operator()(const CKeyID &keyID) {
+        CPubKey pubkey;
+        if (pwalletMain && pwalletMain->GetPubKey(keyID, pubkey)) {
+            CScript basescript;
+            basescript << ToByteVector(pubkey) << OP_CHECKSIG;
+            CScript witscript = GetScriptForWitness(basescript);
+            pwalletMain->AddCScript(witscript);
+            result = CScriptID(witscript);
+            return true;
+        }
+        return false;
+    }
+
+    bool operator()(const CScriptID &scriptID) {
+        CScript subscript;
+        if (pwalletMain && pwalletMain->GetCScript(scriptID, subscript)) {
+            int witnessversion;
+            std::vector<unsigned char> witprog;
+            if (subscript.IsWitnessProgram(witnessversion, witprog)) {
+                result = scriptID;
+                return true;
+            }
+            CScript witscript = GetScriptForWitness(subscript);
+            pwalletMain->AddCScript(witscript);
+            result = CScriptID(witscript);
+            return true;
+        }
+        return false;
+    }
+};
+
+UniValue addwitnessaddress(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() < 1 || params.size() > 1)
+    {
+        string msg = "addwitnessaddress \"address\"\n"
+            "\nAdd a witness address for a script (with pubkey or redeemscript known).\n"
+            "It returns the witness script.\n"
+
+            "\nArguments:\n"
+            "1. \"address\"       (string, required) An address known to the wallet\n"
+
+            "\nResult:\n"
+            "\"witnessaddress\",  (string) The value of the new address (P2SH of witness script).\n"
+            "}\n"
+        ;
+        throw runtime_error(msg);
+    }
+
+    {
+        LOCK(cs_main);
+        if (!IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus()) && !GetBoolArg("-walletprematurewitness", false)) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Segregated witness not enabled on network");
+        }
+    }
+
+    CBitcoinAddress address(params[0].get_str());
+    if (!address.IsValid())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
+
+    Witnessifier w;
+    CTxDestination dest = address.Get();
+    bool ret = boost::apply_visitor(w, dest);
+    if (!ret) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Public key or redeemscript not known to wallet");
+    }
+
+    pwalletMain->SetAddressBook(w.result, "", "receive");
+
+    return CBitcoinAddress(w.result).ToString();
+}
 
 struct tallyitem
 {
@@ -1098,10 +1184,10 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
 
         if (fByAccounts)
         {
-            tallyitem& item = mapAccountTally[strAccount];
-            item.nAmount += nAmount;
-            item.nConf = min(item.nConf, nConf);
-            item.fIsWatchonly = fIsWatchonly;
+            tallyitem& _item = mapAccountTally[strAccount];
+            _item.nAmount += nAmount;
+            _item.nConf = min(_item.nConf, nConf);
+            _item.fIsWatchonly = fIsWatchonly;
         }
         else
         {
@@ -1117,9 +1203,9 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             UniValue transactions(UniValue::VARR);
             if (it != mapTally.end())
             {
-                BOOST_FOREACH(const uint256& item, (*it).second.txids)
+                BOOST_FOREACH(const uint256& _item, (*it).second.txids)
                 {
-                    transactions.push_back(item.GetHex());
+                    transactions.push_back(_item.GetHex());
                 }
             }
             obj.push_back(Pair("txids", transactions));
@@ -2002,7 +2088,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
     // slack space in .dat files; that is bad if the old data is
     // unencrypted private keys. So:
     StartShutdown();
-    return "wallet encrypted; Bitcoin server stopping, restart to run with encrypted wallet. The keypool has been flushed, you need to make a new backup.";
+    return "wallet encrypted; Bitcoin server stopping, restart to run with encrypted wallet. The keypool has been flushed and a new HD seed was generated (if you are using HD). You need to make a new backup.";
 }
 
 UniValue lockunspent(const UniValue& params, bool fHelp)
@@ -2181,15 +2267,16 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "Returns an object containing various wallet state info.\n"
             "\nResult:\n"
             "{\n"
-            "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
-            "  \"balance\": xxxxxxx,         (numeric) the total confirmed balance of the wallet in " + CURRENCY_UNIT + "\n"
-            "  \"unconfirmed_balance\": xxx, (numeric) the total unconfirmed balance of the wallet in " + CURRENCY_UNIT + "\n"
-            "  \"immature_balance\": xxxxxx, (numeric) the total immature balance of the wallet in " + CURRENCY_UNIT + "\n"
-            "  \"txcount\": xxxxxxx,         (numeric) the total number of transactions in the wallet\n"
-            "  \"keypoololdest\": xxxxxx,    (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
-            "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
-            "  \"unlocked_until\": ttt,      (numeric) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked\n"
-            "  \"paytxfee\": x.xxxx,         (numeric) the transaction fee configuration, set in " + CURRENCY_UNIT + "/kB\n"
+            "  \"walletversion\": xxxxx,       (numeric) the wallet version\n"
+            "  \"balance\": xxxxxxx,           (numeric) the total confirmed balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "  \"unconfirmed_balance\": xxx,   (numeric) the total unconfirmed balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "  \"immature_balance\": xxxxxx,   (numeric) the total immature balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "  \"txcount\": xxxxxxx,           (numeric) the total number of transactions in the wallet\n"
+            "  \"keypoololdest\": xxxxxx,      (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
+            "  \"keypoolsize\": xxxx,          (numeric) how many new keys are pre-generated\n"
+            "  \"unlocked_until\": ttt,        (numeric) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked\n"
+            "  \"paytxfee\": x.xxxx,           (numeric) the transaction fee configuration, set in " + CURRENCY_UNIT + "/kB\n"
+            "  \"hdmasterkeyid\": \"<hash160>\", (string) the Hash160 of the HD master pubkey\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getwalletinfo", "")
@@ -2209,6 +2296,9 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
     if (pwalletMain->IsCrypted())
         obj.push_back(Pair("unlocked_until", nWalletUnlockTime));
     obj.push_back(Pair("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK())));
+    CKeyID masterKeyID = pwalletMain->GetHDChain().masterKeyID;
+    if (!masterKeyID.IsNull())
+         obj.push_back(Pair("hdmasterkeyid", masterKeyID.GetHex()));
     return obj;
 }
 
@@ -2226,9 +2316,12 @@ UniValue resendwallettransactions(const UniValue& params, bool fHelp)
             "Returns array of transaction ids that were re-broadcast.\n"
             );
 
+    if (!g_connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::vector<uint256> txids = pwalletMain->ResendWalletTransactionsBefore(GetTime());
+    std::vector<uint256> txids = pwalletMain->ResendWalletTransactionsBefore(GetTime(), g_connman.get());
     UniValue result(UniValue::VARR);
     BOOST_FOREACH(const uint256& txid, txids)
     {
@@ -2451,7 +2544,7 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
 
     // parse hex string from parameter
     CTransaction origTx;
-    if (!DecodeHexTx(origTx, params[0].get_str()))
+    if (!DecodeHexTx(origTx, params[0].get_str(), true))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
 
     if (origTx.vout.size() == 0)
@@ -2491,6 +2584,7 @@ static const CRPCCommand commands[] =
     { "hidden",             "resendwallettransactions", &resendwallettransactions, true  },
     { "wallet",             "abandontransaction",       &abandontransaction,       false },
     { "wallet",             "addmultisigaddress",       &addmultisigaddress,       true  },
+    { "wallet",             "addwitnessaddress",        &addwitnessaddress,        true  },
     { "wallet",             "backupwallet",             &backupwallet,             true  },
     { "wallet",             "dumpprivkey",              &dumpprivkey,              true  },
     { "wallet",             "dumpwallet",               &dumpwallet,               true  },
@@ -2534,8 +2628,11 @@ static const CRPCCommand commands[] =
     { "wallet",             "removeprunedfunds",        &removeprunedfunds,        true  },
 };
 
-void RegisterWalletRPCCommands(CRPCTable &tableRPC)
+void RegisterWalletRPCCommands(CRPCTable &t)
 {
+    if (GetBoolArg("-disablewallet", false))
+        return;
+
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+        t.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }
