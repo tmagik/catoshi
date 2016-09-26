@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(coin_selection_tests)
         // run the 'mtgox' test (see http://blockexplorer.com/tx/29a3efd3ef04f9153d47a990bd7b048a4b2d213daaa5fb8ed670fb85f13bdbcf)
         // they tried to consolidate 10 50k coins into one 500k coin, and ended up with 50k in change
         empty_wallet();
-        for (int i = 0; i < 20; i++)
+        for (int j = 0; j < 20; j++)
             add_coin(50000 * COIN);
 
         BOOST_CHECK( wallet.SelectCoinsMinConf(500000 * COIN, 1, 1, vCoins, setCoinsRet, nValueRet));
@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE(coin_selection_tests)
             BOOST_CHECK(!equal_sets(setCoinsRet, setCoinsRet2));
 
             int fails = 0;
-            for (int i = 0; i < RANDOM_REPEATS; i++)
+            for (int j = 0; j < RANDOM_REPEATS; j++)
             {
                 // selecting 1 from 100 identical coins depends on the shuffle; this test will fail 1% of the time
                 // run the test RANDOM_REPEATS times and only complain if all of them fail
@@ -317,7 +317,7 @@ BOOST_AUTO_TEST_CASE(coin_selection_tests)
             add_coin(25 * CENT);
 
             fails = 0;
-            for (int i = 0; i < RANDOM_REPEATS; i++)
+            for (int j = 0; j < RANDOM_REPEATS; j++)
             {
                 // selecting 1 from 100 identical coins depends on the shuffle; this test will fail 1% of the time
                 // run the test RANDOM_REPEATS times and only complain if all of them fail
@@ -349,20 +349,6 @@ BOOST_AUTO_TEST_CASE(ApproximateBestSubset)
     BOOST_CHECK(wallet.SelectCoinsMinConf(1003 * COIN, 1, 6, vCoins, setCoinsRet, nValueRet));
     BOOST_CHECK_EQUAL(nValueRet, 1003 * COIN);
     BOOST_CHECK_EQUAL(setCoinsRet.size(), 2U);
-
-    empty_wallet();
-
-    // Test trimming
-    for (int i = 0; i < 100; i++)
-        add_coin(10 * COIN);
-    for (int i = 0; i < 100; i++)
-        add_coin(1000 * COIN);
-
-    BOOST_CHECK(wallet.SelectCoinsMinConf(100001 * COIN, 1, 6, vCoins, setCoinsRet, nValueRet));
-    // We need all 100 larger coins and exactly one small coin.
-    // Superfluous small coins must be trimmed from the set:
-    BOOST_CHECK_EQUAL(nValueRet, 100010 * COIN);
-    BOOST_CHECK_EQUAL(setCoinsRet.size(), 101);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
