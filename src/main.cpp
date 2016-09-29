@@ -113,6 +113,8 @@ CScript COINBASE_FLAGS;
 
 const string strMessageMagic = "Bitcoin Signed Message:\n";
 
+static const uint64_t RANDOMIZER_ID_ADDRESS_RELAY = 0x3cac0035b5866b90ULL; // SHA256("main address relay")[0:8]
+
 // Internal stuff
 namespace {
 
@@ -1183,9 +1185,9 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
                 bool fReplacementOptOut = true;
                 if (fEnableReplacement)
                 {
-                    BOOST_FOREACH(const CTxIn &txin, ptxConflicting->vin)
+                    BOOST_FOREACH(const CTxIn &_txin, ptxConflicting->vin)
                     {
-                        if (txin.nSequence < std::numeric_limits<unsigned int>::max()-1)
+                        if (_txin.nSequence < std::numeric_limits<unsigned int>::max()-1)
                         {
                             fReplacementOptOut = false;
                             break;
@@ -2062,7 +2064,7 @@ bool UndoReadFromDisk(CBlockUndo& blockundo, const CDiskBlockPos& pos, const uin
     // Open history file to read
     CAutoFile filein(OpenUndoFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
-        return error("%s: OpenBlockFile failed", __func__);
+        return error("%s: OpenUndoFile failed", __func__);
 
     // Read block
     uint256 hashChecksum;
@@ -2386,6 +2388,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Start enforcing WITNESS rules using versionbits logic.
     if (IsWitnessEnabled(pindex->pprev, chainparams.GetConsensus())) {
         flags |= SCRIPT_VERIFY_WITNESS;
+        flags |= SCRIPT_VERIFY_NULLDUMMY;
     }
 
     int64_t nTime2 = GetTimeMicros(); nTimeForks += nTime2 - nTime1;
@@ -2496,14 +2499,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (pindex->GetUndoPos().IsNull() || !pindex->IsValid(BLOCK_VALID_SCRIPTS))
     {
         if (pindex->GetUndoPos().IsNull()) {
-            CDiskBlockPos pos;
-            if (!FindUndoPos(state, pindex->nFile, pos, ::GetSerializeSize(blockundo, SER_DISK, CLIENT_VERSION) + 40))
+            CDiskBlockPos _pos;
+            if (!FindUndoPos(state, pindex->nFile, _pos, ::GetSerializeSize(blockundo, SER_DISK, CLIENT_VERSION) + 40))
                 return error("ConnectBlock(): FindUndoPos failed");
-            if (!UndoWriteToDisk(blockundo, pos, pindex->pprev->GetBlockHash(), chainparams.MessageStart()))
+            if (!UndoWriteToDisk(blockundo, _pos, pindex->pprev->GetBlockHash(), chainparams.MessageStart()))
                 return AbortNode(state, "Failed to write undo data");
 
             // update nUndoPos in block index
-            pindex->nUndoPos = pos.nPos;
+            pindex->nUndoPos = _pos.nPos;
             pindex->nStatus |= BLOCK_HAVE_UNDO;
         }
 
@@ -3816,10 +3819,10 @@ void PruneOneBlockFile(const int fileNumber)
             // mapBlocksUnlinked or setBlockIndexCandidates.
             std::pair<std::multimap<CBlockIndex*, CBlockIndex*>::iterator, std::multimap<CBlockIndex*, CBlockIndex*>::iterator> range = mapBlocksUnlinked.equal_range(pindex->pprev);
             while (range.first != range.second) {
-                std::multimap<CBlockIndex *, CBlockIndex *>::iterator it = range.first;
+                std::multimap<CBlockIndex *, CBlockIndex *>::iterator _it = range.first;
                 range.first++;
-                if (it->second == pindex) {
-                    mapBlocksUnlinked.erase(it);
+                if (_it->second == pindex) {
+                    mapBlocksUnlinked.erase(_it);
                 }
             }
         }
@@ -4659,12 +4662,12 @@ std::string GetWarnings(const std::string& strFor)
     if (fLargeWorkForkFound)
     {
         strStatusBar = strRPC = "Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.";
-        strGUI += strGUI.empty() ? "" : uiAlertSeperator + _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
+        strGUI += (strGUI.empty() ? "" : uiAlertSeperator) + _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
     }
     else if (fLargeWorkInvalidChainFound)
     {
         strStatusBar = strRPC = "Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.";
-        strGUI += strGUI.empty() ? "" : uiAlertSeperator + _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
+        strGUI += (strGUI.empty() ? "" : uiAlertSeperator) + _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
     }
 
     if (strFor == "gui")
@@ -4739,11 +4742,9 @@ static void RelayAddress(const CAddress& addr, bool fReachable, CConnman& connma
     // Relay to a limited number of other nodes
     // Use deterministic randomness to send to the same nodes for 24 hours
     // at a time so the addrKnowns of the chosen nodes prevent repeats
-    static const uint64_t salt0 = GetRand(std::numeric_limits<uint64_t>::max());
-    static const uint64_t salt1 = GetRand(std::numeric_limits<uint64_t>::max());
     uint64_t hashAddr = addr.GetHash();
     std::multimap<uint64_t, CNode*> mapMix;
-    const CSipHasher hasher = CSipHasher(salt0, salt1).Write(hashAddr << 32).Write((GetTime() + hashAddr) / (24*60*60));
+    const CSipHasher hasher = connman.GetDeterministicRandomizer(RANDOMIZER_ID_ADDRESS_RELAY).Write(hashAddr << 32).Write((GetTime() + hashAddr) / (24*60*60));
 
     auto sortfunc = [&mapMix, &hasher](CNode* pnode) {
         if (pnode->nVersion >= CADDR_TIME_VERSION) {
@@ -5549,9 +5550,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             }
             if (!fRejectedParents) {
                 BOOST_FOREACH(const CTxIn& txin, tx.vin) {
-                    CInv inv(MSG_TX, txin.prevout.hash);
-                    pfrom->AddInventoryKnown(inv);
-                    if (!AlreadyHave(inv)) pfrom->AskFor(inv);
+                    CInv _inv(MSG_TX, txin.prevout.hash);
+                    pfrom->AddInventoryKnown(_inv);
+                    if (!AlreadyHave(_inv)) pfrom->AskFor(_inv);
                 }
                 AddOrphanTx(tx, pfrom->GetId());
 
@@ -6316,9 +6317,9 @@ class CompareInvMempoolOrder
 {
     CTxMemPool *mp;
 public:
-    CompareInvMempoolOrder(CTxMemPool *mempool)
+    CompareInvMempoolOrder(CTxMemPool *_mempool)
     {
-        mp = mempool;
+        mp = _mempool;
     }
 
     bool operator()(std::set<uint256>::iterator a, std::set<uint256>::iterator b)
