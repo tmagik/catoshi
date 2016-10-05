@@ -78,7 +78,7 @@ class CTxMemPoolEntry
 private:
     std::shared_ptr<const CTransaction> tx;
     CAmount nFee;              //!< Cached to avoid expensive parent-transaction lookups
-    size_t nTxCost;            //!< ... and avoid recomputing tx cost (also used for GetTxSize())
+    size_t nTxWeight;          //!< ... and avoid recomputing tx weight (also used for GetTxSize())
     size_t nModSize;           //!< ... and modified size for priority
     size_t nUsageSize;         //!< ... and total memory usage
     int64_t nTime;             //!< Local time when entering the mempool
@@ -122,7 +122,7 @@ public:
     double GetPriority(unsigned int currentHeight) const;
     const CAmount& GetFee() const { return nFee; }
     size_t GetTxSize() const;
-    size_t GetTxCost() const { return nTxCost; }
+    size_t GetTxWeight() const { return nTxWeight; }
     int64_t GetTime() const { return nTime; }
     unsigned int GetHeight() const { return entryHeight; }
     bool WasClearAtEntry() const { return hadNoDependencies; }
@@ -328,14 +328,17 @@ struct TxMempoolInfo
 };
 
 /**
- * CTxMemPool stores valid-according-to-the-current-best-chain
- * transactions that may be included in the next block.
+ * CTxMemPool stores valid-according-to-the-current-best-chain transactions
+ * that may be included in the next block.
  *
- * Transactions are added when they are seen on the network
- * (or created by the local node), but not all transactions seen
- * are added to the pool: if a new transaction double-spends
- * an input of a transaction in the pool, it is dropped,
- * as are non-standard transactions.
+ * Transactions are added when they are seen on the network (or created by the
+ * local node), but not all transactions seen are added to the pool. For
+ * example, the following new transactions will not be added to the mempool:
+ * - a transaction which doesn't make the mimimum fee requirements.
+ * - a new transaction that double-spends an input of a transaction already in
+ * the pool where the new transaction does not meet the Replace-By-Fee
+ * requirements as defined in BIP 125.
+ * - a non-standard transaction.
  *
  * CTxMemPool::mapTx, and CTxMemPoolEntry bookkeeping:
  *
