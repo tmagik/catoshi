@@ -535,7 +535,7 @@ UniValue decodescript(const UniValue& params, bool fHelp)
             "     \"address\"     (string) bitcoin address\n"
             "     ,...\n"
             "  ],\n"
-            "  \"p2sh\",\"address\" (string) script address\n"
+            "  \"p2sh\",\"address\" (string) address of P2SH script wrapping this redeem script (not returned if the script is already a P2SH).\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("decodescript", "\"hexstring\"")
@@ -554,7 +554,15 @@ UniValue decodescript(const UniValue& params, bool fHelp)
     }
     ScriptPubKeyToJSON(script, r, false);
 
-    r.push_back(Pair("p2sh", CBitcoinAddress(CScriptID(script)).ToString()));
+    UniValue type;
+    type = find_value(r, "type");
+
+    if (type.isStr() && type.get_str() != "scripthash") {
+        // P2SH cannot be wrapped in a P2SH. If this script is already a P2SH,
+        // don't return the address for a P2SH of the P2SH.
+        r.push_back(Pair("p2sh", CBitcoinAddress(CScriptID(script)).ToString()));
+    }
+
     return r;
 }
 
@@ -866,6 +874,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
     uint256 hashTx = tx.GetHash();
 
+    bool fLimitFree = false;
     CAmount nMaxRawTxFee = maxTxFee;
     if (params.size() > 1 && params[1].get_bool())
         nMaxRawTxFee = 0;
@@ -878,7 +887,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         // push to local node and sync with wallets
         CValidationState state;
         bool fMissingInputs;
-        if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, false, nMaxRawTxFee)) {
+        if (!AcceptToMemoryPool(mempool, state, tx, fLimitFree, &fMissingInputs, false, nMaxRawTxFee)) {
             if (state.IsInvalid()) {
                 throw JSONRPCError(RPC_TRANSACTION_REJECTED, strprintf("%i: %s", state.GetRejectCode(), state.GetRejectReason()));
             } else {
