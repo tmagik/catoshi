@@ -1,5 +1,5 @@
-#!/usr/bin/env python2
-# Copyright (c) 2014 The Bitcoin Core developers
+#!/usr/bin/env python3
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,11 +9,13 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
-from decimal import Decimal
-import os
-import shutil
 
 class TxnMallTest(BitcoinTestFramework):
+
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = False
 
     def add_options(self, parser):
         parser.add_option("--mineblock", dest="mine_block", default=False, action="store_true",
@@ -99,7 +101,7 @@ class TxnMallTest(BitcoinTestFramework):
         # Now give doublespend and its parents to miner:
         self.nodes[2].sendrawtransaction(fund_foo_tx["hex"])
         self.nodes[2].sendrawtransaction(fund_bar_tx["hex"])
-        self.nodes[2].sendrawtransaction(doublespend["hex"])
+        doublespend_txid = self.nodes[2].sendrawtransaction(doublespend["hex"])
         # ... mine a block...
         self.nodes[2].generate(1)
 
@@ -107,14 +109,15 @@ class TxnMallTest(BitcoinTestFramework):
         connect_nodes(self.nodes[1], 2)
         self.nodes[2].generate(1)  # Mine another block to make sure we sync
         sync_blocks(self.nodes)
+        assert_equal(self.nodes[0].gettransaction(doublespend_txid)["confirmations"], 2)
 
         # Re-fetch transaction info:
         tx1 = self.nodes[0].gettransaction(txid1)
         tx2 = self.nodes[0].gettransaction(txid2)
-        
+
         # Both transactions should be conflicted
-        assert_equal(tx1["confirmations"], -1)
-        assert_equal(tx2["confirmations"], -1)
+        assert_equal(tx1["confirmations"], -2)
+        assert_equal(tx2["confirmations"], -2)
 
         # Node0's total balance should be starting balance, plus 100BTC for 
         # two more matured blocks, minus 1240 for the double-spend, plus fees (which are

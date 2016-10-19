@@ -5,6 +5,8 @@
 #ifndef BITCOIN_MEMUSAGE_H
 #define BITCOIN_MEMUSAGE_H
 
+#include "indirectmap.h"
+
 #include <stdlib.h>
 
 #include <map>
@@ -46,7 +48,9 @@ template<typename X> static inline size_t DynamicUsage(const X * const &v) { ret
 static inline size_t MallocUsage(size_t alloc)
 {
     // Measured on libc6 2.19 on Linux.
-    if (sizeof(void*) == 8) {
+    if (alloc == 0) {
+        return 0;
+    } else if (sizeof(void*) == 8) {
         return ((alloc + 31) >> 4) << 4;
     } else if (sizeof(void*) == 4) {
         return ((alloc + 15) >> 3) << 3;
@@ -68,10 +72,25 @@ private:
     X x;
 };
 
+struct stl_shared_counter
+{
+    /* Various platforms use different sized counters here.
+     * Conservatively assume that they won't be larger than size_t. */
+    void* class_type;
+    size_t use_count;
+    size_t weak_count;
+};
+
 template<typename X>
 static inline size_t DynamicUsage(const std::vector<X>& v)
 {
     return MallocUsage(v.capacity() * sizeof(X));
+}
+
+template<unsigned int N, typename X, typename S, typename D>
+static inline size_t DynamicUsage(const prevector<N, X, S, D>& v)
+{
+    return MallocUsage(v.allocated_memory());
 }
 
 template<typename X, typename Y>
@@ -96,6 +115,35 @@ template<typename X, typename Y, typename Z>
 static inline size_t IncrementalDynamicUsage(const std::map<X, Y, Z>& m)
 {
     return MallocUsage(sizeof(stl_tree_node<std::pair<const X, Y> >));
+}
+
+// indirectmap has underlying map with pointer as key
+
+template<typename X, typename Y>
+static inline size_t DynamicUsage(const indirectmap<X, Y>& m)
+{
+    return MallocUsage(sizeof(stl_tree_node<std::pair<const X*, Y> >)) * m.size();
+}
+
+template<typename X, typename Y>
+static inline size_t IncrementalDynamicUsage(const indirectmap<X, Y>& m)
+{
+    return MallocUsage(sizeof(stl_tree_node<std::pair<const X*, Y> >));
+}
+
+template<typename X>
+static inline size_t DynamicUsage(const std::unique_ptr<X>& p)
+{
+    return p ? MallocUsage(sizeof(X)) : 0;
+}
+
+template<typename X>
+static inline size_t DynamicUsage(const std::shared_ptr<X>& p)
+{
+    // A shared_ptr can either use a single continuous memory block for both
+    // the counter and the storage (when using std::make_shared), or separate.
+    // We can't observe the difference, however, so assume the worst.
+    return p ? MallocUsage(sizeof(X)) + MallocUsage(sizeof(stl_shared_counter)) : 0;
 }
 
 // Boost data structures
