@@ -8,7 +8,7 @@
 #include "base58.h"
 #include "checkpoints.h"
 #include "chain.h"
-#include "coincontrol.h"
+#include "wallet/coincontrol.h"
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
 #include "key.h"
@@ -3466,8 +3466,6 @@ bool CWallet::InitLoadWallet()
         LogPrintf("mapWallet.size() = %u\n",       walletInstance->mapWallet.size());
         LogPrintf("mapAddressBook.size() = %u\n",  walletInstance->mapAddressBook.size());
     }
-    // Add wallet transactions that aren't already in a block to mapTransactions
-    walletInstance->ReacceptWalletTransactions();
 
     pwalletMain = walletInstance;
 
