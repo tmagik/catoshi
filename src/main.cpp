@@ -1584,7 +1584,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     return res;
 }
 
-/** Return transaction in tx, and if it was found inside a block, its hash is placed in hashBlock */
+/** Return transaction in txOut, and if it was found inside a block, its hash is placed in hashBlock */
 bool GetTransaction(const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams, uint256 &hashBlock, bool fAllowSlow)
 {
     CBlockIndex *pindexSlow = NULL;
@@ -5440,6 +5440,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     {
         BlockTransactionsRequest req;
         vRecv >> req;
+
+        LOCK(cs_main);
 
         BlockMap::iterator it = mapBlockIndex.find(req.blockhash);
         if (it == mapBlockIndex.end() || !(it->second->nStatus & BLOCK_HAVE_DATA)) {
