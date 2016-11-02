@@ -6,6 +6,17 @@ import subprocess
 import os
 import json
 import sys
+import binascii
+import difflib
+import logging
+
+def parse_output(a, fmt):
+	if fmt == 'json': # json: compare parsed data
+		return json.loads(a)
+	elif fmt == 'hex': # hex: parse and compare binary data
+		return binascii.a2b_hex(a.strip())
+	else:
+		raise NotImplementedError("Don't know how to compare %s" % fmt)
 
 def bctest(testDir, testObj, exeext):
 
@@ -23,39 +34,71 @@ def bctest(testDir, testObj, exeext):
 	outputData = None
 	if "output_cmp" in testObj:
 		outputFn = testObj['output_cmp']
-		outputData = open(testDir + "/" + outputFn).read()
+		outputType = os.path.splitext(outputFn)[1][1:] # output type from file extension (determines how to compare)
+		try:
+			outputData = open(testDir + "/" + outputFn).read()
+		except:
+			logging.error("Output file " + outputFn + " can not be opened")
+			raise
 		if not outputData:
-			print("Output data missing for " + outputFn)
-			sys.exit(1)
+			logging.error("Output data missing for " + outputFn)
+			raise Exception
+
 	proc = subprocess.Popen(execrun, stdin=stdinCfg, stdout=subprocess.PIPE, stderr=subprocess.PIPE,universal_newlines=True)
 	try:
 		outs = proc.communicate(input=inputData)
 	except OSError:
-		print("OSError, Failed to execute " + execprog)
-		sys.exit(1)
+		logging.error("OSError, Failed to execute " + execprog)
+		raise
 
-	if outputData and (outs[0] != outputData):
-		print("Output data mismatch for " + outputFn)
-		sys.exit(1)
+	if outputData:
+		try:
+			a_parsed = parse_output(outs[0], outputType)
+		except Exception as e:
+			logging.error('Error parsing command output as %s: %s' % (outputType,e))
+			raise
+		try:
+			b_parsed = parse_output(outputData, outputType)
+		except Exception as e:
+			logging.error('Error parsing expected output %s as %s: %s' % (outputFn,outputType,e))
+			raise
+		if a_parsed != b_parsed:
+			logging.error("Output data mismatch for " + outputFn + " (format " + outputType + ")")
+			raise Exception
+		if outs[0] != outputData:
+			error_message = "Output formatting mismatch for " + outputFn + ":\n"
+			error_message += "".join(difflib.context_diff(outputData.splitlines(True),
+				                                          outs[0].splitlines(True),
+				                                          fromfile=outputFn,
+				                                          tofile="returned"))
+			logging.error(error_message)
+			raise Exception
 
 	wantRC = 0
 	if "return_code" in testObj:
 		wantRC = testObj['return_code']
 	if proc.returncode != wantRC:
-		print("Return code mismatch for " + outputFn)
-		sys.exit(1)
+		logging.error("Return code mismatch for " + outputFn)
+		raise Exception
 
-def bctester(testDir, input_basename, buildenv, verbose = False):
+def bctester(testDir, input_basename, buildenv):
 	input_filename = testDir + "/" + input_basename
 	raw_data = open(input_filename).read()
 	input_data = json.loads(raw_data)
 
-	for testObj in input_data:
-		if verbose and "description" in testObj:
-			print ("Testing: " + testObj["description"])
-		bctest(testDir, testObj, buildenv.exeext)
-		if verbose and "description" in testObj:
-			print ("PASS")
+	failed_testcases = []
 
-	sys.exit(0)
+	for testObj in input_data:
+		try:
+			bctest(testDir, testObj, buildenv.exeext)
+			logging.info("PASSED: " + testObj["description"])
+		except:
+			logging.info("FAILED: " + testObj["description"])
+			failed_testcases.append(testObj["description"])
+
+	if failed_testcases:
+		logging.error("FAILED TESTCASES: [" + ", ".join(failed_testcases) + "]")
+		sys.exit(1)
+	else:
+		sys.exit(0)
 
