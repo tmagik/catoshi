@@ -207,6 +207,7 @@ void Shutdown()
 
     StopTorControl();
     UnregisterNodeSignals(GetNodeSignals());
+    DumpMempool();
 
     if (fFeeEstimatesInitialized)
     {
@@ -659,6 +660,8 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
         LogPrintf("Stopping after block import\n");
         StartShutdown();
     }
+
+    LoadMempool();
 }
 
 /** Sanity checks
@@ -1320,7 +1323,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                         CleanupBlockRevFiles();
                 }
 
-                if (!LoadBlockIndex()) {
+                if (!LoadBlockIndex(chainparams)) {
                     strLoadError = _("Error loading block database");
                     break;
                 }
@@ -1493,13 +1496,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         uiInterface.NotifyBlockTip.disconnect(BlockNotifyGenesisWait);
     }
 
-#ifdef ENABLE_WALLET
-    // Add wallet transactions that aren't already in a block to mempool
-    // Do this here as mempool requires genesis block to be loaded
-    if (pwalletMain)
-        pwalletMain->ReacceptWalletTransactions();
-#endif
-
     // ********************************************************* Step 11: start node
 
     //// debug print
@@ -1537,10 +1533,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     uiInterface.InitMessage(_("Done loading"));
 
 #ifdef ENABLE_WALLET
-    if (pwalletMain) {
-        // Run a thread to flush wallet periodically
-        threadGroup.create_thread(boost::bind(&ThreadFlushWalletDB, boost::ref(pwalletMain->strWalletFile)));
-    }
+    if (pwalletMain)
+        pwalletMain->postInitProcess(threadGroup);
 #endif
 
     return !fRequestShutdown;
