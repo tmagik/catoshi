@@ -54,7 +54,7 @@ static const bool DEFAULT_SPEND_ZEROCONF_CHANGE = true;
 //! Default for -sendfreetransactions
 static const bool DEFAULT_SEND_FREE_TRANSACTIONS = false;
 //! -txconfirmtarget default
-static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 2;
+static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 6;
 //! -walletrbf default
 static const bool DEFAULT_WALLET_RBF = false;
 //! Largest (in bytes) free transaction we're willing to create
@@ -134,7 +134,7 @@ struct CRecipient
 typedef std::map<std::string, std::string> mapValue_t;
 
 
-static void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
+static inline void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
 {
     if (!mapValue.count("n"))
     {
@@ -145,7 +145,7 @@ static void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
 }
 
 
-static void WriteOrderPos(const int64_t& nOrderPos, mapValue_t& mapValue)
+static inline void WriteOrderPos(const int64_t& nOrderPos, mapValue_t& mapValue)
 {
     if (nOrderPos == -1)
         return;
