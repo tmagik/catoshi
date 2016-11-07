@@ -160,8 +160,6 @@ public:
         return (nValue == -1);
     }
 
-    uint256 GetHash() const;
-
     CAmount GetDustThreshold(const CFeeRate &minRelayTxFee) const
     {
         // "Dust" is defined in terms of CTransaction::minRelayTxFee,
@@ -415,6 +413,13 @@ public:
 
     // Compute modified tx size for priority calculation (optionally given tx size)
     unsigned int CalculateModifiedSize(unsigned int nTxSize=0) const;
+    
+    /**
+     * Get the total transaction size in bytes, including witness data.
+     * "Total Size" defined in BIP141 and BIP144.
+     * @return Total transaction size in bytes
+     */
+    unsigned int GetTotalSize() const;
 
     bool IsCoinBase() const
     {

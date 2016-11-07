@@ -49,11 +49,6 @@ CTxOut::CTxOut(const CAmount& nValueIn, CScript scriptPubKeyIn)
     scriptPubKey = scriptPubKeyIn;
 }
 
-uint256 CTxOut::GetHash() const
-{
-    return SerializeHash(*this);
-}
-
 std::string CTxOut::ToString() const
 {
     return strprintf("CTxOut(nValue=%d.%08d, scriptPubKey=%s)", nValue / COIN, nValue % COIN, HexStr(scriptPubKey).substr(0, 30));
@@ -129,6 +124,11 @@ unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
             nTxSize -= offset;
     }
     return nTxSize;
+}
+
+unsigned int CTransaction::GetTotalSize() const
+{
+    return ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
 }
 
 std::string CTransaction::ToString() const

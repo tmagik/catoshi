@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2015 The Bitcoin developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -594,7 +594,7 @@ FeeFilterRounder::FeeFilterRounder(const CFeeRate& minIncrementalFee)
 CAmount FeeFilterRounder::round(CAmount currentMinFee)
 {
     std::set<double>::iterator it = feeset.lower_bound(currentMinFee);
-    if ((it != feeset.begin() && insecure_rand() % 3 != 0) || it == feeset.end()) {
+    if ((it != feeset.begin() && insecure_rand.rand32() % 3 != 0) || it == feeset.end()) {
         it--;
     }
     return *it;
