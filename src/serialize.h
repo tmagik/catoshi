@@ -44,33 +44,32 @@ inline T* NCONST_PTR(const T* val)
     return const_cast<T*>(val);
 }
 
-/** 
- * Get begin pointer of vector (non-const version).
- * @note These functions avoid the undefined case of indexing into an empty
- * vector, as well as that of indexing after the end of the vector.
+/**
+ * Important: Do not use the following functions in new code, but use v.data()
+ * and v.data() + v.size() respectively directly. They were once introduced to
+ * have a compatible, safe way to get the begin and end pointer of a vector.
+ * However with C++11 the language has built-in functionality for this and it's
+ * more readable to just use that.
  */
 template <typename V>
 inline typename V::value_type* begin_ptr(V& v)
 {
-    return v.empty() ? NULL : &v[0];
+    return v.data();
 }
-/** Get begin pointer of vector (const version) */
 template <typename V>
 inline const typename V::value_type* begin_ptr(const V& v)
 {
-    return v.empty() ? NULL : &v[0];
+    return v.data();
 }
-/** Get end pointer of vector (non-const version) */
 template <typename V>
 inline typename V::value_type* end_ptr(V& v)
 {
-    return v.empty() ? NULL : (&v[0] + v.size());
+    return v.data() + v.size();
 }
-/** Get end pointer of vector (const version) */
 template <typename V>
 inline const typename V::value_type* end_ptr(const V& v)
 {
-    return v.empty() ? NULL : (&v[0] + v.size());
+    return v.data() + v.size();
 }
 
 /*
@@ -161,6 +160,7 @@ enum
 };
 
 #define READWRITE(obj)      (::SerReadWrite(s, (obj), nType, nVersion, ser_action))
+#define READWRITEMANY(...)      (::SerReadWriteMany(s, nType, nVersion, ser_action, __VA_ARGS__))
 
 /** 
  * Implement three methods for serializable objects. These are actually wrappers over
@@ -960,5 +960,53 @@ public:
         return nSize;
     }
 };
+
+template<typename Stream>
+void SerializeMany(Stream& s, int nType, int nVersion)
+{
+}
+
+template<typename Stream, typename Arg>
+void SerializeMany(Stream& s, int nType, int nVersion, Arg&& arg)
+{
+    ::Serialize(s, std::forward<Arg>(arg), nType, nVersion);
+}
+
+template<typename Stream, typename Arg, typename... Args>
+void SerializeMany(Stream& s, int nType, int nVersion, Arg&& arg, Args&&... args)
+{
+    ::Serialize(s, std::forward<Arg>(arg), nType, nVersion);
+    ::SerializeMany(s, nType, nVersion, std::forward<Args>(args)...);
+}
+
+template<typename Stream>
+inline void UnserializeMany(Stream& s, int nType, int nVersion)
+{
+}
+
+template<typename Stream, typename Arg>
+inline void UnserializeMany(Stream& s, int nType, int nVersion, Arg& arg)
+{
+    ::Unserialize(s, arg, nType, nVersion);
+}
+
+template<typename Stream, typename Arg, typename... Args>
+inline void UnserializeMany(Stream& s, int nType, int nVersion, Arg& arg, Args&... args)
+{
+    ::Unserialize(s, arg, nType, nVersion);
+    ::UnserializeMany(s, nType, nVersion, args...);
+}
+
+template<typename Stream, typename... Args>
+inline void SerReadWriteMany(Stream& s, int nType, int nVersion, CSerActionSerialize ser_action, Args&&... args)
+{
+    ::SerializeMany(s, nType, nVersion, std::forward<Args>(args)...);
+}
+
+template<typename Stream, typename... Args>
+inline void SerReadWriteMany(Stream& s, int nType, int nVersion, CSerActionUnserialize ser_action, Args&... args)
+{
+    ::UnserializeMany(s, nType, nVersion, args...);
+}
 
 #endif // BITCOIN_SERIALIZE_H

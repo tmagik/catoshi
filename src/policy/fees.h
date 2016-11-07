@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2015 The Bitcoin developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_POLICYESTIMATOR_H
@@ -7,6 +7,7 @@
 
 #include "amount.h"
 #include "uint256.h"
+#include "random.h"
 
 #include <map>
 #include <string>
@@ -298,5 +299,6 @@ public:
 
 private:
     std::set<double> feeset;
+    FastRandomContext insecure_rand;
 };
 #endif /*BITCOIN_POLICYESTIMATOR_H */
