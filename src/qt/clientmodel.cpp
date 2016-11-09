@@ -6,6 +6,7 @@
 
 #include "bantablemodel.h"
 #include "guiconstants.h"
+#include "guiutil.h"
 #include "peertablemodel.h"
 
 #include "chainparams.h"
@@ -27,9 +28,9 @@ static const int64_t nClientStartupTime = GetTime();
 static int64_t nLastHeaderTipUpdateNotification = 0;
 static int64_t nLastBlockTipUpdateNotification = 0;
 
-ClientModel::ClientModel(OptionsModel *optionsModel, QObject *parent) :
+ClientModel::ClientModel(OptionsModel *_optionsModel, QObject *parent) :
     QObject(parent),
-    optionsModel(optionsModel),
+    optionsModel(_optionsModel),
     peerTableModel(0),
     banTableModel(0),
     pollTimer(0)
@@ -68,6 +69,22 @@ int ClientModel::getNumBlocks() const
 {
     LOCK(cs_main);
     return chainActive.Height();
+}
+
+int ClientModel::getHeaderTipHeight() const
+{
+    LOCK(cs_main);
+    if (!pindexBestHeader)
+        return 0;
+    return pindexBestHeader->nHeight;
+}
+
+int64_t ClientModel::getHeaderTipTime() const
+{
+    LOCK(cs_main);
+    if (!pindexBestHeader)
+        return 0;
+    return pindexBestHeader->GetBlockTime();
 }
 
 quint64 ClientModel::getTotalBytesRecv() const
@@ -192,7 +209,7 @@ QString ClientModel::formatClientStartupTime() const
 
 QString ClientModel::dataDir() const
 {
-    return QString::fromStdString(GetDataDir().string());
+    return GUIUtil::boostPathToQString(GetDataDir());
 }
 
 void ClientModel::updateBanlist()
