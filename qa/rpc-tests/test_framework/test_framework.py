@@ -21,7 +21,6 @@ from .util import (
     sync_mempools,
     stop_nodes,
     stop_node,
-    wait_bitcoinds,
     enable_coverage,
     check_json_precision,
     initialize_chain_clean,
@@ -81,7 +80,6 @@ class BitcoinTestFramework(object):
         """
         assert not self.is_network_split
         stop_nodes(self.nodes)
-        wait_bitcoinds()
         self.setup_network(True)
 
     def sync_all(self):
@@ -100,7 +98,6 @@ class BitcoinTestFramework(object):
         """
         assert self.is_network_split
         stop_nodes(self.nodes)
-        wait_bitcoinds()
         self.setup_network(False)
 
     def main(self):
@@ -142,16 +139,11 @@ class BitcoinTestFramework(object):
 
         success = False
         try:
-            if not os.path.isdir(self.options.tmpdir):
-                os.makedirs(self.options.tmpdir)
+            os.makedirs(self.options.tmpdir, exist_ok=False)
             self.setup_chain()
-
             self.setup_network()
-
             self.run_test()
-
             success = True
-
         except JSONRPCException as e:
             print("JSONRPC error: "+e.error['message'])
             traceback.print_tb(sys.exc_info()[2])
@@ -170,7 +162,6 @@ class BitcoinTestFramework(object):
         if not self.options.noshutdown:
             print("Stopping nodes")
             stop_nodes(self.nodes)
-            wait_bitcoinds()
         else:
             print("Note: bitcoinds were not stopped and may still be running")
 

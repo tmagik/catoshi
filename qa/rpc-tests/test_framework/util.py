@@ -137,6 +137,16 @@ def sync_blocks(rpc_connections, wait=1, timeout=60):
         maxheight = max(heights)
     raise AssertionError("Block sync failed")
 
+def sync_chain(rpc_connections, wait=1):
+    """
+    Wait until everybody has the same best block
+    """
+    while True:
+        counts = [ x.getbestblockhash() for x in rpc_connections ]
+        if counts == [ counts[0] ]*len(counts):
+            break
+        time.sleep(wait)
+
 def sync_mempools(rpc_connections, wait=1, timeout=60):
     """
     Wait until everybody has the same transactions in their memory
@@ -161,7 +171,7 @@ def initialize_datadir(dirname, n):
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
     rpc_u, rpc_p = rpc_auth_pair(n)
-    with open(os.path.join(datadir, "bitcoin.conf"), 'w') as f:
+    with open(os.path.join(datadir, "bitcoin.conf"), 'w', encoding='utf8') as f:
         f.write("regtest=1\n")
         f.write("rpcuser=" + rpc_u + "\n")
         f.write("rpcpassword=" + rpc_p + "\n")
@@ -266,7 +276,6 @@ def initialize_chain(test_dir, num_nodes, cachedir):
 
         # Shut them down, and clean up cache directories:
         stop_nodes(rpcs)
-        wait_bitcoinds()
         disable_mocktime()
         for i in range(MAX_NODES):
             os.remove(log_filename(cachedir, i, "debug.log"))
@@ -332,7 +341,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
 
     return proxy
 
-def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
+def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, timewait=None, binary=None):
     """
     Start multiple bitcoinds, return RPC connections to them
     """
@@ -341,7 +350,7 @@ def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
     rpcs = []
     try:
         for i in range(num_nodes):
-            rpcs.append(start_node(i, dirname, extra_args[i], rpchost, binary=binary[i]))
+            rpcs.append(start_node(i, dirname, extra_args[i], rpchost, timewait=timewait, binary=binary[i]))
     except: # If one node failed to start, stop the others
         stop_nodes(rpcs)
         raise
@@ -365,6 +374,7 @@ def stop_nodes(nodes):
         except http.client.CannotSendRequest as e:
             print("WARN: Unable to stop node: " + repr(e))
     del nodes[:] # Emptying array closes connections as a side effect
+    wait_bitcoinds()
 
 def set_node_times(nodes, t):
     for node in nodes:
