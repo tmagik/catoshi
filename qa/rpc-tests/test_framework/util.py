@@ -121,23 +121,35 @@ def hex_str_to_bytes(hex_str):
 def str_to_b64str(string):
     return b64encode(string.encode('utf-8')).decode('ascii')
 
-def sync_blocks(rpc_connections, wait=1, timeout=60):
+def sync_blocks(rpc_connections, *, wait=1, timeout=60):
     """
     Wait until everybody has the same tip
     """
     maxheight = 0
     while timeout > 0:
-        tips = [ x.waitforblockheight(maxheight, int(wait * 1000)) for x in rpc_connections ]
-        heights = [ x["height"] for x in tips ]
-        if tips == [ tips[0] ]*len(tips):
-            return True
-        if heights == [ heights[0] ]*len(heights): #heights are the same but hashes are not
-            raise AssertionError("Block sync failed")
+        tips = [r.waitforblockheight(maxheight, int(wait * 1000)) for r in rpc_connections]
+        heights = [t["height"] for t in tips]
+        if tips == [tips[0]] * len(tips):
+            return
+        if heights == [heights[0]] * len(heights):
+            raise AssertionError("Block sync failed: (Hashes don't match)")
         timeout -= wait
         maxheight = max(heights)
-    raise AssertionError("Block sync failed")
+    raise AssertionError("Block sync failed with heights: {}".format(heights))
 
-def sync_mempools(rpc_connections, wait=1, timeout=60):
+def sync_chain(rpc_connections, *, wait=1, timeout=60):
+    """
+    Wait until everybody has the same best block
+    """
+    while timeout > 0:
+        best_hash = [x.getbestblockhash() for x in rpc_connections]
+        if best_hash == [best_hash[0]]*len(best_hash):
+            return
+        time.sleep(wait)
+        timeout -= wait
+    raise AssertionError("Chain sync failed: Best block hashes don't match")
+
+def sync_mempools(rpc_connections, *, wait=1, timeout=60):
     """
     Wait until everybody has the same transactions in their memory
     pools
@@ -149,7 +161,7 @@ def sync_mempools(rpc_connections, wait=1, timeout=60):
             if set(rpc_connections[i].getrawmempool()) == pool:
                 num_match = num_match+1
         if num_match == len(rpc_connections):
-            return True
+            return
         time.sleep(wait)
         timeout -= wait
     raise AssertionError("Mempool sync failed")
@@ -161,7 +173,7 @@ def initialize_datadir(dirname, n):
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
     rpc_u, rpc_p = rpc_auth_pair(n)
-    with open(os.path.join(datadir, "bitcoin.conf"), 'w') as f:
+    with open(os.path.join(datadir, "bitcoin.conf"), 'w', encoding='utf8') as f:
         f.write("regtest=1\n")
         f.write("rpcuser=" + rpc_u + "\n")
         f.write("rpcpassword=" + rpc_p + "\n")
@@ -266,7 +278,6 @@ def initialize_chain(test_dir, num_nodes, cachedir):
 
         # Shut them down, and clean up cache directories:
         stop_nodes(rpcs)
-        wait_bitcoinds()
         disable_mocktime()
         for i in range(MAX_NODES):
             os.remove(log_filename(cachedir, i, "debug.log"))
@@ -332,7 +343,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
 
     return proxy
 
-def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
+def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, timewait=None, binary=None):
     """
     Start multiple bitcoinds, return RPC connections to them
     """
@@ -341,7 +352,7 @@ def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
     rpcs = []
     try:
         for i in range(num_nodes):
-            rpcs.append(start_node(i, dirname, extra_args[i], rpchost, binary=binary[i]))
+            rpcs.append(start_node(i, dirname, extra_args[i], rpchost, timewait=timewait, binary=binary[i]))
     except: # If one node failed to start, stop the others
         stop_nodes(rpcs)
         raise
@@ -365,6 +376,7 @@ def stop_nodes(nodes):
         except http.client.CannotSendRequest as e:
             print("WARN: Unable to stop node: " + repr(e))
     del nodes[:] # Emptying array closes connections as a side effect
+    wait_bitcoinds()
 
 def set_node_times(nodes, t):
     for node in nodes:
