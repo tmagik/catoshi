@@ -529,12 +529,11 @@ void MaybeSetPeerAsAnnouncingHeaderAndIDs(const CNodeState* nodestate, CNode* pf
         if (lNodesAnnouncingHeaderAndIDs.size() >= 3) {
             // As per BIP152, we only get 3 of our peers to announce
             // blocks using compact encodings.
-            bool found = connman.ForNode(lNodesAnnouncingHeaderAndIDs.front(), [&connman, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion](CNode* pnodeStop){
+            connman.ForNode(lNodesAnnouncingHeaderAndIDs.front(), [&connman, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion](CNode* pnodeStop){
                 connman.PushMessage(pnodeStop, NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion);
                 return true;
             });
-            if(found)
-                lNodesAnnouncingHeaderAndIDs.pop_front();
+            lNodesAnnouncingHeaderAndIDs.pop_front();
         }
         fAnnounceUsingCMPCTBLOCK = true;
         connman.PushMessage(pfrom, NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion);
@@ -2461,7 +2460,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
 
-    std::vector<uint256> vOrphanErase;
     std::vector<int> prevheights;
     CAmount nFees = 0;
     int nInputs = 0;
@@ -2490,17 +2488,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             prevheights.resize(tx.vin.size());
             for (size_t j = 0; j < tx.vin.size(); j++) {
                 prevheights[j] = view.AccessCoins(tx.vin[j].prevout.hash)->nHeight;
-            }
-
-            // Which orphan pool entries must we evict?
-            for (size_t j = 0; j < tx.vin.size(); j++) {
-                auto itByPrev = mapOrphanTransactionsByPrev.find(tx.vin[j].prevout);
-                if (itByPrev == mapOrphanTransactionsByPrev.end()) continue;
-                for (auto mi = itByPrev->second.begin(); mi != itByPrev->second.end(); ++mi) {
-                    const CTransaction& orphanTx = (*mi)->second.tx;
-                    const uint256& orphanHash = orphanTx.GetHash();
-                    vOrphanErase.push_back(orphanHash);
-                }
             }
 
             if (!SequenceLocks(tx, nLockTimeFlags, &prevheights, *pindex)) {
@@ -2592,14 +2579,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
     hashPrevBestCoinBase = block.vtx[0]->GetHash();
 
-    // Erase orphan transactions include or precluded by this block
-    if (vOrphanErase.size()) {
-        int nErased = 0;
-        BOOST_FOREACH(uint256 &orphanHash, vOrphanErase) {
-            nErased += EraseOrphanTx(orphanHash);
-        }
-        LogPrint("mempool", "Erased %d orphan tx included or conflicted by block\n", nErased);
-    }
 
     int64_t nTime6 = GetTimeMicros(); nTimeCallbacks += nTime6 - nTime5;
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
@@ -3202,6 +3181,7 @@ bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, C
 
     InvalidChainFound(pindex);
     mempool.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
+    uiInterface.NotifyBlockTip(IsInitialBlockDownload(), pindex->pprev);
     return true;
 }
 
@@ -4740,6 +4720,34 @@ PeerLogicValidation::PeerLogicValidation(CConnman* connmanIn) : connman(connmanI
     recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
 }
 
+void PeerLogicValidation::SyncTransaction(const CTransaction& tx, const CBlockIndex* pindex, int nPosInBlock) {
+    if (nPosInBlock == CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK)
+        return;
+
+    LOCK(cs_main);
+
+    std::vector<uint256> vOrphanErase;
+    // Which orphan pool entries must we evict?
+    for (size_t j = 0; j < tx.vin.size(); j++) {
+        auto itByPrev = mapOrphanTransactionsByPrev.find(tx.vin[j].prevout);
+        if (itByPrev == mapOrphanTransactionsByPrev.end()) continue;
+        for (auto mi = itByPrev->second.begin(); mi != itByPrev->second.end(); ++mi) {
+            const CTransaction& orphanTx = (*mi)->second.tx;
+            const uint256& orphanHash = orphanTx.GetHash();
+            vOrphanErase.push_back(orphanHash);
+        }
+    }
+
+    // Erase orphan transactions include or precluded by this block
+    if (vOrphanErase.size()) {
+        int nErased = 0;
+        BOOST_FOREACH(uint256 &orphanHash, vOrphanErase) {
+            nErased += EraseOrphanTx(orphanHash);
+        }
+        LogPrint("mempool", "Erased %d orphan tx included or conflicted by block\n", nErased);
+    }
+}
+
 void PeerLogicValidation::UpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) {
     const int nNewHeight = pindexNew->nHeight;
     connman->SetBestHeight(nNewHeight);
@@ -4840,26 +4848,35 @@ static void RelayTransaction(const CTransaction& tx, CConnman& connman)
 
 static void RelayAddress(const CAddress& addr, bool fReachable, CConnman& connman)
 {
-    int nRelayNodes = fReachable ? 2 : 1; // limited relaying of addresses outside our network(s)
+    unsigned int nRelayNodes = fReachable ? 2 : 1; // limited relaying of addresses outside our network(s)
 
     // Relay to a limited number of other nodes
     // Use deterministic randomness to send to the same nodes for 24 hours
     // at a time so the addrKnowns of the chosen nodes prevent repeats
     uint64_t hashAddr = addr.GetHash();
-    std::multimap<uint64_t, CNode*> mapMix;
     const CSipHasher hasher = connman.GetDeterministicRandomizer(RANDOMIZER_ID_ADDRESS_RELAY).Write(hashAddr << 32).Write((GetTime() + hashAddr) / (24*60*60));
     FastRandomContext insecure_rand;
 
-    auto sortfunc = [&mapMix, &hasher](CNode* pnode) {
+    std::array<std::pair<uint64_t, CNode*>,2> best{{{0, nullptr}, {0, nullptr}}};
+    assert(nRelayNodes <= best.size());
+
+    auto sortfunc = [&best, &hasher, nRelayNodes](CNode* pnode) {
         if (pnode->nVersion >= CADDR_TIME_VERSION) {
             uint64_t hashKey = CSipHasher(hasher).Write(pnode->id).Finalize();
-            mapMix.emplace(hashKey, pnode);
+            for (unsigned int i = 0; i < nRelayNodes; i++) {
+                 if (hashKey > best[i].first) {
+                     std::copy(best.begin() + i, best.begin() + nRelayNodes - 1, best.begin() + i + 1);
+                     best[i] = std::make_pair(hashKey, pnode);
+                     break;
+                 }
+            }
         }
     };
 
-    auto pushfunc = [&addr, &mapMix, &nRelayNodes, &insecure_rand] {
-        for (auto mi = mapMix.begin(); mi != mapMix.end() && nRelayNodes-- > 0; ++mi)
-            mi->second->PushAddress(addr, insecure_rand);
+    auto pushfunc = [&addr, &best, nRelayNodes, &insecure_rand] {
+        for (unsigned int i = 0; i < nRelayNodes && best[i].first != 0; i++) {
+            best[i].second->PushAddress(addr, insecure_rand);
+        }
     };
 
     connman.ForEachNodeThen(std::move(sortfunc), std::move(pushfunc));
