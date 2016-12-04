@@ -12,7 +12,7 @@
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "init.h"
-#include "main.h"
+#include "validation.h"
 #include "miner.h"
 #include "net.h"
 #include "pow.h"
@@ -680,7 +680,9 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     result.push_back(Pair("curtime", pblock->GetBlockTime()));
     result.push_back(Pair("bits", strprintf("%08x", pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
-    if (!pblocktemplate->vchCoinbaseCommitment.empty()) {
+
+    const struct BIP9DeploymentInfo& segwit_info = VersionBitsDeploymentInfo[Consensus::DEPLOYMENT_SEGWIT];
+    if (!pblocktemplate->vchCoinbaseCommitment.empty() && setClientRules.find(segwit_info.name) != setClientRules.end()) {
         result.push_back(Pair("default_witness_commitment", HexStr(pblocktemplate->vchCoinbaseCommitment.begin(), pblocktemplate->vchCoinbaseCommitment.end())));
     }
 
@@ -783,6 +785,8 @@ UniValue estimatefee(const JSONRPCRequest& request)
             "\n"
             "A negative value is returned if not enough transactions and blocks\n"
             "have been observed to make an estimate.\n"
+            "-1 is always returned for nblocks == 1 as it is impossible to calculate\n"
+            "a fee that is high enough to get reliably included in the next block.\n"
             "\nExample:\n"
             + HelpExampleCli("estimatefee", "6")
             );

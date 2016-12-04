@@ -223,7 +223,7 @@ def wait_for_bitcoind_start(process, url, i):
                 raise # unknown IO error
         except JSONRPCException as e: # Initialization phase
             if e.error['code'] != -28: # RPC in warmup?
-                raise # unkown JSON RPC exception
+                raise # unknown JSON RPC exception
         time.sleep(0.25)
 
 def initialize_chain(test_dir, num_nodes, cachedir):
@@ -257,7 +257,7 @@ def initialize_chain(test_dir, num_nodes, cachedir):
                 print("initialize_chain: bitcoind started, waiting for RPC to come up")
             wait_for_bitcoind_start(bitcoind_processes[i], rpc_url(i), i)
             if os.getenv("PYTHON_DEBUG", ""):
-                print("initialize_chain: RPC succesfully started")
+                print("initialize_chain: RPC successfully started")
 
         rpcs = []
         for i in range(MAX_NODES):
@@ -344,7 +344,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     url = rpc_url(i, rpchost)
     wait_for_bitcoind_start(bitcoind_processes[i], url, i)
     if os.getenv("PYTHON_DEBUG", ""):
-        print("start_node: RPC succesfully started")
+        print("start_node: RPC successfully started")
     proxy = get_rpc_proxy(url, i, timeout=timewait)
 
     if COVERAGE_DIR:
@@ -657,13 +657,12 @@ def create_tx(node, coinbase, to_address, amount):
 def create_lots_of_big_transactions(node, txouts, utxos, fee):
     addr = node.getnewaddress()
     txids = []
-    for i in range(len(utxos)):
+    for _ in range(len(utxos)):
         t = utxos.pop()
-        inputs = []
-        inputs.append({ "txid" : t["txid"], "vout" : t["vout"]})
+        inputs=[{ "txid" : t["txid"], "vout" : t["vout"]}]
         outputs = {}
-        send_value = t['amount'] - fee
-        outputs[addr] = satoshi_round(send_value)
+        change = t['amount'] - fee
+        outputs[addr] = satoshi_round(change)
         rawtx = node.createrawtransaction(inputs, outputs)
         newtx = rawtx[0:92]
         newtx = newtx + txouts
@@ -672,6 +671,15 @@ def create_lots_of_big_transactions(node, txouts, utxos, fee):
         txid = node.sendrawtransaction(signresult["hex"], True)
         txids.append(txid)
     return txids
+
+def mine_large_block(node):
+    # generate a 66k transaction,
+    # and 14 of them is close to the 1MB block limit
+    txouts = gen_return_txouts()
+    utxos = node.listunspent()[:14]
+    fee = 100 * node.getnetworkinfo()["relayfee"]
+    create_lots_of_big_transactions(node, txouts, utxos, fee=fee)
+    node.generate(1)
 
 def get_bip9_status(node, key):
     info = node.getblockchaininfo()
