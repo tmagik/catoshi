@@ -21,14 +21,14 @@ protected:
     bool boolval;
     std::string stringval;
     const char* charstrval;
-    CTransaction txval;
+    CTransactionRef txval;
 public:
     CSerializeMethodsTestSingle() = default;
-    CSerializeMethodsTestSingle(int intvalin, bool boolvalin, std::string stringvalin, const char* charstrvalin, CTransaction txvalin) : intval(intvalin), boolval(boolvalin), stringval(std::move(stringvalin)), charstrval(charstrvalin), txval(txvalin){}
+    CSerializeMethodsTestSingle(int intvalin, bool boolvalin, std::string stringvalin, const char* charstrvalin, CTransaction txvalin) : intval(intvalin), boolval(boolvalin), stringval(std::move(stringvalin)), charstrval(charstrvalin), txval(MakeTransactionRef(txvalin)){}
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(intval);
         READWRITE(boolval);
         READWRITE(stringval);
@@ -42,7 +42,7 @@ public:
                 boolval == rhs.boolval && \
                 stringval == rhs.stringval && \
                 strcmp(charstrval, rhs.charstrval) == 0 && \
-                txval == rhs.txval;
+                *txval == *rhs.txval;
     }
 };
 
@@ -53,7 +53,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITEMANY(intval, boolval, stringval, FLATDATA(charstrval), txval);
     }
 };

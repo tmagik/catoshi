@@ -11,7 +11,7 @@
 
 #include "primitives/transaction.h"
 #include "init.h"
-#include "main.h" // For minRelayTxFee
+#include "validation.h" // For minRelayTxFee
 #include "protocol.h"
 #include "script/script.h"
 #include "script/standard.h"
@@ -55,6 +55,7 @@
 #include <QSettings>
 #include <QTextDocument> // for Qt::mightBeRichText
 #include <QThread>
+#include <QMouseEvent>
 
 #if QT_VERSION < 0x050000
 #include <QUrl>
@@ -585,7 +586,8 @@ void TableViewLastColumnResizingFixer::on_geometriesChanged()
  * Initializes all internal variables and prepares the
  * the resize modes of the last 2 columns of the table and
  */
-TableViewLastColumnResizingFixer::TableViewLastColumnResizingFixer(QTableView* table, int lastColMinimumWidth, int allColsMinimumWidth) :
+TableViewLastColumnResizingFixer::TableViewLastColumnResizingFixer(QTableView* table, int lastColMinimumWidth, int allColsMinimumWidth, QObject *parent) :
+    QObject(parent),
     tableView(table),
     lastColumnMinimumWidth(lastColMinimumWidth),
     allColumnsMinimumWidth(allColsMinimumWidth)
@@ -985,4 +987,15 @@ QString formateNiceTimeOffset(qint64 secs)
     }
     return timeBehindText;
 }
+
+void ClickableLabel::mouseReleaseEvent(QMouseEvent *event)
+{
+    Q_EMIT clicked(event->pos());
+}
+    
+void ClickableProgressBar::mouseReleaseEvent(QMouseEvent *event)
+{
+    Q_EMIT clicked(event->pos());
+}
+
 } // namespace GUIUtil

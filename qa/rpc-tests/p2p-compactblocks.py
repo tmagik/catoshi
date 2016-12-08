@@ -27,6 +27,7 @@ class TestNode(SingleNodeConnCB):
         self.last_cmpctblock = None
         self.block_announced = False
         self.last_getdata = None
+        self.last_getheaders = None
         self.last_getblocktxn = None
         self.last_block = None
         self.last_blocktxn = None
@@ -63,6 +64,9 @@ class TestNode(SingleNodeConnCB):
 
     def on_getdata(self, conn, message):
         self.last_getdata = message
+
+    def on_getheaders(self, conn, message):
+        self.last_getheaders = message
 
     def on_getblocktxn(self, conn, message):
         self.last_getblocktxn = message
@@ -186,12 +190,15 @@ class CompactBlocksTest(BitcoinTestFramework):
 
         def check_announcement_of_new_block(node, peer, predicate):
             peer.clear_block_announcement()
-            node.generate(1)
-            got_message = wait_until(lambda: peer.block_announced, timeout=30)
+            block_hash = int(node.generate(1)[0], 16)
+            peer.wait_for_block_announcement(block_hash, timeout=30)
             assert(peer.block_announced)
             assert(got_message)
+
             with mininode_lock:
-                assert(predicate(peer))
+                assert predicate(peer), (
+                    "block_hash={!r}, cmpctblock={!r}, inv={!r}".format(
+                        block_hash, peer.last_cmpctblock, peer.last_inv))
 
         # We shouldn't get any block announcements via cmpctblock yet.
         check_announcement_of_new_block(node, test_node, lambda p: p.last_cmpctblock is None)
@@ -300,8 +307,8 @@ class CompactBlocksTest(BitcoinTestFramework):
             assert(segwit_tx_generated) # check that our test is not broken
 
         # Wait until we've seen the block announcement for the resulting tip
-        tip = int(self.nodes[0].getbestblockhash(), 16)
-        assert(self.test_node.wait_for_block_announcement(tip))
+        tip = int(node.getbestblockhash(), 16)
+        assert(test_node.wait_for_block_announcement(tip))
 
         # Now mine a block, and look at the resulting compact block.
         test_node.clear_block_announcement()
@@ -393,6 +400,9 @@ class CompactBlocksTest(BitcoinTestFramework):
 
             if announce == "inv":
                 test_node.send_message(msg_inv([CInv(2, block.sha256)]))
+                success = wait_until(lambda: test_node.last_getheaders is not None, timeout=30)
+                assert(success)
+                test_node.send_header_for_blocks([block])
             else:
                 test_node.send_header_for_blocks([block])
             success = wait_until(lambda: test_node.last_getdata is not None, timeout=30)
@@ -589,8 +599,8 @@ class CompactBlocksTest(BitcoinTestFramework):
         assert_equal(int(node.getbestblockhash(), 16), block.sha256)
 
     def test_getblocktxn_handler(self, node, test_node, version):
-        # bitcoind won't respond for blocks whose height is more than 15 blocks
-        # deep.
+        # bitcoind will not send blocktxn responses for blocks whose height is
+        # more than 10 blocks deep.
         MAX_GETBLOCKTXN_DEPTH = 10
         chain_height = node.getblockcount()
         current_height = chain_height
@@ -623,11 +633,17 @@ class CompactBlocksTest(BitcoinTestFramework):
                 test_node.last_blocktxn = None
             current_height -= 1
 
-        # Next request should be ignored, as we're past the allowed depth.
+        # Next request should send a full block response, as we're past the
+        # allowed depth for a blocktxn response.
         block_hash = node.getblockhash(current_height)
         msg.block_txn_request = BlockTransactionsRequest(int(block_hash, 16), [0])
+        with mininode_lock:
+            test_node.last_block = None
+            test_node.last_blocktxn = None
         test_node.send_and_ping(msg)
         with mininode_lock:
+            test_node.last_block.block.calc_sha256()
+            assert_equal(test_node.last_block.block.sha256, int(block_hash, 16))
             assert_equal(test_node.last_blocktxn, None)
 
     def test_compactblocks_not_at_tip(self, node, test_node):
@@ -648,6 +664,8 @@ class CompactBlocksTest(BitcoinTestFramework):
         node.generate(1)
         wait_until(test_node.received_block_announcement, timeout=30)
         test_node.clear_block_announcement()
+        with mininode_lock:
+            test_node.last_block = None
         test_node.send_message(msg_getdata([CInv(4, int(new_blocks[0], 16))]))
         success = wait_until(lambda: test_node.last_block is not None, timeout=30)
         assert(success)
