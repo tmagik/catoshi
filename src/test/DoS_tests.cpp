@@ -6,12 +6,13 @@
 
 #include "chainparams.h"
 #include "keystore.h"
-#include "main.h"
 #include "net.h"
+#include "net_processing.h"
 #include "pow.h"
 #include "script/sign.h"
 #include "serialize.h"
 #include "util.h"
+#include "validation.h"
 
 #include "test/test_bitcoin.h"
 
@@ -29,9 +30,9 @@ extern unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans);
 struct COrphanTx {
     CTransaction tx;
     NodeId fromPeer;
+    int64_t nTimeExpire;
 };
 extern std::map<uint256, COrphanTx> mapOrphanTransactions;
-extern std::map<uint256, std::set<uint256> > mapOrphanTransactionsByPrev;
 
 CService ip(uint32_t i)
 {
@@ -74,7 +75,7 @@ BOOST_AUTO_TEST_CASE(DoS_banning)
 BOOST_AUTO_TEST_CASE(DoS_banscore)
 {
     connman->ClearBanned();
-    mapArgs["-banscore"] = "111"; // because 11 is my favorite number
+    ForceSetArg("-banscore", "111"); // because 11 is my favorite number
     CAddress addr1(ip(0xa0b0c001), NODE_NONE);
     CNode dummyNode1(id++, NODE_NETWORK, 0, INVALID_SOCKET, addr1, 3, 1, "", true);
     dummyNode1.SetSendVersion(PROTOCOL_VERSION);
@@ -89,7 +90,7 @@ BOOST_AUTO_TEST_CASE(DoS_banscore)
     Misbehaving(dummyNode1.GetId(), 1);
     SendMessages(&dummyNode1, *connman);
     BOOST_CHECK(connman->IsBanned(addr1));
-    mapArgs.erase("-banscore");
+    ForceSetArg("-banscore", std::to_string(DEFAULT_BANSCORE_THRESHOLD));
 }
 
 BOOST_AUTO_TEST_CASE(DoS_bantime)
@@ -202,7 +203,6 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
     BOOST_CHECK(mapOrphanTransactions.size() <= 10);
     LimitOrphanTxSize(0);
     BOOST_CHECK(mapOrphanTransactions.empty());
-    BOOST_CHECK(mapOrphanTransactionsByPrev.empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

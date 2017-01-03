@@ -9,7 +9,7 @@
 #include "checkpoints.h"
 #include "coins.h"
 #include "consensus/validation.h"
-#include "main.h"
+#include "validation.h"
 #include "policy/policy.h"
 #include "primitives/transaction.h"
 #include "rpc/server.h"
@@ -119,16 +119,16 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("versionHex", strprintf("%08x", block.nVersion)));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
     UniValue txs(UniValue::VARR);
-    BOOST_FOREACH(const CTransaction&tx, block.vtx)
+    for(const auto& tx : block.vtx)
     {
         if(txDetails)
         {
             UniValue objTx(UniValue::VOBJ);
-            TxToJSON(tx, uint256(), objTx);
+            TxToJSON(*tx, uint256(), objTx);
             txs.push_back(objTx);
         }
         else
-            txs.push_back(tx.GetHash().GetHex());
+            txs.push_back(tx->GetHash().GetHex());
     }
     result.push_back(Pair("tx", txs));
     result.push_back(Pair("time", block.GetBlockTime()));
@@ -169,9 +169,9 @@ UniValue getbestblockhash(const JSONRPCRequest& request)
         throw runtime_error(
             "getbestblockhash\n"
             "\nReturns the hash of the best (tip) block in the longest blockchain.\n"
-            "\nResult\n"
+            "\nResult:\n"
             "\"hex\"      (string) the block hash hex encoded\n"
-            "\nExamples\n"
+            "\nExamples:\n"
             + HelpExampleCli("getbestblockhash", "")
             + HelpExampleRpc("getbestblockhash", "")
         );
@@ -194,17 +194,17 @@ UniValue waitfornewblock(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() > 1)
         throw runtime_error(
-            "waitfornewblock\n"
+            "waitfornewblock (timeout)\n"
             "\nWaits for a specific new block and returns useful info about it.\n"
             "\nReturns the current block on timeout or exit.\n"
             "\nArguments:\n"
-            "1. timeout (milliseconds) (int, optional, default=false)\n"
-            "\nResult::\n"
+            "1. timeout (int, optional, default=0) Time in milliseconds to wait for a response. 0 indicates no timeout.\n"
+            "\nResult:\n"
             "{                           (json object)\n"
             "  \"hash\" : {       (string) The blockhash\n"
             "  \"height\" : {     (int) Block height\n"
             "}\n"
-            "\nExamples\n"
+            "\nExamples:\n"
             + HelpExampleCli("waitfornewblock", "1000")
             + HelpExampleRpc("waitfornewblock", "1000")
         );
@@ -232,18 +232,18 @@ UniValue waitforblock(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 2)
         throw runtime_error(
-            "waitforblock\n"
+            "waitforblock <blockhash> (timeout)\n"
             "\nWaits for a specific new block and returns useful info about it.\n"
             "\nReturns the current block on timeout or exit.\n"
             "\nArguments:\n"
             "1. blockhash to wait for (string)\n"
-            "2. timeout (milliseconds) (int, optional, default=false)\n"
-            "\nResult::\n"
+            "2. timeout (int, optional, default=0) Time in milliseconds to wait for a response. 0 indicates no timeout.\n"
+            "\nResult:\n"
             "{                           (json object)\n"
             "  \"hash\" : {       (string) The blockhash\n"
             "  \"height\" : {     (int) Block height\n"
             "}\n"
-            "\nExamples\n"
+            "\nExamples:\n"
             + HelpExampleCli("waitforblock", "\"0000000000079f8ef3d2c688c244eb7a4570b24c9ed7b4a8c619eb02596f8862\", 1000")
             + HelpExampleRpc("waitforblock", "\"0000000000079f8ef3d2c688c244eb7a4570b24c9ed7b4a8c619eb02596f8862\", 1000")
         );
@@ -274,19 +274,19 @@ UniValue waitforblockheight(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 2)
         throw runtime_error(
-            "waitforblock\n"
+            "waitforblockheight <blockheight> (timeout)\n"
             "\nWaits for (at least) block height and returns the height and hash\n"
-            "\nof the current tip.\n"
+            "of the current tip.\n"
             "\nReturns the current block on timeout or exit.\n"
             "\nArguments:\n"
             "1. block height to wait for (int)\n"
-            "2. timeout (milliseconds) (int, optional, default=false)\n"
-            "\nResult::\n"
+            "2. timeout (int, optional, default=0) Time in milliseconds to wait for a response. 0 indicates no timeout.\n"
+            "\nResult:\n"
             "{                           (json object)\n"
             "  \"hash\" : {       (string) The blockhash\n"
             "  \"height\" : {     (int) Block height\n"
             "}\n"
-            "\nExamples\n"
+            "\nExamples:\n"
             + HelpExampleCli("waitforblockheight", "\"100\", 1000")
             + HelpExampleRpc("waitforblockheight", "\"100\", 1000")
         );
@@ -430,7 +430,7 @@ UniValue getrawmempool(const JSONRPCRequest& request)
             + EntryDescriptionString()
             + "  }, ...\n"
             "}\n"
-            "\nExamples\n"
+            "\nExamples:\n"
             + HelpExampleCli("getrawmempool", "true")
             + HelpExampleRpc("getrawmempool", "true")
         );
@@ -462,7 +462,7 @@ UniValue getmempoolancestors(const JSONRPCRequest& request)
             + EntryDescriptionString()
             + "  }, ...\n"
             "}\n"
-            "\nExamples\n"
+            "\nExamples:\n"
             + HelpExampleCli("getmempoolancestors", "\"mytxid\"")
             + HelpExampleRpc("getmempoolancestors", "\"mytxid\"")
             );
@@ -526,7 +526,7 @@ UniValue getmempooldescendants(const JSONRPCRequest& request)
             + EntryDescriptionString()
             + "  }, ...\n"
             "}\n"
-            "\nExamples\n"
+            "\nExamples:\n"
             + HelpExampleCli("getmempooldescendants", "\"mytxid\"")
             + HelpExampleRpc("getmempooldescendants", "\"mytxid\"")
             );
@@ -582,7 +582,7 @@ UniValue getmempoolentry(const JSONRPCRequest& request)
             "{                           (json object)\n"
             + EntryDescriptionString()
             + "}\n"
-            "\nExamples\n"
+            "\nExamples:\n"
             + HelpExampleCli("getmempoolentry", "\"mytxid\"")
             + HelpExampleRpc("getmempoolentry", "\"mytxid\"")
         );
@@ -751,7 +751,7 @@ UniValue getblock(const JSONRPCRequest& request)
 
     if (!fVerbose)
     {
-        CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION | RPCSerializationFlags());
         ssBlock << block;
         std::string strHex = HexStr(ssBlock.begin(), ssBlock.end());
         return strHex;
@@ -1319,7 +1319,7 @@ UniValue invalidateblock(const JSONRPCRequest& request)
     }
 
     if (state.IsValid()) {
-        ActivateBestChain(state, Params(), NULL);
+        ActivateBestChain(state, Params());
     }
 
     if (!state.IsValid()) {
@@ -1357,7 +1357,7 @@ UniValue reconsiderblock(const JSONRPCRequest& request)
     }
 
     CValidationState state;
-    ActivateBestChain(state, Params(), NULL);
+    ActivateBestChain(state, Params());
 
     if (!state.IsValid()) {
         throw JSONRPCError(RPC_DATABASE_ERROR, state.GetRejectReason());
