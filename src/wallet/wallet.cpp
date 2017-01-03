@@ -3399,7 +3399,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
         strUsage += HelpMessageOpt("-dblogsize=<n>", strprintf("Flush wallet database activity from memory to disk log every <n> megabytes (default: %u)", DEFAULT_WALLET_DBLOGSIZE));
         strUsage += HelpMessageOpt("-flushwallet", strprintf("Run a thread to flush wallet periodically (default: %u)", DEFAULT_FLUSHWALLET));
         strUsage += HelpMessageOpt("-privdb", strprintf("Sets the DB_PRIVATE flag in the wallet db environment (default: %u)", DEFAULT_WALLET_PRIVDB));
-        strUsage += HelpMessageOpt("-walletrejectlongchains", strprintf(_("Wallet will not create transactions that violate mempool chain limits (default: %u"), DEFAULT_WALLET_REJECT_LONG_CHAINS));
+        strUsage += HelpMessageOpt("-walletrejectlongchains", strprintf(_("Wallet will not create transactions that violate mempool chain limits (default: %u)"), DEFAULT_WALLET_REJECT_LONG_CHAINS));
     }
 
     return strUsage;
@@ -3736,21 +3736,13 @@ CWalletKey::CWalletKey(int64_t nExpires)
     nTimeExpires = nExpires;
 }
 
-int CMerkleTx::SetMerkleBranch(const CBlockIndex* pindex, int posInBlock)
+void CMerkleTx::SetMerkleBranch(const CBlockIndex* pindex, int posInBlock)
 {
-    AssertLockHeld(cs_main);
-
     // Update the tx's hashBlock
     hashBlock = pindex->GetBlockHash();
 
     // set the position of the transaction in the block
     nIndex = posInBlock;
-
-    // Is the tx in a block that's in the main chain
-    if (!chainActive.Contains(pindex))
-        return 0;
-
-    return chainActive.Height() - pindex->nHeight + 1;
 }
 
 int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet) const
