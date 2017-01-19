@@ -78,6 +78,7 @@ uint64_t nPruneTarget = 0;
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 bool fEnableReplacement = DEFAULT_ENABLE_REPLACEMENT;
 
+uint256 hashAssumeValid;
 
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
@@ -185,7 +186,8 @@ enum FlushStateMode {
 };
 
 // See definition for documentation
-bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode);
+bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int nManualPruneHeight=0);
+void FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPruneHeight);
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 {
@@ -1392,11 +1394,10 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
         // Only if ALL inputs pass do we perform expensive ECDSA signature checks.
         // Helps prevent CPU exhaustion attacks.
 
-        // Skip ECDSA signature verification when connecting blocks before the
-        // last block chain checkpoint. Assuming the checkpoints are valid this
+        // Skip script verification when connecting blocks under the
+        // assumedvalid block. Assuming the assumedvalid block is valid this
         // is safe because block merkle hashes are still computed and checked,
-        // and any change will be caught at the next checkpoint. Of course, if
-        // the checkpoint is for a chain that's invalid due to false scriptSigs
+        // Of course, if an assumed valid block is invalid due to false scriptSigs
         // this optimization would allow an invalid chain to be accepted.
         if (fScriptChecks) {
             for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -1724,11 +1725,28 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     bool fScriptChecks = true;
-    if (fCheckpointsEnabled) {
-        CBlockIndex *pindexLastCheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());
-        if (pindexLastCheckpoint && pindexLastCheckpoint->GetAncestor(pindex->nHeight) == pindex) {
-            // This block is an ancestor of a checkpoint: disable script checks
-            fScriptChecks = false;
+    if (!hashAssumeValid.IsNull()) {
+        // We've been configured with the hash of a block which has been externally verified to have a valid history.
+        // A suitable default value is included with the software and updated from time to time.  Because validity
+        //  relative to a piece of software is an objective fact these defaults can be easily reviewed.
+        // This setting doesn't force the selection of any particular chain but makes validating some faster by
+        //  effectively caching the result of part of the verification.
+        BlockMap::const_iterator  it = mapBlockIndex.find(hashAssumeValid);
+        if (it != mapBlockIndex.end()) {
+            if (it->second->GetAncestor(pindex->nHeight) == pindex &&
+                pindexBestHeader->GetAncestor(pindex->nHeight) == pindex &&
+                pindexBestHeader->nChainWork >= UintToArith256(chainparams.GetConsensus().nMinimumChainWork)) {
+                // This block is a member of the assumed verified chain and an ancestor of the best header.
+                // The equivalent time check discourages hashpower from extorting the network via DOS attack
+                //  into accepting an invalid block through telling users they must manually set assumevalid.
+                //  Requiring a software change or burying the invalid block, regardless of the setting, makes
+                //  it hard to hide the implication of the demand.  This also avoids having release candidates
+                //  that are hardly doing any signature verification at all in testing without having to
+                //  artificially set the default assumed verified block further back.
+                // The test against nMinimumChainWork prevents the skipping when denied access to any chain at
+                //  least as good as the expected chain.
+                fScriptChecks = (GetBlockProofEquivalentTime(*pindexBestHeader, *pindex, *pindexBestHeader, chainparams.GetConsensus()) <= 60 * 60 * 24 * 7 * 2);
+            }
         }
     }
 
@@ -1938,7 +1956,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
  * if they're too large, if it's been a while since the last write,
  * or always and in all cases if we're in prune mode and are deleting files.
  */
-bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode) {
+bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int nManualPruneHeight) {
     int64_t nMempoolUsage = mempool.DynamicMemoryUsage();
     const CChainParams& chainparams = Params();
     LOCK2(cs_main, cs_LastBlockFile);
@@ -1948,9 +1966,13 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode) {
     std::set<int> setFilesToPrune;
     bool fFlushForPrune = false;
     try {
-    if (fPruneMode && fCheckForPruning && !fReindex) {
-        FindFilesToPrune(setFilesToPrune, chainparams.PruneAfterHeight());
-        fCheckForPruning = false;
+    if (fPruneMode && (fCheckForPruning || nManualPruneHeight > 0) && !fReindex) {
+        if (nManualPruneHeight > 0) {
+            FindFilesToPruneManual(setFilesToPrune, nManualPruneHeight);
+        } else {
+            FindFilesToPrune(setFilesToPrune, chainparams.PruneAfterHeight());
+            fCheckForPruning = false;
+        }
         if (!setFilesToPrune.empty()) {
             fFlushForPrune = true;
             if (!fHavePruned) {
@@ -2105,7 +2127,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
       chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nVersion,
       log(chainActive.Tip()->nChainWork.getdouble())/log(2.0), (unsigned long)chainActive.Tip()->nChainTx,
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
-      Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip()), pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());
+      GuessVerificationProgress(chainParams.TxData(), chainActive.Tip()), pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());
     if (!warningMessages.empty())
         LogPrintf(" warning='%s'", boost::algorithm::join(warningMessages, ", "));
     LogPrintf("\n");
@@ -2413,6 +2435,11 @@ static void NotifyHeaderTip() {
  * that is already loaded (to avoid loading it again from disk).
  */
 bool ActivateBestChain(CValidationState &state, const CChainParams& chainparams, std::shared_ptr<const CBlock> pblock) {
+    // Note that while we're often called here from ProcessNewBlock, this is
+    // far from a guarantee. Things in the P2P/RPC will often end up calling
+    // us in the middle of ProcessNewBlock - do not assume pblock is set
+    // sanely for performance or correctness!
+
     CBlockIndex *pindexMostWork = NULL;
     CBlockIndex *pindexNewTip = NULL;
     do {
@@ -2605,6 +2632,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
         pindexNew->BuildSkip();
     }
+    pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
     pindexNew->RaiseValidity(BLOCK_VALID_TREE);
     if (pindexBestHeader == NULL || pindexBestHeader->nChainWork < pindexNew->nChainWork)
@@ -3055,13 +3083,17 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
 }
 
 // Exposed wrapper for AcceptBlockHeader
-bool ProcessNewBlockHeaders(const std::vector<CBlockHeader>& headers, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex)
+bool ProcessNewBlockHeaders(const std::vector<CBlockHeader>& headers, CValidationState& state, const CChainParams& chainparams, const CBlockIndex** ppindex)
 {
     {
         LOCK(cs_main);
         for (const CBlockHeader& header : headers) {
-            if (!AcceptBlockHeader(header, state, chainparams, ppindex)) {
+            CBlockIndex *pindex = NULL; // Use a temp pindex instead of ppindex to avoid a const_cast
+            if (!AcceptBlockHeader(header, state, chainparams, &pindex)) {
                 return false;
+            }
+            if (ppindex) {
+                *ppindex = pindex;
             }
         }
     }
@@ -3070,8 +3102,10 @@ bool ProcessNewBlockHeaders(const std::vector<CBlockHeader>& headers, CValidatio
 }
 
 /** Store block on disk. If dbp is non-NULL, the file is known to already reside on disk */
-static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, const CDiskBlockPos* dbp, bool* fNewBlock)
+static bool AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, const CDiskBlockPos* dbp, bool* fNewBlock)
 {
+    const CBlock& block = *pblock;
+
     if (fNewBlock) *fNewBlock = false;
     AssertLockHeld(cs_main);
 
@@ -3117,6 +3151,11 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
         return error("%s: %s", __func__, FormatStateMessage(state));
     }
 
+    // Header is valid/has work, merkle tree and segwit merkle tree are good...RELAY NOW
+    // (but if it does not build on our best tip, let the SendMessages loop relay it)
+    if (!IsInitialBlockDownload() && chainActive.Tip() == pindex->pprev)
+        GetMainSignals().NewPoWValidBlock(pindex, pblock);
+
     int nHeight = pindex->nHeight;
 
     // Write block to history file
@@ -3151,7 +3190,7 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
         CBlockIndex *pindex = NULL;
         if (fNewBlock) *fNewBlock = false;
         CValidationState state;
-        bool ret = AcceptBlock(*pblock, state, chainparams, &pindex, fForceProcessing, NULL, fNewBlock);
+        bool ret = AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, NULL, fNewBlock);
         CheckBlockIndex(chainparams.GetConsensus());
         if (!ret) {
             GetMainSignals().BlockChecked(*pblock, state);
@@ -3249,6 +3288,35 @@ void UnlinkPrunedFiles(std::set<int>& setFilesToPrune)
         boost::filesystem::remove(GetBlockPosFilename(pos, "rev"));
         LogPrintf("Prune: %s deleted blk/rev (%05u)\n", __func__, *it);
     }
+}
+
+/* Calculate the block/rev files to delete based on height specified by user with RPC command pruneblockchain */
+void FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPruneHeight)
+{
+    assert(fPruneMode && nManualPruneHeight > 0);
+
+    LOCK2(cs_main, cs_LastBlockFile);
+    if (chainActive.Tip() == NULL)
+        return;
+
+    // last block to prune is the lesser of (user-specified height, MIN_BLOCKS_TO_KEEP from the tip)
+    unsigned int nLastBlockWeCanPrune = min((unsigned)nManualPruneHeight, chainActive.Tip()->nHeight - MIN_BLOCKS_TO_KEEP);
+    int count=0;
+    for (int fileNumber = 0; fileNumber < nLastBlockFile; fileNumber++) {
+        if (vinfoBlockFile[fileNumber].nSize == 0 || vinfoBlockFile[fileNumber].nHeightLast > nLastBlockWeCanPrune)
+            continue;
+        PruneOneBlockFile(fileNumber);
+        setFilesToPrune.insert(fileNumber);
+        count++;
+    }
+    LogPrintf("Prune (Manual): prune_height=%d removed %d blk/rev pairs\n", nLastBlockWeCanPrune, count);
+}
+
+/* This function is called from the RPC code for pruneblockchain */
+void PruneBlockFilesManual(int nManualPruneHeight)
+{
+    CValidationState state;
+    FlushStateToDisk(state, FLUSH_STATE_NONE, nManualPruneHeight);
 }
 
 /* Calculate the block/rev files that should be deleted to remain under target*/
@@ -3386,6 +3454,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
     {
         CBlockIndex* pindex = item.second;
         pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + GetBlockProof(*pindex);
+        pindex->nTimeMax = (pindex->pprev ? std::max(pindex->pprev->nTimeMax, pindex->nTime) : pindex->nTime);
         // We can link the chain of blocks for which we've received transactions at some point.
         // Pruned nodes may have deleted the block.
         if (pindex->nTx > 0) {
@@ -3470,7 +3539,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
     LogPrintf("%s: hashBestChain=%s height=%d date=%s progress=%f\n", __func__,
         chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
         DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
-        Checkpoints::GuessVerificationProgress(chainparams.Checkpoints(), chainActive.Tip()));
+        GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
 
     return true;
 }
@@ -3778,7 +3847,8 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                     dbp->nPos = nBlockPos;
                 blkdat.SetLimit(nBlockPos + nSize);
                 blkdat.SetPos(nBlockPos);
-                CBlock block;
+                std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
+                CBlock& block = *pblock;
                 blkdat >> block;
                 nRewind = blkdat.GetPos();
 
@@ -3796,7 +3866,7 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                 if (mapBlockIndex.count(hash) == 0 || (mapBlockIndex[hash]->nStatus & BLOCK_HAVE_DATA) == 0) {
                     LOCK(cs_main);
                     CValidationState state;
-                    if (AcceptBlock(block, state, chainparams, NULL, true, dbp, NULL))
+                    if (AcceptBlock(pblock, state, chainparams, NULL, true, dbp, NULL))
                         nLoaded++;
                     if (state.IsError())
                         break;
@@ -3823,16 +3893,17 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                     std::pair<std::multimap<uint256, CDiskBlockPos>::iterator, std::multimap<uint256, CDiskBlockPos>::iterator> range = mapBlocksUnknownParent.equal_range(head);
                     while (range.first != range.second) {
                         std::multimap<uint256, CDiskBlockPos>::iterator it = range.first;
-                        if (ReadBlockFromDisk(block, it->second, chainparams.GetConsensus()))
+                        std::shared_ptr<CBlock> pblockrecursive = std::make_shared<CBlock>();
+                        if (ReadBlockFromDisk(*pblockrecursive, it->second, chainparams.GetConsensus()))
                         {
-                            LogPrint("reindex", "%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
+                            LogPrint("reindex", "%s: Processing out of order child %s of %s\n", __func__, pblockrecursive->GetHash().ToString(),
                                     head.ToString());
                             LOCK(cs_main);
                             CValidationState dummy;
-                            if (AcceptBlock(block, dummy, chainparams, NULL, true, &it->second, NULL))
+                            if (AcceptBlock(pblockrecursive, dummy, chainparams, NULL, true, &it->second, NULL))
                             {
                                 nLoaded++;
-                                queue.push_back(block.GetHash());
+                                queue.push_back(pblockrecursive->GetHash());
                             }
                         }
                         range.first++;
@@ -4166,6 +4237,24 @@ void DumpMempool(void)
     } catch (const std::exception& e) {
         LogPrintf("Failed to dump mempool: %s. Continuing anyway.\n", e.what());
     }
+}
+
+//! Guess how far we are in the verification process at the given block index
+double GuessVerificationProgress(const ChainTxData& data, CBlockIndex *pindex) {
+    if (pindex == NULL)
+        return 0.0;
+
+    int64_t nNow = time(NULL);
+
+    double fTxTotal;
+
+    if (pindex->nChainTx <= data.nTxCount) {
+        fTxTotal = data.nTxCount + (nNow - data.nTime) * data.dTxRate;
+    } else {
+        fTxTotal = pindex->nChainTx + (nNow - pindex->GetBlockTime()) * data.dTxRate;
+    }
+
+    return pindex->nChainTx / fTxTotal;
 }
 
 class CMainCleanup
