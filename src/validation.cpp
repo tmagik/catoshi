@@ -540,8 +540,8 @@ static bool IsCurrentForFeeEstimation()
 }
 
 bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const CTransactionRef& ptx, bool fLimitFree,
-                              bool* pfMissingInputs, int64_t nAcceptTime, bool fOverrideMempoolLimit, const CAmount& nAbsurdFee,
-                              std::vector<uint256>& vHashTxnToUncache)
+                              bool* pfMissingInputs, int64_t nAcceptTime, std::list<CTransactionRef>* plTxnReplaced,
+                              bool fOverrideMempoolLimit, const CAmount& nAbsurdFee, std::vector<uint256>& vHashTxnToUncache)
 {
     const CTransaction& tx = *ptx;
     const uint256 hash = tx.GetHash();
@@ -921,12 +921,13 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
             // SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
             // need to turn both off, and compare against just turning off CLEANSTACK
             // to see if the failure is specifically due to witness validation.
-            if (!tx.HasWitness() && CheckInputs(tx, state, view, true, scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK), true, txdata) &&
-                !CheckInputs(tx, state, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, txdata)) {
+            CValidationState stateDummy; // Want reported failures to be from first CheckInputs
+            if (!tx.HasWitness() && CheckInputs(tx, stateDummy, view, true, scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK), true, txdata) &&
+                !CheckInputs(tx, stateDummy, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, txdata)) {
                 // Only the witness is missing, so the transaction itself may be fine.
                 state.SetCorruptionPossible();
             }
-            return false;
+            return false; // state filled in by CheckInputs
         }
 
         // Check again against just the consensus-critical mandatory script
@@ -952,6 +953,8 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
                     hash.ToString(),
                     FormatMoney(nModifiedFees - nConflictingFees),
                     (int)nSize - (int)nConflictingSize);
+            if (plTxnReplaced)
+                plTxnReplaced->push_back(it->GetSharedTx());
         }
         pool.RemoveStaged(allConflicting, false);
 
@@ -977,10 +980,11 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
 }
 
 bool AcceptToMemoryPoolWithTime(CTxMemPool& pool, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                        bool* pfMissingInputs, int64_t nAcceptTime, bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
+                        bool* pfMissingInputs, int64_t nAcceptTime, std::list<CTransactionRef>* plTxnReplaced,
+                        bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
 {
     std::vector<uint256> vHashTxToUncache;
-    bool res = AcceptToMemoryPoolWorker(pool, state, tx, fLimitFree, pfMissingInputs, nAcceptTime, fOverrideMempoolLimit, nAbsurdFee, vHashTxToUncache);
+    bool res = AcceptToMemoryPoolWorker(pool, state, tx, fLimitFree, pfMissingInputs, nAcceptTime, plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee, vHashTxToUncache);
     if (!res) {
         BOOST_FOREACH(const uint256& hashTx, vHashTxToUncache)
             pcoinsTip->Uncache(hashTx);
@@ -992,9 +996,10 @@ bool AcceptToMemoryPoolWithTime(CTxMemPool& pool, CValidationState &state, const
 }
 
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                        bool* pfMissingInputs, bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
+                        bool* pfMissingInputs, std::list<CTransactionRef>* plTxnReplaced,
+                        bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
 {
-    return AcceptToMemoryPoolWithTime(pool, state, tx, fLimitFree, pfMissingInputs, GetTime(), fOverrideMempoolLimit, nAbsurdFee);
+    return AcceptToMemoryPoolWithTime(pool, state, tx, fLimitFree, pfMissingInputs, GetTime(), plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee);
 }
 
 /** Return transaction in txOut, and if it was found inside a block, its hash is placed in hashBlock */
@@ -2160,7 +2165,7 @@ bool static DisconnectTip(CValidationState& state, const CChainParams& chainpara
             const CTransaction& tx = *it;
             // ignore validation errors in resurrected transactions
             CValidationState stateDummy;
-            if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, it, false, NULL, true)) {
+            if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, it, false, NULL, NULL, true)) {
                 mempool.removeRecursive(tx);
             } else if (mempool.exists(tx.GetHash())) {
                 vHashUpdate.push_back(tx.GetHash());
@@ -2469,19 +2474,18 @@ bool ActivateBestChain(CValidationState &state, const CChainParams& chainparams,
             pindexNewTip = chainActive.Tip();
             pindexFork = chainActive.FindFork(pindexOldTip);
             fInitialDownload = IsInitialBlockDownload();
+
+            // throw all transactions though the signal-interface
+            for (const auto& pair : connectTrace.blocksConnected) {
+                assert(pair.second);
+                const CBlock& block = *(pair.second);
+                for (unsigned int i = 0; i < block.vtx.size(); i++)
+                    GetMainSignals().SyncTransaction(*block.vtx[i], pair.first, i);
+            }
         }
         // When we reach this point, we switched to a new tip (stored in pindexNewTip).
 
         // Notifications/callbacks that can run without cs_main
-
-        // throw all transactions though the signal-interface
-        // while _not_ holding the cs_main lock
-        for (const auto& pair : connectTrace.blocksConnected) {
-            assert(pair.second);
-            const CBlock& block = *(pair.second);
-            for (unsigned int i = 0; i < block.vtx.size(); i++)
-                GetMainSignals().SyncTransaction(*block.vtx[i], pair.first, i);
-        }
 
         // Notify external listeners about the new tip.
         GetMainSignals().UpdatedBlockTip(pindexNewTip, pindexFork, fInitialDownload);
