@@ -391,7 +391,7 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
         uint64_t nonce = GetDeterministicRandomizer(RANDOMIZER_ID_LOCALHOSTNONCE).Write(id).Finalize();
         CNode* pnode = new CNode(id, nLocalServices, GetBestHeight(), hSocket, addrConnect, CalculateKeyedNetGroup(addrConnect), nonce, pszDest ? pszDest : "", false);
         pnode->nServicesExpected = ServiceFlags(addrConnect.nServices & nRelevantServices);
-        pnode->nTimeConnected = GetTime();
+        pnode->nTimeConnected = GetSystemTimeInSeconds();
         pnode->AddRef();
         GetNodeSignals().InitializeNode(pnode, *this);
         {
@@ -771,7 +771,7 @@ size_t CConnman::SocketSendData(CNode *pnode)
         assert(data.size() > pnode->nSendOffset);
         int nBytes = send(pnode->hSocket, reinterpret_cast<const char*>(data.data()) + pnode->nSendOffset, data.size() - pnode->nSendOffset, MSG_NOSIGNAL | MSG_DONTWAIT);
         if (nBytes > 0) {
-            pnode->nLastSend = GetTime();
+            pnode->nLastSend = GetSystemTimeInSeconds();
             pnode->nSendBytes += nBytes;
             pnode->nSendOffset += nBytes;
             nSentSize += nBytes;
@@ -1147,12 +1147,10 @@ void CConnman::ThreadSocketHandler()
                 // * Hand off all complete messages to the processor, to be handled without
                 //   blocking here.
                 {
-                    TRY_LOCK(pnode->cs_vSend, lockSend);
-                    if (lockSend) {
-                        if (!pnode->vSendMsg.empty()) {
-                            FD_SET(pnode->hSocket, &fdsetSend);
-                            continue;
-                        }
+                    LOCK(pnode->cs_vSend);
+                    if (!pnode->vSendMsg.empty()) {
+                        FD_SET(pnode->hSocket, &fdsetSend);
+                        continue;
                     }
                 }
                 {
@@ -1272,19 +1270,17 @@ void CConnman::ThreadSocketHandler()
                 continue;
             if (FD_ISSET(pnode->hSocket, &fdsetSend))
             {
-                TRY_LOCK(pnode->cs_vSend, lockSend);
-                if (lockSend) {
-                    size_t nBytes = SocketSendData(pnode);
-                    if (nBytes) {
-                        RecordBytesSent(nBytes);
-                    }
+                LOCK(pnode->cs_vSend);
+                size_t nBytes = SocketSendData(pnode);
+                if (nBytes) {
+                    RecordBytesSent(nBytes);
                 }
             }
 
             //
             // Inactivity checking
             //
-            int64_t nTime = GetTime();
+            int64_t nTime = GetSystemTimeInSeconds();
             if (nTime - pnode->nTimeConnected > 60)
             {
                 if (pnode->nLastRecv == 0 || pnode->nLastSend == 0)
@@ -1875,9 +1871,8 @@ void CConnman::ThreadMessageHandler()
 
             // Send messages
             {
-                TRY_LOCK(pnode->cs_vSend, lockSend);
-                if (lockSend)
-                    GetNodeSignals().SendMessages(pnode, *this, flagInterruptMsgProc);
+                LOCK(pnode->cs_sendProcessing);
+                GetNodeSignals().SendMessages(pnode, *this, flagInterruptMsgProc);
             }
             if (flagInterruptMsgProc)
                 return;
@@ -2570,7 +2565,7 @@ CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn
     nLastRecv = 0;
     nSendBytes = 0;
     nRecvBytes = 0;
-    nTimeConnected = GetTime();
+    nTimeConnected = GetSystemTimeInSeconds();
     nTimeOffset = 0;
     addrName = addrNameIn == "" ? addr.ToStringIPPort() : addrNameIn;
     nVersion = 0;
