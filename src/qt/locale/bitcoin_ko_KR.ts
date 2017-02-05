@@ -429,10 +429,6 @@
         <source>Processing blocks on disk...</source>
         <translation>디스크에서 블록 처리중...</translation>
     </message>
-    <message>
-        <source>No block source available...</source>
-        <translation>사용 가능한 블록이 없습니다...</translation>
-    </message>
     <message numerus="yes">
         <source>Processed %n block(s) of transaction history.</source>
         <translation><numerusform>%n 블럭 만큼의 거래 기록이 처리됨.</numerusform></translation>
@@ -2276,10 +2272,6 @@
     <message>
         <source>Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)</source>
         <translation>블록 축소: 마지막 지갑 동기화 지점이 축소된 데이터보다 과거의 것 입니다. -reindex가 필요합니다 (정지된 노드의 경우 모든 블록체인을 재다운로드합니다)</translation>
-    </message>
-    <message>
-        <source>Reduce storage requirements by pruning (deleting) old blocks. This mode is incompatible with -txindex and -rescan. Warning: Reverting this setting requires re-downloading the entire blockchain. (default: 0 = disable pruning blocks, &gt;%u = target size in MiB to use for block files)</source>
-        <translation>오래된 블록을 제거(축소)하여 디스크 용량을 줄입니다. 이 모드는 -txindex 와 -rescan 과 호환되지 않습니다. 경고: 이 모드를 취소하면 모든 블록체인을 다시 다운로드 받아야 합니다. (기본값:0 = 블록 축소 비활성화, &gt;%u = 블록파일에 사용할 용량을 MiB단위로 지정)</translation>
     </message>
     <message>
         <source>Rescans are not possible in pruned mode. You will need to use -reindex which will download the whole blockchain again.</source>
