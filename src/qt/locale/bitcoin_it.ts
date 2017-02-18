@@ -401,10 +401,6 @@
         <source>Processing blocks on disk...</source>
         <translation>Processando i blocchi su disco...</translation>
     </message>
-    <message>
-        <source>No block source available...</source>
-        <translation>Nessuna fonte di blocchi disponibile...</translation>
-    </message>
     <message numerus="yes">
         <source>Processed %n block(s) of transaction history.</source>
         <translation><numerusform>Elaborato %n blocco dello storico transazioni.</numerusform><numerusform>Elaborati %n blocchi dello storico transazioni.</numerusform></translation>
@@ -705,10 +701,6 @@
     <message>
         <source>Error</source>
         <translation>Errore</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n GB of free space available</source>
-        <translation><numerusform>GB di spazio libero disponibile</numerusform><numerusform>%n GB di spazio disponibile</numerusform></translation>
     </message>
     <message numerus="yes">
         <source>(of %n GB needed)</source>

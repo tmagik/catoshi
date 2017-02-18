@@ -82,6 +82,7 @@ BASE_SCRIPTS= [
     'bumpfee.py',
     'rpcnamedargs.py',
     'listsinceblock.py',
+    'p2p-leaktests.py',
 ]
 
 ZMQ_SCRIPTS = [
@@ -101,6 +102,7 @@ EXTENDED_SCRIPTS = [
     # vv Tests less than 2m vv
     'bip68-sequence.py',
     'getblocktemplate_longpoll.py',
+    'p2p-timeouts.py',
     # vv Tests less than 60s vv
     'bip9-softforks.py',
     'p2p-feefilter.py',
