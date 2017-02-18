@@ -441,10 +441,6 @@
         <source>Processing blocks on disk...</source>
         <translation>正在处理数据块...</translation>
     </message>
-    <message>
-        <source>No block source available...</source>
-        <translation>沒有可用的区块来源...</translation>
-    </message>
     <message numerus="yes">
         <source>Processed %n block(s) of transaction history.</source>
         <translation><numerusform>已处理 %n 个交易历史数据块。</numerusform></translation>
@@ -484,6 +480,10 @@
     <message>
         <source>%1 client</source>
         <translation>%1 客戶</translation>
+    </message>
+    <message>
+        <source>Connecting to peers...</source>
+        <translation>正在连接到节点……</translation>
     </message>
     <message>
         <source>Catching up...</source>
@@ -1931,7 +1931,11 @@
         <source>(no amount requested)</source>
         <translation>（无请求金额）</translation>
     </message>
-    </context>
+    <message>
+        <source>Requested</source>
+        <translation>总额</translation>
+    </message>
+</context>
 <context>
     <name>SendCoinsDialog</name>
     <message>
@@ -2181,6 +2185,10 @@
     <message>
         <source>Warning: Unknown change address</source>
         <translation>警告：未知的更改地址</translation>
+    </message>
+    <message>
+        <source>The address you selected for change is not part of this wallet. Any or all funds in your wallet may be sent to this address. Are you sure?</source>
+        <translation>你选择的找零地址未被包含在本钱包中，你钱包中的部分或全部金额将被发送至该地址。你确定要这样做吗？</translation>
     </message>
     <message>
         <source>(no label)</source>
@@ -2462,6 +2470,14 @@
     <message>
         <source>0/unconfirmed, %1</source>
         <translation>0/未确认，%1</translation>
+    </message>
+    <message>
+        <source>in memory pool</source>
+        <translation>在内存池中</translation>
+    </message>
+    <message>
+        <source>not in memory pool</source>
+        <translation>不在内存池中</translation>
     </message>
     <message>
         <source>abandoned</source>
@@ -3203,6 +3219,10 @@
     <message>
         <source>Use UPnP to map the listening port (default: %u)</source>
         <translation>使用UPnp映射监听端口 (默认: %u) </translation>
+    </message>
+    <message>
+        <source>Use the test chain</source>
+        <translation>使用测试链</translation>
     </message>
     <message>
         <source>User Agent comment (%s) contains unsafe characters.</source>
