@@ -1,19 +1,9 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015 The Bitcoin Core developers
+# Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+"""Test activation of the first version bits soft fork.
 
-from test_framework.test_framework import ComparisonTestFramework
-from test_framework.util import *
-from test_framework.mininode import ToHex, CTransaction, NetworkThread
-from test_framework.blocktools import create_coinbase, create_block
-from test_framework.comptool import TestInstance, TestManager
-from test_framework.script import *
-from io import BytesIO
-import time
-
-'''
-This test is meant to exercise activation of the first version bits soft fork
 This soft fork will activate the following BIPS:
 BIP 68  - nSequence relative lock times
 BIP 112 - CHECKSEQUENCEVERIFY
@@ -51,7 +41,16 @@ bip112txs_vary_nSequence_9 - 16 txs with nSequence relative_locktimes of 9 evalu
 bip112txs_vary_OP_CSV - 16 txs with nSequence = 10 evaluated against varying {relative_locktimes of 10} OP_CSV OP_DROP
 bip112txs_vary_OP_CSV_9 - 16 txs with nSequence = 9 evaluated against varying {relative_locktimes of 10} OP_CSV OP_DROP
 bip112tx_special - test negative argument to OP_CSV
-'''
+"""
+
+from test_framework.test_framework import ComparisonTestFramework
+from test_framework.util import *
+from test_framework.mininode import ToHex, CTransaction, NetworkThread
+from test_framework.blocktools import create_coinbase, create_block
+from test_framework.comptool import TestInstance, TestManager
+from test_framework.script import *
+from io import BytesIO
+import time
 
 base_relative_locktime = 10
 seq_disable_flag = 1<<31
@@ -289,6 +288,7 @@ class BIP68_112_113Test(ComparisonTestFramework):
         # BIP113 test transaction will be modified before each use to put in appropriate block time
         bip113tx_v1 = self.create_transaction(self.nodes[0], bip113input, self.nodeaddress, Decimal("49.98"))
         bip113tx_v1.vin[0].nSequence = 0xFFFFFFFE
+        bip113tx_v1.nVersion = 1
         bip113tx_v2 = self.create_transaction(self.nodes[0], bip113input, self.nodeaddress, Decimal("49.98"))
         bip113tx_v2.vin[0].nSequence = 0xFFFFFFFE
         bip113tx_v2.nVersion = 2

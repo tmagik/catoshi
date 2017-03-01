@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2015 The Bitcoin Core developers
+// Copyright (c) 2009-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -197,8 +197,8 @@ bool CNetAddr::IsValid() const
         return false;
 
     // unspecified IPv6 address (::/128)
-    unsigned char ipNone[16] = {};
-    if (memcmp(ip, ipNone, 16) == 0)
+    unsigned char ipNone6[16] = {};
+    if (memcmp(ip, ipNone6, 16) == 0)
         return false;
 
     // documentation IPv6 address

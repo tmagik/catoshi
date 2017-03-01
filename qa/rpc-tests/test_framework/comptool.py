@@ -2,34 +2,29 @@
 # Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+"""Compare two or more bitcoinds to each other.
+
+To use, create a class that implements get_tests(), and pass it in
+as the test generator to TestManager.  get_tests() should be a python
+generator that returns TestInstance objects.  See below for definition.
+
+TestNode behaves as follows:
+    Configure with a BlockStore and TxStore
+    on_inv: log the message but don't request
+    on_headers: log the chain tip
+    on_pong: update ping response map (for synchronization)
+    on_getheaders: provide headers via BlockStore
+    on_getdata: provide blocks via BlockStore
+"""
 
 from .mininode import *
 from .blockstore import BlockStore, TxStore
 from .util import p2p_port
 
-'''
-This is a tool for comparing two or more bitcoinds to each other
-using a script provided.
-
-To use, create a class that implements get_tests(), and pass it in
-as the test generator to TestManager.  get_tests() should be a python
-generator that returns TestInstance objects.  See below for definition.
-'''
-
-# TestNode behaves as follows:
-# Configure with a BlockStore and TxStore
-# on_inv: log the message but don't request
-# on_headers: log the chain tip
-# on_pong: update ping response map (for synchronization)
-# on_getheaders: provide headers via BlockStore
-# on_getdata: provide blocks via BlockStore
-
 global mininode_lock
 
 class RejectResult(object):
-    '''
-    Outcome that expects rejection of a transaction or block.
-    '''
+    """Outcome that expects rejection of a transaction or block."""
     def __init__(self, code, reason=b''):
         self.code = code
         self.reason = reason
@@ -109,6 +104,11 @@ class TestNode(NodeConnCB):
         # We ask for headers from their last tip.
         m = msg_getheaders()
         m.locator = self.block_store.get_locator(self.bestblockhash)
+        self.conn.send_message(m)
+
+    def send_header(self, header):
+        m = msg_headers()
+        m.headers.append(header)
         self.conn.send_message(m)
 
     # This assumes BIP31
@@ -345,8 +345,16 @@ class TestManager(object):
                     # Either send inv's to each node and sync, or add
                     # to invqueue for later inv'ing.
                     if (test_instance.sync_every_block):
-                        [ c.cb.send_inv(block) for c in self.connections ]
-                        self.sync_blocks(block.sha256, 1)
+                        # if we expect success, send inv and sync every block
+                        # if we expect failure, just push the block and see what happens.
+                        if outcome == True:
+                            [ c.cb.send_inv(block) for c in self.connections ]
+                            self.sync_blocks(block.sha256, 1)
+                        else:
+                            [ c.send_message(msg_block(block)) for c in self.connections ]
+                            [ c.cb.send_ping(self.ping_counter) for c in self.connections ]
+                            self.wait_for_pings(self.ping_counter)
+                            self.ping_counter += 1
                         if (not self.check_results(tip, outcome)):
                             raise AssertionError("Test failed at test %d" % test_number)
                     else:
@@ -354,6 +362,8 @@ class TestManager(object):
                 elif isinstance(b_or_t, CBlockHeader):
                     block_header = b_or_t
                     self.block_store.add_header(block_header)
+                    [ c.cb.send_header(block_header) for c in self.connections ]
+
                 else:  # Tx test runner
                     assert(isinstance(b_or_t, CTransaction))
                     tx = b_or_t

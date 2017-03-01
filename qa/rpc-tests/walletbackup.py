@@ -2,9 +2,7 @@
 # Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-"""
-Exercise the wallet backup code.  Ported from walletbackup.sh.
+"""Test the wallet backup features.
 
 Test case is:
 4 nodes. 1 2 and 3 send transactions between each other,
@@ -45,12 +43,12 @@ class WalletBackupTest(BitcoinTestFramework):
         super().__init__()
         self.setup_clean_chain = True
         self.num_nodes = 4
+        # nodes 1, 2,3 are spenders, let's give them a keypool=100
+        self.extra_args = [["-keypool=100"], ["-keypool=100"], ["-keypool=100"], []]
 
     # This mirrors how the network was setup in the bash test
     def setup_network(self, split=False):
-        # nodes 1, 2,3 are spenders, let's give them a keypool=100
-        extra_args = [["-keypool=100"], ["-keypool=100"], ["-keypool=100"], []]
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, self.extra_args)
         connect_nodes(self.nodes[0], 3)
         connect_nodes(self.nodes[1], 3)
         connect_nodes(self.nodes[2], 3)
@@ -79,6 +77,7 @@ class WalletBackupTest(BitcoinTestFramework):
         # Must sync mempools before mining.
         sync_mempools(self.nodes)
         self.nodes[3].generate(1)
+        sync_blocks(self.nodes)
 
     # As above, this mirrors the original bash test.
     def start_three(self):

@@ -2,8 +2,7 @@
 # Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-# Test descendant package tracking code
+"""Test descendant package tracking code."""
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
@@ -20,8 +19,8 @@ class MempoolPackagesTest(BitcoinTestFramework):
 
     def setup_network(self):
         self.nodes = []
-        self.nodes.append(start_node(0, self.options.tmpdir, ["-maxorphantx=1000", "-relaypriority=0", "-debug"]))
-        self.nodes.append(start_node(1, self.options.tmpdir, ["-maxorphantx=1000", "-relaypriority=0", "-limitancestorcount=5", "-debug"]))
+        self.nodes.append(start_node(0, self.options.tmpdir, ["-maxorphantx=1000", "-debug"]))
+        self.nodes.append(start_node(1, self.options.tmpdir, ["-maxorphantx=1000", "-limitancestorcount=5", "-debug"]))
         connect_nodes(self.nodes[0], 1)
         self.is_network_split = False
         self.sync_all()

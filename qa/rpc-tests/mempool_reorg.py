@@ -2,11 +2,11 @@
 # Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+"""Test mempool re-org scenarios.
 
-#
-# Test re-org scenarios with a mempool that contains transactions
-# that spend (directly or indirectly) coinbase transactions.
-#
+Test re-org scenarios with a mempool that contains transactions
+that spend (directly or indirectly) coinbase transactions.
+"""
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
@@ -55,7 +55,7 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
         # Create a block-height-locked transaction which will be invalid after reorg
         timelock_tx = self.nodes[0].createrawtransaction([{"txid": coinbase_txids[0], "vout": 0}], {node0_address: 49.99})
         # Set the time lock
-        timelock_tx = timelock_tx.replace("ffffffff", "11111111", 1)
+        timelock_tx = timelock_tx.replace("ffffffff", "11111191", 1)
         timelock_tx = timelock_tx[:-8] + hex(self.nodes[0].getblockcount() + 2)[2:] + "000000"
         timelock_tx = self.nodes[0].signrawtransaction(timelock_tx)["hex"]
         assert_raises(JSONRPCException, self.nodes[0].sendrawtransaction, timelock_tx)

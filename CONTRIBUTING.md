@@ -38,7 +38,7 @@ fixes or code moves with actual code changes.
 Commit messages should be verbose by default consisting of a short subject line
 (50 chars max), a blank line and detailed explanatory text as separate
 paragraph(s); unless the title alone is self-explanatory (like "Corrected typo
-in main.cpp") then a single title line is sufficient. Commit messages should be
+in init.cpp") then a single title line is sufficient. Commit messages should be
 helpful to people reading your code in the future, so explain the reasoning for
 your decisions. Further explanation [here](http://chris.beams.io/posts/git-commit/).
 
@@ -53,12 +53,33 @@ about Git.
   - Create pull request
 
 The title of the pull request should be prefixed by the component or area that
-the pull request affects. Examples:
+the pull request affects. Valid areas as:
+
+  - *Consensus* for changes to consensus critical code
+  - *Docs* for changes to the documentation
+  - *Qt* for changes to bitcoin-qt
+  - *Mining* for changes to the mining code
+  - *Net* or *P2P* for changes to the peer-to-peer network code
+  - *RPC/REST/ZMQ* for changes to the RPC, REST or ZMQ APIs
+  - *Scripts and tools* for changes to the scripts and tools
+  - *Tests* for changes to the bitcoin unit tests or QA tests
+  - *Trivial* should **only** be used for PRs that do not change generated
+    executable code. Notably, refactors (change of function arguments and code
+    reorganization) and changes in behavior should **not** be marked as trivial.
+    Examples of trivial PRs are changes to:
+    - comments
+    - whitespace
+    - variable names
+    - logging and messages
+  - *Utils and libraries* for changes to the utils and libraries
+  - *Wallet* for changes to the wallet code
+
+Examples:
 
     Consensus: Add new opcode for BIP-XXXX OP_CHECKAWESOMESIG
     Net: Automatically create hidden service, listen on Tor
     Qt: Add feed bump button
-    Trivial: Fix typo in main.cpp
+    Trivial: Fix typo in init.cpp
 
 If a pull request is specifically not to be considered for merging (yet) please
 prefix the title with [WIP] or use [Tasks Lists](https://help.github.com/articles/basic-writing-and-formatting-syntax/#task-lists)
@@ -86,6 +107,15 @@ before it will be merged. The basic squashing workflow is shown below.
     # on the next screen, edit/refine commit messages
     # save and quit
     git push -f # (force push to GitHub)
+
+If you have problems with squashing (or other workflows with `git`), you can
+alternatively enable "Allow edits from maintainers" in the right GitHub
+sidebar and ask for help in the pull request.
+
+Please refrain from creating several pull requests for the same change.
+Use the pull request that is already open (or was created earlier) to amend
+changes. This preserves the discussion and review that happened earlier for
+the respective change set.
 
 The length of time required for peer review is unpredictable and will vary from
 pull request to pull request.
@@ -164,12 +194,14 @@ request. Typically reviewers will review the code for obvious errors, as well as
 test out the patch set and opine on the technical merits of the patch. Project
 maintainers take into account the peer review when determining if there is
 consensus to merge a pull request (remember that discussions may have been
-spread out over github, mailing list and IRC discussions). The following
+spread out over GitHub, mailing list and IRC discussions). The following
 language is used within pull-request comments:
 
   - ACK means "I have tested the code and I agree it should be merged";
   - NACK means "I disagree this should be merged", and must be accompanied by
-    sound technical justification. NACKs without accompanying reasoning may be disregarded;
+    sound technical justification (or in certain cases of copyright/patent/licensing
+    issues, legal justification). NACKs without accompanying reasoning may be
+    disregarded;
   - utACK means "I have not tested the code, but I have reviewed it and it looks
     OK, I agree it can be merged";
   - Concept ACK means "I agree in the general principle of this pull request";
@@ -198,3 +230,11 @@ Release Policy
 --------------
 
 The project leader is the release manager for each Bitcoin Core release.
+
+Copyright
+---------
+
+By contributing to this repository, you agree to license your work under the 
+MIT license unless specified otherwise in `contrib/debian/copyright` or at 
+the top of the file itself. Any work contributed where you are not the original 
+author must contain its license header with the original author(s) and source.

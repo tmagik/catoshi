@@ -2,10 +2,7 @@
 # Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#
-# Test fee estimation code
-#
+"""Test fee estimation code."""
 
 from collections import OrderedDict
 from test_framework.test_framework import BitcoinTestFramework
@@ -21,7 +18,7 @@ P2SH_2 = "2NBdpwq8Aoo1EEKEXPNrKvr5xQr3M9UfcZA" # P2SH of "OP_2 OP_DROP"
 SCRIPT_SIG = ["0451025175", "0451025275"]
 
 def small_txpuzzle_randfee(from_node, conflist, unconflist, amount, min_fee, fee_increment):
-    '''
+    """
     Create and send a transaction with a random fee.
     The transaction pays to a trivial P2SH script, and assumes that its inputs
     are of the same form.
@@ -29,7 +26,7 @@ def small_txpuzzle_randfee(from_node, conflist, unconflist, amount, min_fee, fee
     and attempts to use the confirmed list first for its inputs.
     It adds the newly created outputs to the unconfirmed list.
     Returns (raw transaction, fee)
-    '''
+    """
     # It's best to exponentially distribute our random fees
     # because the buckets are exponentially spaced.
     # Exponentially distributed from 1-128 * fee_increment
@@ -71,12 +68,12 @@ def small_txpuzzle_randfee(from_node, conflist, unconflist, amount, min_fee, fee
     return (completetx, fee)
 
 def split_inputs(from_node, txins, txouts, initial_split = False):
-    '''
+    """
     We need to generate a lot of very small inputs so we can generate a ton of transactions
     and they will have low priority.
     This function takes an input from txins, and creates and sends a transaction
     which splits the value into 2 outputs which are appended to txouts.
-    '''
+    """
     prevtxout = txins.pop()
     inputs = []
     inputs.append({ "txid" : prevtxout["txid"], "vout" : prevtxout["vout"] })
@@ -95,10 +92,10 @@ def split_inputs(from_node, txins, txouts, initial_split = False):
     txouts.append({ "txid" : txid, "vout" : 1 , "amount" : rem_change})
 
 def check_estimates(node, fees_seen, max_invalid, print_estimates = True):
-    '''
+    """
     This function calls estimatefee and verifies that the estimates
     meet certain invariants.
-    '''
+    """
     all_estimates = [ node.estimatefee(i) for i in range(1,26) ]
     if print_estimates:
         print([str(all_estimates[e-1]) for e in [1,2,3,6,15,25]])
@@ -151,15 +148,15 @@ class EstimateFeeTest(BitcoinTestFramework):
         self.setup_clean_chain = False
 
     def setup_network(self):
-        '''
+        """
         We'll setup the network to have 3 nodes that all mine with different parameters.
         But first we need to use one node to create a lot of small low priority outputs
         which we will use to generate our transactions.
-        '''
+        """
         self.nodes = []
         # Use node0 to mine blocks for input splitting
         self.nodes.append(start_node(0, self.options.tmpdir, ["-maxorphantx=1000",
-                                                              "-relaypriority=0", "-whitelist=127.0.0.1"]))
+                                                              "-whitelist=127.0.0.1"]))
 
         print("This test is time consuming, please be patient")
         print("Splitting inputs to small size so we can generate low priority tx's")
@@ -197,12 +194,12 @@ class EstimateFeeTest(BitcoinTestFramework):
         # (17k is room enough for 110 or so transactions)
         self.nodes.append(start_node(1, self.options.tmpdir,
                                      ["-blockprioritysize=1500", "-blockmaxsize=17000",
-                                      "-maxorphantx=1000", "-relaypriority=0", "-debug=estimatefee"]))
+                                      "-maxorphantx=1000", "-debug=estimatefee"]))
         connect_nodes(self.nodes[1], 0)
 
         # Node2 is a stingy miner, that
         # produces too small blocks (room for only 55 or so transactions)
-        node2args = ["-blockprioritysize=0", "-blockmaxsize=8000", "-maxorphantx=1000", "-relaypriority=0"]
+        node2args = ["-blockprioritysize=0", "-blockmaxsize=8000", "-maxorphantx=1000"]
 
         self.nodes.append(start_node(2, self.options.tmpdir, node2args))
         connect_nodes(self.nodes[0], 2)
@@ -225,9 +222,9 @@ class EstimateFeeTest(BitcoinTestFramework):
                                                       self.memutxo, Decimal("0.005"), min_fee, min_fee)
                 tx_kbytes = (len(txhex) // 2) / 1000.0
                 self.fees_per_kb.append(float(fee)/tx_kbytes)
-            sync_mempools(self.nodes[0:3],.1)
+            sync_mempools(self.nodes[0:3], wait=.1)
             mined = mining_node.getblock(mining_node.generate(1)[0],True)["tx"]
-            sync_blocks(self.nodes[0:3],.1)
+            sync_blocks(self.nodes[0:3], wait=.1)
             # update which txouts are confirmed
             newmem = []
             for utx in self.memutxo:
@@ -259,7 +256,7 @@ class EstimateFeeTest(BitcoinTestFramework):
         while len(self.nodes[1].getrawmempool()) > 0:
             self.nodes[1].generate(1)
 
-        sync_blocks(self.nodes[0:3],.1)
+        sync_blocks(self.nodes[0:3], wait=.1)
         print("Final estimates after emptying mempools")
         check_estimates(self.nodes[1], self.fees_per_kb, 2)
 
