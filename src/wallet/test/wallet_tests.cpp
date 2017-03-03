@@ -395,24 +395,62 @@ BOOST_FIXTURE_TEST_CASE(rescan, TestChain100Setup)
         BOOST_CHECK_EQUAL(wallet.GetImmatureBalance(), 50 * COIN);
     }
 
+    // Verify importmulti RPC returns failure for a key whose creation time is
+    // before the missing block, and success for a key whose creation time is
+    // after.
     {
         CWallet wallet;
+        CWallet *backup = ::pwalletMain;
         ::pwalletMain = &wallet;
+        UniValue keys;
+        keys.setArray();
         UniValue key;
         key.setObject();
         key.pushKV("scriptPubKey", HexStr(GetScriptForRawPubKey(coinbaseKey.GetPubKey())));
         key.pushKV("timestamp", 0);
         key.pushKV("internal", UniValue(true));
-        UniValue keys;
-        keys.setArray();
+        keys.push_back(key);
+        key.clear();
+        key.setObject();
+        CKey futureKey;
+        futureKey.MakeNewKey(true);
+        key.pushKV("scriptPubKey", HexStr(GetScriptForRawPubKey(futureKey.GetPubKey())));
+        key.pushKV("timestamp", newTip->GetBlockTimeMax() + 7200);
+        key.pushKV("internal", UniValue(true));
         keys.push_back(key);
         JSONRPCRequest request;
         request.params.setArray();
         request.params.push_back(keys);
 
         UniValue response = importmulti(request);
-        BOOST_CHECK_EQUAL(response.write(), strprintf("[{\"success\":false,\"error\":{\"code\":-1,\"message\":\"Failed to rescan before time %d, transactions may be missing.\"}}]", newTip->GetBlockTimeMax()));
+        BOOST_CHECK_EQUAL(response.write(), strprintf("[{\"success\":false,\"error\":{\"code\":-1,\"message\":\"Failed to rescan before time %d, transactions may be missing.\"}},{\"success\":true}]", newTip->GetBlockTimeMax()));
+        ::pwalletMain = backup;
     }
+}
+
+// Check that GetImmatureCredit() returns a newly calculated value instead of
+// the cached value after a MarkDirty() call.
+//
+// This is a regression test written to verify a bugfix for the immature credit
+// function. Similar tests probably should be written for the other credit and
+// debit functions.
+BOOST_FIXTURE_TEST_CASE(coin_mark_dirty_immature_credit, TestChain100Setup)
+{
+    CWallet wallet;
+    CWalletTx wtx(&wallet, MakeTransactionRef(coinbaseTxns.back()));
+    LOCK2(cs_main, wallet.cs_wallet);
+    wtx.hashBlock = chainActive.Tip()->GetBlockHash();
+    wtx.nIndex = 0;
+
+    // Call GetImmatureCredit() once before adding the key to the wallet to
+    // cache the current immature credit amount, which is 0.
+    BOOST_CHECK_EQUAL(wtx.GetImmatureCredit(), 0);
+
+    // Invalidate the cached value, add the key, and make sure a new immature
+    // credit amount is calculated.
+    wtx.MarkDirty();
+    wallet.AddKeyPubKey(coinbaseKey, coinbaseKey.GetPubKey());
+    BOOST_CHECK_EQUAL(wtx.GetImmatureCredit(), 50*COIN);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
