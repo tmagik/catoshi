@@ -2,10 +2,7 @@
 # Copyright (c) 2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#
-# Test the SegWit changeover logic
-#
+"""Test the SegWit changeover logic."""
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
@@ -39,7 +36,7 @@ def addlength(script):
     return scriptlen + script
 
 def create_witnessprogram(version, node, utxo, pubkey, encode_p2sh, amount):
-    pkscript = witness_script(version, pubkey);
+    pkscript = witness_script(version, pubkey)
     if (encode_p2sh):
         p2sh_hash = bytes_to_hex_str(ripemd160(sha256(hex_str_to_bytes(pkscript))))
         pkscript = "a914"+p2sh_hash+"87"
@@ -86,7 +83,7 @@ class SegWitTest(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, ["-logtimemicros", "-debug", "-walletprematurewitness", "-rpcserialversion=0"]))
-        self.nodes.append(start_node(1, self.options.tmpdir, ["-logtimemicros", "-debug", "-blockversion=4", "-promiscuousmempoolflags=517", "-prematurewitness", "-walletprematurewitness", "-rpcserialversion=2"]))
+        self.nodes.append(start_node(1, self.options.tmpdir, ["-logtimemicros", "-debug", "-blockversion=4", "-promiscuousmempoolflags=517", "-prematurewitness", "-walletprematurewitness", "-rpcserialversion=1"]))
         self.nodes.append(start_node(2, self.options.tmpdir, ["-logtimemicros", "-debug", "-blockversion=536870915", "-promiscuousmempoolflags=517", "-prematurewitness", "-walletprematurewitness"]))
         connect_nodes(self.nodes[1], 0)
         connect_nodes(self.nodes[2], 1)
@@ -130,10 +127,14 @@ class SegWitTest(BitcoinTestFramework):
         print("Verify sigops are counted in GBT with pre-BIP141 rules before the fork")
         txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), 1)
         tmpl = self.nodes[0].getblocktemplate({})
+        assert(tmpl['sizelimit'] == 1000000)
+        assert('weightlimit' not in tmpl)
         assert(tmpl['sigoplimit'] == 20000)
         assert(tmpl['transactions'][0]['hash'] == txid)
         assert(tmpl['transactions'][0]['sigops'] == 2)
         tmpl = self.nodes[0].getblocktemplate({'rules':['segwit']})
+        assert(tmpl['sizelimit'] == 1000000)
+        assert('weightlimit' not in tmpl)
         assert(tmpl['sigoplimit'] == 20000)
         assert(tmpl['transactions'][0]['hash'] == txid)
         assert(tmpl['transactions'][0]['sigops'] == 2)
@@ -216,7 +217,6 @@ class SegWitTest(BitcoinTestFramework):
         assert_equal(len(segwit_tx_list), 5)
 
         print("Verify block and transaction serialization rpcs return differing serializations depending on rpc serialization flag")
-        # Note: node1 has version 2, which is simply >0 and will catch future upgrades in tests
         assert(self.nodes[2].getblock(block[0], False) !=  self.nodes[0].getblock(block[0], False))
         assert(self.nodes[1].getblock(block[0], False) ==  self.nodes[2].getblock(block[0], False))
         for i in range(len(segwit_tx_list)):
@@ -242,6 +242,8 @@ class SegWitTest(BitcoinTestFramework):
         print("Verify sigops are counted in GBT with BIP141 rules after the fork")
         txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), 1)
         tmpl = self.nodes[0].getblocktemplate({'rules':['segwit']})
+        assert(tmpl['sizelimit'] >= 3999577)  # actual maximum size is lower due to minimum mandatory non-witness data
+        assert(tmpl['weightlimit'] == 4000000)
         assert(tmpl['sigoplimit'] == 80000)
         assert(tmpl['transactions'][0]['txid'] == txid)
         assert(tmpl['transactions'][0]['sigops'] == 8)
@@ -251,6 +253,8 @@ class SegWitTest(BitcoinTestFramework):
         try:
             tmpl = self.nodes[0].getblocktemplate({})
             assert(len(tmpl['transactions']) == 1)  # Doesn't include witness tx
+            assert(tmpl['sizelimit'] == 1000000)
+            assert('weightlimit' not in tmpl)
             assert(tmpl['sigoplimit'] == 20000)
             assert(tmpl['transactions'][0]['hash'] == txid)
             assert(tmpl['transactions'][0]['sigops'] == 2)
