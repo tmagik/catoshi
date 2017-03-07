@@ -24,7 +24,7 @@ public:
 };
 
 /**
- * Specifiy a (method, idx, name) here if the argument is a non-string RPC
+ * Specify a (method, idx, name) here if the argument is a non-string RPC
  * argument and needs to be converted from JSON.
  *
  * @note Parameter indexes start from 0.
@@ -117,6 +117,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "setnetworkactive", 0, "state" },
     { "getmempoolancestors", 1, "verbose" },
     { "getmempooldescendants", 1, "verbose" },
+    { "bumpfee", 1, "options" },
     // Echo with conversion (For testing only)
     { "echojson", 0, "arg0" },
     { "echojson", 1, "arg1" },
