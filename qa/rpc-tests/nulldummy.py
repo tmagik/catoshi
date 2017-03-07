@@ -2,6 +2,16 @@
 # Copyright (c) 2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+"""Test NULLDUMMY softfork.
+
+Connect to a single node.
+Generate 2 blocks (save the coinbases for later).
+Generate 427 more blocks.
+[Policy/Consensus] Check that NULLDUMMY compliant transactions are accepted in the 430th block.
+[Policy] Check that non-NULLDUMMY transactions are rejected before activation.
+[Consensus] Check that the new NULLDUMMY rules are not enforced on the 431st block.
+[Policy/Consensus] Check that the new NULLDUMMY rules are enforced on the 432nd block.
+"""
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
@@ -24,17 +34,6 @@ def trueDummy(tx):
             newscript.append(i)
     tx.vin[0].scriptSig = CScript(newscript)
     tx.rehash()
-
-'''
-This test is meant to exercise NULLDUMMY softfork.
-Connect to a single node.
-Generate 2 blocks (save the coinbases for later).
-Generate 427 more blocks.
-[Policy/Consensus] Check that NULLDUMMY compliant transactions are accepted in the 430th block.
-[Policy] Check that non-NULLDUMMY transactions are rejected before activation.
-[Consensus] Check that the new NULLDUMMY rules are not enforced on the 431st block.
-[Policy/Consensus] Check that the new NULLDUMMY rules are enforced on the 432nd block.
-'''
 
 class NULLDUMMYTest(BitcoinTestFramework):
 
@@ -75,7 +74,7 @@ class NULLDUMMYTest(BitcoinTestFramework):
         self.block_submit(self.nodes[0], test1txs, False, True)
 
         print ("Test 2: Non-NULLDUMMY base multisig transaction should not be accepted to mempool before activation")
-        test2tx = self.create_transaction(self.nodes[0], txid2, self.ms_address, 48)
+        test2tx = self.create_transaction(self.nodes[0], txid2, self.ms_address, 47)
         trueDummy(test2tx)
         txid4 = self.tx_submit(self.nodes[0], test2tx, NULLDUMMY_ERROR)
 
@@ -83,7 +82,7 @@ class NULLDUMMYTest(BitcoinTestFramework):
         self.block_submit(self.nodes[0], [test2tx], False, True)
 
         print ("Test 4: Non-NULLDUMMY base multisig transaction is invalid after activation")
-        test4tx = self.create_transaction(self.nodes[0], txid4, self.address, 47)
+        test4tx = self.create_transaction(self.nodes[0], txid4, self.address, 46)
         test6txs=[CTransaction(test4tx)]
         trueDummy(test4tx)
         self.tx_submit(self.nodes[0], test4tx, NULLDUMMY_ERROR)
