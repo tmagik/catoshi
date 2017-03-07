@@ -2,8 +2,7 @@
 # Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-# Test descendant package tracking code
+"""Test descendant package tracking code."""
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
@@ -104,7 +103,7 @@ class MempoolPackagesTest(BitcoinTestFramework):
 
         # Check that descendant modified fees includes fee deltas from
         # prioritisetransaction
-        self.nodes[0].prioritisetransaction(chain[-1], 0, 1000)
+        self.nodes[0].prioritisetransaction(chain[-1], 1000)
         mempool = self.nodes[0].getrawmempool(True)
 
         descendant_fees = 0
@@ -125,7 +124,7 @@ class MempoolPackagesTest(BitcoinTestFramework):
         assert_equal(len(self.nodes[0].getrawmempool()), 0)
         # Prioritise a transaction that has been mined, then add it back to the
         # mempool by using invalidateblock.
-        self.nodes[0].prioritisetransaction(chain[-1], 0, 2000)
+        self.nodes[0].prioritisetransaction(chain[-1], 2000)
         self.nodes[0].invalidateblock(self.nodes[0].getbestblockhash())
         # Keep node1's tip synced with node0
         self.nodes[1].invalidateblock(self.nodes[1].getbestblockhash())
