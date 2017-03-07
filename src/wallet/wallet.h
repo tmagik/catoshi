@@ -29,7 +29,6 @@
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
 
 extern CWallet* pwalletMain;
 
@@ -79,6 +78,7 @@ class CCoinControl;
 class COutput;
 class CReserveKey;
 class CScript;
+class CScheduler;
 class CTxMemPool;
 class CWalletTx;
 
@@ -256,6 +256,31 @@ private:
     const CWallet* pwallet;
 
 public:
+    /**
+     * Key/value map with information about the transaction.
+     *
+     * The following keys can be read and written through the map and are
+     * serialized in the wallet database:
+     *
+     *     "comment", "to"   - comment strings provided to sendtoaddress,
+     *                         sendfrom, sendmany wallet RPCs
+     *     "replaces_txid"   - txid (as HexStr) of transaction replaced by
+     *                         bumpfee on transaction created by bumpfee
+     *     "replaced_by_txid" - txid (as HexStr) of transaction created by
+     *                         bumpfee on transaction replaced by bumpfee
+     *     "from", "message" - obsolete fields that could be set in UI prior to
+     *                         2011 (removed in commit 4d9b223)
+     *
+     * The following keys are serialized in the wallet database, but shouldn't
+     * be read or written through the map (they will be temporarily added and
+     * removed from the map during serialization):
+     *
+     *     "fromaccount"     - serialized strFromAccount value
+     *     "n"               - serialized nOrderPos value
+     *     "timesmart"       - serialized nTimeSmart value
+     *     "spent"           - serialized vfSpent value that existed prior to
+     *                         2014 (removed in commit 93a18a3)
+     */
     mapValue_t mapValue;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
@@ -369,7 +394,6 @@ public:
         }
 
         mapValue.erase("fromaccount");
-        mapValue.erase("version");
         mapValue.erase("spent");
         mapValue.erase("n");
         mapValue.erase("timesmart");
@@ -569,7 +593,7 @@ private:
 class CWallet : public CCryptoKeyStore, public CValidationInterface
 {
 private:
-    static std::atomic<bool> fFlushThreadRunning;
+    static std::atomic<bool> fFlushScheduled;
 
     /**
      * Select a set of coins such that nValueRet >= nTargetValue and at least
@@ -767,6 +791,9 @@ public:
     bool RemoveWatchOnly(const CScript &dest) override;
     //! Adds a watch-only address to the store, without saving it to disk (used by LoadWallet)
     bool LoadWatchOnly(const CScript &dest);
+
+    //! Holds a timestamp at which point the wallet is scheduled (externally) to be relocked. Caller must arrange for actual relocking to occur via Lock().
+    int64_t nRelockTime;
 
     bool Unlock(const SecureString& strWalletPassphrase);
     bool ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase, const SecureString& strNewWalletPassphrase);
@@ -974,7 +1001,7 @@ public:
      * Wallet post-init setup
      * Gives the wallet a chance to register repetitive tasks and complete post-init tasks
      */
-    void postInitProcess(boost::thread_group& threadGroup);
+    void postInitProcess(CScheduler& scheduler);
 
     /* Wallets parameter interaction */
     static bool ParameterInteraction();
@@ -1008,6 +1035,10 @@ public:
         nIndex = -1;
         pwallet = pwalletIn;
     }
+
+    CReserveKey() = default;
+    CReserveKey(const CReserveKey&) = delete;
+    CReserveKey& operator=(const CReserveKey&) = delete;
 
     ~CReserveKey()
     {
