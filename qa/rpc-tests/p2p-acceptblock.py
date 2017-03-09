@@ -2,15 +2,7 @@
 # Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-from test_framework.mininode import *
-from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-import time
-from test_framework.blocktools import create_block, create_coinbase
-
-'''
-AcceptBlockTest -- test processing of unrequested blocks.
+"""Test processing of unrequested blocks.
 
 Since behavior differs when receiving unrequested blocks from whitelisted peers
 versus non-whitelisted peers, this tests the behavior of both (effectively two
@@ -54,7 +46,13 @@ The test:
 
 7. Send Node0 the missing block again.
    Node0 should process and the tip should advance.
-'''
+"""
+
+from test_framework.mininode import *
+from test_framework.test_framework import BitcoinTestFramework
+from test_framework.util import *
+import time
+from test_framework.blocktools import create_block, create_coinbase
 
 # TestNode: bare-bones "peer".  Used mostly as a conduit for a test to sending
 # p2p messages to a node, generating the messages in the main testing logic.
@@ -199,11 +197,8 @@ class AcceptBlockTest(BitcoinTestFramework):
                 assert_equal(x['status'], "headers-only")
 
         # But this block should be accepted by node0 since it has more work.
-        try:
-            self.nodes[0].getblock(blocks_h3[0].hash)
-            print("Unrequested more-work block accepted from non-whitelisted peer")
-        except:
-            raise AssertionError("Unrequested more work block was not processed")
+        self.nodes[0].getblock(blocks_h3[0].hash)
+        print("Unrequested more-work block accepted from non-whitelisted peer")
 
         # Node1 should have accepted and reorged.
         assert_equal(self.nodes[1].getblockcount(), 3)
@@ -227,26 +222,17 @@ class AcceptBlockTest(BitcoinTestFramework):
                 tips[j] = next_block
 
         time.sleep(2)
-        for x in all_blocks:
-            try:
-                self.nodes[0].getblock(x.hash)
-                if x == all_blocks[287]:
-                    raise AssertionError("Unrequested block too far-ahead should have been ignored")
-            except:
-                if x == all_blocks[287]:
-                    print("Unrequested block too far-ahead not processed")
-                else:
-                    raise AssertionError("Unrequested block with more work should have been accepted")
+        # Blocks 1-287 should be accepted, block 288 should be ignored because it's too far ahead
+        for x in all_blocks[:-1]:
+            self.nodes[0].getblock(x.hash)
+        assert_raises_jsonrpc(-1, "Block not found on disk", self.nodes[0].getblock, all_blocks[-1].hash)
 
         headers_message.headers.pop() # Ensure the last block is unrequested
         white_node.send_message(headers_message) # Send headers leading to tip
         white_node.send_message(msg_block(tips[1]))  # Now deliver the tip
-        try:
-            white_node.sync_with_ping()
-            self.nodes[1].getblock(tips[1].hash)
-            print("Unrequested block far ahead of tip accepted from whitelisted peer")
-        except:
-            raise AssertionError("Unrequested block from whitelisted peer not accepted")
+        white_node.sync_with_ping()
+        self.nodes[1].getblock(tips[1].hash)
+        print("Unrequested block far ahead of tip accepted from whitelisted peer")
 
         # 5. Test handling of unrequested block on the node that didn't process
         # Should still not be processed (even though it has a child that has more
