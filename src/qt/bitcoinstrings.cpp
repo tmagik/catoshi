@@ -78,6 +78,9 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Execute command when the best block changes (%s in cmd is replaced by block "
 "hash)"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
+"Extra transactions to keep in memory for compact block reconstructions "
+"(default: %u)"),
+QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Fees (in %s/kB) smaller than this are considered zero fee for relaying, "
 "mining and transaction creation (default: %s)"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
@@ -94,6 +97,10 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "If paytxfee is not set, include enough fee so transactions begin "
 "confirmation on average within n blocks (default: %u)"),
+QT_TRANSLATE_NOOP("bitcoin-core", ""
+"If this block is in the chain assume that it and its ancestors are valid and "
+"potentially skip their script verification (0 to verify all, default: %s, "
+"testnet: %s)"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Invalid amount for -maxtxfee=<amount>: '%s' (must be at least the minrelay "
 "fee of %s to prevent stuck transactions)"),
@@ -132,13 +139,20 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Randomize credentials for every proxy connection. This enables Tor stream "
 "isolation (default: %u)"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
-"Reduce storage requirements by pruning (deleting) old blocks. This mode is "
-"incompatible with -txindex and -rescan. Warning: Reverting this setting "
-"requires re-downloading the entire blockchain. (default: 0 = disable pruning "
-"blocks, >%u = target size in MiB to use for block files)"),
+"Reduce storage requirements by enabling pruning (deleting) of old blocks. "
+"This allows the pruneblockchain RPC to be called to delete specific blocks, "
+"and enables automatic pruning of old blocks if a target size in MiB is "
+"provided. This mode is incompatible with -txindex and -rescan. Warning: "
+"Reverting this setting requires re-downloading the entire blockchain. "
+"(default: 0 = disable pruning blocks, 1 = allow manual pruning via RPC, >%u "
+"= automatically prune block files to stay under the specified target size in "
+"MiB)"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Rescans are not possible in pruned mode. You will need to use -reindex which "
 "will download the whole blockchain again."),
+QT_TRANSLATE_NOOP("bitcoin-core", ""
+"Set lowest fee rate (in %s/kB) for transactions to be included in block "
+"creation. (default: %s)"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Set maximum size of high-priority/low-fee transactions in bytes (default: %d)"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
@@ -156,6 +170,9 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "time are correct"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "The transaction amount is too small to send after the fee has been deducted"),
+QT_TRANSLATE_NOOP("bitcoin-core", ""
+"This is a pre-release test build - use at your own risk - do not use for "
+"mining or merchant applications"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "This is the transaction fee you may pay when fee estimates are not available."),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
@@ -188,10 +205,15 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Username and hashed password for JSON-RPC connections. The field <userpw> "
 "comes in the format: <USERNAME>:<SALT>$<HASH>. A canonical python script is "
-"included in share/rpcuser. This option can be specified multiple times"),
+"included in share/rpcuser. The client then connects normally using the "
+"rpcuser=<USERNAME>/rpcpassword=<PASSWORD> pair of arguments. This option can "
+"be specified multiple times"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Wallet will not create transactions that violate mempool chain limits "
 "(default: %u)"),
+QT_TRANSLATE_NOOP("bitcoin-core", ""
+"Warning: The network does not appear to fully agree! Some miners appear to "
+"be experiencing issues."),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Warning: Unknown block versions being mined! It's possible unknown rules are "
 "in effect"),
@@ -199,6 +221,9 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Warning: Wallet file corrupt, data salvaged! Original %s saved as %s in %s; "
 "if your balance or transactions are incorrect you should restore from a "
 "backup."),
+QT_TRANSLATE_NOOP("bitcoin-core", ""
+"Warning: We do not appear to fully agree with our peers! You may need to "
+"upgrade, or other nodes may need to upgrade."),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Whitelist peers connecting from the given IP address (e.g. 1.2.3.4) or CIDR "
 "notated network (e.g. 1.2.3.0/24). Can be specified multiple times."),
@@ -228,6 +253,7 @@ QT_TRANSLATE_NOOP("bitcoin-core", "Block creation options:"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Cannot downgrade wallet"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Cannot resolve -%s address: '%s'"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Cannot write default address"),
+QT_TRANSLATE_NOOP("bitcoin-core", "Chain selection options:"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Change index out of range"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Connect through SOCKS5 proxy"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Connect to a node to retrieve peer addresses, and disconnect"),
@@ -350,6 +376,7 @@ QT_TRANSLATE_NOOP("bitcoin-core", "Unsupported argument -debugnet ignored, use -
 QT_TRANSLATE_NOOP("bitcoin-core", "Unsupported argument -tor found, use -onion."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Upgrade wallet to latest format on startup"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Use UPnP to map the listening port (default: %u)"),
+QT_TRANSLATE_NOOP("bitcoin-core", "Use the test chain"),
 QT_TRANSLATE_NOOP("bitcoin-core", "User Agent comment (%s) contains unsafe characters."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Username for JSON-RPC connections"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Verifying blocks..."),
