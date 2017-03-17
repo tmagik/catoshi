@@ -2,19 +2,21 @@
 # Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+"""Test RPCs related to blockchainstate.
 
-#
-# Test RPC calls related to blockchain state. Tests correspond to code in
-# rpc/blockchain.cpp.
-#
+Test the following RPCs:
+    - gettxoutsetinfo
+    - verifychain
+
+Tests correspond to code in rpc/blockchain.cpp.
+"""
 
 from decimal import Decimal
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
     assert_equal,
-    assert_raises,
+    assert_raises_jsonrpc,
     assert_is_hex_string,
     assert_is_hash_string,
     start_nodes,
@@ -23,13 +25,6 @@ from test_framework.util import (
 
 
 class BlockchainTest(BitcoinTestFramework):
-    """
-    Test blockchain-related RPC calls:
-
-        - gettxoutsetinfo
-        - verifychain
-
-    """
 
     def __init__(self):
         super().__init__()
@@ -62,8 +57,7 @@ class BlockchainTest(BitcoinTestFramework):
     def _test_getblockheader(self):
         node = self.nodes[0]
 
-        assert_raises(
-            JSONRPCException, lambda: node.getblockheader('nonsense'))
+        assert_raises_jsonrpc(-5, "Block not found", node.getblockheader, "nonsense")
 
         besthash = node.getbestblockhash()
         secondbesthash = node.getblockhash(199)
