@@ -118,7 +118,7 @@ public:
     void Run()
     {
         ThreadCounter count(*this);
-        while (running) {
+        while (true) {
             std::unique_ptr<WorkItem> i;
             {
                 std::unique_lock<std::mutex> lock(cs);
@@ -145,13 +145,6 @@ public:
         std::unique_lock<std::mutex> lock(cs);
         while (numThreads > 0)
             cond.wait(lock);
-    }
-
-    /** Return current depth of queue */
-    size_t Depth()
-    {
-        std::unique_lock<std::mutex> lock(cs);
-        return queue.size();
     }
 };
 
@@ -482,6 +475,7 @@ void StopHTTPServer()
         LogPrint("http", "Waiting for HTTP worker threads to exit\n");
         workQueue->WaitExit();
         delete workQueue;
+        workQueue = nullptr;
     }
     if (eventBase) {
         LogPrint("http", "Waiting for HTTP event thread to exit\n");

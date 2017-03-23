@@ -29,7 +29,7 @@ static UniValue rpcNestedTest_rpc(const JSONRPCRequest& request)
 
 static const CRPCCommand vRPCCommands[] =
 {
-    { "test", "rpcNestedTest", &rpcNestedTest_rpc, true },
+    { "test", "rpcNestedTest", &rpcNestedTest_rpc, true, {} },
 };
 
 void RPCNestedTests::rpcNestedTests()
@@ -148,9 +148,13 @@ void RPCNestedTests::rpcNestedTests()
     QVERIFY_EXCEPTION_THROWN(RPCConsole::RPCExecuteCommandLine(result, "rpcNestedTest(abc,,)"), std::runtime_error); //don't tollerate empty arguments when using ,
 #endif
 
+    UnloadBlockIndex();
     delete pcoinsTip;
+    pcoinsTip = nullptr;
     delete pcoinsdbview;
+    pcoinsdbview = nullptr;
     delete pblocktree;
+    pblocktree = nullptr;
 
     boost::filesystem::remove_all(boost::filesystem::path(path));
 }

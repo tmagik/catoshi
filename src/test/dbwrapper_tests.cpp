@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(dbwrapper_batch)
         BOOST_CHECK(dbw.Read(key2, res));
         BOOST_CHECK_EQUAL(res.ToString(), in2.ToString());
 
-        // key3 never should've been written
+        // key3 should've never been written
         BOOST_CHECK(dbw.Read(key3, res) == false);
     }
 }
@@ -141,6 +141,7 @@ BOOST_AUTO_TEST_CASE(existing_data_no_obfuscate)
 
     // Call the destructor to free leveldb LOCK
     delete dbw;
+    dbw = nullptr;
 
     // Now, set up another wrapper that wants to obfuscate the same directory
     CDBWrapper odbw(ph, (1 << 10), false, false, true);
@@ -182,6 +183,7 @@ BOOST_AUTO_TEST_CASE(existing_data_reindex)
 
     // Call the destructor to free leveldb LOCK
     delete dbw;
+    dbw = nullptr;
 
     // Simulate a -reindex by wiping the existing data store
     CDBWrapper odbw(ph, (1 << 10), false, true, true);
@@ -277,7 +279,7 @@ BOOST_AUTO_TEST_CASE(iterator_string_ordering)
     CDBWrapper dbw(ph, (1 << 20), true, false, false);
     for (int x=0x00; x<10; ++x) {
         for (int y = 0; y < 10; y++) {
-            sprintf(buf, "%d", x);
+            snprintf(buf, sizeof(buf), "%d", x);
             StringContentsSerializer key(buf);
             for (int z = 0; z < y; z++)
                 key += key;
@@ -293,12 +295,12 @@ BOOST_AUTO_TEST_CASE(iterator_string_ordering)
             seek_start = 0;
         else
             seek_start = 5;
-        sprintf(buf, "%d", seek_start);
+        snprintf(buf, sizeof(buf), "%d", seek_start);
         StringContentsSerializer seek_key(buf);
         it->Seek(seek_key);
         for (int x=seek_start; x<10; ++x) {
             for (int y = 0; y < 10; y++) {
-                sprintf(buf, "%d", x);
+                snprintf(buf, sizeof(buf), "%d", x);
                 std::string exp_key(buf);
                 for (int z = 0; z < y; z++)
                     exp_key += exp_key;
