@@ -29,7 +29,7 @@ static UniValue rpcNestedTest_rpc(const JSONRPCRequest& request)
 
 static const CRPCCommand vRPCCommands[] =
 {
-    { "test", "rpcNestedTest", &rpcNestedTest_rpc, true },
+    { "test", "rpcNestedTest", &rpcNestedTest_rpc, true, {} },
 };
 
 void RPCNestedTests::rpcNestedTests()
@@ -45,7 +45,7 @@ void RPCNestedTests::rpcNestedTests()
     std::string path = QDir::tempPath().toStdString() + "/" + strprintf("test_bitcoin_qt_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
     QDir dir(QString::fromStdString(path));
     dir.mkpath(".");
-    mapArgs["-datadir"] = path;
+    ForceSetArg("-datadir", path);
     //mempool.setSanityCheck(1.0);
     pblocktree = new CBlockTreeDB(1 << 20, true);
     pcoinsdbview = new CCoinsViewDB(1 << 23, true);
@@ -61,8 +61,10 @@ void RPCNestedTests::rpcNestedTests()
 
     std::string result;
     std::string result2;
-    RPCConsole::RPCExecuteCommandLine(result, "getblockchaininfo()[chain]"); //simple result filtering with path
+    std::string filtered;
+    RPCConsole::RPCExecuteCommandLine(result, "getblockchaininfo()[chain]", &filtered); //simple result filtering with path
     QVERIFY(result=="main");
+    QVERIFY(filtered == "getblockchaininfo()[chain]");
 
     RPCConsole::RPCExecuteCommandLine(result, "getblock(getbestblockhash())"); //simple 2 level nesting
     RPCConsole::RPCExecuteCommandLine(result, "getblock(getblock(getbestblockhash())[hash], true)");
@@ -87,8 +89,30 @@ void RPCNestedTests::rpcNestedTests()
     (RPCConsole::RPCExecuteCommandLine(result2, "createrawtransaction( [],  {} , 0   )")); //whitespace between parametres is allowed
     QVERIFY(result == result2);
 
-    RPCConsole::RPCExecuteCommandLine(result, "getblock(getbestblockhash())[tx][0]");
+    RPCConsole::RPCExecuteCommandLine(result, "getblock(getbestblockhash())[tx][0]", &filtered);
     QVERIFY(result == "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+    QVERIFY(filtered == "getblock(getbestblockhash())[tx][0]");
+
+    RPCConsole::RPCParseCommandLine(result, "importprivkey", false, &filtered);
+    QVERIFY(filtered == "importprivkey(…)");
+    RPCConsole::RPCParseCommandLine(result, "signmessagewithprivkey abc", false, &filtered);
+    QVERIFY(filtered == "signmessagewithprivkey(…)");
+    RPCConsole::RPCParseCommandLine(result, "signmessagewithprivkey abc,def", false, &filtered);
+    QVERIFY(filtered == "signmessagewithprivkey(…)");
+    RPCConsole::RPCParseCommandLine(result, "signrawtransaction(abc)", false, &filtered);
+    QVERIFY(filtered == "signrawtransaction(…)");
+    RPCConsole::RPCParseCommandLine(result, "walletpassphrase(help())", false, &filtered);
+    QVERIFY(filtered == "walletpassphrase(…)");
+    RPCConsole::RPCParseCommandLine(result, "walletpassphrasechange(help(walletpassphrasechange(abc)))", false, &filtered);
+    QVERIFY(filtered == "walletpassphrasechange(…)");
+    RPCConsole::RPCParseCommandLine(result, "help(encryptwallet(abc, def))", false, &filtered);
+    QVERIFY(filtered == "help(encryptwallet(…))");
+    RPCConsole::RPCParseCommandLine(result, "help(importprivkey())", false, &filtered);
+    QVERIFY(filtered == "help(importprivkey(…))");
+    RPCConsole::RPCParseCommandLine(result, "help(importprivkey(help()))", false, &filtered);
+    QVERIFY(filtered == "help(importprivkey(…))");
+    RPCConsole::RPCParseCommandLine(result, "help(importprivkey(abc), walletpassphrase(def))", false, &filtered);
+    QVERIFY(filtered == "help(importprivkey(…), walletpassphrase(…))");
 
     RPCConsole::RPCExecuteCommandLine(result, "rpcNestedTest");
     QVERIFY(result == "[]");
@@ -124,9 +148,13 @@ void RPCNestedTests::rpcNestedTests()
     QVERIFY_EXCEPTION_THROWN(RPCConsole::RPCExecuteCommandLine(result, "rpcNestedTest(abc,,)"), std::runtime_error); //don't tollerate empty arguments when using ,
 #endif
 
+    UnloadBlockIndex();
     delete pcoinsTip;
+    pcoinsTip = nullptr;
     delete pcoinsdbview;
+    pcoinsdbview = nullptr;
     delete pblocktree;
+    pblocktree = nullptr;
 
     boost::filesystem::remove_all(boost::filesystem::path(path));
 }
