@@ -8,23 +8,6 @@ noinst_PROGRAMS += test/test_bitcoin_fuzzy
 TEST_SRCDIR = test
 TEST_BINARY=test/test_bitcoin$(EXEEXT)
 
-
-EXTRA_DIST += \
-	test/bctest.py \
-	test/bitcoin-util-test.py \
-	test/data/bitcoin-util-test.json \
-	test/data/tt-delin1-out.hex \
-	test/data/tt-delout1-out.hex \
-	test/data/tt-locktime317000-out.hex \
-	test/data/tx394b54bb.hex \
-	test/data/txcreate1.hex \
-	test/data/txcreate2.hex \
-	test/data/txcreatedata1.hex \
-	test/data/txcreatedata2.hex \
-	test/data/txcreatesignv1.hex \
-	test/data/txcreatedata_seq0.hex \
-	test/data/txcreatedata_seq1.hex
-
 JSON_TEST_FILES = \
   test/data/script_tests.json \
   test/data/base58_keys_valid.json \
@@ -52,6 +35,7 @@ BITCOIN_TESTS =\
   test/blockencodings_tests.cpp \
   test/bloom_tests.cpp \
   test/bswap_tests.cpp \
+  test/checkqueue_tests.cpp \
   test/coins_tests.cpp \
   test/compress_tests.cpp \
   test/crypto_tests.cpp \
@@ -73,6 +57,8 @@ BITCOIN_TESTS =\
   test/policyestimator_tests.cpp \
   test/pow_tests.cpp \
   test/prevector_tests.cpp \
+  test/random_tests.cpp \
+  test/raii_event_tests.cpp \
   test/reverselock_tests.cpp \
   test/rpc_tests.cpp \
   test/sanity_tests.cpp \
@@ -87,6 +73,7 @@ BITCOIN_TESTS =\
   test/streams_tests.cpp \
   test/test_bitcoin.cpp \
   test/test_bitcoin.h \
+  test/test_bitcoin_main.cpp \
   test/test_random.h \
   test/testutil.cpp \
   test/testutil.h \
@@ -108,9 +95,9 @@ BITCOIN_TESTS += \
 endif
 
 test_test_bitcoin_SOURCES = $(BITCOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
-test_test_bitcoin_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -I$(builddir)/test/ $(TESTDEFS)
+test_test_bitcoin_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -I$(builddir)/test/ $(TESTDEFS) $(EVENT_CFLAGS)
 test_test_bitcoin_LDADD = $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CONSENSUS) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
-  $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)
+  $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1) $(EVENT_LIBS)
 test_test_bitcoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 if ENABLE_WALLET
 test_test_bitcoin_LDADD += $(LIBBITCOIN_WALLET)
@@ -150,9 +137,6 @@ CLEAN_BITCOIN_TEST = test/*.gcda test/*.gcno $(GENERATED_TEST_FILES)
 
 CLEANFILES += $(CLEAN_BITCOIN_TEST)
 
-# This file is problematic for out-of-tree builds if it exists.
-DISTCLEANFILES += test/buildenv.pyc
-
 bitcoin_test: $(TEST_BINARY)
 
 bitcoin_test_check: $(TEST_BINARY) FORCE
@@ -162,8 +146,8 @@ bitcoin_test_clean : FORCE
 	rm -f $(CLEAN_BITCOIN_TEST) $(test_test_bitcoin_OBJECTS) $(TEST_BINARY)
 
 check-local:
-	@echo "Running test/bitcoin-util-test.py..."
-	$(AM_V_at)srcdir=$(srcdir) PYTHONPATH=$(builddir)/test $(PYTHON) $(srcdir)/test/bitcoin-util-test.py
+	@echo "Running test/util/bitcoin-util-test.py..."
+	$(PYTHON) $(top_builddir)/test/util/bitcoin-util-test.py
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C secp256k1 check
 if EMBEDDED_UNIVALUE
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue check

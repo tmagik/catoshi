@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2015 The Bitcoin Core developers
+// Copyright (c) 2009-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -97,13 +97,15 @@ namespace boost {
 
 } // namespace boost
 
-using namespace std;
+
 
 const char * const BITCOIN_CONF_FILENAME = "bitcoin.conf";
 const char * const BITCOIN_PID_FILENAME = "bitcoind.pid";
 
-map<string, string> mapArgs;
-map<string, vector<string> > mapMultiArgs;
+CCriticalSection cs_args;
+std::map<std::string, std::string> mapArgs;
+static std::map<std::string, std::vector<std::string> > _mapMultiArgs;
+const std::map<std::string, std::vector<std::string> >& mapMultiArgs = _mapMultiArgs;
 bool fDebug = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugLog = true;
@@ -189,7 +191,7 @@ static boost::once_flag debugPrintInitFlag = BOOST_ONCE_INIT;
  */
 static FILE* fileout = NULL;
 static boost::mutex* mutexDebugLog = NULL;
-static list<string> *vMsgsBeforeOpenLog;
+static std::list<std::string>* vMsgsBeforeOpenLog;
 
 static int FileWriteStr(const std::string &str, FILE *fp)
 {
@@ -200,7 +202,7 @@ static void DebugPrintInit()
 {
     assert(mutexDebugLog == NULL);
     mutexDebugLog = new boost::mutex();
-    vMsgsBeforeOpenLog = new list<string>;
+    vMsgsBeforeOpenLog = new std::list<std::string>;
 }
 
 void OpenDebugLog()
@@ -212,12 +214,13 @@ void OpenDebugLog()
     assert(vMsgsBeforeOpenLog);
     boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
     fileout = fopen(pathDebug.string().c_str(), "a");
-    if (fileout) setbuf(fileout, NULL); // unbuffered
-
-    // dump buffered messages from before we opened the log
-    while (!vMsgsBeforeOpenLog->empty()) {
-        FileWriteStr(vMsgsBeforeOpenLog->front(), fileout);
-        vMsgsBeforeOpenLog->pop_front();
+    if (fileout) {
+        setbuf(fileout, NULL); // unbuffered
+        // dump buffered messages from before we opened the log
+        while (!vMsgsBeforeOpenLog->empty()) {
+            FileWriteStr(vMsgsBeforeOpenLog->front(), fileout);
+            vMsgsBeforeOpenLog->pop_front();
+        }
     }
 
     delete vMsgsBeforeOpenLog;
@@ -235,19 +238,22 @@ bool LogAcceptCategory(const char* category)
         // This helps prevent issues debugging global destructors,
         // where mapMultiArgs might be deleted before another
         // global destructor calls LogPrint()
-        static boost::thread_specific_ptr<set<string> > ptrCategory;
+        static boost::thread_specific_ptr<std::set<std::string> > ptrCategory;
         if (ptrCategory.get() == NULL)
         {
-            const vector<string>& categories = mapMultiArgs["-debug"];
-            ptrCategory.reset(new set<string>(categories.begin(), categories.end()));
-            // thread_specific_ptr automatically deletes the set when the thread ends.
+            if (mapMultiArgs.count("-debug")) {
+                const std::vector<std::string>& categories = mapMultiArgs.at("-debug");
+                ptrCategory.reset(new std::set<std::string>(categories.begin(), categories.end()));
+                // thread_specific_ptr automatically deletes the set when the thread ends.
+            } else
+                ptrCategory.reset(new std::set<std::string>());
         }
-        const set<string>& setCategories = *ptrCategory.get();
+        const std::set<std::string>& setCategories = *ptrCategory;
 
         // if not debugging everything and not debugging specific category, LogPrint does nothing.
-        if (setCategories.count(string("")) == 0 &&
-            setCategories.count(string("1")) == 0 &&
-            setCategories.count(string(category)) == 0)
+        if (setCategories.count(std::string("")) == 0 &&
+            setCategories.count(std::string("1")) == 0 &&
+            setCategories.count(std::string(category)) == 0)
             return false;
     }
     return true;
@@ -260,7 +266,7 @@ bool LogAcceptCategory(const char* category)
  */
 static std::string LogTimestampStr(const std::string &str, std::atomic_bool *fStartedNewLine)
 {
-    string strStamped;
+    std::string strStamped;
 
     if (!fLogTimestamps)
         return str;
@@ -287,7 +293,7 @@ int LogPrintStr(const std::string &str)
     int ret = 0; // Returns total number of characters written
     static std::atomic_bool fStartedNewLine(true);
 
-    string strTimestamped = LogTimestampStr(str, &fStartedNewLine);
+    std::string strTimestamped = LogTimestampStr(str, &fStartedNewLine);
 
     if (fPrintToConsole)
     {
@@ -342,8 +348,9 @@ static void InterpretNegativeSetting(std::string& strKey, std::string& strValue)
 
 void ParseParameters(int argc, const char* const argv[])
 {
+    LOCK(cs_args);
     mapArgs.clear();
-    mapMultiArgs.clear();
+    _mapMultiArgs.clear();
 
     for (int i = 1; i < argc; i++)
     {
@@ -371,12 +378,19 @@ void ParseParameters(int argc, const char* const argv[])
         InterpretNegativeSetting(str, strValue);
 
         mapArgs[str] = strValue;
-        mapMultiArgs[str].push_back(strValue);
+        _mapMultiArgs[str].push_back(strValue);
     }
+}
+
+bool IsArgSet(const std::string& strArg)
+{
+    LOCK(cs_args);
+    return mapArgs.count(strArg);
 }
 
 std::string GetArg(const std::string& strArg, const std::string& strDefault)
 {
+    LOCK(cs_args);
     if (mapArgs.count(strArg))
         return mapArgs[strArg];
     return strDefault;
@@ -384,6 +398,7 @@ std::string GetArg(const std::string& strArg, const std::string& strDefault)
 
 int64_t GetArg(const std::string& strArg, int64_t nDefault)
 {
+    LOCK(cs_args);
     if (mapArgs.count(strArg))
         return atoi64(mapArgs[strArg]);
     return nDefault;
@@ -391,6 +406,7 @@ int64_t GetArg(const std::string& strArg, int64_t nDefault)
 
 bool GetBoolArg(const std::string& strArg, bool fDefault)
 {
+    LOCK(cs_args);
     if (mapArgs.count(strArg))
         return InterpretBool(mapArgs[strArg]);
     return fDefault;
@@ -398,6 +414,7 @@ bool GetBoolArg(const std::string& strArg, bool fDefault)
 
 bool SoftSetArg(const std::string& strArg, const std::string& strValue)
 {
+    LOCK(cs_args);
     if (mapArgs.count(strArg))
         return false;
     mapArgs[strArg] = strValue;
@@ -411,6 +428,14 @@ bool SoftSetBoolArg(const std::string& strArg, bool fValue)
     else
         return SoftSetArg(strArg, std::string("0"));
 }
+
+void ForceSetArg(const std::string& strArg, const std::string& strValue)
+{
+    LOCK(cs_args);
+    mapArgs[strArg] = strValue;
+}
+
+
 
 static const int screenWidth = 79;
 static const int optIndent = 2;
@@ -494,8 +519,8 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
     if (!path.empty())
         return path;
 
-    if (mapArgs.count("-datadir")) {
-        path = fs::system_complete(mapArgs["-datadir"]);
+    if (IsArgSet("-datadir")) {
+        path = fs::system_complete(GetArg("-datadir", ""));
         if (!fs::is_directory(path)) {
             path = "";
             return path;
@@ -513,6 +538,8 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 
 void ClearDatadirCache()
 {
+    LOCK(csPathCached);
+
     pathCached = boost::filesystem::path();
     pathCachedNetSpecific = boost::filesystem::path();
 }
@@ -526,26 +553,27 @@ boost::filesystem::path GetConfigFile(const std::string& confPath)
     return pathConfigFile;
 }
 
-void ReadConfigFile(const std::string& confPath,
-                    map<string, string>& mapSettingsRet,
-                    map<string, vector<string> >& mapMultiSettingsRet)
+void ReadConfigFile(const std::string& confPath)
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile(confPath));
     if (!streamConfig.good())
         return; // No bitcoin.conf file is OK
 
-    set<string> setOptions;
-    setOptions.insert("*");
-
-    for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
-        // Don't overwrite existing settings so command line settings override bitcoin.conf
-        string strKey = string("-") + it->string_key;
-        string strValue = it->value[0];
-        InterpretNegativeSetting(strKey, strValue);
-        if (mapSettingsRet.count(strKey) == 0)
-            mapSettingsRet[strKey] = strValue;
-        mapMultiSettingsRet[strKey].push_back(strValue);
+        LOCK(cs_args);
+        std::set<std::string> setOptions;
+        setOptions.insert("*");
+
+        for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
+        {
+            // Don't overwrite existing settings so command line settings override bitcoin.conf
+            std::string strKey = std::string("-") + it->string_key;
+            std::string strValue = it->value[0];
+            InterpretNegativeSetting(strKey, strValue);
+            if (mapArgs.count(strKey) == 0)
+                mapArgs[strKey] = strValue;
+            _mapMultiArgs[strKey].push_back(strValue);
+        }
     }
     // If datadir is changed in .conf file:
     ClearDatadirCache();
@@ -696,13 +724,17 @@ void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
 
 void ShrinkDebugFile()
 {
+    // Amount of debug.log to save at end when shrinking (must fit in memory)
+    constexpr size_t RECENT_DEBUG_HISTORY_SIZE = 10 * 1000000;
     // Scroll debug.log if it's getting too big
     boost::filesystem::path pathLog = GetDataDir() / "debug.log";
     FILE* file = fopen(pathLog.string().c_str(), "r");
-    if (file && boost::filesystem::file_size(pathLog) > 10 * 1000000)
+    // If debug.log file is more than 10% bigger the RECENT_DEBUG_HISTORY_SIZE
+    // trim it down by saving only the last RECENT_DEBUG_HISTORY_SIZE bytes
+    if (file && boost::filesystem::file_size(pathLog) > 11 * (RECENT_DEBUG_HISTORY_SIZE / 10))
     {
         // Restart the file with some of the end
-        std::vector <char> vch(200000,0);
+        std::vector<char> vch(RECENT_DEBUG_HISTORY_SIZE, 0);
         fseek(file, -((long)vch.size()), SEEK_END);
         int nBytes = fread(vch.data(), 1, vch.size(), file);
         fclose(file);
