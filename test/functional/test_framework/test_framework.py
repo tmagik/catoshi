@@ -4,6 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Base class for RPC testing."""
 
+from collections import deque
 import logging
 import optparse
 import os
@@ -27,8 +28,11 @@ from .util import (
 )
 from .authproxy import JSONRPCException
 
-
 class BitcoinTestFramework(object):
+
+    TEST_EXIT_PASSED = 0
+    TEST_EXIT_FAILED = 1
+    TEST_EXIT_SKIPPED = 77
 
     def __init__(self):
         self.num_nodes = 4
@@ -174,19 +178,24 @@ class BitcoinTestFramework(object):
                 # Dump the end of the debug logs, to aid in debugging rare
                 # travis failures.
                 import glob
-                filenames = glob.glob(self.options.tmpdir + "/node*/regtest/debug.log")
+                filenames = [self.options.tmpdir + "/test_framework.log"]
+                filenames += glob.glob(self.options.tmpdir + "/node*/regtest/debug.log")
                 MAX_LINES_TO_PRINT = 1000
-                for f in filenames:
-                    print("From" , f, ":")
-                    from collections import deque
-                    print("".join(deque(open(f), MAX_LINES_TO_PRINT)))
+                for fn in filenames:
+                    try:
+                        with open(fn, 'r') as f:
+                            print("From" , fn, ":")
+                            print("".join(deque(f, MAX_LINES_TO_PRINT)))
+                    except OSError:
+                        print("Opening file %s failed." % fn)
+                        traceback.print_exc()
         if success:
             self.log.info("Tests successful")
-            sys.exit(0)
+            sys.exit(self.TEST_EXIT_PASSED)
         else:
             self.log.error("Test failed. Test logging available at %s/test_framework.log", self.options.tmpdir)
             logging.shutdown()
-            sys.exit(1)
+            sys.exit(self.TEST_EXIT_FAILED)
 
     def _start_logging(self):
         # Add logger and logging handlers
