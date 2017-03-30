@@ -26,8 +26,6 @@
 #include "validationinterface.h"
 
 #include <algorithm>
-#include <boost/thread.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <queue>
 #include <utility>
 
@@ -45,17 +43,6 @@
 uint64_t nLastBlockTx = 0;
 uint64_t nLastBlockSize = 0;
 uint64_t nLastBlockWeight = 0;
-
-class ScoreCompare
-{
-public:
-    ScoreCompare() {}
-
-    bool operator()(const CTxMemPool::txiter a, const CTxMemPool::txiter b)
-    {
-        return CompareTxMemPoolEntryByScore()(*b,*a); // Convert to less than
-    }
-};
 
 int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
@@ -137,7 +124,7 @@ void BlockAssembler::resetBlock()
     nFees = 0;
 }
 
-std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn)
+std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn, bool fMineWitnessTx)
 {
     int64_t nTimeStart = GetTimeMicros();
 
@@ -177,7 +164,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // -promiscuousmempoolflags is used.
     // TODO: replace this with a call to main to assess validity of a mempool
     // transaction (which in most cases can be a no-op).
-    fIncludeWitness = IsWitnessEnabled(pindexPrev, chainparams.GetConsensus());
+    fIncludeWitness = IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
 
     int nPackagesSelected = 0;
     int nDescendantsUpdated = 0;

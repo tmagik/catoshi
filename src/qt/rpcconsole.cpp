@@ -175,6 +175,10 @@ bool RPCConsole::RPCParseCommandLine(std::string &strResult, const std::string &
             nDepthInsideSensitive = 1;
             filter_begin_pos = chpos;
         }
+        // Make sure stack is not empty before adding something
+        if (stack.empty()) {
+            stack.push_back(std::vector<std::string>());
+        }
         stack.back().push_back(strArg);
     };
 
@@ -626,9 +630,12 @@ void RPCConsole::setClientModel(ClientModel *model)
         for (size_t i = 0; i < commandList.size(); ++i)
         {
             wordList << commandList[i].c_str();
+            wordList << ("help " + commandList[i]).c_str();
         }
 
+        wordList.sort();
         autoCompleter = new QCompleter(wordList, this);
+        autoCompleter->setModelSorting(QCompleter::CaseSensitivelySortedModel);
         ui->lineEdit->setCompleter(autoCompleter);
         autoCompleter->popup()->installEventFilter(this);
         // Start thread to execute RPC commands.
