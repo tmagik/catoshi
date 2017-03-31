@@ -40,17 +40,14 @@ from test_framework.mininode import (CBlockHeader,
                                      CTxOut,
                                      NetworkThread,
                                      NodeConn,
-                                     SingleNodeConnCB,
+                                     NodeConnCB,
                                      msg_block,
                                      msg_headers)
 from test_framework.script import (CScript, OP_TRUE)
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (start_node, p2p_port, assert_equal)
 
-class BaseNode(SingleNodeConnCB):
-    def __init__(self):
-        super().__init__()
-
+class BaseNode(NodeConnCB):
     def send_header_for_blocks(self, new_blocks):
         headers_message = msg_headers()
         headers_message.headers = [CBlockHeader(b) for b in new_blocks]
@@ -193,7 +190,8 @@ class AssumeValidTest(BitcoinTestFramework):
         # Send all blocks to node1. All blocks will be accepted.
         for i in range(2202):
             node1.send_message(msg_block(self.blocks[i]))
-        node1.sync_with_ping()  # make sure the most recent block is synced
+        # Syncing 2200 blocks can take a while on slow systems. Give it plenty of time to sync.
+        node1.sync_with_ping(120)
         assert_equal(self.nodes[1].getblock(self.nodes[1].getbestblockhash())['height'], 2202)
 
         # Send blocks to node2. Block 102 will be rejected.
