@@ -28,8 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
 extern CWallet* pwalletMain;
 
 /**
@@ -475,7 +473,34 @@ public:
 };
 
 
+class CInputCoin {
+public:
+    CInputCoin(const CWalletTx* walletTx, unsigned int i)
+    {
+        if (!walletTx)
+            throw std::invalid_argument("walletTx should not be null");
+        if (i >= walletTx->tx->vout.size())
+            throw std::out_of_range("The output index is out of range");
 
+        outpoint = COutPoint(walletTx->GetHash(), i);
+        txout = walletTx->tx->vout[i];
+    }
+
+    COutPoint outpoint;
+    CTxOut txout;
+
+    bool operator<(const CInputCoin& rhs) const {
+        return outpoint < rhs.outpoint;
+    }
+
+    bool operator!=(const CInputCoin& rhs) const {
+        return outpoint != rhs.outpoint;
+    }
+
+    bool operator==(const CInputCoin& rhs) const {
+        return outpoint == rhs.outpoint;
+    }
+};
 
 class COutput
 {
@@ -632,7 +657,7 @@ private:
      * all coins from coinControl are selected; Never select unconfirmed coins
      * if they are not ours
      */
-    bool SelectCoins(const std::vector<COutput>& vAvailableCoins, const CAmount& nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet, const CCoinControl *coinControl = NULL) const;
+    bool SelectCoins(const std::vector<COutput>& vAvailableCoins, const CAmount& nTargetValue, std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet, const CCoinControl *coinControl = NULL) const;
 
     CWalletDB *pwalletdbEncryption;
 
@@ -660,6 +685,10 @@ private:
     void MarkConflicted(const uint256& hashBlock, const uint256& hashTx);
 
     void SyncMetaData(std::pair<TxSpends::iterator, TxSpends::iterator>);
+
+    /* Used by TransactionAddedToMemorypool/BlockConnected/Disconnected.
+     * Should be called with pindexBlock and posInBlock if this is for a transaction that is included in a block. */
+    void SyncTransaction(const CTransactionRef& tx, const CBlockIndex *pindex = NULL, int posInBlock = 0);
 
     /* the HD chain data model (external chain counters) */
     CHDChain hdChain;
@@ -780,7 +809,7 @@ public:
      * completion the coin set and corresponding actual target value is
      * assembled
      */
-    bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, uint64_t nMaxAncestors, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
+    bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, uint64_t nMaxAncestors, std::vector<COutput> vCoins, std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet) const;
 
     bool IsSpent(const uint256& hash, unsigned int n) const;
 
@@ -849,8 +878,10 @@ public:
     void MarkDirty();
     bool AddToWallet(const CWalletTx& wtxIn, bool fFlushOnClose=true);
     bool LoadToWallet(const CWalletTx& wtxIn);
-    void SyncTransaction(const CTransaction& tx, const CBlockIndex *pindex, int posInBlock) override;
-    bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlockIndex* pIndex, int posInBlock, bool fUpdate);
+    void TransactionAddedToMempool(const CTransactionRef& tx) override;
+    void BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex *pindex, const std::vector<CTransactionRef>& vtxConflicted) override;
+    void BlockDisconnected(const std::shared_ptr<const CBlock>& pblock) override;
+    bool AddToWalletIfInvolvingMe(const CTransactionRef& tx, const CBlockIndex* pIndex, int posInBlock, bool fUpdate);
     CBlockIndex* ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
     void ReacceptWalletTransactions();
     void ResendWalletTransactions(int64_t nBestBlockTime, CConnman* connman) override;
@@ -867,6 +898,7 @@ public:
      * calling CreateTransaction();
      */
     bool FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, bool overrideEstimatedFeeRate, const CFeeRate& specificFeeRate, int& nChangePosInOut, std::string& strFailReason, bool includeWatching, bool lockUnspents, const std::set<int>& setSubtractFeeFromOutputs, bool keepReserveKey = true, const CTxDestination& destChange = CNoDestination());
+    bool SignTransaction(CMutableTransaction& tx);
 
     /**
      * Create a new transaction paying the recipients with a set of coins
@@ -881,7 +913,7 @@ public:
     bool AddAccountingEntry(const CAccountingEntry&);
     bool AddAccountingEntry(const CAccountingEntry&, CWalletDB *pwalletdb);
     template <typename ContainerType>
-    bool DummySignTx(CMutableTransaction &txNew, const ContainerType &coins);
+    bool DummySignTx(CMutableTransaction &txNew, const ContainerType &coins) const;
 
     static CFeeRate minTxFee;
     static CFeeRate fallbackFee;
@@ -958,12 +990,7 @@ public:
         }
     }
 
-    void GetScriptForMining(boost::shared_ptr<CReserveScript> &script) override;
-    void ResetRequestCount(const uint256 &hash) override
-    {
-        LOCK(cs_wallet);
-        mapRequestCount[hash] = 0;
-    };
+    void GetScriptForMining(std::shared_ptr<CReserveScript> &script) override;
     
     unsigned int GetKeyPoolSize()
     {
@@ -1125,13 +1152,13 @@ public:
 // ContainerType is meant to hold pair<CWalletTx *, int>, and be iterable
 // so that each entry corresponds to each vIn, in order.
 template <typename ContainerType>
-bool CWallet::DummySignTx(CMutableTransaction &txNew, const ContainerType &coins)
+bool CWallet::DummySignTx(CMutableTransaction &txNew, const ContainerType &coins) const
 {
     // Fill in dummy signatures for fee calculation.
     int nIn = 0;
     for (const auto& coin : coins)
     {
-        const CScript& scriptPubKey = coin.first->tx->vout[coin.second].scriptPubKey;
+        const CScript& scriptPubKey = coin.txout.scriptPubKey;
         SignatureData sigdata;
 
         if (!ProduceSignature(DummySignatureCreator(this), scriptPubKey, sigdata))
