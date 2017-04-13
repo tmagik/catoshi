@@ -28,7 +28,6 @@ namespace RPCServer
     void OnStarted(boost::function<void ()> slot);
     void OnStopped(boost::function<void ()> slot);
     void OnPreCommand(boost::function<void (const CRPCCommand&)> slot);
-    void OnPostCommand(boost::function<void (const CRPCCommand&)> slot);
 }
 
 class CBlockIndex;
@@ -69,7 +68,7 @@ void SetRPCWarmupStatus(const std::string& newStatus);
 void SetRPCWarmupFinished();
 
 /* returns the current warmup state.  */
-bool RPCIsInWarmup(std::string *statusOut);
+bool RPCIsInWarmup(std::string *outStatus);
 
 /**
  * Type-check arguments; throws JSONRPCError if wrong type given. Does not check that
@@ -154,7 +153,7 @@ private:
 public:
     CRPCTable();
     const CRPCCommand* operator[](const std::string& name) const;
-    std::string help(const std::string& name) const;
+    std::string help(const std::string& name, const JSONRPCRequest& helpreq) const;
 
     /**
      * Execute a method.
@@ -190,21 +189,15 @@ extern uint256 ParseHashO(const UniValue& o, std::string strKey);
 extern std::vector<unsigned char> ParseHexV(const UniValue& v, std::string strName);
 extern std::vector<unsigned char> ParseHexO(const UniValue& o, std::string strKey);
 
-extern int64_t nWalletUnlockTime;
 extern CAmount AmountFromValue(const UniValue& value);
 extern UniValue ValueFromAmount(const CAmount& amount);
-extern double GetDifficulty(const CBlockIndex* blockindex = NULL);
-extern std::string HelpRequiringPassphrase();
 extern std::string HelpExampleCli(const std::string& methodname, const std::string& args);
 extern std::string HelpExampleRpc(const std::string& methodname, const std::string& args);
-
-extern void EnsureWalletIsUnlocked();
 
 bool StartRPC();
 void InterruptRPC();
 void StopRPC();
 std::string JSONRPCExecBatch(const UniValue& vReq);
-void RPCNotifyBlockChange(bool ibd, const CBlockIndex *);
 
 // Retrieves any serialization flags requested in command line argument
 int RPCSerializationFlags();
