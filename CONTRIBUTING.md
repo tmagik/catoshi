@@ -38,7 +38,7 @@ fixes or code moves with actual code changes.
 Commit messages should be verbose by default consisting of a short subject line
 (50 chars max), a blank line and detailed explanatory text as separate
 paragraph(s); unless the title alone is self-explanatory (like "Corrected typo
-in main.cpp") then a single title line is sufficient. Commit messages should be
+in init.cpp") then a single title line is sufficient. Commit messages should be
 helpful to people reading your code in the future, so explain the reasoning for
 your decisions. Further explanation [here](http://chris.beams.io/posts/git-commit/).
 
@@ -79,7 +79,7 @@ Examples:
     Consensus: Add new opcode for BIP-XXXX OP_CHECKAWESOMESIG
     Net: Automatically create hidden service, listen on Tor
     Qt: Add feed bump button
-    Trivial: Fix typo in main.cpp
+    Trivial: Fix typo in init.cpp
 
 If a pull request is specifically not to be considered for merging (yet) please
 prefix the title with [WIP] or use [Tasks Lists](https://help.github.com/articles/basic-writing-and-formatting-syntax/#task-lists)
@@ -130,7 +130,7 @@ pull requests which attempt to do too much, are overly large, or overly complex
 as this makes review difficult.
 
 
-###Features
+### Features
 
 When adding a new feature, thought must be given to the long term technical debt
 and maintenance that feature may require after inclusion. Before proposing a new
@@ -139,7 +139,7 @@ maintain it (including bug fixing). If features get orphaned with no maintainer
 in the future, they may be removed by the Repository Maintainer.
 
 
-###Refactoring
+### Refactoring
 
 Refactoring is a necessary part of any software project's evolution. The
 following guidelines cover refactoring pull requests for the project.
@@ -187,14 +187,14 @@ other kinds of patches because of increased peer review and consensus building
 requirements.
 
 
-###Peer Review
+### Peer Review
 
 Anyone may participate in peer review which is expressed by comments in the pull
 request. Typically reviewers will review the code for obvious errors, as well as
 test out the patch set and opine on the technical merits of the patch. Project
 maintainers take into account the peer review when determining if there is
 consensus to merge a pull request (remember that discussions may have been
-spread out over github, mailing list and IRC discussions). The following
+spread out over GitHub, mailing list and IRC discussions). The following
 language is used within pull-request comments:
 
   - ACK means "I have tested the code and I agree it should be merged";
