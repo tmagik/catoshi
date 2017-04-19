@@ -25,7 +25,7 @@
 #include <boost/algorithm/string/case_conv.hpp> // for to_lower()
 #include <boost/algorithm/string/predicate.hpp> // for startswith() and endswith()
 
-#if !defined(HAVE_MSG_NOSIGNAL) && !defined(MSG_NOSIGNAL)
+#if !defined(HAVE_MSG_NOSIGNAL)
 #define MSG_NOSIGNAL 0
 #endif
 
@@ -281,7 +281,7 @@ std::string Socks5ErrorString(int err)
 static bool Socks5(const std::string& strDest, int port, const ProxyCredentials *auth, SOCKET& hSocket)
 {
     IntrRecvError recvr;
-    LogPrint("net", "SOCKS5 connecting %s\n", strDest);
+    LogPrint(BCLog::NET, "SOCKS5 connecting %s\n", strDest);
     if (strDest.size() > 255) {
         CloseSocket(hSocket);
         return error("Hostname too long");
@@ -327,7 +327,7 @@ static bool Socks5(const std::string& strDest, int port, const ProxyCredentials 
             CloseSocket(hSocket);
             return error("Error sending authentication to proxy");
         }
-        LogPrint("proxy", "SOCKS5 sending proxy authentication %s:%s\n", auth->username, auth->password);
+        LogPrint(BCLog::PROXY, "SOCKS5 sending proxy authentication %s:%s\n", auth->username, auth->password);
         char pchRetA[2];
         if ((recvr = InterruptibleRecv(pchRetA, 2, SOCKS5_RECV_TIMEOUT, hSocket)) != IntrRecvError::OK) {
             CloseSocket(hSocket);
@@ -409,7 +409,7 @@ static bool Socks5(const std::string& strDest, int port, const ProxyCredentials 
         CloseSocket(hSocket);
         return error("Error reading from proxy");
     }
-    LogPrint("net", "SOCKS5 connected %s\n", strDest);
+    LogPrint(BCLog::NET, "SOCKS5 connected %s\n", strDest);
     return true;
 }
 
@@ -458,7 +458,7 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
             int nRet = select(hSocket + 1, NULL, &fdset, NULL, &timeout);
             if (nRet == 0)
             {
-                LogPrint("net", "connection to %s timeout\n", addrConnect.ToString());
+                LogPrint(BCLog::NET, "connection to %s timeout\n", addrConnect.ToString());
                 CloseSocket(hSocket);
                 return false;
             }
