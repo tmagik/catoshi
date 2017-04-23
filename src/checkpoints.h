@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2009-2012 The *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -6,46 +6,44 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-#ifndef CODECOIN_CHECKPOINT_H
-#define CODECOIN_CHECKPOINT_H
+#ifndef _CODECOIN_CHECKPOINT_H
+#define _CODECOIN_CHECKPOINT_H
 
 #include <map>
-#include <boost/assign/list_of.hpp>  // for 'map_list_of()'
-#include "net.h"
-#include "util.h"
-
-#define CHECKPOINT_MAX_SPAN (60 * 60 * 4) // max 4 hours before latest block
 
 class uint256;
 class CBlockIndex;
 class CSyncCheckpoint;
 
-/** Block-chain checkpoints are compiled-in sanity checks.
+/** 
+ * Block-chain checkpoints are compiled-in sanity checks.
  * They are updated every release or three.
  */
 namespace Checkpoints
 {
-	// Returns true if block passes checkpoint checks
-	bool CheckBlock(int nHeight, const uint256& hash);
+typedef std::map<int, uint256> MapCheckpoints;
 
-	// Return conservative estimate of total number of blocks, 0 if unknown
-	int GetTotalBlocksEstimate();
+struct CCheckpointData {
+    const MapCheckpoints *mapCheckpoints;
+    int64_t nTimeLastCheckpoint;
+    int64_t nTransactionsLastCheckpoint;
+    double fTransactionsPerDay;
+};
 
-	// Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
-	CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex);
+//! Returns true if block passes checkpoint checks
+    bool CheckBlock(int nHeight, const uint256& hash);
 
-	double GuessVerificationProgress(CBlockIndex *pindex);
+//! Return conservative estimate of total number of blocks, 0 if unknown
+    int GetTotalBlocksEstimate();
 
-	typedef std::map<int, uint256> MapCheckpoints;
+//! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
+CBlockIndex* GetLastCheckpoint();
 
-	struct CCheckpointData {
-		const MapCheckpoints *mapCheckpoints;
-		int64_t nTimeLastCheckpoint;
-		int64_t nTransactionsLastCheckpoint;
-		double fTransactionsPerDay;
-	};
+double GuessVerificationProgress(CBlockIndex* pindex, bool fSigchecks = true);
 
-	extern const CCheckpointData data;
+    extern bool fEnabled;
+
+extern const CCheckpointData data;
 
 #if !defined(SYNC_CHECKPOINTS)
 	/* always false */
@@ -54,7 +52,7 @@ namespace Checkpoints
 	}
 
 	inline void AskForPendingSyncCheckpoint(CNode* pfrom){ return; };
-}
+} //end namespace Checkpoints
 #else /* SYNC_CHECKPOINTS */
     extern uint256 hashSyncCheckpoint;
     extern CSyncCheckpoint checkpointMessage;
@@ -73,7 +71,7 @@ namespace Checkpoints
     bool SendSyncCheckpoint(uint256 hashCheckpoint);
     bool IsMatureSyncCheckpoint();
     bool IsSyncCheckpointTooOld(unsigned int nSeconds);
-}
+} //end namespace Checkpoints
 
 // ppcoin: synchronized checkpoint
 class CUnsignedSyncCheckpoint
@@ -166,4 +164,5 @@ public:
 };
 #endif /* SYNC_CHECKPOINTS */
 
-#endif
+#endif /* _CODECOIN_CHECKPOINT_H */
+

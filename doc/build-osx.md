@@ -1,38 +1,13 @@
-Mac OS X *coind build instructions
+Mac OS X codecoind build instructions
 ====================================
+This guide will show you how to build codecoind(headless client) for OSX.
 
-Authors
--------
-
-* Laszlo Hanyecz <solar@heliacal.net>
-* Douglas Huff <dhuff@jrbobdobbs.org>
-* Colin Dean <cad@cad.cx>
-* Gavin Andresen <gavinandresen@gmail.com>
-
-License
--------
-
-Copyright (c) 2009-2012 Bitcoin Developers
-
-Distributed under the MIT/X11 software license, see the accompanying
-file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-This product includes software developed by the OpenSSL Project for use in
-the OpenSSL Toolkit (http://www.openssl.org/).
-
-This product includes cryptographic software written by
-Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.
+It's broken. Please send patches.
 
 Notes
 -----
 
-See `doc/readme-qt.rst` for instructions on building *Coin-Qt, the
-graphical user interface.
-
-Tested on OS X 10.5 through 10.8 on Intel processors only. PPC is not
-supported because it is big-endian.
-
-All of the commands should be executed in a Terminal application. The
+* All of the commands should be executed in a Terminal application. The
 built-in one is located in `/Applications/Utilities`.
 
 Preparation
@@ -46,73 +21,34 @@ Xcode 4.3 or later, you'll need to install its command line tools. This can
 be done in `Xcode > Preferences > Downloads > Components` and generally must
 be re-done or updated every time Xcode is updated.
 
-There's an assumption that you already have `git` installed, as well. If
-not, it's the path of least resistance to install [Github for ac](https://mac.github.com/)
+There's also an assumption that you already have `git` installed. If
+not, it's the path of least resistance to install [Github for Mac](https://mac.github.com/)
 (OS X 10.7+) or
 [Git for OS X](https://code.google.com/p/git-osx-installer/). It is also
-available via Homebrew or MacPorts.
+available via Homebrew.
 
-You will also need to install [Homebrew](http://mxcl.github.io/homebrew/)
-or [MacPorts](https://www.macports.org/) in order to install library
-dependencies. It's largely a religious decision which to choose, but, as of
-December 2012, MacPorts is a little easier because you can just install the
-dependencies immediately - no other work required. If you're unsure, read
-the instructions through first in order to assess what you want to do.
-Homebrew is a little more popular among those newer to OS X.
+You will also need to install [Homebrew](http://brew.sh) in order to install library
+dependencies.
 
 The installation of the actual dependencies is covered in the Instructions
 sections below.
 
-Instructions: MacPorts
-----------------------
-
-### Install dependencies
-
-Installing the dependencies using MacPorts is very straightforward.
-
-    sudo port install boost db48@+no_java openssl miniupnpc
-
-### Building `*coind`
-
-1. Clone the github tree to get the source code and go into the directory.
-
-        git clone git@github.com:kR105/*coin.git *coin
-        cd *coin
-
-2.  Build *coind:
-
-        cd src
-        make -f makefile.osx
-
-3.  It is a good idea to build and run the unit tests, too:
-
-        make -f makefile.osx test
-
-Instructions: HomeBrew
+Instructions: Homebrew
 ----------------------
 
 #### Install dependencies using Homebrew
 
-        brew install boost miniupnpc openssl berkeley-db4
+        brew install boost miniupnpc openssl berkeley-db5.3
 
-Note: After you have installed the dependencies, you should check that the Brew installed version of OpenSSL is the one available for compilation. You can check this by typing
+(berkely DB 5.3 recipie available at https://github.com/tmagik/homebrew-core)
+(yes I mixed Git and Mercurial, that's like crossing the streams or something)
 
-        openssl version
-
-into Terminal. You should see OpenSSL 1.0.1e 11 Feb 2013.
-
-If not, you can ensure that the Brew OpenSSL is correctly linked by running
-
-        brew link openssl --force
-
-Rerunning "openssl version" should now return the correct version.
-
-### Building `*coind`
+### Building `codecoind`
 
 1. Clone the github tree to get the source code and go into the directory.
 
-        git clone git@github.com:kR105/*coin.git *coin
-        cd *coin
+        hg clone https://bitbucket.org/catoshi/catoshi
+        cd bitcoin
 
 2.  Modify source in order to pick up the `openssl` library.
 
@@ -122,7 +58,7 @@ Rerunning "openssl version" should now return the correct version.
 
         patch -p1 < contrib/homebrew/makefile.osx.patch
 
-3.  Build *coind:
+3.  Build bitcoind:
 
         cd src
         make -f makefile.osx
@@ -134,34 +70,8 @@ Rerunning "openssl version" should now return the correct version.
 Creating a release build
 ------------------------
 
-A *coind binary is not included in the *Coin-Qt.app bundle. You can ignore
-this section if you are building `*coind` for your own use.
+TODO: document this
 
-If you are building `litecond` for others, your build machine should be set up
-as follows for maximum compatibility:
-
-All dependencies should be compiled with these flags:
-
-    -mmacosx-version-min=10.5 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk
-
-For MacPorts, that means editing your macports.conf and setting
-`macosx_deployment_target` and `build_arch`:
-
-    macosx_deployment_target=10.5
-    build_arch=i386
-
-... and then uninstalling and re-installing, or simply rebuilding, all ports.
-
-As of December 2012, the `boost` port does not obey `macosx_deployment_target`.
-Download `http://gavinandresen-bitcoin.s3.amazonaws.com/boost_macports_fix.zip`
-for a fix. Some ports also seem to obey either `build_arch` or
-`macosx_deployment_target`, but not both at the same time. For example, building
-on an OS X 10.6 64-bit machine fails. Official release builds of *Coin-Qt are
-compiled on an OS X 10.6 32-bit machine to workaround that problem.
-
-Once dependencies are compiled, creating `*Coin-Qt.app` is easy:
-
-    make -f Makefile.osx RELEASE=1
 
 Running
 -------

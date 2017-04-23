@@ -10,10 +10,9 @@
 #ifndef CODECOIN_UNDO_H
 #define CODECOIN_UNDO_H
 
-// included by main.h for now
-//#include "compressor.h" 
-//#include "primitives/transaction.h"
-//#include "serialize.h"
+#include "compressor.h" 
+#include "primitives/transaction.h"
+#include "serialize.h"
 
 /** Undo information for a CTxIn
  *
@@ -110,35 +109,12 @@ public:
 	// undo information for all txins
 	std::vector<CTxInUndo> vprevout;
 
-#if BITCOIN_SERIALIZE
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-#endif
-    IMPLEMENT_SERIALIZE(
 		READWRITE(vprevout);
-	)
-};
-
-/** Undo information for a CBlock */
-class CBlockUndo
-{
-public:
-    std::vector<CTxUndo> vtxundo; // for all but the coinbase
-
-#if BITCOIN_SERIALIZE
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-#endif
-    IMPLEMENT_SERIALIZE(
-        READWRITE(vtxundo);
-    )
-
-    bool WriteToDisk(CDiskBlockPos &pos, const uint256 &hashBlock);
-    bool ReadFromDisk(const CDiskBlockPos &pos, const uint256 &hashBlock);
+    }
 };
 
 #endif // CODECOIN_UNDO_H

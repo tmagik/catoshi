@@ -1,10 +1,3 @@
-Copyright (c) 2009-2013 Bitcoin Developers
-Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
-Distributed under the Affero GNU General public license version 3
-file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](http://www.openssl.org/). This product includes
-cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.
-
 UNIX BUILD NOTES
 ====================
 
@@ -14,7 +7,7 @@ To Build
 	cd src/
 	make			# Headless c0pyc4tcoin
 
-See readme-qt.rst for instructions on building *Coin-Qt, the graphical user interface.
+See [readme-qt.md](readme-qt.md) for instructions on building *Coin-Qt, the graphical user interface.
 
 Dependencies
 ---------------------
@@ -22,7 +15,7 @@ Dependencies
  Library     Purpose           Description
  -------     -------           -----------
  libssl      SSL Support       Secure communications
- libdb4.8    Berkeley DB       Blockchain & wallet storage
+ libdb5.3    Berkeley DB       Blockchain & wallet storage
  libboost    Boost             C++ Library
  miniupnpc   UPnP Support      Optional firewall-jumping support
 
@@ -55,80 +48,13 @@ Dependency Build Instructions: Ubuntu & Debian
 ----------------------------------------------
 Build requirements:
 
-	sudo apt-get install build-essential
-	sudo apt-get install libssl-dev
-
-for Ubuntu 12.04:
-
-	sudo apt-get install libboost-all-dev
-
- db4.8 packages are available [here](https://launchpad.net/~bitcoin/+archive/bitcoin).
-
- Ubuntu precise has packages for libdb5.1-dev and libdb5.1++-dev,
- but using these will break binary wallet compatibility, and is not recommended.
-
-for other Ubuntu & Debian:
-
-	sudo apt-get install libdb4.8-dev
-	sudo apt-get install libdb4.8++-dev
-	sudo apt-get install libboost1.37-dev
- (If using Boost 1.37, append -mt to the boost libraries in the makefile)
-
-Optional:
-
-	sudo apt-get install libminiupnpc-dev (see USE_UPNP compile flag)
-
-
-Dependency Build Instructions: Gentoo
--------------------------------------
-
-Note: If you just want to install bitcoind on Gentoo, you can add the Bitcoin overlay and use your package manager:
-
-	layman -a bitcoin && emerge bitcoind
-	emerge -av1 --noreplace boost glib openssl sys-libs/db:4.8
-
-Take the following steps to build (no UPnP support):
-
-	cd ${BITCOIN_DIR}/src
-	make -f makefile.unix USE_UPNP= USE_IPV6=1 BDB_INCLUDE_PATH='/usr/include/db4.8'
-	strip bitcoind
-
-
-Notes
------
-The release is built with GCC and then "strip bitcoind" to strip the debug
-symbols, which reduces the executable size by about 90%.
-
-
-miniupnpc
----------
-	tar -xzvf miniupnpc-1.6.tar.gz
-	cd miniupnpc-1.6
-	make
-	sudo su
-	make install
-
-
-Berkeley DB
------------
-You need Berkeley DB 4.8.  If you have to build Berkeley DB yourself:
-
-	../dist/configure --enable-cxx
-	make
-
-
-Boost
------
-If you need to build Boost yourself:
-
-	sudo su
-	./bootstrap.sh
-	./bjam install
-
+type 'dpkg-buildpackage', or run 'build-debian.sh' if I didn't change it.
 
 Security
 --------
-To help make your *coin installation more secure by making certain attacks impossible to
+This is old, but believed to be accurate. Please review and update.
+
+To help make your codecoin installation more secure by making certain attacks impossible to
 exploit even if a vulnerability is found, you can take the following measures:
 
 * Position Independent Executable
@@ -142,11 +68,12 @@ exploit even if a vulnerability is found, you can take the following measures:
     such as: "relocation R_X86_64_32 against `......' can not be used when making a shared object;"
 
     To build with PIE, use:
-    make -f makefile.unix ... -e PIE=1
+
+    	make -f makefile.unix ... -e PIE=1
 
     To test that you have built PIE executable, install scanelf, part of paxutils, and use:
 
-    	scanelf -e ./*coin
+    	scanelf -e ./bitcoin
 
     The output should contain:
      TYPE
@@ -160,7 +87,7 @@ exploit even if a vulnerability is found, you can take the following measures:
     executable without the non-executable stack protection.
 
     To verify that the stack is non-executable after compiling use:
-    `scanelf -e ./*coin`
+    `scanelf -e ./bitcoin`
 
     the output should contain:
 	STK/REL/PTL

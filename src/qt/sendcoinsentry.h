@@ -1,3 +1,4 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
@@ -5,20 +6,27 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
-// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-#ifndef SENDCOINSENTRY_H
-#define SENDCOINSENTRY_H
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.htm
 
-#include <QFrame>
+#ifndef BITCOIN_QT_SENDCOINSENTRY_H
+#define BITCOIN_QT_SENDCOINSENTRY_H
+
+#include "walletmodel.h"
+
+#include <QStackedWidget>
+
+class WalletModel;
 
 namespace Ui {
     class SendCoinsEntry;
 }
-class WalletModel;
-class SendCoinsRecipient;
 
-/** A single entry in the dialog for sending bitcoins. */
-class SendCoinsEntry : public QFrame
+/**
+ * A single entry in the dialog for sending bitcoins.
+ * Stacked widget, with different UIs for payment requests
+ * with a strong payee identity.
+ */
+class SendCoinsEntry : public QStackedWidget
 {
     Q_OBJECT
 
@@ -34,15 +42,16 @@ public:
     bool isClear();
 
     void setValue(const SendCoinsRecipient &value);
+    void setAddress(const QString &address);
 
-    /** Set up the tab chain manually, as Qt messes up the tab chain by default in some cases (issue http://bugreports.qt.nokia.com/browse/QTBUG-10907).
+    /** Set up the tab chain manually, as Qt messes up the tab chain by default in some cases
+     *  (issue https://bugreports.qt-project.org/browse/QTBUG-10907).
      */
     QWidget *setupTabChain(QWidget *prev);
 
     void setFocus();
 
 public slots:
-    void setRemoveEnabled(bool enabled);
     void clear();
 
 signals:
@@ -50,14 +59,18 @@ signals:
     void payAmountChanged();
 
 private slots:
-    void on_deleteButton_clicked();
+    void deleteClicked();
     void on_payTo_textChanged(const QString &address);
     void on_addressBookButton_clicked();
     void on_pasteButton_clicked();
+    void updateDisplayUnit();
 
 private:
+    SendCoinsRecipient recipient;
     Ui::SendCoinsEntry *ui;
     WalletModel *model;
+
+    bool updateLabel(const QString &address);
 };
 
-#endif // SENDCOINSENTRY_H
+#endif // BITCOIN_QT_SENDCOINSENTRY_H

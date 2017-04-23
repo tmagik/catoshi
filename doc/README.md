@@ -35,12 +35,10 @@ Unpack the files into a directory and run:
 See the documentation at the [*Coin Wiki](http://litecoin.info)
 for help and more information.
 
-
-Other Pages
+Development
 ---------------------
 - [Unix Build Notes](build-unix.md)
 - [OSX Build Notes](build-osx.md)
-- [Windows Build Notes](build-msw.md)
 - [Coding Guidelines](coding.md)
 - [Release Process](release-process.md)
 - [Release Notes](release-notes.md)

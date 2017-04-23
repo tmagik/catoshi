@@ -5,7 +5,6 @@
 #define CODECOIN_codecoin_H
 
 #if !defined(BRANDING_ONLY)  // hack for resource codecoin-qt.rc
-#include "bignum.h"
 #include <inttypes.h>
 #include <string>
 
