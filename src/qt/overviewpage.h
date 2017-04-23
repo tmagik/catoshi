@@ -1,20 +1,32 @@
-#ifndef OVERVIEWPAGE_H
-#define OVERVIEWPAGE_H
+// Copyright (c) 2009-2010 Satoshi Nakamoto
+// Copyright (c) 2009-2013 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "codecoinunits.h"
+
+#ifndef CODECOIN_QT_OVERVIEWPAGE_H
+#define CODECOIN_QT_OVERVIEWPAGE_H
+
+#include "amount.h"
+
 #include <QWidget>
-#include <QAbstractItemDelegate>
 
-QT_BEGIN_NAMESPACE
-class QModelIndex;
-QT_END_NAMESPACE
+class ClientModel;
+class TransactionFilterProxy;
+class TxViewDelegate;
+class WalletModel;
 
 namespace Ui {
     class OverviewPage;
 }
-class WalletModel;
-class TxViewDelegate;
-class TransactionFilterProxy;
+
+QT_BEGIN_NAMESPACE
+class QModelIndex;
+QT_END_NAMESPACE
 
 /** Overview ("home") page widget */
 class OverviewPage : public QWidget
@@ -25,23 +37,27 @@ public:
     explicit OverviewPage(QWidget *parent = 0);
     ~OverviewPage();
 
-    void setModel(WalletModel *model);
+    void setClientModel(ClientModel *clientModel);
+    void setWalletModel(WalletModel *walletModel);
     void showOutOfSyncWarning(bool fShow);
 
 public slots:
-    void setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance);
-    void setNumTransactions(int count);
+    void setBalance(const CAmount& balance, const CAmount& unconfirmedBalance, const CAmount& immatureBalance,
+                    const CAmount& watchOnlyBalance, const CAmount& watchUnconfBalance, const CAmount& watchImmatureBalance);
 
 signals:
     void transactionClicked(const QModelIndex &index);
 
 private:
     Ui::OverviewPage *ui;
-    WalletModel *model;
-    qint64 currentBalance;
-    qint64 currentStake;
-    qint64 currentUnconfirmedBalance;
-    qint64 currentImmatureBalance;
+    ClientModel *clientModel;
+    WalletModel *walletModel;
+    CAmount currentBalance;
+    CAmount currentUnconfirmedBalance;
+    CAmount currentImmatureBalance;
+    CAmount currentWatchOnlyBalance;
+    CAmount currentWatchUnconfBalance;
+    CAmount currentWatchImmatureBalance;
 
     TxViewDelegate *txdelegate;
     TransactionFilterProxy *filter;
@@ -49,24 +65,8 @@ private:
 private slots:
     void updateDisplayUnit();
     void handleTransactionClicked(const QModelIndex &index);
+    void updateAlerts(const QString &warnings);
+    void updateWatchOnlyLabels(bool showWatchOnly);
 };
 
-class TxViewDelegate : public QAbstractItemDelegate
-{
-	Q_OBJECT
-
-public:
-	TxViewDelegate(): QAbstractItemDelegate(), unit(CodecoinUnits::CC)
-	{
-
-	}
-
-	void paint(QPainter *painter, const QStyleOptionViewItem &option,
-			const QModelIndex &index ) const;
-
-	QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
-
-	int unit;
-
-};
-#endif // OVERVIEWPAGE_H
+#endif // CODECOIN_QT_OVERVIEWPAGE_H

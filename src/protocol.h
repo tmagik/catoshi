@@ -1,6 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Copyright (c) 2009-2013 The Bitcoin developers
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
@@ -11,23 +10,18 @@
 # error This header can only be compiled as C++.
 #endif
 
-#ifndef __INCLUDED_PROTOCOL_H__
-#define __INCLUDED_PROTOCOL_H__
+#ifndef _CODECOIN_PROTOCOL_H
+#define _CODECOIN_PROTOCOL_H
 
-#include "codecoin.h"
-#include "serialize.h"
 #include "netbase.h"
-#include <string>
+#include "serialize.h"
 #include "uintBIG.h"
+#include "version.h"
 
-extern bool fTestNet;
-static inline unsigned short GetDefaultPort(const bool testnet = fTestNet)
-{
-    return testnet ? P2P_PORT_TESTNET : P2P_PORT;
-}
+#include <stdint.h>
+#include <string>
 
-
-extern unsigned char pchMessageStart[4];
+#define MESSAGE_START_SIZE 4
 
 /** Message header.
  * (4) message start.
@@ -44,18 +38,20 @@ class CMessageHeader
         std::string GetCommand() const;
         bool IsValid() const;
 
-        IMPLEMENT_SERIALIZE
-            (
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion)
+    {
              READWRITE(FLATDATA(pchMessageStart));
              READWRITE(FLATDATA(pchCommand));
              READWRITE(nMessageSize);
              READWRITE(nChecksum);
-            )
+    }
 
     // TODO: make private (improves encapsulation)
     public:
         enum {
-            MESSAGE_START_SIZE=sizeof(::pchMessageStart),
             COMMAND_SIZE=12,
             MESSAGE_SIZE_SIZE=sizeof(int),
             CHECKSUM_SIZE=sizeof(int),
@@ -71,10 +67,16 @@ class CMessageHeader
 };
 
 /** nServices flags */
-enum
-{
+enum {
     NODE_NETWORK = (1 << 0),
-    NODE_BLOOM = (1 << 1),
+
+    // Bits 24-31 are reserved for temporary experiments. Just pick a bit that
+    // isn't getting used, or one not being used much, and notify the
+    // bitcoin-development mailing list. Remember that service bits are just
+    // unauthenticated advertisements, so your code must be robust against
+    // collisions and other cases where nodes may be advertising a service they
+    // do not actually support. Other service bits should be allocated via the
+    // BIP process.
 };
 
 /** A CService with information about it as peer */
@@ -82,36 +84,35 @@ class CAddress : public CService
 {
     public:
         CAddress();
-        explicit CAddress(CService ipIn, uint64_t nServicesIn=NODE_NETWORK);
+    explicit CAddress(CService ipIn, uint64_t nServicesIn = NODE_NETWORK);
 
         void Init();
 
-        IMPLEMENT_SERIALIZE
-            (
-             CAddress* pthis = const_cast<CAddress*>(this);
-             CService* pip = (CService*)pthis;
-             if (fRead)
-                 pthis->Init();
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion)
+    {
+        if (ser_action.ForRead())
+            Init();
              if (nType & SER_DISK)
                  READWRITE(nVersion);
              if ((nType & SER_DISK) ||
                  (nVersion >= CADDR_TIME_VERSION && !(nType & SER_GETHASH)))
                  READWRITE(nTime);
              READWRITE(nServices);
-             READWRITE(*pip);
-            )
-
-        void print() const;
+        READWRITE(*(CService*)this);
+    }
 
     // TODO: make private (improves encapsulation)
     public:
-        uint64_t nServices;
+    uint64_t nServices;
 
         // disk and network only
         unsigned int nTime;
 
         // memory only
-        int64_t nLastTry;
+    int64_t nLastTry;
 };
 
 /** inv message data */
@@ -122,18 +123,20 @@ class CInv
         CInv(int typeIn, const uint256& hashIn);
         CInv(const std::string& strType, const uint256& hashIn);
 
-        IMPLEMENT_SERIALIZE
-        (
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion)
+    {
             READWRITE(type);
             READWRITE(hash);
-        )
+    }
 
         friend bool operator<(const CInv& a, const CInv& b);
 
         bool IsKnownType() const;
         const char* GetCommand() const;
         std::string ToString() const;
-        void print() const;
 
     // TODO: make private (improves encapsulation)
     public:
@@ -141,8 +144,7 @@ class CInv
         uint256 hash;
 };
 
-enum
-{
+enum {
     MSG_TX = 1,
     MSG_BLOCK,
     // Nodes may always request a MSG_FILTERED_BLOCK in a getdata, however,
@@ -150,4 +152,4 @@ enum
     MSG_FILTERED_BLOCK,
 };
 
-#endif // __INCLUDED_PROTOCOL_H__
+#endif // BITCOIN_PROTOCOL_H

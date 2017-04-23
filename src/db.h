@@ -1,35 +1,34 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2012 The Bitcoin developers
-// Copyright (c) 2011-2012 The PPCoin developers
-// Previously distributed under the MIT/X11 software license, see the
+// Copyright (c) 2009-2014 The Bitcoin developers
+// Previously istributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-#ifndef CODECOIN_DB_H
-#define CODECOIN_DB_H
+#ifndef _CODECOIN_DB_H
+#define _CODECOIN_DB_H
 
-#include "main.h"
+#include "clientversion.h"
+#include "serialize.h"
+#include "streams.h"
+#include "sync.h"
+#include "version.h"
 
 #include <map>
 #include <string>
 #include <vector>
 
+#include <boost/filesystem.hpp>
 #include <db_cxx.h>
 
-class CAddress;
-class CAddrMan;
-class CBlockLocator;
 class CDiskBlockIndex;
-class CMasterKey;
 class COutPoint;
-class CWallet;
-class CWalletTx;
+
+struct CBlockLocator;
 
 extern unsigned int nWalletDBUpdated;
 
 void ThreadFlushWalletDB(const std::string& strWalletFile);
-bool BackupWallet(const CWallet& wallet, const std::string& strDest);
 
 
 class CDBEnv
@@ -52,15 +51,17 @@ public:
     void MakeMock();
     bool IsMock() { return fMockDb; }
 
-    /*
+    /**
      * Verify that database file strFile is OK. If it is not,
      * call the callback to try to recover.
      * This must be called BEFORE strFile is opened.
      * Returns true if strFile is OK.
      */
-    enum VerifyResult { VERIFY_OK, RECOVER_OK, RECOVER_FAIL };
+    enum VerifyResult { VERIFY_OK,
+                        RECOVER_OK,
+                        RECOVER_FAIL };
     VerifyResult Verify(std::string strFile, bool (*recoverFunc)(CDBEnv& dbenv, std::string strFile));
-    /*
+    /**
      * Salvage data from a file that Verify says is bad.
      * fAggressive sets the DB_AGGRESSIVE flag (see berkeley DB->verify() method documentation).
      * Appends binary key/value pairs to vResult, returns true if successful.
@@ -73,7 +74,7 @@ public:
     bool Open(const boost::filesystem::path &path);
     void Close();
     void Flush(bool fShutdown);
-    void CheckpointLSN(std::string strFile);
+    void CheckpointLSN(const std::string& strFile);
 
     void CloseDb(const std::string& strFile);
     bool RemoveDb(const std::string& strFile);
@@ -100,11 +101,13 @@ protected:
     DbTxn *activeTxn;
     bool fReadOnly;
 
-    explicit CDB(const char* pszFile, const char* pszMode="r+");
+    explicit CDB(const std::string& strFilename, const char* pszMode = "r+");
     ~CDB() { Close(); }
+
 public:
     void Flush();
     void Close();
+
 private:
     CDB(const CDB&);
     void operator=(const CDB&);
@@ -134,8 +137,7 @@ protected:
         try {
             CDataStream ssValue((char*)datValue.get_data(), (char*)datValue.get_data() + datValue.get_size(), SER_DISK, CLIENT_VERSION);
             ssValue >> value;
-        }
-        catch (std::exception &e) {
+        } catch (const std::exception&) {
             return false;
         }
 
@@ -231,14 +233,12 @@ protected:
     {
         // Read at cursor
         Dbt datKey;
-        if (fFlags == DB_SET || fFlags == DB_SET_RANGE || fFlags == DB_GET_BOTH || fFlags == DB_GET_BOTH_RANGE)
-        {
+        if (fFlags == DB_SET || fFlags == DB_SET_RANGE || fFlags == DB_GET_BOTH || fFlags == DB_GET_BOTH_RANGE) {
             datKey.set_data(&ssKey[0]);
             datKey.set_size(ssKey.size());
         }
         Dbt datValue;
-        if (fFlags == DB_GET_BOTH || fFlags == DB_GET_BOTH_RANGE)
-        {
+        if (fFlags == DB_GET_BOTH || fFlags == DB_GET_BOTH_RANGE) {
             datValue.set_data(&ssValue[0]);
             datValue.set_size(ssValue.size());
         }
@@ -308,18 +308,6 @@ public:
     }
 
     bool static Rewrite(const std::string& strFile, const char* pszSkip = NULL);
-};
-
-
-/** Access to the (IP) address database (peers.dat) */
-class CAddrDB
-{
-private:
-    boost::filesystem::path pathAddr;
-public:
-    CAddrDB();
-    bool Write(const CAddrMan& addr);
-    bool Read(CAddrMan& addr);
 };
 
 #endif // CODECOIN_DB_H

@@ -3,11 +3,11 @@ Codecoin Catbox
 
 http://7el.us/CATOSHI
 
-Copyright (c) 2009-2013 Bitcoin Developers
-Copyright (c) 2011-2013 Litecoin Developers
+Copyright (c) 2009-2017 Bitcoin Developers
+Copyright (c) 2011-2017 Litecoin Developers
 Copyright (c) 2013-2014 Catcoin Developers
-Copyright (c) 2015 Grantcoin Developers
-Copyright (c) 2015 Troy Benjegerdes <hozer@hozed.org>
+Copyright (c) 2015-2017 Grantcoin Developers
+Copyright (c) 2015-2017 Troy Benjegerdes <hozer@hozed.org>
 
 ### What is Codecoin
 
@@ -83,7 +83,7 @@ cats, and think cryptographic currencies are a better way to make money.
 
 He also likes rough consensus, running code, and good tests. So if you have all
 of those, the probability that he'll feel like integrating your change approaches
-unity over a month or three.
+unity over a year or three.
 
 If you have only rough consensus, or only running code, the others can also be
 achieved with sufficient money for a publicly announced contract and request

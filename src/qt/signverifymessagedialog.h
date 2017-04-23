@@ -1,3 +1,4 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
@@ -6,8 +7,9 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-#ifndef SIGNVERIFYMESSAGEDIALOG_H
-#define SIGNVERIFYMESSAGEDIALOG_H
+
+#ifndef BITCOIN_QT_SIGNVERIFYMESSAGEDIALOG_H
+#define BITCOIN_QT_SIGNVERIFYMESSAGEDIALOG_H
 
 #include <QDialog>
 
@@ -52,4 +54,4 @@ private slots:
     void on_clearButton_VM_clicked();
 };
 
-#endif // SIGNVERIFYMESSAGEDIALOG_H
+#endif // BITCOIN_QT_SIGNVERIFYMESSAGEDIALOG_H

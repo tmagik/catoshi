@@ -1,9 +1,13 @@
+// Copyright (c) 2012-2013 The Bitcoin Core developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#include "compressor.h"
+#include "util.h"
+
+#include <stdint.h>
+
 #include <boost/test/unit_test.hpp>
-
-#include <string>
-#include <vector>
-
-#include "main.h"
 
 // amounts 0.00000001 .. 0.00100000
 #define NUM_MULTIPLES_UNIT 100000
@@ -16,8 +20,6 @@
 
 // amounts 50 .. 21000000
 #define NUM_MULTIPLES_50BTC 420000
-
-using namespace std;
 
 BOOST_AUTO_TEST_SUITE(compress_tests)
 

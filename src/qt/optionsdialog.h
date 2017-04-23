@@ -1,3 +1,4 @@
+// Copyright (c) 2011-2013 The Bitcoin developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -5,106 +6,61 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-#ifndef OPTIONSDIALOG_H
-#define OPTIONSDIALOG_H
+
+#ifndef _CODECOIN_QT_OPTIONSDIALOG_H
+#define _CODECOIN_QT_OPTIONSDIALOG_H
 
 #include <QDialog>
-#include <QCheckBox>
-#include "codecoinunits.h"
-#include "bitcoinamountfield.h"
-#include "qvaluecombobox.h"
+
+class OptionsModel;
+class QValidatedLineEdit;
 
 QT_BEGIN_NAMESPACE
-class QStackedWidget;
-class QListWidget;
-class QListWidgetItem;
-class QPushButton;
+class QDataWidgetMapper;
 QT_END_NAMESPACE
-class OptionsModel;
-class MainOptionsPage;
-class DisplayOptionsPage;
-class MonitoredDataMapper;
+
+namespace Ui {
+class OptionsDialog;
+}
 
 /** Preferences dialog. */
 class OptionsDialog : public QDialog
 {
     Q_OBJECT
+
 public:
-    explicit OptionsDialog(QWidget *parent=0);
+    explicit OptionsDialog(QWidget *parent, bool enableWallet);
+    ~OptionsDialog();
 
     void setModel(OptionsModel *model);
+    void setMapper();
 
-signals:
-
-public slots:
-    /** Change the current page to \a index. */
-    void changePage(int index);
+protected:
+    bool eventFilter(QObject *object, QEvent *event);
 
 private slots:
-    void okClicked();
-    void cancelClicked();
-    void applyClicked();
-    void enableApply();
-    void disableApply();
+    /* enable OK button */
+    void enableOkButton();
+    /* disable OK button */
+    void disableOkButton();
+    /* set OK button state (enabled / disabled) */
+    void setOkButtonState(bool fState);
+    void on_resetButton_clicked();
+    void on_okButton_clicked();
+    void on_cancelButton_clicked();
+
+    void showRestartWarning(bool fPersistent = false);
+    void clearStatusLabel();
+    void doProxyIpChecks(QValidatedLineEdit *pUiProxyIp, int nProxyPort);
+
+signals:
+    void proxyIpChecks(QValidatedLineEdit *pUiProxyIp, int nProxyPort);
 
 private:
-    QListWidget *contents_widget;
-    QStackedWidget *pages_widget;
+    Ui::OptionsDialog *ui;
     OptionsModel *model;
-    MonitoredDataMapper *mapper;
-    QPushButton *apply_button;
-
-    // Pages
-    MainOptionsPage *main_page;
-    DisplayOptionsPage *display_page;
-
-    void setupMainPage();
+    QDataWidgetMapper *mapper;
+    bool fProxyIpValid;
 };
 
-/* First page of options */
-class MainOptionsPage : public QWidget
-{
-	Q_OBJECT
-public:
-	explicit MainOptionsPage(QWidget *parent=0);
-
-	void setMapper(MonitoredDataMapper *mapper);
-private:
-	QCheckBox *bitcoin_at_startup;
-#ifndef Q_WS_MAC
-	QCheckBox *minimize_to_tray;
-#endif
-	QCheckBox *map_port_upnp;
-#ifndef Q_WS_MAC
-	QCheckBox *minimize_on_close;
-#endif
-	QCheckBox *connect_socks4;
-	QCheckBox *detach_database;
-	QLineEdit *proxy_ip;
-	QLineEdit *proxy_port;
-	BitcoinAmountField *fee_edit;
-
-signals:
-
-public slots:
-
-};
-
-class DisplayOptionsPage : public QWidget
-{
-	Q_OBJECT
-public:
-	explicit DisplayOptionsPage(QWidget *parent=0);
-
-	void setMapper(MonitoredDataMapper *mapper);
-private:
-	QValueComboBox *unit;
-	QCheckBox *display_addresses;
-	QCheckBox *coin_control_features;
-signals:
-
-public slots:
-
-};
-
-#endif // OPTIONSDIALOG_H
+#endif // BITCOIN_QT_OPTIONSDIALOG_H

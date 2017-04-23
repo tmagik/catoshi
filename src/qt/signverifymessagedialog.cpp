@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2011-2013 The Bitcoin developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -19,6 +19,7 @@
 
 #include <string>
 #include <vector>
+
 #include <QClipboard>
 
 SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
@@ -28,8 +29,7 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#if (QT_VERSION >= 0x040700)
-    /* Do not move this to the XML file, Qt before 4.7 will choke on it */
+#if QT_VERSION >= 0x040700
     ui->signatureOut_SM->setPlaceholderText(tr("Click \"Sign Message\" to generate signature"));
     ui->signatureIn_VM->setPlaceholderText(tr("Enter the signature of the message"));
     ui->addressIn_SM->setPlaceholderText(tr("Enter a " BRAND_upper " address"));
@@ -90,7 +90,7 @@ void SignVerifyMessageDialog::on_addressBookButton_SM_clicked()
 {
     if (model && model->getAddressTableModel())
     {
-        AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::ReceivingTab, this);
+        AddressBookPage dlg(AddressBookPage::ForSelection, AddressBookPage::ReceivingTab, this);
         dlg.setModel(model->getAddressTableModel());
         if (dlg.exec())
         {
@@ -164,7 +164,7 @@ void SignVerifyMessageDialog::on_signMessageButton_SM_clicked()
 
 void SignVerifyMessageDialog::on_copySignatureButton_SM_clicked()
 {
-    QApplication::clipboard()->setText(ui->signatureOut_SM->text());
+    GUIUtil::setClipboard(ui->signatureOut_SM->text());
 }
 
 void SignVerifyMessageDialog::on_clearButton_SM_clicked()
@@ -181,7 +181,7 @@ void SignVerifyMessageDialog::on_addressBookButton_VM_clicked()
 {
     if (model && model->getAddressTableModel())
     {
-        AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::SendingTab, this);
+        AddressBookPage dlg(AddressBookPage::ForSelection, AddressBookPage::SendingTab, this);
         dlg.setModel(model->getAddressTableModel());
         if (dlg.exec())
         {
@@ -195,7 +195,6 @@ void SignVerifyMessageDialog::on_verifyMessageButton_VM_clicked()
     CBitcoinAddress addr(ui->addressIn_VM->text().toStdString());
     if (!addr.IsValid())
     {
-        ui->addressIn_VM->setValid(false);
         ui->statusLabel_VM->setStyleSheet("QLabel { color: red; }");
         ui->statusLabel_VM->setText(tr("The entered address is invalid.") + QString(" ") + tr("Please check the address and try again."));
         return;

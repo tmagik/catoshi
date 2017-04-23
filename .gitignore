@@ -14,19 +14,13 @@ src/build.h
 *.orig
 *.o
 *.patch
-.catcoin
-.ppcoin
 
 # Compilation and Qt preprocessor part
 *.qm
 Makefile
-catcoin-qt
-ppcoin-qt
-Catcoin-Qt.app
 
 # Unit-tests
 Makefile.test
-catcoin-qt_test
 
 # Resources cpp
 qrc_*.cpp
