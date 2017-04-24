@@ -32,11 +32,9 @@
 #include <arpa/inet.h>
 #endif
 
-#include <boost/filesystem/path.hpp>
 #include <boost/foreach.hpp>
 #include <boost/signals2/signal.hpp>
 
-class CAddrMan;
 class CScheduler;
 class CNode;
 
@@ -92,7 +90,7 @@ static const ServiceFlags REQUIRED_SERVICES = NODE_NETWORK;
 // NOTE: When adjusting this, update rpcnet:setban's help ("24h")
 static const unsigned int DEFAULT_MISBEHAVING_BANTIME = 60 * 60 * 24;  // Default 24-hour ban
 
-typedef int NodeId;
+typedef int64_t NodeId;
 
 struct AddedNodeInfo
 {

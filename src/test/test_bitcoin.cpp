@@ -7,6 +7,7 @@
 #include "chainparams.h"
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
+#include "fs.h"
 #include "key.h"
 #include "validation.h"
 #include "miner.h"
@@ -24,7 +25,6 @@
 
 #include <memory>
 
-#include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
 uint256 insecure_rand_seed = GetRandHash();
@@ -60,7 +60,7 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
         RegisterAllCoreRPCCommands(tableRPC);
         ClearDatadirCache();
         pathTemp = GetTempPath() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
-        boost::filesystem::create_directories(pathTemp);
+        fs::create_directories(pathTemp);
         ForceSetArg("-datadir", pathTemp.string());
         mempool.setSanityCheck(1.0);
         pblocktree = new CBlockTreeDB(1 << 20, true);
@@ -92,7 +92,7 @@ TestingSetup::~TestingSetup()
         delete pcoinsTip;
         delete pcoinsdbview;
         delete pblocktree;
-        boost::filesystem::remove_all(pathTemp);
+        fs::remove_all(pathTemp);
 }
 
 TestChain100Setup::TestChain100Setup() : TestingSetup(CBaseChainParams::REGTEST)
