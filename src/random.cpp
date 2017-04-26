@@ -91,7 +91,7 @@ static void RandAddSeedPerfmon()
     if (ret == ERROR_SUCCESS) {
         RAND_add(vData.data(), nSize, nSize / 100.0);
         memory_cleanse(vData.data(), nSize);
-        LogPrint("rand", "%s: %lu bytes\n", __func__, nSize);
+        LogPrint(BCLog::RAND, "%s: %lu bytes\n", __func__, nSize);
     } else {
         static bool warned = false; // Warn only once
         if (!warned) {
@@ -240,22 +240,16 @@ uint256 GetRandHash()
     return hash;
 }
 
-FastRandomContext::FastRandomContext(bool fDeterministic)
+void FastRandomContext::RandomSeed()
 {
-    // The seed values have some unlikely fixed points which we avoid.
-    if (fDeterministic) {
-        Rz = Rw = 11;
-    } else {
-        uint32_t tmp;
-        do {
-            GetRandBytes((unsigned char*)&tmp, 4);
-        } while (tmp == 0 || tmp == 0x9068ffffU);
-        Rz = tmp;
-        do {
-            GetRandBytes((unsigned char*)&tmp, 4);
-        } while (tmp == 0 || tmp == 0x464fffffU);
-        Rw = tmp;
-    }
+    uint256 seed = GetRandHash();
+    rng.SetKey(seed.begin(), 32);
+    requires_seed = false;
+}
+
+FastRandomContext::FastRandomContext(const uint256& seed) : requires_seed(false), bytebuf_size(0), bitbuf_size(0)
+{
+    rng.SetKey(seed.begin(), 32);
 }
 
 bool Random_SanityCheck()
@@ -287,4 +281,13 @@ bool Random_SanityCheck()
         tries += 1;
     } while (num_overwritten < NUM_OS_RANDOM_BYTES && tries < MAX_TRIES);
     return (num_overwritten == NUM_OS_RANDOM_BYTES); /* If this failed, bailed out after too many tries */
+}
+
+FastRandomContext::FastRandomContext(bool fDeterministic) : requires_seed(!fDeterministic), bytebuf_size(0), bitbuf_size(0)
+{
+    if (!fDeterministic) {
+        return;
+    }
+    uint256 seed;
+    rng.SetKey(seed.begin(), 32);
 }
