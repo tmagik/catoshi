@@ -613,18 +613,6 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
 	uint32_t nBits = pblock->nBits;
 	uint64_t mintime = pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING;
-#if defined(FEATURE_FUTURE_IS_HARDER)
-	uint64_t hardtime = max(GetTime(), GetAdjustedTime());
-	if (mintime > hardtime){
-		int escalator = ((mintime-hardtime)*100/MINIMUM_BLOCK_SPACING);
-		printf("Mining a future block, check your clock. Difficulty escalator %d%%\n", escalator);
-		CBigNum newTarget;
-		newTarget.SetCompact(pblock->nBits);
-		newTarget *= max(escalator, 100);
-		newTarget /= 100;
-		nBits = newTarget.GetCompact();
-	}
-#endif
 
 	Object result;
 	result.push_back(Pair("version", pblock->nVersion));
@@ -643,6 +631,24 @@ Value getblocktemplate(const Array& params, bool fHelp)
 	result.push_back(Pair("curtime", (int64_t)pblock->nTime));
 	result.push_back(Pair("bits", HexBits(nBits)));
 	result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
+#if defined(FEATURE_FUTURE_IS_HARDER)
+	/* Dynamics of this are hand-wavy heuristics at best, that seemed to
+	   work okay at one point. Actually figuring it out would be a good
+	   PhD thesis (or maybe something usefull that Hyperledger could do */
+	uint64_t hardtime = max(GetTime(), GetAdjustedTime());
+	uint32_t escalatorbits;
+	if (mintime > hardtime){
+		int escalator = ((mintime-hardtime)*10)+100;
+		CBigNum newTarget;
+		newTarget.SetCompact(pblock->nBits);
+		newTarget /= max(escalator, 100); /* PoW hash is *less* than target */
+		newTarget *= 100;
+		escalatorbits = newTarget.GetCompact();
+		printf("Mining a future block, check your clock. escalator %d%% %x new %x\n",
+			escalator, pblock->nBits, escalatorbits);
+		result.push_back(Pair("escalator", HexBits(escalatorbits)));
+	}
+#endif
 
 	return result;
 }
@@ -665,6 +671,16 @@ Value submitblock(const Array& params, bool fHelp)
 	catch (std::exception &e) {
 		throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
 	}
+
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+    // PPCoin: sign block
+	assert(pwalletMain);
+    	if (!pblock.SignBlock(*pwalletMain)){
+	    printf("Unable to sign block\n");
+	    pblock.print();
+            throw JSONRPCError(-100, "Unable to sign block, wallet locked?");
+	}
+#endif
 
 	CValidationState state;
 	bool fAccepted = ProcessBlock(state, NULL, &pblock);
