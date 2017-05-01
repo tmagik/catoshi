@@ -611,32 +611,17 @@ Value getblocktemplate(const Array& params, bool fHelp)
 		aMutable.push_back("prevblock");
 	}
 
-	uint32_t nBits = pblock->nBits;
+	uint32_t escalatorbits = 0;
 	uint64_t mintime = pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING;
 
-	Object result;
-	result.push_back(Pair("version", pblock->nVersion));
-	result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
-	result.push_back(Pair("transactions", transactions));
-	result.push_back(Pair("coinbaseaux", aux));
-	result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
-	result.push_back(Pair("target", hashTarget.GetHex()));
-	/* danger, there be off-by-one here, add 1 to be safe until we have regression tests -- T */
-	result.push_back(Pair("mintime", (int64_t)(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1)));
-
-	result.push_back(Pair("mutable", aMutable));
-	result.push_back(Pair("noncerange", "00000000ffffffff"));
-	result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
-	result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE));
-	result.push_back(Pair("curtime", (int64_t)pblock->nTime));
-	result.push_back(Pair("bits", HexBits(nBits)));
-	result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
 #if defined(FEATURE_FUTURE_IS_HARDER)
+        /* What this does is attempt to slow down creation of blocks that would
+           end up 'in the future'. By decreasing the target, we make big miners
+           work harder */
 	/* Dynamics of this are hand-wavy heuristics at best, that seemed to
 	   work okay at one point. Actually figuring it out would be a good
-	   PhD thesis (or maybe something usefull that Hyperledger could do */
+	   PhD thesis (or maybe something usefull that Hyperledger could do) */
 	uint64_t hardtime = max(GetTime(), GetAdjustedTime());
-	uint32_t escalatorbits;
 	if (mintime > hardtime){
 		int escalator = ((mintime-hardtime)*10)+100;
 		CBigNum newTarget;
@@ -646,10 +631,29 @@ Value getblocktemplate(const Array& params, bool fHelp)
 		escalatorbits = newTarget.GetCompact();
 		printf("Mining a future block, check your clock. escalator %d%% %x new %x\n",
 			escalator, pblock->nBits, escalatorbits);
-		result.push_back(Pair("escalator", HexBits(escalatorbits)));
+		hashTarget = newTarget.getuint256(); 
 	}
 #endif
 
+	Object result;
+	result.push_back(Pair("version", pblock->nVersion));
+	result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
+	result.push_back(Pair("transactions", transactions));
+	result.push_back(Pair("coinbaseaux", aux));
+	result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+	result.push_back(Pair("target", hashTarget.GetHex()));
+	/* danger, there be off-by-one here, add 1 to be safe until we have regression tests -- T */
+	result.push_back(Pair("mintime", mintime+1));
+
+	result.push_back(Pair("mutable", aMutable));
+	result.push_back(Pair("noncerange", "00000000ffffffff"));
+	result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
+	result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE));
+	result.push_back(Pair("curtime", (int64_t)pblock->nTime));
+	result.push_back(Pair("bits", HexBits(pblock->nBits)));
+	result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
+	if (escalatorbits)
+            result.push_back(Pair("escalator", HexBits(escalatorbits)));
 	return result;
 }
 
