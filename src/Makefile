@@ -23,15 +23,18 @@ USE_SSE2:=1
 
 LINK:=$(CXX)
 
-COIN_BRAND:=grantcoin
+COIN_BRAND:=litecoin
 
 DEFS=-DBOOST_SPIRIT_THREADSAFE -D_FILE_OFFSET_BITS=64 -DBRAND_$(COIN_BRAND)
 
 OBJDIR = obj/$(COIN_BRAND)
 TESTDIR = $(OBJDIR)/test
+SUBDIRS = $(OBJDIR)/crypto $(OBJDIR)/primitives $(OBJDIR)/script $(OBJDIR)/compat $(OBJDIR)/univalue
+SECP256K1_INCLUDE_PATH = $(CURDIR)/secp256k1/include
+SECP256K1_LIB_PATH = $(CURDIR)/secp256k1/.libs
 
-DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/$(OBJDIR) $(BOOST_INCLUDE_PATH) $(BDB_INCLUDE_PATH) $(OPENSSL_INCLUDE_PATH))
-LIBS = $(addprefix -L,$(BOOST_LIB_PATH) $(BDB_LIB_PATH) $(OPENSSL_LIB_PATH))
+DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/$(OBJDIR) $(BOOST_INCLUDE_PATH) $(BDB_INCLUDE_PATH) $(SECP256K1_INCLUDE_PATH))
+LIBS = $(addprefix -L,$(BOOST_LIB_PATH) $(BDB_LIB_PATH) $(SECP256K1_LIB_PATH))
 
 TESTDEFS = -DTEST_DATA_DIR=$(abspath test/data)
 
@@ -55,8 +58,9 @@ LIBS += \
    -l boost_program_options$(BOOST_LIB_SUFFIX) \
    -l boost_thread$(BOOST_LIB_SUFFIX) \
    -l db_cxx$(BDB_LIB_SUFFIX) \
+   -l secp256k1 \
    -l ssl \
-   -l crypto
+   -l crypto \
 
 TESTLIBS += \
  -Wl,-B$(LMODE) \
@@ -120,7 +124,7 @@ DEBUGFLAGS=-g
 
 # CXXFLAGS can be specified on the make command line, so we use xCXXFLAGS that only
 # adds some defaults in front. Unfortunately, CXXFLAGS=... $(CXXFLAGS) does not work.
-xCXXFLAGS=-O2 -pthread -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter \
+xCXXFLAGS=-O2 -std=c++11 -pthread -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter \
     $(DEBUGFLAGS) $(DEFS) $(HARDENING) $(CXXFLAGS)
 
 # LDFLAGS can be specified on the make command line, so we use xLDFLAGS that only
@@ -132,38 +136,93 @@ STAKE_OBJS = \
     $(OBJDIR)/kernelrecord.o
 
 OBJS= $(OBJDIR)/$(COIN_BRAND).o \
-    leveldb/libleveldb.a \
-    $(OBJDIR)/alert.o \
-    $(OBJDIR)/version.o \
-    $(OBJDIR)/checkpoints.o \
-    $(OBJDIR)/netbase.o \
-    $(OBJDIR)/addrman.o \
-    $(OBJDIR)/crypter.o \
-    $(OBJDIR)/key.o \
-    $(OBJDIR)/db.o \
-    $(OBJDIR)/init.o \
-    $(OBJDIR)/keystore.o \
     $(OBJDIR)/main.o \
-    $(OBJDIR)/undo.o \
+    $(OBJDIR)/addrman.o \
+    $(OBJDIR)/alert.o \
+    $(OBJDIR)/allocators.o \
+    $(OBJDIR)/amount.o \
+    $(OBJDIR)/base58.o \
+    $(OBJDIR)/bitcoind.o \
+    $(OBJDIR)/coins.o \
+    $(OBJDIR)/crypter.o \
+    $(OBJDIR)/crypto/hmac_sha256.o \
+    $(OBJDIR)/crypto/hmac_sha512.o \
+    $(OBJDIR)/crypto/ripemd160.o \
+    $(OBJDIR)/crypto/rfc6979_hmac_sha256.o \
+    $(OBJDIR)/crypto/sha256.o \
+    $(OBJDIR)/crypto/sha512.o \
+    $(OBJDIR)/crypto/sha1.o \
+    $(OBJDIR)/clientversion.o \
+    $(OBJDIR)/chain.o \
+    $(OBJDIR)/chainparams.o \
+    $(OBJDIR)/chainparamsbase.o \
+    $(OBJDIR)/checkpoints.o \
+    $(OBJDIR)/compressor.o \
+    $(OBJDIR)/core_read.o \
+    $(OBJDIR)/core_write.o \
+    $(OBJDIR)/crypter.o \
+    $(OBJDIR)/compat/glibc_sanity.o \
+    $(OBJDIR)/compat/glibcxx_sanity.o \
+    $(OBJDIR)/compat/strnlen.o \
+    $(OBJDIR)/db.o \
+    $(OBJDIR)/ecwrapper.o \
+    $(OBJDIR)/eccryptoverify.o \
+    $(OBJDIR)/init.o \
+    $(OBJDIR)/key.o \
+    $(OBJDIR)/keystore.o \
+    $(OBJDIR)/merkleblock.o \
     $(OBJDIR)/net.o \
+    $(OBJDIR)/netbase.o \
+    $(OBJDIR)/pow.o \
     $(OBJDIR)/protocol.o \
-    $(OBJDIR)/codecoinrpc.o \
-    $(OBJDIR)/rpcdump.o \
-    $(OBJDIR)/rpcnet.o \
-    $(OBJDIR)/rpcmining.o \
-    $(OBJDIR)/rpcwallet.o \
+    $(OBJDIR)/primitives/block.o \
+    $(OBJDIR)/primitives/transaction.o \
+    $(OBJDIR)/pubkey.o \
+    $(OBJDIR)/random.o \
+    $(OBJDIR)/rest.o \
     $(OBJDIR)/rpcblockchain.o \
+    $(OBJDIR)/rpcclient.o \
+    $(OBJDIR)/rpcmisc.o \
+    $(OBJDIR)/rpcnet.o \
+    $(OBJDIR)/rpcprotocol.o \
     $(OBJDIR)/rpcrawtransaction.o \
-    $(OBJDIR)/script.o \
+    $(OBJDIR)/rpcserver.o \
+    $(OBJDIR)/script/bitcoinconsensus.o \
+    $(OBJDIR)/script/interpreter.o \
+    $(OBJDIR)/script/script.o \
+    $(OBJDIR)/script/script_error.o \
+    $(OBJDIR)/script/sigcache.o \
+    $(OBJDIR)/script/sign.o \
+    $(OBJDIR)/script/standard.o \
     $(OBJDIR)/sync.o \
+    $(OBJDIR)/timedata.o \
+    $(OBJDIR)/txmempool.o \
+    $(OBJDIR)/uint256.o \
+    $(OBJDIR)/undo.o \
     $(OBJDIR)/util.o \
-    $(OBJDIR)/wallet.o \
-    $(OBJDIR)/walletdb.o \
+    $(OBJDIR)/utilmoneystr.o \
+    $(OBJDIR)/utilstrencodings.o \
+    $(OBJDIR)/utiltime.o \
+    $(OBJDIR)/univalue/univalue.o \
+    $(OBJDIR)/univalue/univalue_read.o \
+    $(OBJDIR)/univalue/univalue_write.o \
     $(OBJDIR)/hash.o \
     $(OBJDIR)/bloom.o \
     $(OBJDIR)/noui.o \
-    $(OBJDIR)/leveldb.o \
+    $(OBJDIR)/leveldbwrapper.o \
     $(OBJDIR)/txdb.o
+
+#MINER_OBJS
+OBJS += \
+    $(OBJDIR)/rpcmining.o \
+    $(OBJDIR)/miner.o
+
+WALLET_OBJS = \
+    $(OBJDIR)/wallet.o \
+    $(OBJDIR)/walletdb.o \
+    $(OBJDIR)/wallet_ismine.o \
+    $(OBJDIR)/rpcdump.o \
+    $(OBJDIR)/rpcwallet.o
 
 X11_OBJS = \
     $(OBJDIR)/cubehash.o \
@@ -179,14 +238,19 @@ X11_OBJS = \
     $(OBJDIR)/keccak.o \
     $(OBJDIR)/skein.o
 
-SCRYPT_OBJS = $(OBJDIR)/scrypt.o
+SCRYPT_OBJS = $(OBJDIR)/crypto/scrypt.o
 
 ifdef USE_SSE2
 DEFS += -DUSE_SSE2
-OBJS_SSE2= $(OBJDIR)/scrypt-sse2.o
+OBJS_SSE2= $(OBJDIR)/crypto/scrypt-sse2.o
 SCRYPT_OBJS += $(OBJS_SSE2)
 endif
 
+
+ifeq ($(COIN_BRAND),litecoin)
+DEFS += -DUSE_SCRYPT
+OBJS += $(SCRYPT_OBJS)
+endif
 #ifeq ($(COIN_BRAND),grantcoin)
 #OBJS += $(STAKE_OBJS)
 #endif
@@ -214,7 +278,7 @@ ifeq ($(COIN_BRAND),cleanwatercoin)
 OBJS += $(SCRYPT_OBJS) $(STAKE_OBJS)
 endif
 
-all: $(TESTDIR) $(COIN_BRAND)d
+all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d
 
 test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
 	./test_$(COIN_BRAND)
@@ -230,16 +294,14 @@ regression: test FORCE
 $(TESTDIR):
 	mkdir -p $(TESTDIR)
 
+$(SUBDIRS):
+	mkdir -p $(SUBDIRS)
+
 #
 # LevelDB support
 #
 MAKEOVERRIDES =
-LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a
-DEFS += $(addprefix -I,$(CURDIR)/leveldb/include)
-DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
-leveldb/libleveldb.a:
-	@echo "Building LevelDB ..." && cd leveldb && $(MAKE) CC=$(CC) CXX=$(CXX) OPT="$(xCXXFLAGS)" libleveldb.a libmemenv.a && cd ..
-
+LIBS += -lleveldb -lmemenv
 
 # auto-generated dependencies:
 -include $(OBJDIR)/*.P
@@ -248,7 +310,7 @@ leveldb/libleveldb.a:
 $(OBJDIR)/build.h: FORCE
 	/bin/sh ../share/genbuild.sh $(OBJDIR)/build.h
 version.cpp: $(OBJDIR)/build.h
-DEFS += -DHAVE_BUILD_INFO
+DEFS += -DHAVE_BUILD_INFO -DHAVE_SYS_SELECT_H
 
 $(OBJDIR)/%-sse2.o: %-sse2.cpp
 	$(CXX) -c $(xCXXFLAGS) -msse2 -MMD -MF $(@:%.o=%.d) -o $@ $<
@@ -290,9 +352,9 @@ test_$(COIN_BRAND): $(TESTOBJS) $(filter-out $(OBJDIR)/init.o,$(OBJS:$(OBJDIR)/%
 clean:
 	-rm -f $(COIN_BRAND)d test_$(COIN_BRAND)
 	-rm -f $(OBJDIR)/*.o
-	-rm -f $(OBJDIR)/test/*.o
+	-rm -f $(OBJDIR)/*/*.o
 	-rm -f $(OBJDIR)/*.P
-	-rm -f $(OBJDIR)/test/*.P
+	-rm -f $(OBJDIR)/*/*.P
 	-rm -f $(OBJDIR)/build.h
 	-cd leveldb && $(MAKE) clean || true
 

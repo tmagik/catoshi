@@ -8,13 +8,17 @@
 
 #include "main.h"
 #include "random.h"
-#include "txdb.h"
+//#include "txdb.h"
 #include "ui_interface.h"
 #include "util.h"
 #ifdef ENABLE_WALLET
 #include "db.h"
 #include "wallet.h"
 #endif
+
+#include <leveldb.h>
+#include "memenv.h"
+#include "txdb_memenv.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
@@ -34,6 +38,8 @@ struct TestingSetup {
     TestingSetup() {
         fPrintToDebugLog = false; // don't want to write to debug.log file
         fCheckBlockIndex = true;
+	// Breaks abstraction, but contains memenv to this file
+	leveldb::Env* penv = leveldb::NewMemEnv(leveldb::Env::Default());
         SelectParams(CBaseChainParams::UNITTEST);
         noui_connect();
 #ifdef ENABLE_WALLET
@@ -42,8 +48,8 @@ struct TestingSetup {
         pathTemp = GetTempPath() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
         boost::filesystem::create_directories(pathTemp);
         mapArgs["-datadir"] = pathTemp.string();
-        pblocktree = new CBlockTreeDB(1 << 20, true);
-        pcoinsdbview = new CCoinsViewDB(1 << 23, true);
+        pblocktree = new CBlockTreeDB_mem(1 << 20, penv);
+        pcoinsdbview = new CCoinsViewDB_mem(1 << 23, penv);
         pcoinsTip = new CCoinsViewCache(pcoinsdbview);
         InitBlockIndex();
 #ifdef ENABLE_WALLET

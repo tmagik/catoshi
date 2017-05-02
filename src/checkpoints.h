@@ -9,6 +9,8 @@
 #ifndef _CODECOIN_CHECKPOINT_H
 #define _CODECOIN_CHECKPOINT_H
 
+#include "uintBIG.h"
+
 #include <map>
 
 class uint256;
@@ -45,13 +47,17 @@ double GuessVerificationProgress(CBlockIndex* pindex, bool fSigchecks = true);
 
 extern const CCheckpointData data;
 
+
 #if !defined(SYNC_CHECKPOINTS)
+#warning "redo this in json and/or chainbasewhatever anyway"
 	/* always false */
+/*
 	inline bool WantedByPendingSyncCheckpoint(uint256 hashBlock){
 		return false;
 	}
 
 	inline void AskForPendingSyncCheckpoint(CNode* pfrom){ return; };
+*/
 } //end namespace Checkpoints
 #else /* SYNC_CHECKPOINTS */
     extern uint256 hashSyncCheckpoint;

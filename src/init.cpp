@@ -33,7 +33,6 @@
 #include "walletdb.h"
 #endif
 
-#include <stdint.h>
 #include <stdio.h>
 
 #ifndef WIN32
@@ -41,7 +40,7 @@
 #endif
 
 #if defined(USE_SSE2) && defined(USE_SCRYPT)
-#include "scrypt.h"
+#include "crypto/scrypt.h"
 #if !defined(MAC_OSX) && (defined(_M_IX86) || defined(__i386__) || defined(__i386))
 #ifdef _MSC_VER
 // MSVC 64bit is unable to use inline asm
@@ -164,7 +163,7 @@ void Shutdown()
     /// for example if the data directory was found to be locked.
     /// Be sure that anything that writes files or flushes caches only does this if the respective
     /// module was initialized.
-    RenameThread("litecoin-shutoff");
+    RenameThread(BRAND_lower "-shutoff");
     mempool.AddTransactionsUpdated(1);
     StopRPCThreads();
 #ifdef ENABLE_WALLET
@@ -447,7 +446,7 @@ struct CImportingNow
 
 void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
 {
-    RenameThread("litecoin-loadblk");
+    RenameThread(BRAND_lower "-loadblk");
 
     // -reindex
     if (fReindex) {
@@ -1061,8 +1060,8 @@ bool AppInit2(boost::thread_group& threadGroup)
                 delete pcoinscatcher;
                 delete pblocktree;
 
-                pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
-                pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex);
+                pblocktree = new CBlockTreeDB(nBlockTreeDBCache, fReindex);
+                pcoinsdbview = new CCoinsViewDB(nCoinDBCache, fReindex);
                 pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
                 pcoinsTip = new CCoinsViewCache(pcoinscatcher);
 
@@ -1313,7 +1312,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     RandAddSeedPerfmon();
 
     //// debug print
-    LogPrintf("mapBlockIndex.size() = %" PRIszu "\n",   mapBlockIndex.size());
+    LogPrintf("mapBlockIndex.size() = %u\n",   mapBlockIndex.size());
     LogPrintf("nBestHeight = %d\n",                   chainActive.Height());
 #ifdef ENABLE_WALLET
     LogPrintf("setKeyPool.size() = %" PRIszu "\n",      pwalletMain ? pwalletMain->setKeyPool.size() : 0);

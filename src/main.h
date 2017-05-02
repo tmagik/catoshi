@@ -56,6 +56,8 @@ struct CNodeStateStats;
 /** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
 #if defined(BRAND_litecoin)
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 750000;
+#elif defined(BRAND_grantcoin)
+static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 1000000;
 #else
 #error "put this in chainparamsbase"
 #endif
@@ -78,8 +80,6 @@ static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 static const unsigned int BLOCKFILE_CHUNK_SIZE = 0x1000000; // 16 MiB
 /** The pre-allocation chunk size for rev?????.dat files (since 0.8) */
 static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
-/** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
-static const int COINBASE_MATURITY = 100;
 /** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 /** Maximum number of script-checking threads allowed */
@@ -597,7 +597,6 @@ inline static int64_t GetProofOfStakeReward(int64_t nCoinAge, const CBlockIndex*
 	return block->GetSeigniorage(0, nCoinAge);
 };
 extern int64_t GetPoW_seigniorage(CBlockIndex *block, int64_t nFees);
-extern unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime, const CBlockHeader* pblock = NULL);
 bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock);
 /* takes the last block, and the current block header, returns nbits of trust */
 #if defined(PPCOINSTAKE)
@@ -607,7 +606,5 @@ extern unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CB
 #endif
 extern bool LoadBlockIndex(); 
 extern bool InitBlockIndex();
-
-#endif
 
 #endif // CODECOIN_MAIN_H

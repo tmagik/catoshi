@@ -26,6 +26,7 @@ public:
 template<unsigned int BITS>
 class base_uint
 {
+friend class uint512;
 protected:
     enum { WIDTH=BITS/32 };
     uint32_t pn[WIDTH];

@@ -51,7 +51,11 @@ static const CAmount DEFAULT_TRANSACTION_MAXFEE = 0.1 * COIN;
 //! -maxtxfee will warn if called with a higher fee than this amount (in satoshis)
 static const CAmount nHighTransactionMaxFeeWarning = 100 * nHighTransactionFeeWarning;
 //! Largest (in bytes) free transaction we're willing to create
+#if defined(BRAND_litecoin) // TODO: make object
 static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 5000;
+#else
+static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
+#endif
 
 class CAccountingEntry;
 class CCoinControl;
@@ -212,11 +216,17 @@ public:
 
     const CWalletTx* GetWalletTx(const uint256& hash) const;
 
-    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true) const;
-#if defined(PPCOINSTAKE) 
+    //! check whether we are allowed to upgrade (or already support) to the named feature
+    bool CanSupportFeature(enum WalletFeature wf) { AssertLockHeld(cs_wallet); return nWalletMaxVersion >= wf; }
+
+#if defined(PPCOINSTAKE) // TODO: objectize
     bool SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
 #endif
-    bool SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
+    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL) const;
+    bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
+
+    bool IsSpent(const uint256& hash, unsigned int n) const;
+
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);
     void UnlockCoin(COutPoint& output);
@@ -400,8 +410,6 @@ public:
 
     void UpdatedTransaction(const uint256 &hashTx);
 
-    void PrintWallet(const CBlock& block);
-
     void Inventory(const uint256 &hash)
     {
         {
@@ -579,7 +587,6 @@ private:
     const CWallet* pwallet;
 
 public:
-    std::vector<CMerkleTx> vtxPrev;
     mapValue_t mapValue;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
@@ -632,7 +639,6 @@ public:
     void Init(const CWallet* pwalletIn)
     {
         pwallet = pwalletIn;
-        vtxPrev.clear();
         mapValue.clear();
         vOrderForm.clear();
         fTimeReceivedIsTxTime = false;
@@ -640,7 +646,6 @@ public:
         nTimeSmart = 0;
         fFromMe = false;
         strFromAccount.clear();
-        vfSpent.clear();
         fDebitCached = false;
         fCreditCached = false;
         fImmatureCreditCached = false;

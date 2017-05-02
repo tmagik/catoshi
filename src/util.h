@@ -16,6 +16,8 @@
 #include "config/bitcoin-config.h"
 #endif
 
+#include "codecoin.h"
+
 #include "compat.h"
 #include "tinyformat.h"
 #include "utiltime.h"
@@ -177,7 +179,7 @@ void RenameThread(const char* name);
  */
 template <typename Callable> void LoopForever(const char* name,  Callable func, int64_t msecs)
 {
-    std::string s = strprintf("litecoin-%s", name);
+    std::string s = strprintf(BRAND_lower "-%s", name);
     RenameThread(s.c_str());
     LogPrintf("%s thread start\n", name);
     try

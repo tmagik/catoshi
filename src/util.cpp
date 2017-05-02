@@ -9,9 +9,9 @@
 #include "config/bitcoin-config.h"
 #endif
 
+#include "codecoin.h"
 #include "util.h"
 
-#include "chainparamsbase.h"
 #include "random.h"
 #include "serialize.h"
 #include "sync.h"
@@ -32,6 +32,7 @@
 
 #endif // __linux__
 
+#include <inttypes.h>
 #include <algorithm>
 #include <fcntl.h>
 #include <sys/resource.h>
@@ -239,8 +240,8 @@ int LogPrintStr(const std::string &str)
 
         // Debug print useful for profiling
         if (fLogTimestamps && fStartedNewLine)
-            ret += fprintf(fileout, "%" PRId64" ", GetTime());
-        if (pszFormat[strlen(pszFormat) - 1] == '\n')
+            ret += fprintf(fileout, "%" PRId64 " ", GetTime());
+        if (!str.empty() && str[str.size()-1] == '\n')
             fStartedNewLine = true;
         else
             fStartedNewLine = false;
@@ -354,7 +355,7 @@ static std::string FormatException(std::exception* pex, const char* pszThread)
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(NULL, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = BRAND_lower';
+    const char* pszModule = BRAND_lower;
 #endif
     if (pex)
         return strprintf(
@@ -443,7 +444,7 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", BRAND_lower));
+    boost::filesystem::path pathConfigFile(GetArg("-conf", BRAND_lower ".conf"));
     if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir(false) / pathConfigFile;
     return pathConfigFile;
 }

@@ -116,8 +116,24 @@ public:
     //! Byte offset within rev?????.dat where this block's undo data is stored
     unsigned int nUndoPos;
 
-    //! (memory only) Total amount of work (expected number of hashes) in the chain up to and including this block
-    uint256 nChainWork;
+	/* (memory only) Total amount of trust score in the chain up to and including this block
+	 * For proof-of-work only coins, this is approximately equivalent to the number of hashes
+	 * applied towards finding proof-of-work.
+	 * For proof-of-stake only coins, this is (mostly) the coin-age consumed by staking, with
+	 * some multipliers to get something that looks like the old Proof-of-Work 'nChainWork'.
+	 * For hybrid coins, this is (at least conceptually) PoW-hashes + PoS-CoinAge*multiplier
+	 * HERE THERE BE DRAGONS (or at least hackers and stealth-switchpools)
+	 * The dragons in the details centers around assumptions about the ratio of PoS CoinAge
+	 * with PoS Hashes can go all over the place and change by orders of magnitude when ASIC
+	 * hashpower shows up.
+	 * There are further issues with the 'nothing-at-stake' attacks, and all of this makes
+	 * Proof-of-stake a much more complicated and potentially ambiguous consensus system.
+	 * Hybrid systems, with a properly functioning stake/hash trust multiplier can mitigate
+	 * some of the ambiguity by requiring a consensus between miners and stakers. */
+	/* compatibility defines for legacy Satoshi & Sunny King *coin code */
+	#define nChainWork ChainTrust
+	#define nChainTrust ChainTrust
+	uint256 ChainTrust;
 
     //! Number of transactions in this block.
     //! Note: in a potential headers-first mode, this number cannot be relied upon
@@ -131,7 +147,28 @@ public:
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
-    //! block header
+#if defined(FEATURE_MONEYSUPPLY)
+	int64_t nMoneySupply;
+#endif
+#if defined(PPCOINSTAKE)
+	int64_t nMint;
+
+	// ppcoin: proof-of-stake related block index fields
+	unsigned int nFlags;  // ppcoin: block index flags
+	enum  
+	{
+		BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
+		BLOCK_STAKE_ENTROPY  = (1 << 1), // entropy bit for stake modifier
+		BLOCK_STAKE_MODIFIER = (1 << 2), // regenerated stake modifier
+	};
+
+	uint64_t nStakeModifier; // hash modifier for proof-of-stake
+	unsigned int nStakeModifierChecksum; // checksum of index; in-memeory only
+	COutPoint prevoutStake;
+	unsigned int nStakeTime;
+	uint256 hashProofOfStake;
+#endif
+	//! block header
     int nVersion;
     uint256 hashMerkleRoot;
     unsigned int nTime;
@@ -150,7 +187,17 @@ public:
         nFile = 0;
         nDataPos = 0;
         nUndoPos = 0;
-        nChainWork = 0;
+        nChainTrust = 0;
+#if defined(FEATURE_MONEYSUPPLY)
+		nMoneySupply = 0;
+#endif
+#if defined(PPCOINSTAKE)
+		nMint = 0;
+		nFlags = 0;
+		nStakeModifier = 0;
+		nStakeModifierChecksum = 0;
+		hashProofOfStake = 0;
+#endif
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
@@ -177,6 +224,19 @@ public:
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
+#if defined(PPCOINSTAKE)
+		if (block.IsProofOfStake())
+		{
+			SetProofOfStake();
+			prevoutStake = block.vtx[1].vin[0].prevout;
+			nStakeTime = block.vtx[1].nTime;
+		}
+		else
+		{
+			prevoutStake.SetNull();
+			nStakeTime = 0;
+		}
+#endif
     }
 
     CDiskBlockPos GetBlockPos() const {
@@ -249,6 +309,67 @@ public:
     static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart,
                                 unsigned int nRequired);
 
+	/* eventually should be overloadable/subclass/derived for various coins */
+	int64_t GetSeigniorage(const int64_t nFees=0, const int64_t CoinAge=0) const;
+
+
+#if defined(PPCOINSTAKE)
+	bool IsProofOfWork() const
+	{
+		return !(nFlags & BLOCK_PROOF_OF_STAKE);
+	}
+
+	bool IsProofOfStake() const
+	{
+		return (nFlags & BLOCK_PROOF_OF_STAKE);
+	}
+
+	void SetProofOfStake()
+	{
+		nFlags |= BLOCK_PROOF_OF_STAKE;
+	}
+
+	unsigned int GetStakeEntropyBit() const
+	{
+		return ((nFlags & BLOCK_STAKE_ENTROPY) >> 1);
+	}
+
+	bool SetStakeEntropyBit(unsigned int nEntropyBit)
+	{
+		if (nEntropyBit > 1)
+			return false;
+		nFlags |= (nEntropyBit? BLOCK_STAKE_ENTROPY : 0);
+		return true;
+	}
+
+	bool GeneratedStakeModifier() const
+	{
+		return (nFlags & BLOCK_STAKE_MODIFIER);
+	}
+
+	void SetStakeModifier(uint64_t nModifier, bool fGeneratedStakeModifier)
+	{
+		nStakeModifier = nModifier;
+		if (fGeneratedStakeModifier)
+			nFlags |= BLOCK_STAKE_MODIFIER;
+	}
+
+	std::string ToString() const
+	{
+		return strprintf("CBlockIndex(nprev=%p, pnext=%p,  nHeight=%d, nMint=%s, nMoneySupply=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016" PRIx64", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
+			pprev, pnext, nHeight,
+			FormatMoney(nMint).c_str(), FormatMoney(nMoneySupply).c_str(),
+			GeneratedStakeModifier() ? "MOD" : "-", GetStakeEntropyBit(), IsProofOfStake()? "PoS" : "PoW",
+			nStakeModifier, nStakeModifierChecksum, 
+			hashProofOfStake.ToString().c_str(),
+			prevoutStake.ToString().c_str(), nStakeTime,
+			hashMerkleRoot.ToString().substr(0,10).c_str(),
+			GetBlockHash().ToString().substr(0,20).c_str());
+	}
+#else
+	inline bool IsProofOfWork() const { return true; };
+	inline bool IsProofOfStake() const { return false; };	
+
     std::string ToString() const
     {
         return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
@@ -256,6 +377,7 @@ public:
             hashMerkleRoot.ToString(),
             GetBlockHash().ToString());
     }
+#endif
 
     //! Check whether this block index entry is valid up to the passed validity level.
     bool IsValid(enum BlockStatus nUpTo = BLOCK_VALID_TRANSACTIONS) const
@@ -318,6 +440,29 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
+
+#if defined(PPCOINSTAKE) // TODO: is needed for grantcoin?
+		READWRITE(nMint);
+#if defined(FEATURE_MONEYSUPPLY)
+		READWRITE(nMoneySupply);
+#endif
+		READWRITE(nFlags);
+		READWRITE(nStakeModifier);
+		if (IsProofOfStake())
+		{
+			READWRITE(prevoutStake);
+			READWRITE(nStakeTime);
+			READWRITE(hashProofOfStake);
+		}
+		else if (fRead)
+		{
+			const_cast<CDiskBlockIndex*>(this)->prevoutStake.SetNull();
+			const_cast<CDiskBlockIndex*>(this)->nStakeTime = 0;
+			const_cast<CDiskBlockIndex*>(this)->hashProofOfStake = 0;
+		}
+#elif defined(FEATURE_MONEYSUPPLY)
+		READWRITE(nMoneySupply);
+#endif
 
         // block header
         READWRITE(this->nVersion);

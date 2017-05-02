@@ -4,29 +4,25 @@
 #ifndef CODECOIN_codecoin_H
 #define CODECOIN_codecoin_H
 
-#if !defined(BRANDING_ONLY)  // hack for resource codecoin-qt.rc
-#include <inttypes.h>
-#include <string>
+#include "chainparamsbase.h"
 
-/* TODO: make this a class */
-extern const std::string strMessageMagic;
-extern const CBigNum bnProofOfWorkLimit;
-extern const CBigNum bnProofOfStakeLimit;
-//extern const unsigned int nStakeMinAge;
-//extern const unsigned int nStakeMaxAge;
-#endif
+//#if !defined(BRANDING_ONLY)  // hack for resource codecoin-qt.rc
+//#include <inttypes.h>
+//#endif
 
-#ifdef BRAND_solarcoin
+#if defined(BRAND_litecoin)
+#include "litecoin.h"
+#elif defined(BRAND_solarcoin)
 #include "solarcoin.h"
-#elif BRAND_catcoin
+#elif defined(BRAND_catcoin)
 #include "catcoin.h"
-#elif BRAND_kittycoin
+#elif defined(BRAND_kittycoin)
 #include "kittycoin.h"
-#elif BRAND_uro
+#elif defined(BRAND_uro)
 #include "uro.h"
-#elif BRAND_grantcoin
+#elif defined(BRAND_grantcoin)
 #include "grantcoin.h"
-#elif BRAND_grantstake
+#elif defined(BRAND_grantstake)
 #include "grantstake.h"
 #elif defined(BRAND_givecoin) || defined(BRAND_givestake)
 #include "givecoin.h"
