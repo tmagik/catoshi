@@ -9,7 +9,7 @@
 #include "key.h"
 #include "keystore.h"
 #include "script/standard.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <boost/foreach.hpp>
 

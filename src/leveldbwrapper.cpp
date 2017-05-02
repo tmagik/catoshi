@@ -9,9 +9,7 @@
 #include <boost/filesystem.hpp>
 
 #include <leveldb/cache.h>
-#include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
-#include <memenv.h>
 
 void HandleError(const leveldb::Status& status) throw(leveldb_error)
 {
@@ -43,27 +41,22 @@ static leveldb::Options GetOptions(size_t nCacheSize)
     return options;
 }
 
-CLevelDBWrapper::CLevelDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory, bool fWipe)
+CLevelDBWrapper::CLevelDBWrapper(const boost::filesystem::path& path,
+	size_t nCacheSize, 
+	bool fWipe)
 {
-    penv = NULL;
     readoptions.verify_checksums = true;
     iteroptions.verify_checksums = true;
     iteroptions.fill_cache = false;
     syncoptions.sync = true;
     options = GetOptions(nCacheSize);
     options.create_if_missing = true;
-    if (fMemory) {
-        penv = leveldb::NewMemEnv(leveldb::Env::Default());
-        options.env = penv;
-    } else {
-        if (fWipe) {
-            LogPrintf("Wiping LevelDB in %s\n", path.string());
-            leveldb::Status result = leveldb::DestroyDB(path.string(), options);
-            HandleError(result);
-        }
-        TryCreateDirectory(path);
-        LogPrintf("Opening LevelDB in %s\n", path.string());
+    if (fWipe) {
+        LogPrintf("Wiping LevelDB in %s\n", path.string());
+        leveldb::DestroyDB(path.string(), options);
     }
+    TryCreateDirectory(path);
+    LogPrintf("Opening LevelDB in %s\n", path.string());
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
     HandleError(status);
     LogPrintf("Opened LevelDB successfully\n");
@@ -77,7 +70,6 @@ CLevelDBWrapper::~CLevelDBWrapper()
     options.filter_policy = NULL;
     delete options.block_cache;
     options.block_cache = NULL;
-    delete penv;
     options.env = NULL;
 }
 

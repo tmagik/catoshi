@@ -1,9 +1,15 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2010 Satoshi Nakamoto
+// Copyright (c) 2009-2013 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_QT_OVERVIEWPAGE_H
-#define BITCOIN_QT_OVERVIEWPAGE_H
+
+#ifndef CODECOIN_QT_OVERVIEWPAGE_H
+#define CODECOIN_QT_OVERVIEWPAGE_H
 
 #include "amount.h"
 
@@ -63,4 +69,4 @@ private slots:
     void updateWatchOnlyLabels(bool showWatchOnly);
 };
 
-#endif // BITCOIN_QT_OVERVIEWPAGE_H
+#endif // CODECOIN_QT_OVERVIEWPAGE_H

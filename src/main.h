@@ -1,10 +1,14 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#ifndef BITCOIN_MAIN_H
-#define BITCOIN_MAIN_H
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef CODECOIN_MAIN_H
+#define CODECOIN_MAIN_H
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
@@ -24,7 +28,7 @@
 #include "sync.h"
 #include "tinyformat.h"
 #include "txmempool.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "undo.h"
 
 #include <algorithm>
@@ -50,12 +54,18 @@ struct CBlockTemplate;
 struct CNodeStateStats;
 
 /** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
+#if defined(BRAND_litecoin)
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 750000;
+#elif defined(BRAND_grantcoin)
+static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 1000000;
+#else
+#error "put this in chainparamsbase"
+#endif
 static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
 /** Default for -blockprioritysize, maximum space for zero/low-fee transactions **/
 static const unsigned int DEFAULT_BLOCK_PRIORITY_SIZE = 17000;
 /** Default for accepting alerts from the P2P network. */
-static const bool DEFAULT_ALERTS = true;
+static const bool DEFAULT_ALERTS = false;
 /** The maximum size for transactions we're willing to relay/mine */
 static const unsigned int MAX_STANDARD_TX_SIZE = 100000;
 /** The maximum allowed number of signature check operations in a block (network rule) */
@@ -72,8 +82,9 @@ static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 static const unsigned int BLOCKFILE_CHUNK_SIZE = 0x1000000; // 16 MiB
 /** The pre-allocation chunk size for rev?????.dat files (since 0.8) */
 static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
-/** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
-static const int COINBASE_MATURITY = 100;
+#warning "move to chainparams"
+/** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
+static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 /** Maximum number of script-checking threads allowed */
 static const int MAX_SCRIPTCHECK_THREADS = 16;
 /** -par default (number of script-checking threads, 0 = auto) */
@@ -573,4 +584,31 @@ protected:
     friend void ::UnregisterAllValidationInterfaces();
 };
 
-#endif // BITCOIN_MAIN_H
+/** things in main.cpp that coin.cpp need **/
+bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false );
+
+
+/** *coin.cpp functions **/ 
+// FIXME DOXYGEN THIS
+inline static int64_t GetProofOfWorkReward(CBlockIndex * block, int64_t nFees){
+	return block->GetSeigniorage(nFees, 0);
+};
+inline static int64_t GetBlockValue(const CBlockIndex * block, int64_t nFees){
+	return block->GetSeigniorage(nFees, 0);
+}; 
+inline static int64_t GetProofOfStakeReward(int64_t nCoinAge, const CBlockIndex* block){
+	assert(nCoinAge > 0);
+	return block->GetSeigniorage(0, nCoinAge);
+};
+extern int64_t GetPoW_seigniorage(CBlockIndex *block, int64_t nFees);
+bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock);
+/* takes the last block, and the current block header, returns nbits of trust */
+#if defined(PPCOINSTAKE)
+extern unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlock *pblock);
+#else
+extern unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock);
+#endif
+extern bool LoadBlockIndex(); 
+extern bool InitBlockIndex();
+
+#endif // CODECOIN_MAIN_H

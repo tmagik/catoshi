@@ -1,6 +1,11 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "sendcoinsdialog.h"
 #include "ui_sendcoinsdialog.h"
@@ -23,6 +28,7 @@
 #include <QScrollBar>
 #include <QSettings>
 #include <QTextDocument>
+#include <QScrollBar>
 
 SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
     QDialog(parent),
@@ -239,7 +245,7 @@ void SendCoinsDialog::on_sendButton_clicked()
             {
                 recipientElement = tr("%1 to %2").arg(amount, address);
             }
-        }
+    }
         else if(!rcp.authenticatedMerchant.isEmpty()) // secure payment request
         {
             recipientElement = tr("%1 to %2").arg(amount, GUIUtil::HtmlEscape(rcp.authenticatedMerchant));
@@ -254,6 +260,10 @@ void SendCoinsDialog::on_sendButton_clicked()
 
     fNewRecipientAllowed = false;
 
+    QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm send coins"),
+                          tr("Are you sure you want to send %1?").arg(formatted.join(tr(" and "))),
+          QMessageBox::Yes|QMessageBox::Cancel,
+          QMessageBox::Cancel);
 
     WalletModel::UnlockContext ctx(model->requestUnlock());
     if(!ctx.isValid())

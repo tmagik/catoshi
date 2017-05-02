@@ -1,10 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#ifndef BITCOIN_NET_H
-#define BITCOIN_NET_H
+// Previously distributed under the MIT/X11 software license, see the
+// file COPYING or http://www.opensource.org/licenses/mit-license.php
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef CODECOIN_NET_H
+#define CODECOIN_NET_H
 
 #include "bloom.h"
 #include "compat.h"
@@ -16,7 +18,7 @@
 #include "random.h"
 #include "streams.h"
 #include "sync.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "utilstrencodings.h"
 
 #include <deque>
@@ -333,7 +335,7 @@ public:
     unsigned int GetTotalRecvSize()
     {
         unsigned int total = 0;
-        BOOST_FOREACH(const CNetMessage &msg, vRecvMsg)
+        BOOST_FOREACH(const CNetMessage &msg, vRecvMsg) 
             total += msg.vRecv.size() + 24;
         return total;
     }
@@ -376,8 +378,8 @@ public:
             if (vAddrToSend.size() >= MAX_ADDR_TO_SEND) {
                 vAddrToSend[insecure_rand() % vAddrToSend.size()] = addr;
             } else {
-                vAddrToSend.push_back(addr);
-            }
+            vAddrToSend.push_back(addr);
+    }
         }
     }
 

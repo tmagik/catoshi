@@ -273,6 +273,7 @@ BOOST_AUTO_TEST_CASE(AreInputsStandard)
     }
     for (int i = 0; i < 3; i++)
         keys.push_back(key[i].GetPubKey());
+    }
 
     CMutableTransaction txFrom;
     txFrom.vout.resize(7);
@@ -308,6 +309,13 @@ BOOST_AUTO_TEST_CASE(AreInputsStandard)
     keystore.AddCScript(fifteenSigops);
     txFrom.vout[4].scriptPubKey = GetScriptForDestination(CScriptID(fifteenSigops));
     txFrom.vout[4].nValue = 5000;
+    CScript oneOfEleven;
+    oneOfEleven << OP_1;
+    for (int i = 0; i < 11; i++)
+        oneOfEleven << key[0].GetPubKey();
+    oneOfEleven << OP_11 << OP_CHECKMULTISIG;
+    txFrom.vout[5].scriptPubKey.SetDestination(oneOfEleven.GetID());
+    txFrom.vout[5].nValue = 6000;
 
     // vout[5/6] are non-standard because they exceed MAX_P2SH_SIGOPS
     CScript sixteenSigops; sixteenSigops << OP_16 << OP_CHECKMULTISIG;

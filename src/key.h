@@ -1,14 +1,20 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2014 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_KEY_H
-#define BITCOIN_KEY_H
+
+#ifndef _CODECOIN_KEY_H
+#define _CODECOIN_KEY_H
 
 #include "allocators.h"
 #include "serialize.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <stdexcept>
 #include <vector>
@@ -48,7 +54,7 @@ private:
     unsigned char vch[32];
 
     //! Check whether the 32-byte array pointed to be vch is valid keydata.
-    bool static Check(const unsigned char* vch);
+    bool static Check(const unsigned char *vch);
 
 public:
     //! Construct an invalid private key.
@@ -77,7 +83,7 @@ public:
     }
 
     //! Initialize using begin and end iterators to byte data.
-    template <typename T>
+    template<typename T>
     void Set(const T pbegin, const T pend, bool fCompressedIn)
     {
         if (pend - pbegin != 32) {
@@ -95,8 +101,8 @@ public:
 
     //! Simple read-only vector-like interface.
     unsigned int size() const { return (fValid ? 32 : 0); }
-    const unsigned char* begin() const { return vch; }
-    const unsigned char* end() const { return vch + size(); }
+    const unsigned char *begin() const { return vch; }
+    const unsigned char *end() const { return vch + size(); }
 
     //! Check whether this private key is valid.
     bool IsValid() const { return fValid; }
@@ -105,7 +111,7 @@ public:
     bool IsCompressed() const { return fCompressed; }
 
     //! Initialize from a CPrivKey (serialized OpenSSL private key data).
-    bool SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed);
+    bool SetPrivKey(const CPrivKey &vchPrivKey, bool fCompressed);
 
     //! Generate a new private key using a cryptographic PRNG.
     void MakeNewKey(bool fCompressed);
@@ -136,7 +142,7 @@ public:
      *                  0x1D = second key with even y, 0x1E = second key with odd y,
      *                  add 0x04 for compressed keys.
      */
-    bool SignCompact(const uint256& hash, std::vector<unsigned char>& vchSig) const;
+    bool SignCompact(const uint256 &hash, std::vector<unsigned char>& vchSig) const;
 
     //! Derive BIP32 child key.
     bool Derive(CKey& keyChild, unsigned char ccChild[32], unsigned int nChild, const unsigned char cc[32]) const;

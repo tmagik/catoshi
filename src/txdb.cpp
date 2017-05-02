@@ -1,12 +1,16 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include "txdb.h"
-
+#include "codecoin.h"
 #include "pow.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <stdint.h>
 
@@ -25,15 +29,15 @@ void static BatchWriteHashBestChain(CLevelDBBatch &batch, const uint256 &hash) {
     batch.Write('B', hash);
 }
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe) {
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fWipe) {
 }
 
 bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) const {
-    return db.Read(make_pair('c', txid), coins);
+    return db.Read(make_pair('c', txid), coins); 
 }
 
 bool CCoinsViewDB::HaveCoins(const uint256 &txid) const {
-    return db.Exists(make_pair('c', txid));
+    return db.Exists(make_pair('c', txid)); 
 }
 
 uint256 CCoinsViewDB::GetBestBlock() const {
@@ -51,7 +55,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) {
             BatchWriteCoins(batch, it->first, it->second.coins);
             changed++;
-        }
+}
         count++;
         CCoinsMap::iterator itOld = it++;
         mapCoins.erase(itOld);
@@ -63,13 +67,25 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
     return db.WriteBatch(batch);
 }
 
-CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CLevelDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fMemory, fWipe) {
+CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fWipe) : CLevelDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fWipe) {
 }
 
 bool CBlockTreeDB::WriteBlockIndex(const CDiskBlockIndex& blockindex)
 {
     return Write(make_pair('b', blockindex.GetBlockHash()), blockindex);
 }
+
+#if defined(PPCOINSTAKE)
+bool CBlockTreeDB::ReadBestInvalidWork(CBigNum& bnBestInvalidWork)
+{
+    return Read('I', bnBestInvalidWork);
+}
+
+bool CBlockTreeDB::WriteBestInvalidWork(const CBigNum& bnBestInvalidWork)
+{
+    return Write('I', bnBestInvalidWork);
+}
+#endif
 
 bool CBlockTreeDB::WriteBlockFileInfo(int nFile, const CBlockFileInfo &info) {
     return Write(make_pair('f', nFile), info);
@@ -126,7 +142,7 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) const {
                 ssKey >> txhash;
                 ss << txhash;
                 ss << VARINT(coins.nVersion);
-                ss << (coins.fCoinBase ? 'c' : 'n');
+                ss << (coins.fCoinBase ? 'c' : 'n'); 
                 ss << VARINT(coins.nHeight);
                 stats.nTransactions++;
                 for (unsigned int i=0; i<coins.vout.size(); i++) {
@@ -198,6 +214,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 ssValue >> diskindex;
 
                 // Construct block index object
+				// TODO: document why this needs to be duplicated here, if there
+				// is a reason, or re-factor and replace this maintenance mess with:
+				// ssValue >> pindexNew;
                 CBlockIndex* pindexNew = InsertBlockIndex(diskindex.GetBlockHash());
                 pindexNew->pprev          = InsertBlockIndex(diskindex.hashPrev);
                 pindexNew->nHeight        = diskindex.nHeight;
@@ -211,15 +230,41 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nNonce         = diskindex.nNonce;
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
+#if defined(FEATURE_MONEYSUPPLY)
+				pindexNew->nMoneySupply   = diskindex.nMoneySupply;
+#endif
+#if defined(PPCOINSTAKE)
+				pindexNew->nMint		  = diskindex.nMint;
+				pindexNew->nFlags		  = diskindex.nFlags;
+				pindexNew->nStakeModifier = diskindex.nStakeModifier;
+				pindexNew->prevoutStake   = diskindex.prevoutStake;
+				pindexNew->nStakeTime	  = diskindex.nStakeTime;
+				pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
 
-                // Litecoin: Disable PoW Sanity check while loading block index from disk.
-                // We use the sha256 hash for the block index for performance reasons, which is recorded for later use.
-                // CheckProofOfWork() uses the scrypt hash which is discarded after a block is accepted.
-                // While it is technically feasible to verify the PoW, doing so takes several minutes as it
-                // requires recomputing every PoW hash during every Litecoin startup.
-                // We opt instead to simply trust the data that is on your local disk.
-                //if (!CheckProofOfWork(pindexNew->GetBlockPoWHash(), pindexNew->nBits))
-                //    return error("LoadBlockIndex() : CheckProofOfWork failed: %s", pindexNew->ToString());
+				// ppcoin: build setStakeSeen
+				if (pindexNew->IsProofOfStake()){
+					//printf("blk %d StakeTime %d\n", pindexNew->nHeight, pindexNew->nStakeTime);
+					setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
+				}
+#endif
+
+#ifdef VERBOSE_LOAD
+				count+=1;
+				if (pindexNew->nHeight > maxfound)
+					maxfound = pindexNew->nHeight;
+				if ((count % 1000)==0){
+					string mesg = strprintf("LoadDB: count %d/%d", count, maxfound);
+					//qDebug(mesg.c_str());
+					uiInterface.InitMessage(mesg);
+				}
+#endif
+#if 0 // SLOW_LOAD /* original, but slow checks with X11 */
+#warning "slow loading"
+				if (!pindexNew->CheckIndex()){
+					printf("LoadBlockIndex(): CheckIndex failed: %s\n", pindexNew->ToString().c_str());
+					//return error("LoadBlockIndex() : CheckIndex failed: %s", pindexNew->ToString().c_str());
+				}
+#endif
 
                 pcursor->Next();
             } else {

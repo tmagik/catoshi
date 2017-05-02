@@ -30,6 +30,7 @@
 #include "crypto/scrypt.h"
 //#include "util.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <openssl/sha.h>

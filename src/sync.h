@@ -62,17 +62,17 @@ class LOCKABLE AnnotatedMixin : public PARENT
 public:
     void lock() EXCLUSIVE_LOCK_FUNCTION()
     {
-        PARENT::lock();
+      PARENT::lock();
     }
 
     void unlock() UNLOCK_FUNCTION()
     {
-        PARENT::unlock();
+      PARENT::unlock();
     }
 
     bool try_lock() EXCLUSIVE_TRYLOCK_FUNCTION(true)
     {
-        return PARENT::try_lock();
+      return PARENT::try_lock();
     }
 };
 
@@ -105,7 +105,7 @@ void PrintLockContention(const char* pszName, const char* pszFile, int nLine);
 #endif
 
 /** Wrapper around boost::unique_lock<Mutex> */
-template <typename Mutex>
+template<typename Mutex>
 class CMutexLock
 {
 private:
@@ -118,7 +118,7 @@ private:
         if (!lock.try_lock()) {
             PrintLockContention(pszName, pszFile, nLine);
 #endif
-            lock.lock();
+        lock.lock();
 #ifdef DEBUG_LOCKCONTENTION
         }
 #endif
@@ -157,19 +157,19 @@ public:
 typedef CMutexLock<CCriticalSection> CCriticalBlock;
 
 #define LOCK(cs) CCriticalBlock criticalblock(cs, #cs, __FILE__, __LINE__)
-#define LOCK2(cs1, cs2) CCriticalBlock criticalblock1(cs1, #cs1, __FILE__, __LINE__), criticalblock2(cs2, #cs2, __FILE__, __LINE__)
-#define TRY_LOCK(cs, name) CCriticalBlock name(cs, #cs, __FILE__, __LINE__, true)
+#define LOCK2(cs1,cs2) CCriticalBlock criticalblock1(cs1, #cs1, __FILE__, __LINE__),criticalblock2(cs2, #cs2, __FILE__, __LINE__)
+#define TRY_LOCK(cs,name) CCriticalBlock name(cs, #cs, __FILE__, __LINE__, true)
 
-#define ENTER_CRITICAL_SECTION(cs)                            \
-    {                                                         \
+#define ENTER_CRITICAL_SECTION(cs) \
+    { \
         EnterCritical(#cs, __FILE__, __LINE__, (void*)(&cs)); \
-        (cs).lock();                                          \
+        (cs).lock(); \
     }
 
 #define LEAVE_CRITICAL_SECTION(cs) \
-    {                              \
-        (cs).unlock();             \
-        LeaveCritical();           \
+    { \
+        (cs).unlock(); \
+        LeaveCritical(); \
     }
 
 class CSemaphore
@@ -214,7 +214,7 @@ public:
 class CSemaphoreGrant
 {
 private:
-    CSemaphore* sem;
+    CSemaphore *sem;
     bool fHaveGrant;
 
 public:

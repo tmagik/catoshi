@@ -4,7 +4,7 @@
 
 #include "coins.h"
 #include "random.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <vector>
 #include <map>

@@ -1,7 +1,11 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "checkpoints.h"
 #include "main.h"
@@ -50,6 +54,32 @@ double GetDifficulty(const CBlockIndex* blockindex)
     return dDiff;
 }
 
+#if defined(PPCOINSTAKE)
+double GetPoSKernelPS()
+{
+    int nPoSInterval = 72;
+    double dStakeKernelsTriedAvg = 0;
+    int nStakesHandled = 0, nStakesTime = 0;
+
+    CBlockIndex* pindex = pindexBest;;
+    CBlockIndex* pindexPrevStake = NULL;
+
+    while (pindex && nStakesHandled < nPoSInterval)
+    {
+        if (pindex->IsProofOfStake())
+        {
+            dStakeKernelsTriedAvg += GetDifficulty(pindex) * 4294967296.0;
+            nStakesTime += pindexPrevStake ? (pindexPrevStake->nTime - pindex->nTime) : 0;
+            pindexPrevStake = pindex;
+            nStakesHandled++;
+        }
+
+        pindex = pindex->pprev;
+    }
+
+    return nStakesTime ? dStakeKernelsTriedAvg / nStakesTime : 0;
+}
+#endif
 
 Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false)
 {
@@ -74,7 +104,7 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDe
             txs.push_back(objTx);
         }
         else
-            txs.push_back(tx.GetHash().GetHex());
+        txs.push_back(tx.GetHash().GetHex());
     }
     result.push_back(Pair("tx", txs));
     result.push_back(Pair("time", block.GetBlockTime()));
@@ -82,7 +112,34 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDe
     result.push_back(Pair("bits", strprintf("%08x", block.nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
+#if defined(PPCOINSTAKE)    
+    result.push_back(Pair("mint", ValueFromAmount(blockindex->nMint)));
+    result.push_back(Pair("flags", strprintf("%s%s", blockindex->IsProofOfStake()? "proof-of-stake" : "proof-of-work", blockindex->GeneratedStakeModifier()? " stake-modifier": "")));
+    result.push_back(Pair("proofhash", blockindex->IsProofOfStake()? blockindex->hashProofOfStake.GetHex() : blockindex->GetBlockHash().GetHex()));
+    result.push_back(Pair("entropybit", (int)blockindex->GetStakeEntropyBit()));
+    result.push_back(Pair("modifier", strprintf("%016" PRIx64, blockindex->nStakeModifier)));
+    result.push_back(Pair("modifierchecksum", strprintf("%08x", blockindex->nStakeModifierChecksum)));
+    Array txinfo;
+    BOOST_FOREACH (const CTransaction& tx, block.vtx)
+    {
+        if (fPrintTransactionDetail)
+        {
+            Object entry;
 
+            entry.push_back(Pair("txid", tx.GetHash().GetHex()));
+            TxToJSON(tx, 0, entry);
+
+            txinfo.push_back(entry);
+        }
+        else
+            txinfo.push_back(tx.GetHash().GetHex());
+    }
+
+    result.push_back(Pair("tx", txinfo));
+    result.push_back(Pair("signature", HexStr(block.vchBlockSig.begin(), block.vchBlockSig.end())));
+#elif defined(BRAND_grantcoin)
+    	result.push_back(Pair("signature", HexStr(block.vchBlockSig.begin(), block.vchBlockSig.end())));
+#endif /* PPCCOINSTAKE */
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
     CBlockIndex *pnext = chainActive.Next(blockindex);
@@ -129,6 +186,15 @@ Value getdifficulty(const Array& params, bool fHelp)
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getdifficulty\n"
+#if defined(PPCOINSTAKE)
+            "Returns the difficulty as a multiple of the minimum difficulty.");
+
+    Object obj;
+    obj.push_back(Pair("proof-of-work",        GetDifficulty()));
+    obj.push_back(Pair("proof-of-stake",       GetDifficulty(GetLastBlockIndex(pindexBest, true))));
+    obj.push_back(Pair("search-interval",      (int)nLastCoinStakeSearchInterval));
+    return obj;
+#else
             "\nReturns the proof-of-work difficulty as a multiple of the minimum difficulty.\n"
             "\nResult:\n"
             "n.nnn       (numeric) the proof-of-work difficulty as a multiple of the minimum difficulty.\n"
@@ -138,6 +204,7 @@ Value getdifficulty(const Array& params, bool fHelp)
         );
 
     return GetDifficulty();
+#endif
 }
 
 
@@ -198,7 +265,7 @@ Value getrawmempool(const Array& params, bool fHelp)
             {
                 if (mempool.exists(txin.prevout.hash))
                     setDepends.insert(txin.prevout.hash.ToString());
-            }
+}
             Array depends(setDepends.begin(), setDepends.end());
             info.push_back(Pair("depends", depends));
             o.push_back(Pair(hash.ToString(), info));
@@ -206,16 +273,16 @@ Value getrawmempool(const Array& params, bool fHelp)
         return o;
     }
     else
-    {
-        vector<uint256> vtxid;
-        mempool.queryHashes(vtxid);
+{
+    vector<uint256> vtxid;
+    mempool.queryHashes(vtxid);
 
-        Array a;
-        BOOST_FOREACH(const uint256& hash, vtxid)
-            a.push_back(hash.ToString());
+    Array a;
+    BOOST_FOREACH(const uint256& hash, vtxid)
+        a.push_back(hash.ToString());
 
-        return a;
-    }
+    return a;
+}
 }
 
 Value getblockhash(const Array& params, bool fHelp)

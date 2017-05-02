@@ -1,10 +1,14 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#ifndef BITCOIN_WALLET_H
-#define BITCOIN_WALLET_H
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef CODECOIN_WALLET_H
+#define CODECOIN_WALLET_H
 
 #include "amount.h"
 #include "primitives/block.h"
@@ -47,7 +51,11 @@ static const CAmount DEFAULT_TRANSACTION_MAXFEE = 0.1 * COIN;
 //! -maxtxfee will warn if called with a higher fee than this amount (in satoshis)
 static const CAmount nHighTransactionMaxFeeWarning = 100 * nHighTransactionFeeWarning;
 //! Largest (in bytes) free transaction we're willing to create
+#if defined(BRAND_litecoin) // TODO: make object
 static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 5000;
+#else
+static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
+#endif
 
 class CAccountingEntry;
 class CCoinControl;
@@ -192,6 +200,10 @@ public:
     std::map<uint256, CWalletTx> mapWallet;
 
     int64_t nOrderPosNext;
+#if defined(PPCOINSTAKE)
+    std::vector<uint256> vWalletUpdated;
+    std::vector<uint256> vMintingWalletUpdated;
+#endif
     std::map<uint256, int> mapRequestCount;
 
     std::map<CTxDestination, CAddressBookData> mapAddressBook;
@@ -207,6 +219,9 @@ public:
     //! check whether we are allowed to upgrade (or already support) to the named feature
     bool CanSupportFeature(enum WalletFeature wf) { AssertLockHeld(cs_wallet); return nWalletMaxVersion >= wf; }
 
+#if defined(PPCOINSTAKE) // TODO: objectize
+    bool SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
+#endif
     void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL) const;
     bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
 
@@ -295,6 +310,13 @@ public:
     bool CreateTransaction(CScript scriptPubKey, const CAmount& nValue,
                            CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, std::string& strFailReason, const CCoinControl *coinControl = NULL);
     bool CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey);
+
+#if defined(PPCOINSTAKE)
+	int64_t GetStake() const;
+	bool CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int64_t nSearchInterval, CTransaction& txNew);
+	int64_t GetNewMint() const;
+	bool GetStakeWeight(const CKeyStore& keystore, uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight);
+#endif
 
     static CFeeRate minTxFee;
     static CAmount GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool);
@@ -403,6 +425,8 @@ public:
         AssertLockHeld(cs_wallet); // setKeyPool
         return setKeyPool.size();
     }
+
+    bool GetTransaction(const uint256 &hashTx, CWalletTx& wtx);
 
     bool SetDefaultKey(const CPubKey &vchPubKey);
 
@@ -722,14 +746,14 @@ public:
                 nDebitCached = pwallet->GetDebit(*this, ISMINE_SPENDABLE);
                 fDebitCached = true;
                 debit += nDebitCached;
-            }
         }
+    }
         if(filter & ISMINE_WATCH_ONLY)
-        {
+    {
             if(fWatchDebitCached)
                 debit += nWatchDebitCached;
             else
-            {
+    {
                 nWatchDebitCached = pwallet->GetDebit(*this, ISMINE_WATCH_ONLY);
                 fWatchDebitCached = true;
                 debit += nWatchDebitCached;
@@ -747,13 +771,13 @@ public:
         int64_t credit = 0;
         if (filter & ISMINE_SPENDABLE)
         {
-            // GetBalance can assume transactions in mapWallet won't change
+        // GetBalance can assume transactions in mapWallet won't change
             if (fCreditCached)
                 credit += nCreditCached;
             else
             {
                 nCreditCached = pwallet->GetCredit(*this, ISMINE_SPENDABLE);
-                fCreditCached = true;
+        fCreditCached = true;
                 credit += nCreditCached;
             }
         }
@@ -867,6 +891,9 @@ public:
         return nChangeCached;
     }
 
+/* (PPCOINSTAKE)
+    void GetAmounts(int64_t& nGeneratedImmature, int64_t& nGeneratedMature, std::list<std::pair<CTxDestination, int64_t> >& listReceived,
+                    std::list<std::pair<CTxDestination, int64_t> >& listSent, int64_t& nFee, std::string& strSentAccount) const; */
     void GetAmounts(std::list<COutputEntry>& listReceived,
                     std::list<COutputEntry>& listSent, CAmount& nFee, std::string& strSentAccount, const isminefilter& filter) const;
 
@@ -1080,4 +1107,4 @@ private:
     std::vector<char> _ssExtra;
 };
 
-#endif // BITCOIN_WALLET_H
+#endif // CODECOIN_WALLET_H
