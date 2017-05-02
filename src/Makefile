@@ -17,8 +17,10 @@ USE_UPNP:=0
 # :=0 --> Disable IPv6 support
 USE_IPV6:=1
 
-#ARCH=$(shell arch)
-ARCH=ppc
+# Build wallet
+ENABLE_WALLET:=1
+
+ARCH=$(shell arch)
 
 # :=1 --> enable SSE
 # :=0 --> disable SSE
@@ -36,9 +38,12 @@ COIN_BRAND:=litecoin
 
 DEFS=-DBOOST_SPIRIT_THREADSAFE -D_FILE_OFFSET_BITS=64 -DBRAND_$(COIN_BRAND)
 
+#debian jessie libboost-filesystem1.55 needs this
+DEFS += -DBOOST_NO_CXX11_SCOPED_ENUMS
+
 OBJDIR = obj/$(COIN_BRAND)
 TESTDIR = $(OBJDIR)/test
-SUBDIRS = $(OBJDIR)/crypto $(OBJDIR)/primitives $(OBJDIR)/script $(OBJDIR)/compat $(OBJDIR)/univalue
+SUBDIRS = $(OBJDIR)/crypto $(OBJDIR)/primitives $(OBJDIR)/script $(OBJDIR)/compat $(OBJDIR)/univalue 
 SECP256K1_INCLUDE_PATH = $(CURDIR)/secp256k1/include
 SECP256K1_LIB_PATH = $(CURDIR)/secp256k1/.libs
 
@@ -231,7 +236,7 @@ WALLET_OBJS = \
     $(OBJDIR)/walletdb.o \
     $(OBJDIR)/wallet_ismine.o \
     $(OBJDIR)/rpcdump.o \
-    $(OBJDIR)/rpcwallet.o
+    $(OBJDIR)/rpcwallet.o 
 
 X11_OBJS = \
     $(OBJDIR)/cubehash.o \
@@ -249,12 +254,16 @@ X11_OBJS = \
 
 SCRYPT_OBJS = $(OBJDIR)/crypto/scrypt.o
 
+ifeq ($(ENABLE_WALLET),1)
+DEFS+= -DENABLE_WALLET
+OBJS+= $(WALLET_OBJS)
+endif
+
 ifeq ($(USE_SSE2),1)
 DEFS += -DUSE_SSE2
 OBJS_SSE2= $(OBJDIR)/crypto/scrypt-sse2.o
 SCRYPT_OBJS += $(OBJS_SSE2)
 endif
-
 
 ifeq ($(COIN_BRAND),litecoin)
 DEFS += -DUSE_SCRYPT
@@ -287,7 +296,7 @@ ifeq ($(COIN_BRAND),cleanwatercoin)
 OBJS += $(SCRYPT_OBJS) $(STAKE_OBJS)
 endif
 
-all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d
+all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d $(COIN_BRAND)-cli $(COIN_BRAND)-tx
 
 test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
 	./test_$(COIN_BRAND)
@@ -344,6 +353,14 @@ $(OBJDIR)/%.o: %.cpp
 
 $(COIN_BRAND)d: $(OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
 	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
+
+$(COIN_BRAND)-tx: $(TX_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
+	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
+
+$(COIN_BRAND)-cli: $(CLI_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
+	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
+
+
 
 
 TESTOBJS := $(patsubst test/%.cpp,$(OBJDIR)/test/%.o,$(wildcard test/*.cpp))
