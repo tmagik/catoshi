@@ -17,9 +17,18 @@ USE_UPNP:=0
 # :=0 --> Disable IPv6 support
 USE_IPV6:=1
 
+#ARCH=$(shell arch)
+ARCH=ppc
+
 # :=1 --> enable SSE
 # :=0 --> disable SSE
+ifeq ($(ARCH), i386)
 USE_SSE2:=1
+else ifeq ($(ARCH), x86_64)
+USE_SSE2:=1
+else
+USE_SSE2:=0
+endif
 
 LINK:=$(CXX)
 
@@ -240,7 +249,7 @@ X11_OBJS = \
 
 SCRYPT_OBJS = $(OBJDIR)/crypto/scrypt.o
 
-ifdef USE_SSE2
+ifeq ($(USE_SSE2),1)
 DEFS += -DUSE_SSE2
 OBJS_SSE2= $(OBJDIR)/crypto/scrypt-sse2.o
 SCRYPT_OBJS += $(OBJS_SSE2)
@@ -301,7 +310,7 @@ $(SUBDIRS):
 # LevelDB support
 #
 MAKEOVERRIDES =
-LIBS += -lleveldb -lmemenv
+LIBS += -lleveldb 
 
 # auto-generated dependencies:
 -include $(OBJDIR)/*.P
@@ -309,7 +318,7 @@ LIBS += -lleveldb -lmemenv
 
 $(OBJDIR)/build.h: FORCE
 	/bin/sh ../share/genbuild.sh $(OBJDIR)/build.h
-version.cpp: $(OBJDIR)/build.h
+clientversion.cpp: $(OBJDIR)/build.h
 DEFS += -DHAVE_BUILD_INFO -DHAVE_SYS_SELECT_H
 
 $(OBJDIR)/%-sse2.o: %-sse2.cpp
