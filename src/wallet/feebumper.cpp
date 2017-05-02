@@ -5,6 +5,7 @@
 #include "consensus/validation.h"
 #include "wallet/feebumper.h"
 #include "wallet/wallet.h"
+#include "policy/fees.h"
 #include "policy/policy.h"
 #include "policy/rbf.h"
 #include "validation.h" //for mempool access
@@ -23,14 +24,14 @@
 int64_t CalculateMaximumSignedTxSize(const CTransaction &tx, const CWallet *pWallet)
 {
     CMutableTransaction txNew(tx);
-    std::vector<std::pair<const CWalletTx *, unsigned int>> vCoins;
+    std::vector<CInputCoin> vCoins;
     // Look up the inputs.  We should have already checked that this transaction
     // IsAllFromMe(ISMINE_SPENDABLE), so every input should already be in our
     // wallet, with a valid index into the vout array.
     for (auto& input : tx.vin) {
         const auto mi = pWallet->mapWallet.find(input.prevout.hash);
         assert(mi != pWallet->mapWallet.end() && input.prevout.n < mi->second.tx->vout.size());
-        vCoins.emplace_back(&(mi->second), input.prevout.n);
+        vCoins.emplace_back(CInputCoin(&(mi->second), input.prevout.n));
     }
     if (!pWallet->DummySignTx(txNew, vCoins)) {
         // This should never happen, because IsAllFromMe(ISMINE_SPENDABLE)
@@ -159,11 +160,11 @@ CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, int newConf
     } else {
         // if user specified a confirm target then don't consider any global payTxFee
         if (specifiedConfirmTarget) {
-            nNewFee = CWallet::GetMinimumFee(maxNewTxSize, newConfirmTarget, mempool, CAmount(0));
+            nNewFee = CWallet::GetMinimumFee(maxNewTxSize, newConfirmTarget, mempool, ::feeEstimator, true);
         }
         // otherwise use the regular wallet logic to select payTxFee or default confirm target
         else {
-            nNewFee = CWallet::GetMinimumFee(maxNewTxSize, newConfirmTarget, mempool);
+            nNewFee = CWallet::GetMinimumFee(maxNewTxSize, newConfirmTarget, mempool, ::feeEstimator);
         }
 
         nNewFeeRate = CFeeRate(nNewFee, maxNewTxSize);
