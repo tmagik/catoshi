@@ -25,6 +25,7 @@ static const int COINBASE_MATURITY = 100;
 #define BRAND "Litecoin"
 #define BRAND_upper "Litecoin"
 #define BRAND_lower "litecoin"
+#define BRAND_CODE "LTC"
 #define LITECOIN_SCRYPT_POWHASH
 
 #endif
