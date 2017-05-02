@@ -27,9 +27,17 @@ import logging
 
 # Formatting. Default colors to empty strings.
 BOLD, BLUE, RED, GREY = ("", ""), ("", ""), ("", ""), ("", "")
-TICK = "✓ "
-CROSS = "✖ "
-CIRCLE = "○ "
+try:
+    # Make sure python thinks it can write unicode to its stdout
+    "\u2713".encode("utf_8").decode(sys.stdout.encoding)
+    TICK = "✓ "
+    CROSS = "✖ "
+    CIRCLE = "○ "
+except UnicodeDecodeError:
+    TICK = "P "
+    CROSS = "x "
+    CIRCLE = "o "
+
 if os.name == 'posix':
     # primitive formatting on supported
     # terminal via ANSI escape sequences:
@@ -69,6 +77,7 @@ BASE_SCRIPTS= [
     'rawtransactions.py',
     'reindex.py',
     # vv Tests less than 30s vv
+    "zmq_test.py",
     'mempool_resurrect_test.py',
     'txn_doublespend.py --mineblock',
     'txn_clone.py',
@@ -80,7 +89,7 @@ BASE_SCRIPTS= [
     'multi_rpc.py',
     'proxy_test.py',
     'signrawtransactions.py',
-    'nodehandling.py',
+    'disconnect_ban.py',
     'decodescript.py',
     'blockchain.py',
     'disablewallet.py',
@@ -100,12 +109,8 @@ BASE_SCRIPTS= [
     'rpcnamedargs.py',
     'listsinceblock.py',
     'p2p-leaktests.py',
+    'import-abort-rescan.py',
 ]
-
-ZMQ_SCRIPTS = [
-    # ZMQ test can only be run if bitcoin was built with zmq-enabled.
-    # call test_runner.py with -nozmq to explicitly exclude these tests.
-    'zmq_test.py']
 
 EXTENDED_SCRIPTS = [
     # These tests are not run by the travis build process.
@@ -135,12 +140,12 @@ EXTENDED_SCRIPTS = [
     'txn_clone.py --mineblock',
     'forknotify.py',
     'invalidateblock.py',
-    'maxblocksinflight.py',
     'p2p-acceptblock.py',
     'replace-by-fee.py',
 ]
 
-ALL_SCRIPTS = BASE_SCRIPTS + ZMQ_SCRIPTS + EXTENDED_SCRIPTS
+# Place EXTENDED_SCRIPTS first since it has the 3 longest running tests
+ALL_SCRIPTS = EXTENDED_SCRIPTS + BASE_SCRIPTS
 
 NON_SCRIPTS = [
     # These are python files that live in the functional tests directory, but are not test scripts.
@@ -163,8 +168,8 @@ def main():
     parser.add_argument('--force', '-f', action='store_true', help='run tests even on platforms where they are disabled by default (e.g. windows).')
     parser.add_argument('--help', '-h', '-?', action='store_true', help='print help text and exit')
     parser.add_argument('--jobs', '-j', type=int, default=4, help='how many test scripts to run in parallel. Default=4.')
+    parser.add_argument('--keepcache', '-k', action='store_true', help='the default behavior is to flush the cache directory on startup. --keepcache retains the cache from the previous testrun.')
     parser.add_argument('--quiet', '-q', action='store_true', help='only print results summary and failure logs')
-    parser.add_argument('--nozmq', action='store_true', help='do not run the zmq tests')
     args, unknown_args = parser.parse_known_args()
 
     # Create a set to store arguments and create the passon string
@@ -182,7 +187,6 @@ def main():
     enable_wallet = config["components"].getboolean("ENABLE_WALLET")
     enable_utils = config["components"].getboolean("ENABLE_UTILS")
     enable_bitcoind = config["components"].getboolean("ENABLE_BITCOIND")
-    enable_zmq = config["components"].getboolean("ENABLE_ZMQ") and not args.nozmq
 
     if config["environment"]["EXEEXT"] == ".exe" and not args.force:
         # https://github.com/bitcoin/bitcoin/commit/d52802551752140cf41f0d9a225a43e84404d3e9
@@ -195,15 +199,6 @@ def main():
         print("Rerun `configure` with -enable-wallet, -with-utils and -with-daemon and rerun make")
         sys.exit(0)
 
-    # python3-zmq may not be installed. Handle this gracefully and with some helpful info
-    if enable_zmq:
-        try:
-            import zmq
-        except ImportError:
-            print("ERROR: \"import zmq\" failed. Use -nozmq to run without the ZMQ tests."
-                  "To run zmq tests, see dependency info in /test/README.md.")
-            raise
-
     # Build list of tests
     if tests:
         # Individual tests have been specified. Run specified tests that exist
@@ -211,16 +206,13 @@ def main():
         test_list = [t for t in ALL_SCRIPTS if
                 (t in tests or re.sub(".py$", "", t) in tests)]
     else:
-        # No individual tests have been specified. Run base tests, and
-        # optionally ZMQ tests and extended tests.
+        # No individual tests have been specified.
+        # Run all base tests, and optionally run extended tests.
         test_list = BASE_SCRIPTS
-        if enable_zmq:
-            test_list += ZMQ_SCRIPTS
         if args.extended:
-            test_list += EXTENDED_SCRIPTS
-            # TODO: BASE_SCRIPTS and EXTENDED_SCRIPTS are sorted by runtime
-            # (for parallel running efficiency). This combined list will is no
-            # longer sorted.
+            # place the EXTENDED_SCRIPTS first since the three longest ones
+            # are there and the list is shorter
+            test_list = EXTENDED_SCRIPTS + test_list
 
     # Remove the test cases that the user has explicitly asked to exclude.
     if args.exclude:
@@ -241,9 +233,23 @@ def main():
 
     check_script_list(config["environment"]["SRCDIR"])
 
+    if not args.keepcache:
+        shutil.rmtree("%s/test/cache" % config["environment"]["BUILDDIR"], ignore_errors=True)
+
     run_tests(test_list, config["environment"]["SRCDIR"], config["environment"]["BUILDDIR"], config["environment"]["EXEEXT"], args.jobs, args.coverage, passon_args)
 
 def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=False, args=[]):
+    # Warn if bitcoind is already running (unix only)
+    try:
+        if subprocess.check_output(["pidof", "bitcoind"]) is not None:
+            print("%sWARNING!%s There is already a bitcoind process running on this system. Tests may fail unexpectedly due to resource contention!" % (BOLD[1], BOLD[0]))
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+    # Warn if there is a cache directory
+    cache_dir = "%s/test/cache" % build_dir
+    if os.path.isdir(cache_dir):
+        print("%sWARNING!%s There is a cache directory here: %s. If tests fail unexpectedly, try deleting the cache directory." % (BOLD[1], BOLD[0], cache_dir))
 
     #Set env vars
     if "BITCOIND" not in os.environ:
@@ -252,7 +258,7 @@ def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=Fal
     tests_dir = src_dir + '/test/functional/'
 
     flags = ["--srcdir={}/src".format(build_dir)] + args
-    flags.append("--cachedir=%s/test/cache" % build_dir)
+    flags.append("--cachedir=%s" % cache_dir)
 
     if enable_coverage:
         coverage = RPCCoverage()
@@ -293,7 +299,7 @@ def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=Fal
         logging.debug("Cleaning up coverage data")
         coverage.cleanup()
 
-    all_passed = all(map(lambda test_result: test_result.status == "Passed", test_results))
+    all_passed = all(map(lambda test_result: test_result.was_successful, test_results))
 
     sys.exit(not all_passed)
 
@@ -305,7 +311,7 @@ def print_results(test_results, max_len_name, runtime):
     time_sum = 0
 
     for test_result in test_results:
-        all_passed = all_passed and test_result.status != "Failed"
+        all_passed = all_passed and test_result.was_successful
         time_sum += test_result.time
         test_result.padding = max_len_name
         results += str(test_result)
@@ -393,6 +399,10 @@ class TestResult():
 
         return color[1] + "%s | %s%s | %s s\n" % (self.name.ljust(self.padding), glyph, self.status.ljust(7), self.time) + color[0]
 
+    @property
+    def was_successful(self):
+        return self.status != "Failed"
+
 
 def check_script_list(src_dir):
     """Check scripts directory.
@@ -403,9 +413,10 @@ def check_script_list(src_dir):
     python_files = set([t for t in os.listdir(script_dir) if t[-3:] == ".py"])
     missed_tests = list(python_files - set(map(lambda x: x.split()[0], ALL_SCRIPTS + NON_SCRIPTS)))
     if len(missed_tests) != 0:
-        print("The following scripts are not being run:" + str(missed_tests))
-        print("Check the test lists in test_runner.py")
-        sys.exit(1)
+        print("%sWARNING!%s The following scripts are not being run: %s. Check the test lists in test_runner.py." % (BOLD[1], BOLD[0], str(missed_tests)))
+        if os.getenv('TRAVIS') == 'true':
+            # On travis this warning is an error to prevent merging incomplete commits into master
+            sys.exit(1)
 
 class RPCCoverage(object):
     """
