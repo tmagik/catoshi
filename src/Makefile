@@ -49,6 +49,7 @@ SECP256K1_LIB_PATH = $(CURDIR)/secp256k1/.libs
 
 DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/$(OBJDIR) $(BOOST_INCLUDE_PATH) $(BDB_INCLUDE_PATH) $(SECP256K1_INCLUDE_PATH))
 LIBS = $(addprefix -L,$(BOOST_LIB_PATH) $(BDB_LIB_PATH) $(SECP256K1_LIB_PATH))
+BOOST_LIBS = -lboost_system -lboost_filesystem -lboost_program_options -lboost_thread
 
 TESTDEFS = -DTEST_DATA_DIR=$(abspath test/data)
 
@@ -65,7 +66,7 @@ else
 endif
 
 # for boost 1.37, add -mt to the boost libraries
-LIBS += \
+D_LIBS = $(LIBS) \
  -Wl,-B$(LMODE) \
    -l boost_system$(BOOST_LIB_SUFFIX) \
    -l boost_filesystem$(BOOST_LIB_SUFFIX) \
@@ -84,7 +85,7 @@ ifndef USE_UPNP
 	override USE_UPNP = -
 endif
 ifneq (${USE_UPNP}, -)
-	LIBS += -l miniupnpc
+	D_LIBS += -l miniupnpc
 	DEFS += -DUSE_UPNP=$(USE_UPNP)
 endif
 
@@ -92,12 +93,15 @@ ifneq (${USE_IPV6}, -)
 	DEFS += -DUSE_IPV6=$(USE_IPV6)
 endif
 
-LIBS+= \
+D_LIBS+= \
  -Wl,-B$(LMODE2) \
    -l z \
    -l dl \
    -l pthread
 
+#TODO: simplify above
+TX_LIBS = $(LIBS) $(BOOST_LIBS) -lsecp256k1 -lssl -lcrypto -lpthread
+CLI_LIBS = $(LIBS) $(BOOST_LIBS) -lssl -lcrypto
 
 # Hardening
 # Make some classes of vulnerabilities unexploitable in case one is discovered.
@@ -149,85 +153,100 @@ STAKE_OBJS = \
     $(OBJDIR)/kernel.o \
     $(OBJDIR)/kernelrecord.o
 
-OBJS= $(OBJDIR)/$(COIN_BRAND).o \
-    $(OBJDIR)/main.o \
-    $(OBJDIR)/addrman.o \
-    $(OBJDIR)/alert.o \
-    $(OBJDIR)/allocators.o \
-    $(OBJDIR)/amount.o \
-    $(OBJDIR)/base58.o \
-    $(OBJDIR)/bitcoind.o \
-    $(OBJDIR)/coins.o \
-    $(OBJDIR)/crypter.o \
+UTIL_OBJS= \
+    $(OBJDIR)/compat/glibc_sanity.o \
+    $(OBJDIR)/compat/glibcxx_sanity.o \
+    $(OBJDIR)/compat/strnlen.o \
+    $(OBJDIR)/chainparamsbase.o \
+    $(OBJDIR)/clientversion.o \
+    $(OBJDIR)/random.o \
+    $(OBJDIR)/rpcprotocol.o \
+    $(OBJDIR)/rpcclient.o \
+    $(OBJDIR)/sync.o \
+    $(OBJDIR)/uint256.o \
+    $(OBJDIR)/util.o \
+    $(OBJDIR)/utilmoneystr.o \
+    $(OBJDIR)/utilstrencodings.o \
+    $(OBJDIR)/utiltime.o 
+
+CRYPTO_OBJS = \
     $(OBJDIR)/crypto/hmac_sha256.o \
     $(OBJDIR)/crypto/hmac_sha512.o \
     $(OBJDIR)/crypto/ripemd160.o \
     $(OBJDIR)/crypto/rfc6979_hmac_sha256.o \
     $(OBJDIR)/crypto/sha256.o \
     $(OBJDIR)/crypto/sha512.o \
-    $(OBJDIR)/crypto/sha1.o \
-    $(OBJDIR)/clientversion.o \
-    $(OBJDIR)/chain.o \
-    $(OBJDIR)/chainparams.o \
-    $(OBJDIR)/chainparamsbase.o \
-    $(OBJDIR)/checkpoints.o \
-    $(OBJDIR)/compressor.o \
-    $(OBJDIR)/core_read.o \
-    $(OBJDIR)/core_write.o \
-    $(OBJDIR)/crypter.o \
-    $(OBJDIR)/compat/glibc_sanity.o \
-    $(OBJDIR)/compat/glibcxx_sanity.o \
-    $(OBJDIR)/compat/strnlen.o \
-    $(OBJDIR)/db.o \
-    $(OBJDIR)/ecwrapper.o \
-    $(OBJDIR)/eccryptoverify.o \
-    $(OBJDIR)/init.o \
-    $(OBJDIR)/key.o \
-    $(OBJDIR)/keystore.o \
-    $(OBJDIR)/merkleblock.o \
-    $(OBJDIR)/net.o \
-    $(OBJDIR)/netbase.o \
-    $(OBJDIR)/pow.o \
-    $(OBJDIR)/protocol.o \
-    $(OBJDIR)/primitives/block.o \
-    $(OBJDIR)/primitives/transaction.o \
-    $(OBJDIR)/pubkey.o \
-    $(OBJDIR)/random.o \
-    $(OBJDIR)/rest.o \
-    $(OBJDIR)/rpcblockchain.o \
-    $(OBJDIR)/rpcclient.o \
-    $(OBJDIR)/rpcmisc.o \
-    $(OBJDIR)/rpcnet.o \
-    $(OBJDIR)/rpcprotocol.o \
-    $(OBJDIR)/rpcrawtransaction.o \
-    $(OBJDIR)/rpcserver.o \
-    $(OBJDIR)/script/bitcoinconsensus.o \
-    $(OBJDIR)/script/interpreter.o \
-    $(OBJDIR)/script/script.o \
-    $(OBJDIR)/script/script_error.o \
-    $(OBJDIR)/script/sigcache.o \
-    $(OBJDIR)/script/sign.o \
-    $(OBJDIR)/script/standard.o \
-    $(OBJDIR)/sync.o \
-    $(OBJDIR)/timedata.o \
-    $(OBJDIR)/txmempool.o \
-    $(OBJDIR)/uint256.o \
-    $(OBJDIR)/undo.o \
-    $(OBJDIR)/util.o \
-    $(OBJDIR)/utilmoneystr.o \
-    $(OBJDIR)/utilstrencodings.o \
-    $(OBJDIR)/utiltime.o \
+    $(OBJDIR)/crypto/sha1.o
+
+UNIVALUE_OBJS = \
     $(OBJDIR)/univalue/univalue.o \
     $(OBJDIR)/univalue/univalue_read.o \
     $(OBJDIR)/univalue/univalue_write.o \
+
+COMMON_OBJS = \
+    $(OBJDIR)/allocators.o \
+    $(OBJDIR)/amount.o \
+    $(OBJDIR)/base58.o \
+    $(OBJDIR)/chainparams.o \
+    $(OBJDIR)/coins.o \
+    $(OBJDIR)/compressor.o \
+    $(OBJDIR)/core_read.o \
+    $(OBJDIR)/core_write.o \
+    $(OBJDIR)/ecwrapper.o \
+    $(OBJDIR)/eccryptoverify.o \
     $(OBJDIR)/hash.o \
+    $(OBJDIR)/key.o \
+    $(OBJDIR)/keystore.o \
+    $(OBJDIR)/netbase.o \
+    $(OBJDIR)/primitives/block.o \
+    $(OBJDIR)/primitives/transaction.o \
+    $(OBJDIR)/protocol.o \
+    $(OBJDIR)/pubkey.o \
+    $(OBJDIR)/script/interpreter.o \
+    $(OBJDIR)/script/script.o \
+    $(OBJDIR)/script/script_error.o \
+    $(OBJDIR)/script/sign.o \
+    $(OBJDIR)/script/standard.o
+
+
+#put the longest compiling things first for parallel make
+D_OBJS= \
+    $(OBJDIR)/main.o \
+    $(OBJDIR)/init.o \
+    $(OBJDIR)/rpcserver.o \
+    $(OBJDIR)/net.o \
+    $(UNIVALUE_OBJS) \
+    $(UTIL_OBJS) \
+    $(CRYPTO_OBJS) \
+    $(COMMON_OBJS) \
+    $(OBJDIR)/$(COIN_BRAND).o \
+    $(OBJDIR)/addrman.o \
+    $(OBJDIR)/alert.o \
+    $(OBJDIR)/bitcoind.o \
+    $(OBJDIR)/crypter.o \
+    $(OBJDIR)/chain.o \
+    $(OBJDIR)/checkpoints.o \
+    $(OBJDIR)/crypter.o \
+    $(OBJDIR)/db.o \
+    $(OBJDIR)/merkleblock.o \
+    $(OBJDIR)/pow.o \
+    $(OBJDIR)/rest.o \
+    $(OBJDIR)/rpcblockchain.o \
+    $(OBJDIR)/rpcmisc.o \
+    $(OBJDIR)/rpcnet.o \
+    $(OBJDIR)/rpcrawtransaction.o \
+    $(OBJDIR)/script/bitcoinconsensus.o \
+    $(OBJDIR)/script/sigcache.o \
+    $(OBJDIR)/timedata.o \
+    $(OBJDIR)/txmempool.o \
+    $(OBJDIR)/undo.o \
     $(OBJDIR)/bloom.o \
     $(OBJDIR)/noui.o \
     $(OBJDIR)/leveldbwrapper.o \
     $(OBJDIR)/txdb.o
 
 #MINER_OBJS
-OBJS += \
+D_OBJS += \
     $(OBJDIR)/rpcmining.o \
     $(OBJDIR)/miner.o
 
@@ -256,7 +275,7 @@ SCRYPT_OBJS = $(OBJDIR)/crypto/scrypt.o
 
 ifeq ($(ENABLE_WALLET),1)
 DEFS+= -DENABLE_WALLET
-OBJS+= $(WALLET_OBJS)
+D_OBJS+= $(WALLET_OBJS)
 endif
 
 ifeq ($(USE_SSE2),1)
@@ -267,34 +286,34 @@ endif
 
 ifeq ($(COIN_BRAND),litecoin)
 DEFS += -DUSE_SCRYPT
-OBJS += $(SCRYPT_OBJS)
+COMMON_OBJS += $(SCRYPT_OBJS)
 endif
 #ifeq ($(COIN_BRAND),grantcoin)
-#OBJS += $(STAKE_OBJS)
+#COMMON_OBJS += $(STAKE_OBJS)
 #endif
 ifeq ($(COIN_BRAND),grantstake)
-OBJS += $(STAKE_OBJS)
+COMMON_OBJS += $(STAKE_OBJS)
 endif
 ifeq ($(COIN_BRAND),uro)
-OBJS += $(X11_OBJS)
+COMMON_OBJS += $(X11_OBJS)
 endif
 ifeq ($(COIN_BRAND),givecoin)
-OBJS += $(X11_OBJS)
+COMMON_OBJS += $(X11_OBJS)
 endif
 ifeq ($(COIN_BRAND),hamburger)
 DEFS += -DUSE_SCRYPT
-OBJS += $(SCRYPT_OBJS) $(STAKE_OBJS)
+COMMON_OBJS += $(SCRYPT_OBJS) $(STAKE_OBJS)
 endif
 ifeq ($(COIN_BRAND),kittycoin)
 DEFS += -DUSE_SCRYPT
-OBJS += $(SCRYPT_OBJS)
+COMMON_OBJS += $(SCRYPT_OBJS)
 endif
 ifeq ($(COIN_BRAND),bluecoin)
-OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
+COMMON_OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
 endif
-ifeq ($(COIN_BRAND),cleanwatercoin)
-OBJS += $(SCRYPT_OBJS) $(STAKE_OBJS)
-endif
+
+TX_OBJS= $(UTIL_OBJS) $(UNIVALUE_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) bitcoin-tx.cpp
+CLI_OBJS= $(UTIL_OBJS) bitcoin-cli.cpp
 
 all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d $(COIN_BRAND)-cli $(COIN_BRAND)-tx
 
@@ -319,7 +338,7 @@ $(SUBDIRS):
 # LevelDB support
 #
 MAKEOVERRIDES =
-LIBS += -lleveldb 
+D_LIBS += -lleveldb 
 
 # auto-generated dependencies:
 -include $(OBJDIR)/*.P
@@ -351,14 +370,14 @@ $(OBJDIR)/%.o: %.cpp
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-$(COIN_BRAND)d: $(OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
-	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
+$(COIN_BRAND)d: $(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
+	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(D_LIBS)
 
 $(COIN_BRAND)-tx: $(TX_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
-	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
+	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(TX_LIBS)
 
 $(COIN_BRAND)-cli: $(CLI_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
-	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(LIBS)
+	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(CLI_LIBS)
 
 
 
@@ -372,11 +391,11 @@ $(OBJDIR)/test/%.o: test/%.cpp
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-test_$(COIN_BRAND): $(TESTOBJS) $(filter-out $(OBJDIR)/init.o,$(OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
+test_$(COIN_BRAND): $(TESTOBJS) $(filter-out $(OBJDIR)/init.o,$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
 	$(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS)
 
 clean:
-	-rm -f $(COIN_BRAND)d test_$(COIN_BRAND)
+	-rm -f $(COIN_BRAND)d $(COIN_BRAND)-tx $(COIN_BRAND)-cli test_$(COIN_BRAND)
 	-rm -f $(OBJDIR)/*.o
 	-rm -f $(OBJDIR)/*/*.o
 	-rm -f $(OBJDIR)/*.P
