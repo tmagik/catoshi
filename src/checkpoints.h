@@ -49,7 +49,7 @@ extern const CCheckpointData data;
 
 
 #if !defined(SYNC_CHECKPOINTS)
-#warning "redo this in json and/or chainbasewhatever anyway"
+// FIXME #warning "redo this in json and/or chainbasewhatever anyway"
 	/* always false */
 /*
 	inline bool WantedByPendingSyncCheckpoint(uint256 hashBlock){
