@@ -9,6 +9,7 @@
 #include "noui.h"
 
 #include "ui_interface.h"
+#include "codecoin.h"
 #include "util.h"
 
 #include <cstdio>

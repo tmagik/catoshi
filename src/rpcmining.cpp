@@ -103,7 +103,7 @@ Value getgenerate(const Array& params, bool fHelp)
         throw runtime_error(
             "getgenerate\n"
             "\nReturn if the server is set to generate coins or not. The default is false.\n"
-            "It is set with the command line argument -gen (or litecoin.conf setting gen)\n"
+            "It is set with the command line argument -gen (or " BRAND_lower ".conf setting gen)\n"
             "It can also be set with the setgenerate call.\n"
             "\nResult\n"
             "true|false      (boolean) If the server is set to generate coins or not\n"
@@ -496,7 +496,6 @@ Value getblocktemplate(const Array& params, bool fHelp)
     }
 
     // Update block
-    static unsigned int nTransactionsUpdatedLast;
     static CBlockIndex* pindexPrev;
     static int64_t nStart;
     static CBlockTemplate* pblocktemplate;
@@ -541,7 +540,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
-		if (tx.IsGenerated())
+        if (tx.IsCoinBase())
             continue;
 
         Object entry;
@@ -578,20 +577,28 @@ Value getblocktemplate(const Array& params, bool fHelp)
         aMutable.push_back("prevblock");
     }
 
-	uint32_t nBits = pblock->nBits;
+	uint32_t escalatorbits;
+#if defined(FEATURE_MINBLOCKTIME)
 	uint64_t mintime = pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING;
+
 #if defined(FEATURE_FUTURE_IS_HARDER)
+        /* What this does is attempt to slow down creation of blocks that would
+           end up 'in the future'. By decreasing the target, we make big miners
+           work harder */
+	/* Dynamics of this are hand-wavy heuristics at best, that seemed to
+	   work okay at one point. Actually figuring it out would be a good
+	   PhD thesis (or maybe something usefull that Hyperledger could do) */
 	uint64_t hardtime = max(GetTime(), GetAdjustedTime());
 	if (mintime > hardtime){
-		int escalator = ((mintime-hardtime)*100/MINIMUM_BLOCK_SPACING);
-		printf("Mining a future block, check your clock. Difficulty escalator %d%%\n", escalator);
-		CBigNum newTarget;
-		newTarget.SetCompact(pblock->nBits);
-		newTarget *= max(escalator, 100);
-		newTarget /= 100;
-		nBits = newTarget.GetCompact();
+		int escalator = ((mintime-hardtime)*10)+100;
+		hashTarget /= max(escalator, 100); /* PoW hash is *less* than target */
+		hashTarget *= 100;
+		escalatorbits = hashTarget.GetCompact();
+		printf("Mining a future block, check your clock. escalator %d%% %x new %x\n",
+			escalator, pblock->nBits, escalatorbits);
 	}
 #endif
+#endif /* FEATURE_MINBLOCKTIME */
 
     Object result;
     result.push_back(Pair("capabilities", aCaps));
@@ -613,9 +620,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
     result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE));
     result.push_back(Pair("curtime", pblock->GetBlockTime()));
-    result.push_back(Pair("bits", strprintf("%08x", nBits)));
+    result.push_back(Pair("bits", strprintf("%08x", pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
-
+    if (escalatorbits)
+        result.push_back(Pair("escalator", strprintf("%08x", escalatorbits)));
     return result;
 }
 
@@ -663,6 +671,9 @@ Value submitblock(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
 
     uint256 hash = block.GetHash();
+    bool fBlockPresent = false;
+    {
+        LOCK(cs_main);
     BlockMap::iterator mi = mapBlockIndex.find(hash);
     if (mi != mapBlockIndex.end()) {
         CBlockIndex *pindex = mi->second;
@@ -671,6 +682,8 @@ Value submitblock(const Array& params, bool fHelp)
         if (pindex->nStatus & BLOCK_FAILED_MASK)
             return "duplicate-invalid";
         // Otherwise, we might only have the header - process the block before returning
+            fBlockPresent = true;
+        }
     }
 
     CValidationState state;
@@ -678,7 +691,7 @@ Value submitblock(const Array& params, bool fHelp)
     RegisterValidationInterface(&sc);
     bool fAccepted = ProcessNewBlock(state, NULL, &block);
     UnregisterValidationInterface(&sc);
-    if (mi != mapBlockIndex.end())
+    if (fBlockPresent)
     {
         if (fAccepted && !sc.found)
             return "duplicate-inconclusive";

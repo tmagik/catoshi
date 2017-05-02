@@ -11,7 +11,6 @@
 #ifndef _CODECOIN_CHAIN_PARAMS_H
 #define _CODECOIN_CHAIN_PARAMS_H
 
-#include "codecoin.h"
 #include "chainparamsbase.h"
 #include "checkpoints.h"
 #include "primitives/block.h"

@@ -34,12 +34,6 @@ namespace Checkpoints {
 
     bool fEnabled = true;
 
-	const CCheckpointData &Checkpoints() {
-		/* provided by COIN_brand.cpp */
-		assert(data.nTimeLastCheckpoint > 1);
-		return data;
-	}
-
     bool CheckBlock(int nHeight, const uint256& hash)
     {
         if (!fEnabled)

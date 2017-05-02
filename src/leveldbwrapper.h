@@ -6,6 +6,7 @@
 #define BITCOIN_LEVELDBWRAPPER_H
 
 #include "clientversion.h"
+#include "codecoin.h"
 #include "serialize.h"
 #include "streams.h"
 #include "util.h"
@@ -64,9 +65,6 @@ public:
 class CLevelDBWrapper
 {
 private:
-    //! custom environment this database is using (may be NULL in case of default environment)
-    leveldb::Env* penv;
-
     //! database options used
     leveldb::Options options;
 
@@ -86,7 +84,7 @@ private:
     leveldb::DB* pdb;
 
 public:
-    CLevelDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false);
+    CLevelDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fWipe = false);
     ~CLevelDBWrapper();
 
     template <typename K, typename V>

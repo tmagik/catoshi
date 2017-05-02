@@ -24,7 +24,6 @@
 
 using namespace boost;
 using namespace std;
-using namespace boost;
 
 static uint64_t nAccountingEntryNumber = 0;
 
@@ -906,7 +905,7 @@ bool CWalletDB::Recover(CDBEnv& dbenv, std::string filename, bool fOnlyKeys)
     // Rewrite salvaged data to wallet.dat
     // Set -rescan so any missing transactions will be
     // found.
-    int64 now = GetTime();
+    int64_t now = GetTime();
     std::string newFilename = strprintf("wallet.%" PRId64 ".bak", now);
 
     int result = dbenv.dbenv.dbrename(NULL, filename.c_str(), NULL,

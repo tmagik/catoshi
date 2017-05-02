@@ -4,6 +4,8 @@
 
 #include "timedata.h"
 
+#include "codecoin.h"
+
 #include "netbase.h"
 #include "sync.h"
 #include "ui_interface.h"
