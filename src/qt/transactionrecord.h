@@ -1,12 +1,16 @@
 // Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#ifndef BITCOIN_QT_TRANSACTIONRECORD_H
-#define BITCOIN_QT_TRANSACTIONRECORD_H
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef TRANSACTIONRECORD_H
+#define TRANSACTIONRECORD_H
 
 #include "amount.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <QList>
 #include <QString>
@@ -35,7 +39,7 @@ public:
         Conflicted,         /**< Conflicts with other transaction or mempool **/
         /// Generated (mined) transactions
         Immature,           /**< Mined but waiting for maturity */
-        MaturesWarning,     /**< Transaction will likely not mature because no nodes have confirmed */
+        MaturesWarning, /**< Transaction will likely not mature because no nodes have confirmed */
         NotAccepted         /**< Mined but not accepted */
     };
 
@@ -46,6 +50,7 @@ public:
 
     /** @name Generated (mined) transactions
        @{*/
+    Maturity maturity;
     int matures_in;
     /**@}*/
 
@@ -140,4 +145,4 @@ public:
     bool statusUpdateNeeded();
 };
 
-#endif // BITCOIN_QT_TRANSACTIONRECORD_H
+#endif // TRANSACTIONRECORD_H

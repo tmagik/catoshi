@@ -1,10 +1,15 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2012 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_UI_INTERFACE_H
-#define BITCOIN_UI_INTERFACE_H
+#ifndef CODECOIN_UI_INTERFACE_H
+#define CODECOIN_UI_INTERFACE_H
 
 #include <stdint.h>
 #include <string>
@@ -75,11 +80,20 @@ public:
     /** Show message box. */
     boost::signals2::signal<bool (const std::string& message, const std::string& caption, unsigned int style), boost::signals2::last_value<bool> > ThreadSafeMessageBox;
 
+    /** Ask the user whether they want to pay a fee or not. */
+    boost::signals2::signal<bool (int64_t nFeeRequired), boost::signals2::last_value<bool> > ThreadSafeAskFee;
+
+    /** Handle a URL passed at the command line. */
+    boost::signals2::signal<void (const std::string& strURI)> ThreadSafeHandleURI;
+
     /** Progress message during initialization. */
     boost::signals2::signal<void (const std::string &message)> InitMessage;
 
     /** Translate a message to the native language of the user. */
     boost::signals2::signal<std::string (const char* psz)> Translate;
+
+    /** Block chain changed. */
+    boost::signals2::signal<void ()> NotifyBlocksChanged;
 
     /** Number of network connections changed. */
     boost::signals2::signal<void (int newNumConnections)> NotifyNumConnectionsChanged;
@@ -112,4 +126,4 @@ inline std::string _(const char* psz)
     return rv ? (*rv) : psz;
 }
 
-#endif // BITCOIN_UI_INTERFACE_H
+#endif // CODECOIN_UI_INTERFACE_H

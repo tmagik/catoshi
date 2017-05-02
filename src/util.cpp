@@ -1,15 +1,17 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
 #endif
 
+#include "codecoin.h"
 #include "util.h"
 
-#include "chainparamsbase.h"
 #include "random.h"
 #include "serialize.h"
 #include "sync.h"
@@ -30,6 +32,7 @@
 
 #endif // __linux__
 
+#include <inttypes.h>
 #include <algorithm>
 #include <fcntl.h>
 #include <sys/resource.h>
@@ -64,7 +67,7 @@
 #endif
 
 #ifdef HAVE_SYS_PRCTL_H
-#include <sys/prctl.h>
+# include <sys/prctl.h>
 #endif
 
 #include <boost/algorithm/string/case_conv.hpp> // for to_lower()
@@ -245,7 +248,7 @@ int LogPrintStr(const std::string &str)
 
         // Debug print useful for profiling
         if (fLogTimestamps && fStartedNewLine)
-            ret += fprintf(fileout, "%s ", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()).c_str());
+            ret += fprintf(fileout, "%" PRId64 " ", GetTime());
         if (!str.empty() && str[str.size()-1] == '\n')
             fStartedNewLine = true;
         else
@@ -360,7 +363,7 @@ static std::string FormatException(std::exception* pex, const char* pszThread)
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(NULL, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = "litecoin";
+    const char* pszModule = BRAND_lower;
 #endif
     if (pex)
         return strprintf(
@@ -381,13 +384,13 @@ void PrintExceptionContinue(std::exception* pex, const char* pszThread)
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Litecoin
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Litecoin
-    // Mac: ~/Library/Application Support/Litecoin
-    // Unix: ~/.litecoin
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\catoshi\coin_brand
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Catoshi\coin_brand
+    // Mac: ~/Library/Application Support/catoshi/coin_brand
+    // Unix: ~/.catoshi/coin_brand
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Litecoin";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "catoshi" / BRAND_lower;
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -399,10 +402,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Litecoin";
+    return pathRet / "catoshi" / BRAND_lower;
 #else
     // Unix
-    return pathRet / ".litecoin";
+    return pathRet / ".catoshi" / BRAND_lower;
 #endif
 #endif
 }
@@ -449,10 +452,8 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "litecoin.conf"));
-    if (!pathConfigFile.is_complete())
-        pathConfigFile = GetDataDir(false) / pathConfigFile;
-
+    boost::filesystem::path pathConfigFile(GetArg("-conf", BRAND_lower ".conf"));
+    if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir(false) / pathConfigFile;
     return pathConfigFile;
 }
 
@@ -461,14 +462,14 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-        return; // No litecoin.conf file is OK
+        return; // No codecoin.conf file is OK
 
     set<string> setOptions;
     setOptions.insert("*");
 
     for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
-        // Don't overwrite existing settings so command line settings override litecoin.conf
+        // Don't overwrite existing settings so command line settings override codecoin.conf
         string strKey = string("-") + it->string_key;
         if (mapSettingsRet.count(strKey) == 0)
         {
@@ -533,7 +534,7 @@ bool TryCreateDirectory(const boost::filesystem::path& p)
 
 void FileCommit(FILE *fileout)
 {
-    fflush(fileout); // harmless if redundantly called
+    fflush(fileout);                // harmless if redundantly called
 #ifdef WIN32
     HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fileout));
     FlushFileBuffers(hFile);

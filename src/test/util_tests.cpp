@@ -40,6 +40,31 @@ BOOST_AUTO_TEST_CASE(util_criticalsection)
     } while(0);
 }
 
+BOOST_AUTO_TEST_CASE(util_MedianFilter)
+{
+    CMedianFilter<int> filter(5, 15);
+
+    BOOST_CHECK_EQUAL(filter.median(), 15);
+
+    filter.input(20); // [15 20]
+    BOOST_CHECK_EQUAL(filter.median(), 17);
+
+    filter.input(30); // [15 20 30]
+    BOOST_CHECK_EQUAL(filter.median(), 20);
+
+    filter.input(3); // [3 15 20 30]
+    BOOST_CHECK_EQUAL(filter.median(), 17);
+
+    filter.input(7); // [3 7 15 20 30]
+    BOOST_CHECK_EQUAL(filter.median(), 15);
+
+    filter.input(18); // [3 7 18 20 30]
+    BOOST_CHECK_EQUAL(filter.median(), 18);
+
+    filter.input(0); // [0 3 7 18 30]
+    BOOST_CHECK_EQUAL(filter.median(), 7);
+}
+
 static const unsigned char ParseHex_expected[65] = {
     0x04, 0x67, 0x8a, 0xfd, 0xb0, 0xfe, 0x55, 0x48, 0x27, 0x19, 0x67, 0xf1, 0xa6, 0x71, 0x30, 0xb7,
     0x10, 0x5c, 0xd6, 0xa8, 0x28, 0xe0, 0x39, 0x09, 0xa6, 0x79, 0x62, 0xe0, 0xea, 0x1f, 0x61, 0xde,
@@ -88,10 +113,13 @@ BOOST_AUTO_TEST_CASE(util_HexStr)
 
 BOOST_AUTO_TEST_CASE(util_DateTimeStrFormat)
 {
+    /* Do we test, or do we not test, may be platform dependent.. */
+#if 1
     BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", 0), "1970-01-01 00:00:00");
     BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", 0x7FFFFFFF), "2038-01-19 03:14:07");
     BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", 1317425777), "2011-09-30 23:36:17");
     BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M", 1317425777), "2011-09-30 23:36");
+#endif
     BOOST_CHECK_EQUAL(DateTimeStrFormat("%a, %d %b %Y %H:%M:%S +0000", 1317425777), "Fri, 30 Sep 2011 23:36:17 +0000");
 }
 
@@ -141,6 +169,17 @@ BOOST_AUTO_TEST_CASE(util_GetArg)
     BOOST_CHECK_EQUAL(GetBoolArg("booltest2", false), false);
     BOOST_CHECK_EQUAL(GetBoolArg("booltest3", false), false);
     BOOST_CHECK_EQUAL(GetBoolArg("booltest4", false), true);
+}
+
+BOOST_AUTO_TEST_CASE(util_WildcardMatch)
+{
+    BOOST_CHECK(WildcardMatch("127.0.0.1", "*"));
+    BOOST_CHECK(WildcardMatch("127.0.0.1", "127.*"));
+    BOOST_CHECK(WildcardMatch("abcdef", "a?cde?"));
+    BOOST_CHECK(!WildcardMatch("abcdef", "a?cde??"));
+    BOOST_CHECK(WildcardMatch("abcdef", "a*f"));
+    BOOST_CHECK(!WildcardMatch("abcdef", "a*x"));
+    BOOST_CHECK(WildcardMatch("", "*"));
 }
 
 BOOST_AUTO_TEST_CASE(util_FormatMoney)

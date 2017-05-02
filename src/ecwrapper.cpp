@@ -5,7 +5,7 @@
 #include "ecwrapper.h"
 
 #include "serialize.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <openssl/bn.h>
 #include <openssl/ecdsa.h>

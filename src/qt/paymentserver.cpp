@@ -1,6 +1,11 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+/ Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "paymentserver.h"
 
@@ -192,6 +197,8 @@ void PaymentServer::LoadRootCAs(X509_STORE* _store)
 //
 void PaymentServer::ipcParseCommandLine(int argc, char* argv[])
 {
+    bool fResult = false;
+
     for (int i = 1; i < argc; i++)
     {
         QString arg(argv[i]);
@@ -320,7 +327,7 @@ PaymentServer::PaymentServer(QObject* parent, bool startLocalServer) :
         else {
             connect(uriServer, SIGNAL(newConnection()), this, SLOT(handleURIConnection()));
             connect(this, SIGNAL(receivedPaymentACK(QString)), this, SLOT(handlePaymentACK(QString)));
-        }
+    }
     }
 }
 
@@ -338,7 +345,7 @@ bool PaymentServer::eventFilter(QObject *object, QEvent *event)
     // clicking on bitcoin: URIs creates FileOpen events on the Mac
     if (event->type() == QEvent::FileOpen)
     {
-        QFileOpenEvent *fileEvent = static_cast<QFileOpenEvent*>(event);
+        QFileOpenEvent* fileEvent = static_cast<QFileOpenEvent*>(event);
         if (!fileEvent->file().isEmpty())
             handleURIOrFile(fileEvent->file());
         else if (!fileEvent->url().isEmpty())

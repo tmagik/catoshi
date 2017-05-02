@@ -1,7 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #ifdef HAVE_CONFIG_H
 #include "config/bitcoin-config.h"
@@ -11,7 +14,7 @@
 
 #include "hash.h"
 #include "sync.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "util.h"
 #include "utilstrencodings.h"
 
@@ -76,7 +79,7 @@ void SplitHostPort(std::string in, int &portOut, std::string &hostOut) {
         int32_t n;
         if (ParseInt32(in.substr(colon + 1), &n) && n > 0 && n < 0x10000) {
             in = in.substr(0, colon);
-            portOut = n;
+                portOut = n;
         }
     }
     if (in.size()>0 && in[0] == '[' && in[in.size()-1] == ']')
@@ -237,7 +240,7 @@ struct timeval static MillisToTimeval(int64_t nTimeout)
     timeout.tv_sec  = nTimeout / 1000;
     timeout.tv_usec = (nTimeout % 1000) * 1000;
     return timeout;
-}
+    }
 
 /**
  * Read bytes from socket. This will either read the full number of bytes requested
@@ -251,7 +254,7 @@ struct timeval static MillisToTimeval(int64_t nTimeout)
  * @note This function requires that hSocket is in non-blocking mode.
  */
 bool static InterruptibleRecv(char* data, size_t len, int timeout, SOCKET& hSocket)
-{
+    {
     int64_t curTime = GetTimeMillis();
     int64_t endTime = curTime + timeout;
     // Maximum time to wait in one select call. It will take up until this time (in millis)
@@ -277,10 +280,10 @@ bool static InterruptibleRecv(char* data, size_t len, int timeout, SOCKET& hSock
                 int nRet = select(hSocket + 1, &fdset, NULL, NULL, &tval);
                 if (nRet == SOCKET_ERROR) {
                     return false;
-                }
+    }
             } else {
-                return false;
-            }
+        return false;
+    }
         }
         boost::this_thread::interruption_point();
         curTime = GetTimeMillis();
@@ -547,8 +550,8 @@ bool ConnectSocket(const CService &addrDest, SOCKET& hSocketRet, int nTimeout, b
         return false;
     }
     // do socks negotiation
-    if (!Socks5(addrDest.ToStringIP(), addrDest.GetPort(), hSocket))
-        return false;
+        if (!Socks5(addrDest.ToStringIP(), addrDest.GetPort(), hSocket))
+            return false;
 
     hSocketRet = hSocket;
     return true;
@@ -587,7 +590,7 @@ bool ConnectSocketByName(CService &addr, SOCKET& hSocketRet, const char *pszDest
     }
     // do socks negotiation
     if (!Socks5(strDest, (unsigned short)port, hSocket))
-        return false;
+                return false;
 
     hSocketRet = hSocket;
     return true;

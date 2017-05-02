@@ -10,7 +10,7 @@
 #include "merkleblock.h"
 #include "serialize.h"
 #include "streams.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "util.h"
 #include "utilstrencodings.h"
 

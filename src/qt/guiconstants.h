@@ -11,7 +11,7 @@ static const int MODEL_UPDATE_DELAY = 250;
 /* AskPassphraseDialog -- Maximum passphrase length */
 static const int MAX_PASSPHRASE_SIZE = 1024;
 
-/* BitcoinGUI -- Size of icons in status bar */
+/* codecoinGUI -- Size of icons in status bar */
 static const int STATUSBAR_ICONSIZE = 16;
 
 /* Invalid field background style */
@@ -29,6 +29,11 @@ static const int STATUSBAR_ICONSIZE = 16;
 #define COLOR_TX_STATUS_OFFLINE QColor(192, 192, 192)
 /* Transaction list -- TX status decoration - default color */
 #define COLOR_BLACK QColor(0, 0, 0)
+
+/* Colors for minting tab for each coin age group */
+#define COLOR_MINT_YOUNG QColor(127, 127, 240)
+#define COLOR_MINT_MATURE QColor(127, 240, 127)
+#define COLOR_MINT_OLD QColor(240, 127, 127)
 
 /* Tooltips longer than this (in characters) are converted into rich text,
    so that they can be word-wrapped.

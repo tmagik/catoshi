@@ -1,6 +1,11 @@
 // Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "guiutil.h"
 
@@ -124,7 +129,7 @@ void setupAmountWidget(QLineEdit *widget, QWidget *parent)
 bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
 {
     // return if URI is not valid or is no bitcoin: URI
-    if(!uri.isValid() || uri.scheme() != QString("litecoin"))
+    if(!uri.isValid() || uri.scheme() != QString("" BRAND_lower ""))
         return false;
 
     SendCoinsRecipient rv;
@@ -187,10 +192,10 @@ bool parseBitcoinURI(QString uri, SendCoinsRecipient *out)
     // Convert bitcoin:// to bitcoin:
     //
     //    Cannot handle this later, because bitcoin:// will cause Qt to see the part after // as host,
-    //    which will lower-case it (and thus invalidate the address).
-    if(uri.startsWith("litecoin://", Qt::CaseInsensitive))
+    //    which will lowercase it (and thus invalidate the address).
+    if(uri.startsWith("" BRAND_lower "://"))
     {
-        uri.replace(0, 11, "litecoin:");
+        uri.replace(0, len(BRAND_lower ":"), "" BRAND_lower ":");
     }
     QUrl uriInstance(uri);
     return parseBitcoinURI(uriInstance, out);
@@ -265,8 +270,8 @@ void copyEntryData(QAbstractItemView *view, int column, int role)
 }
 
 QString getSaveFileName(QWidget *parent, const QString &caption, const QString &dir,
-    const QString &filter,
-    QString *selectedSuffixOut)
+                                 const QString &filter,
+                                 QString *selectedSuffixOut)
 {
     QString selectedFilter;
     QString myDir;
@@ -567,7 +572,7 @@ TableViewLastColumnResizingFixer::TableViewLastColumnResizingFixer(QTableView* t
 #ifdef WIN32
 boost::filesystem::path static StartupShortcutPath()
 {
-    return GetSpecialFolderPath(CSIDL_STARTUP) / "Litecoin.lnk";
+    return GetSpecialFolderPath(CSIDL_STARTUP) / "" BRAND_lower ".lnk";
 }
 
 bool GetStartOnSystemStartup()
@@ -649,7 +654,7 @@ boost::filesystem::path static GetAutostartDir()
 
 boost::filesystem::path static GetAutostartFilePath()
 {
-    return GetAutostartDir() / "litecoin.desktop";
+    return GetAutostartDir() / "" BRAND_lower ".desktop";
 }
 
 bool GetStartOnSystemStartup()
@@ -690,7 +695,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
         // Write a bitcoin.desktop file to the autostart directory:
         optionFile << "[Desktop Entry]\n";
         optionFile << "Type=Application\n";
-        optionFile << "Name=Litecoin\n";
+        optionFile << "Name=" BRAND_upper "\n";
         optionFile << "Exec=" << pszExePath << " -min\n";
         optionFile << "Terminal=false\n";
         optionFile << "Hidden=false\n";

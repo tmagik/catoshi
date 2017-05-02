@@ -1,9 +1,14 @@
 // Copyright (c) 2012 Pieter Wuille
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_ADDRMAN_H
-#define BITCOIN_ADDRMAN_H
+#ifndef _CODECOIN_ADDRMAN
+#define _CODECOIN_ADDRMAN 1
 
 #include "netbase.h"
 #include "protocol.h"
@@ -14,7 +19,7 @@
 
 #include <map>
 #include <set>
-#include <stdint.h>
+#include <inttypes.h>
 #include <vector>
 
 /** 
@@ -276,8 +281,8 @@ public:
      */
     template<typename Stream>
     void Serialize(Stream &s, int nType, int nVersionDummy) const
-    {
-        LOCK(cs);
+        {
+            LOCK(cs);
 
         unsigned char nVersion = 1;
         s << nVersion;
@@ -288,32 +293,32 @@ public:
 
         int nUBuckets = ADDRMAN_NEW_BUCKET_COUNT ^ (1 << 30);
         s << nUBuckets;
-        std::map<int, int> mapUnkIds;
-        int nIds = 0;
+                std::map<int, int> mapUnkIds;
+                int nIds = 0;
         for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++) {
-            mapUnkIds[(*it).first] = nIds;
+                    mapUnkIds[(*it).first] = nIds;
             const CAddrInfo &info = (*it).second;
             if (info.nRefCount) {
                 assert(nIds != nNew); // this means nNew was wrong, oh ow
                 s << info;
-                nIds++;
-            }
-        }
-        nIds = 0;
+                        nIds++;
+                    }
+                }
+                nIds = 0;
         for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++) {
             const CAddrInfo &info = (*it).second;
             if (info.fInTried) {
                 assert(nIds != nTried); // this means nTried was wrong, oh ow
                 s << info;
-                nIds++;
-            }
-        }
+                        nIds++;
+                    }
+                }
         for (int bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; bucket++) {
             int nSize = 0;
             for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++) {
                 if (vvNew[bucket][i] != -1)
                     nSize++;
-            }
+                    }
             s << nSize;
             for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++) {
                 if (vvNew[bucket][i] != -1) {
@@ -339,7 +344,7 @@ public:
         s >> nKey;
         s >> nNew;
         s >> nTried;
-        int nUBuckets = 0;
+                int nUBuckets = 0;
         s >> nUBuckets;
         if (nVersion != 0) {
             nUBuckets ^= (1 << 30);
@@ -350,7 +355,7 @@ public:
             CAddrInfo &info = mapInfo[n];
             s >> info;
             mapAddr[info] = n;
-            info.nRandomPos = vRandom.size();
+                    info.nRandomPos = vRandom.size();
             vRandom.push_back(n);
             if (nVersion != 1 || nUBuckets != ADDRMAN_NEW_BUCKET_COUNT) {
                 // In case the new table data cannot be used (nVersion unknown, or bucket count wrong),
@@ -359,50 +364,50 @@ public:
                 int nUBucketPos = info.GetBucketPosition(nKey, true, nUBucket);
                 if (vvNew[nUBucket][nUBucketPos] == -1) {
                     vvNew[nUBucket][nUBucketPos] = n;
-                    info.nRefCount++;
+                        info.nRefCount++;
+                    }
                 }
-            }
         }
         nIdCount = nNew;
 
         // Deserialize entries from the tried table.
-        int nLost = 0;
+                int nLost = 0;
         for (int n = 0; n < nTried; n++) {
-            CAddrInfo info;
+                    CAddrInfo info;
             s >> info;
             int nKBucket = info.GetTriedBucket(nKey);
             int nKBucketPos = info.GetBucketPosition(nKey, false, nKBucket);
             if (vvTried[nKBucket][nKBucketPos] == -1) {
-                info.nRandomPos = vRandom.size();
-                info.fInTried = true;
+                        info.nRandomPos = vRandom.size();
+                        info.fInTried = true;
                 vRandom.push_back(nIdCount);
                 mapInfo[nIdCount] = info;
                 mapAddr[info] = nIdCount;
                 vvTried[nKBucket][nKBucketPos] = nIdCount;
                 nIdCount++;
-            } else {
-                nLost++;
-            }
-        }
+                    } else {
+                        nLost++;
+                    }
+                }
         nTried -= nLost;
 
         // Deserialize positions in the new table (if possible).
         for (int bucket = 0; bucket < nUBuckets; bucket++) {
-            int nSize = 0;
+                    int nSize = 0;
             s >> nSize;
             for (int n = 0; n < nSize; n++) {
-                int nIndex = 0;
+                        int nIndex = 0;
                 s >> nIndex;
                 if (nIndex >= 0 && nIndex < nNew) {
                     CAddrInfo &info = mapInfo[nIndex];
                     int nUBucketPos = info.GetBucketPosition(nKey, true, bucket);
                     if (nVersion == 1 && nUBuckets == ADDRMAN_NEW_BUCKET_COUNT && vvNew[bucket][nUBucketPos] == -1 && info.nRefCount < ADDRMAN_NEW_BUCKETS_PER_ADDRESS) {
-                        info.nRefCount++;
+                            info.nRefCount++;
                         vvNew[bucket][nUBucketPos] = nIndex;
+                        }
                     }
                 }
             }
-        }
 
         // Prune new entries with refcount 0 (as a result of collisions).
         int nLostUnk = 0;
@@ -413,7 +418,7 @@ public:
                 nLostUnk++;
             } else {
                 it++;
-            }
+        }
         }
         if (nLost + nLostUnk > 0) {
             LogPrint("addrman", "addrman lost %i new and %i tried addresses due to collisions\n", nLostUnk, nLost);
@@ -442,9 +447,9 @@ public:
             }
         }
 
-        nIdCount = 0;
-        nTried = 0;
-        nNew = 0;
+         nIdCount = 0;
+         nTried = 0;
+         nNew = 0;
     }
 
     CAddrMan()

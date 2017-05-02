@@ -487,9 +487,9 @@
              <property name="autoDefault">
               <bool>false</bool>
              </property>
-            </widget>
-           </item>
-          </layout>
+    </widget>
+   </item>
+  </layout>
          </item>
         </layout>
        </item>
@@ -557,7 +557,7 @@
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
-               </widget>
+ </widget>
               </item>
               <item>
                <widget class="QLabel" name="label_16">

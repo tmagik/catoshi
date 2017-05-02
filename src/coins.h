@@ -8,7 +8,7 @@
 
 #include "compressor.h"
 #include "serialize.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "undo.h"
 
 #include <assert.h>

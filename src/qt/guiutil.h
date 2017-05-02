@@ -202,7 +202,7 @@ namespace GUIUtil
 #else
     typedef QProgressBar ProgressBar;
 #endif
-    
+
 } // namespace GUIUtil
 
 #endif // BITCOIN_QT_GUIUTIL_H

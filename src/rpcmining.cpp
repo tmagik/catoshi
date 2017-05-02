@@ -1,7 +1,12 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "amount.h"
 #include "chainparams.h"
@@ -98,7 +103,7 @@ Value getgenerate(const Array& params, bool fHelp)
         throw runtime_error(
             "getgenerate\n"
             "\nReturn if the server is set to generate coins or not. The default is false.\n"
-            "It is set with the command line argument -gen (or litecoin.conf setting gen)\n"
+            "It is set with the command line argument -gen (or " BRAND_lower ".conf setting gen)\n"
             "It can also be set with the setgenerate call.\n"
             "\nResult\n"
             "true|false      (boolean) If the server is set to generate coins or not\n"
@@ -429,10 +434,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
     if (vNodes.empty())
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Litecoin is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, BRAND_upper " is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Litecoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, BRAND_upper " is downloading blocks...");
 
     static unsigned int nTransactionsUpdatedLast;
 
@@ -572,6 +577,29 @@ Value getblocktemplate(const Array& params, bool fHelp)
         aMutable.push_back("prevblock");
     }
 
+	uint32_t escalatorbits;
+#if defined(FEATURE_MINBLOCKTIME)
+	uint64_t mintime = pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING;
+
+#if defined(FEATURE_FUTURE_IS_HARDER)
+        /* What this does is attempt to slow down creation of blocks that would
+           end up 'in the future'. By decreasing the target, we make big miners
+           work harder */
+	/* Dynamics of this are hand-wavy heuristics at best, that seemed to
+	   work okay at one point. Actually figuring it out would be a good
+	   PhD thesis (or maybe something usefull that Hyperledger could do) */
+	uint64_t hardtime = max(GetTime(), GetAdjustedTime());
+	if (mintime > hardtime){
+		int escalator = ((mintime-hardtime)*10)+100;
+		hashTarget /= max(escalator, 100); /* PoW hash is *less* than target */
+		hashTarget *= 100;
+		escalatorbits = hashTarget.GetCompact();
+		printf("Mining a future block, check your clock. escalator %d%% %x new %x\n",
+			escalator, pblock->nBits, escalatorbits);
+	}
+#endif
+#endif /* FEATURE_MINBLOCKTIME */
+
     Object result;
     result.push_back(Pair("capabilities", aCaps));
     result.push_back(Pair("version", pblock->nVersion));
@@ -581,7 +609,12 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
     result.push_back(Pair("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
     result.push_back(Pair("target", hashTarget.GetHex()));
+#if defined(FEATURE_MINBLOCKTIME)
+	/* danger, there be off-by-one here, add 1 to be safe until we have regression tests -- T */
+	result.push_back(Pair("mintime", mintime+1)));
+#else
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
+#endif
     result.push_back(Pair("mutable", aMutable));
     result.push_back(Pair("noncerange", "00000000ffffffff"));
     result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
@@ -589,7 +622,8 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("curtime", pblock->GetBlockTime()));
     result.push_back(Pair("bits", strprintf("%08x", pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
-
+    if (escalatorbits)
+        result.push_back(Pair("escalator", strprintf("%08x", escalatorbits)));
     return result;
 }
 

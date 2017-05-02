@@ -14,7 +14,6 @@
 #include <boost/assign/list_of.hpp>
 
 using namespace std;
-using namespace boost::assign;
 
 struct SeedSpec6 {
     uint8_t addr[16];
@@ -162,11 +161,11 @@ public:
         vSeeds.push_back(CDNSSeedData("koin-project.com", "dnsseed.koin-project.com"));
         vSeeds.push_back(CDNSSeedData("weminemnc.com", "dnsseed.weminemnc.com"));
 
-        base58Prefixes[PUBKEY_ADDRESS] = list_of(48);
-        base58Prefixes[SCRIPT_ADDRESS] = list_of(5);
-        base58Prefixes[SECRET_KEY] =     list_of(176);
-        base58Prefixes[EXT_PUBLIC_KEY] = list_of(0x04)(0x88)(0xB2)(0x1E);
-        base58Prefixes[EXT_SECRET_KEY] = list_of(0x04)(0x88)(0xAD)(0xE4);
+        base58Prefixes[PUBKEY_ADDRESS] = {  48 };
+        base58Prefixes[SCRIPT_ADDRESS] = {   5 };
+        base58Prefixes[SECRET_KEY] =     { 176 };
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04,0x88,0xB2,0x1E};
+        base58Prefixes[EXT_SECRET_KEY] = {0x04,0x88,0xAD,0xE4};
 
         convertSeed6(vFixedSeeds, pnSeed6_main, ARRAYLEN(pnSeed6_main));
 
@@ -224,11 +223,11 @@ public:
         vSeeds.push_back(CDNSSeedData("xurious.com", "testnet-seed.ltc.xurious.com"));
         vSeeds.push_back(CDNSSeedData("wemine-testnet.com", "dnsseed.wemine-testnet.com"));
 
-        base58Prefixes[PUBKEY_ADDRESS] = list_of(111);
-        base58Prefixes[SCRIPT_ADDRESS] = list_of(196);
-        base58Prefixes[SECRET_KEY]     = list_of(239);
-        base58Prefixes[EXT_PUBLIC_KEY] = list_of(0x04)(0x35)(0x87)(0xCF);
-        base58Prefixes[EXT_SECRET_KEY] = list_of(0x04)(0x35)(0x83)(0x94);
+        base58Prefixes[PUBKEY_ADDRESS] = { 111 };
+        base58Prefixes[SCRIPT_ADDRESS] = { 196 };
+        base58Prefixes[SECRET_KEY]     = { 239 };
+        base58Prefixes[EXT_PUBLIC_KEY] = { 0x04,0x35,0x87,0xCF};
+        base58Prefixes[EXT_SECRET_KEY] = { 0x04,0x35,0x83,0x94};
 
         convertSeed6(vFixedSeeds, pnSeed6_test, ARRAYLEN(pnSeed6_test));
 

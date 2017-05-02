@@ -336,6 +336,9 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "listsinceblock",         &listsinceblock,         false,     false,      true },
     { "wallet",             "listtransactions",       &listtransactions,       false,     false,      true },
     { "wallet",             "listunspent",            &listunspent,            false,     false,      true },
+#if defined(PPCOINSTAKE)
+    { "wallet",             "listminting",            &listminting,            false,     false,      true },
+#endif
     { "wallet",             "lockunspent",            &lockunspent,            true,      false,      true },
     { "wallet",             "move",                   &movecmd,                false,     false,      true },
     { "wallet",             "sendfrom",               &sendfrom,               false,     false,      true },

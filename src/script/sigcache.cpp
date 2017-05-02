@@ -7,7 +7,7 @@
 
 #include "pubkey.h"
 #include "random.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "util.h"
 
 #include <boost/thread.hpp>

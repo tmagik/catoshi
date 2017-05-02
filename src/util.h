@@ -1,18 +1,22 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+#ifndef CODECOIN_UTIL_H
+#define CODECOIN_UTIL_H
 
 /**
  * Server/client environment: argument handling, config file parsing,
  * logging, thread wrappers
  */
-#ifndef BITCOIN_UTIL_H
-#define BITCOIN_UTIL_H
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
 #endif
+
+#include "codecoin.h"
 
 #include "compat.h"
 #include "tinyformat.h"
@@ -175,7 +179,7 @@ void RenameThread(const char* name);
  */
 template <typename Callable> void LoopForever(const char* name,  Callable func, int64_t msecs)
 {
-    std::string s = strprintf("litecoin-%s", name);
+    std::string s = strprintf(BRAND_lower "-%s", name);
     RenameThread(s.c_str());
     LogPrintf("%s thread start\n", name);
     try
@@ -206,7 +210,7 @@ template <typename Callable> void LoopForever(const char* name,  Callable func, 
  */
 template <typename Callable> void TraceThread(const char* name,  Callable func)
 {
-    std::string s = strprintf("litecoin-%s", name);
+    std::string s = strprintf(BRAND_lower "-%s", name);
     RenameThread(s.c_str());
     try
     {
@@ -229,4 +233,4 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
     }
 }
 
-#endif // BITCOIN_UTIL_H
+#endif // CODECOIN_UTIL_H

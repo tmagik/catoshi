@@ -1,6 +1,11 @@
 // Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "sendcoinsentry.h"
 #include "ui_sendcoinsentry.h"
@@ -10,6 +15,8 @@
 #include "guiutil.h"
 #include "optionsmodel.h"
 #include "walletmodel.h"
+#include "optionsmodel.h"
+#include "addresstablemodel.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -75,10 +82,15 @@ void SendCoinsEntry::setModel(WalletModel *model)
 {
     this->model = model;
 
-    if (model && model->getOptionsModel())
+    if(model && model->getOptionsModel())
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
 
     clear();
+}
+
+void SendCoinsEntry::setRemoveEnabled(bool enabled)
+{
+    ui->deleteButton->setEnabled(enabled);
 }
 
 void SendCoinsEntry::clear()
@@ -126,7 +138,7 @@ bool SendCoinsEntry::validate()
         retval = false;
     }
 
-    if (!ui->payAmount->validate())
+    if(!ui->payAmount->validate())
     {
         retval = false;
     }

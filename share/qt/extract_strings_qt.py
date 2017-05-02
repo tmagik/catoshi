@@ -6,10 +6,8 @@ they can be picked up by Qt linguist.
 from subprocess import Popen, PIPE
 import glob
 import operator
-import os
-import sys
 
-OUT_CPP="qt/bitcoinstrings.cpp"
+OUT_CPP="src/qt/codecoinstrings.cpp"
 EMPTY=['""']
 
 def parse_po(text):

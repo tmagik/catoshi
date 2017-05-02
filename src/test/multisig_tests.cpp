@@ -9,7 +9,7 @@
 #include "script/script_error.h"
 #include "script/interpreter.h"
 #include "script/sign.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #ifdef ENABLE_WALLET
 #include "wallet_ismine.h"

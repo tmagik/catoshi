@@ -63,7 +63,7 @@ read_json(const std::string& jsondata)
 BOOST_AUTO_TEST_SUITE(script_tests)
 
 CMutableTransaction BuildCreditingTransaction(const CScript& scriptPubKey)
-{
+    {
     CMutableTransaction txCredit;
     txCredit.nVersion = 1;
     txCredit.nLockTime = 0;
@@ -79,7 +79,7 @@ CMutableTransaction BuildCreditingTransaction(const CScript& scriptPubKey)
 }
 
 CMutableTransaction BuildSpendingTransaction(const CScript& scriptSig, const CMutableTransaction& txCredit)
-{
+        {
     CMutableTransaction txSpend;
     txSpend.nVersion = 1;
     txSpend.nLockTime = 0;
@@ -93,7 +93,7 @@ CMutableTransaction BuildSpendingTransaction(const CScript& scriptSig, const CMu
     txSpend.vout[0].nValue = 0;
 
     return txSpend;
-}
+        }
 
 void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, int flags, bool expect, const std::string& message)
 {
@@ -107,7 +107,7 @@ void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, int flags, bo
     stream << tx2;
     BOOST_CHECK_MESSAGE(bitcoinconsensus_verify_script(begin_ptr(scriptPubKey), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), 0, flags, NULL) == expect,message);
 #endif
-}
+    }
 
 void static NegateSignatureS(std::vector<unsigned char>& vchSig) {
     // Parse the signature.
@@ -152,13 +152,13 @@ void static NegateSignatureS(std::vector<unsigned char>& vchSig) {
 }
 
 namespace
-{
+    {
 const unsigned char vchKey0[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
 const unsigned char vchKey1[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0};
 const unsigned char vchKey2[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0};
 
 struct KeyData
-{
+        {
     CKey key0, key0C, key1, key1C, key2, key2C;
     CPubKey pubkey0, pubkey0C, pubkey0H;
     CPubKey pubkey1, pubkey1C;
@@ -183,12 +183,12 @@ struct KeyData
         key2C.Set(vchKey2, vchKey2 + 32, true);
         pubkey2 = key2.GetPubKey();
         pubkey2C = key2C.GetPubKey();
-    }
+        }
 };
 
 
 class TestBuilder
-{
+        {
 private:
     CScript scriptPubKey;
     CTransaction creditTx;
@@ -207,15 +207,15 @@ private:
     }
 
     void DoPush(const std::vector<unsigned char>& data)
-    {
+        {
          DoPush();
          push = data;
          havePush = true;
-    }
+        }
 
 public:
     TestBuilder(const CScript& redeemScript, const std::string& comment_, int flags_, bool P2SH = false) : scriptPubKey(redeemScript), havePush(false), comment(comment_), flags(flags_)
-    {
+        {
         if (P2SH) {
             creditTx = BuildCreditingTransaction(CScript() << OP_HASH160 << ToByteVector(CScriptID(redeemScript)) << OP_EQUAL);
         } else {
@@ -225,11 +225,11 @@ public:
     }
 
     TestBuilder& Add(const CScript& script)
-    {
+        {
         DoPush();
         spendTx.vin[0].scriptSig += script;
         return *this;
-    }
+        }
 
     TestBuilder& Num(int num)
     {
@@ -242,10 +242,10 @@ public:
     {
         DoPush(ParseHex(hex));
         return *this;
-    }
+}
 
     TestBuilder& PushSig(const CKey& key, int nHashType = SIGHASH_ALL, unsigned int lenR = 32, unsigned int lenS = 32)
-    {
+{
         uint256 hash = SignatureHash(scriptPubKey, spendTx, 0, nHashType);
         std::vector<unsigned char> vchSig, r, s;
         uint32_t iter = 0;
@@ -292,7 +292,7 @@ public:
         assert(pos < push.size());
         push[pos] ^= 1;
         return *this;
-    }
+}
 
     TestBuilder& Test(bool expect)
     {
@@ -629,7 +629,7 @@ BOOST_AUTO_TEST_CASE(script_valid)
         if (test.size() < 3) // Allow size > 3; extra stuff ignored (useful for comments)
         {
             if (test.size() != 1) {
-                BOOST_ERROR("Bad test: " << strTest);
+            BOOST_ERROR("Bad test: " << strTest);
             }
             continue;
         }
@@ -655,7 +655,7 @@ BOOST_AUTO_TEST_CASE(script_invalid)
         if (test.size() < 3) // Allow size > 3; extra stuff ignored (useful for comments)
         {
             if (test.size() != 1) {
-                BOOST_ERROR("Bad test: " << strTest);
+            BOOST_ERROR("Bad test: " << strTest);
             }
             continue;
         }

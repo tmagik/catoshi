@@ -1,7 +1,11 @@
 // Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include "signverifymessagedialog.h"
 #include "ui_signverifymessagedialog.h"
 
@@ -27,6 +31,9 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
 
 #if QT_VERSION >= 0x040700
     ui->signatureOut_SM->setPlaceholderText(tr("Click \"Sign Message\" to generate signature"));
+    ui->signatureIn_VM->setPlaceholderText(tr("Enter the signature of the message"));
+    ui->addressIn_SM->setPlaceholderText(tr("Enter a " BRAND_upper " address"));
+    ui->addressIn_VM->setPlaceholderText(tr("Enter a " BRAND_upper " address"));
 #endif
 
     GUIUtil::setupAddressWidget(ui->addressIn_SM, this);

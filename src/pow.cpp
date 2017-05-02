@@ -8,7 +8,7 @@
 #include "chain.h"
 #include "chainparams.h"
 #include "primitives/block.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "util.h"
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)

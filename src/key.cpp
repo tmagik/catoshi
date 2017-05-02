@@ -1,5 +1,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2014 The *coin developers
+// where * = (Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "key.h"
@@ -131,7 +133,7 @@ bool CKey::Load(CPrivKey &privkey, CPubKey &vchPubKey, bool fSkipCheck=false) {
     fValid = true;
 
     if (fSkipCheck)
-        return true;
+    return true;
 
     return VerifyPubKey(vchPubKey);
 }

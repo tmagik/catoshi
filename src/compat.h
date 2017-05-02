@@ -1,14 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_COMPAT_H
-#define BITCOIN_COMPAT_H
-
-#if defined(HAVE_CONFIG_H)
-#include "config/bitcoin-config.h"
-#endif
+#ifndef _CODECOIN_COMPAT_H
+#define _CODECOIN_COMPAT_H 1
 
 #ifdef WIN32
 #ifdef _WIN32_WINNT
@@ -31,7 +28,12 @@
 #include <mswsock.h>
 #include <windows.h>
 #include <ws2tcpip.h>
-#else
+#elif defined(OS_ANDROID)
+#include <fcntl.h>
+#include <netdb.h>
+#include <endian.h>
+#include <linux/rtnetlink.h>
+#else // Linux
 #include <sys/fcntl.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
@@ -99,4 +101,4 @@ bool static inline IsSelectableSocket(SOCKET s) {
 #endif
 }
 
-#endif // BITCOIN_COMPAT_H
+#endif // CODECOIN_COMPAT_H

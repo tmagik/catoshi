@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "rpcclient.h"
+#include "codecoin.h"
 
 #include "rpcprotocol.h"
 #include "util.h"

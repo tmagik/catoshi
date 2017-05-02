@@ -1,10 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Previously istributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#ifndef BITCOIN_DB_H
-#define BITCOIN_DB_H
+// Copyright (c) 2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+#ifndef _CODECOIN_DB_H
+#define _CODECOIN_DB_H
 
 #include "clientversion.h"
 #include "serialize.h"
@@ -16,8 +18,7 @@
 #include <string>
 #include <vector>
 
-#include <boost/filesystem/path.hpp>
-
+#include <boost/filesystem.hpp>
 #include <db_cxx.h>
 
 class CDiskBlockIndex;
@@ -70,7 +71,7 @@ public:
     typedef std::pair<std::vector<unsigned char>, std::vector<unsigned char> > KeyValPair;
     bool Salvage(std::string strFile, bool fAggressive, std::vector<KeyValPair>& vResult);
 
-    bool Open(const boost::filesystem::path& path);
+    bool Open(const boost::filesystem::path &path);
     void Close();
     void Flush(bool fShutdown);
     void CheckpointLSN(const std::string& strFile);
@@ -78,7 +79,7 @@ public:
     void CloseDb(const std::string& strFile);
     bool RemoveDb(const std::string& strFile);
 
-    DbTxn* TxnBegin(int flags = DB_TXN_WRITE_NOSYNC)
+    DbTxn *TxnBegin(int flags=DB_TXN_WRITE_NOSYNC)
     {
         DbTxn* ptxn = NULL;
         int ret = dbenv.txn_begin(NULL, &ptxn, flags);
@@ -97,7 +98,7 @@ class CDB
 protected:
     Db* pdb;
     std::string strFile;
-    DbTxn* activeTxn;
+    DbTxn *activeTxn;
     bool fReadOnly;
 
     explicit CDB(const std::string& strFilename, const char* pszMode = "r+");
@@ -112,7 +113,7 @@ private:
     void operator=(const CDB&);
 
 protected:
-    template <typename K, typename T>
+    template<typename K, typename T>
     bool Read(const K& key, T& value)
     {
         if (!pdb)
@@ -146,8 +147,8 @@ protected:
         return (ret == 0);
     }
 
-    template <typename K, typename T>
-    bool Write(const K& key, const T& value, bool fOverwrite = true)
+    template<typename K, typename T>
+    bool Write(const K& key, const T& value, bool fOverwrite=true)
     {
         if (!pdb)
             return false;
@@ -175,7 +176,7 @@ protected:
         return (ret == 0);
     }
 
-    template <typename K>
+    template<typename K>
     bool Erase(const K& key)
     {
         if (!pdb)
@@ -197,7 +198,7 @@ protected:
         return (ret == 0 || ret == DB_NOTFOUND);
     }
 
-    template <typename K>
+    template<typename K>
     bool Exists(const K& key)
     {
         if (!pdb)
@@ -228,7 +229,7 @@ protected:
         return pcursor;
     }
 
-    int ReadAtCursor(Dbc* pcursor, CDataStream& ssKey, CDataStream& ssValue, unsigned int fFlags = DB_NEXT)
+    int ReadAtCursor(Dbc* pcursor, CDataStream& ssKey, CDataStream& ssValue, unsigned int fFlags=DB_NEXT)
     {
         // Read at cursor
         Dbt datKey;
@@ -309,4 +310,4 @@ public:
     bool static Rewrite(const std::string& strFile, const char* pszSkip = NULL);
 };
 
-#endif // BITCOIN_DB_H
+#endif // CODECOIN_DB_H

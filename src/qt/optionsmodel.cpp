@@ -124,10 +124,10 @@ void OptionsModel::Init()
         addOverriddenOption("-lang");
 
     language = settings.value("language").toString();
-}
+        }
 
 void OptionsModel::Reset()
-{
+    {
     QSettings settings;
 
     // Remove all entries from our QSettings object
@@ -231,7 +231,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         // default proxy
         case ProxyUse:
             if (settings.value("fUseProxy") != value) {
-                settings.setValue("fUseProxy", value.toBool());
+            settings.setValue("fUseProxy", value.toBool());
                 setRestartRequired(true);
             }
             break;
@@ -264,8 +264,8 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             if (settings.value("bSpendZeroConfChange") != value) {
                 settings.setValue("bSpendZeroConfChange", value);
                 setRestartRequired(true);
-            }
-            break;
+        }
+        break;
 #endif
         case DisplayUnit:
             setDisplayUnit(value);
