@@ -496,8 +496,7 @@ public:
 
     /** Create a new CTxMemPool.
      */
-    CTxMemPool();
-    ~CTxMemPool();
+    CTxMemPool(CBlockPolicyEstimator* estimator = nullptr);
 
     /**
      * If sanity-checking is turned on, check makes sure the pool is
@@ -552,12 +551,12 @@ public:
      *  new mempool entries may have children in the mempool (which is generally
      *  not the case when otherwise adding transactions).
      *  UpdateTransactionsFromBlock() will find child transactions and update the
-     *  descendant state for each transaction in hashesToUpdate (excluding any
-     *  child transactions present in hashesToUpdate, which are already accounted
-     *  for).  Note: hashesToUpdate should be the set of transactions from the
+     *  descendant state for each transaction in vHashesToUpdate (excluding any
+     *  child transactions present in vHashesToUpdate, which are already accounted
+     *  for).  Note: vHashesToUpdate should be the set of transactions from the
      *  disconnected block that have been accepted back into the mempool.
      */
-    void UpdateTransactionsFromBlock(const std::vector<uint256> &hashesToUpdate);
+    void UpdateTransactionsFromBlock(const std::vector<uint256> &vHashesToUpdate);
 
     /** Try to calculate all in-mempool ancestors of entry.
      *  (these are all calculated including the tx itself)
@@ -617,19 +616,6 @@ public:
     CTransactionRef get(const uint256& hash) const;
     TxMempoolInfo info(const uint256& hash) const;
     std::vector<TxMempoolInfo> infoAll() const;
-
-    /** Estimate fee rate needed to get into the next nBlocks
-     *  If no answer can be given at nBlocks, return an estimate
-     *  at the lowest number of blocks where one can be given
-     */
-    CFeeRate estimateSmartFee(int nBlocks, int *answerFoundAtBlocks = NULL) const;
-
-    /** Estimate fee rate needed to get into the next nBlocks */
-    CFeeRate estimateFee(int nBlocks) const;
-
-    /** Write/Read estimates to disk */
-    bool WriteFeeEstimates(CAutoFile& fileout) const;
-    bool ReadFeeEstimates(CAutoFile& filein);
 
     size_t DynamicMemoryUsage() const;
 

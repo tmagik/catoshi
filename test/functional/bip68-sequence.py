@@ -21,16 +21,11 @@ class BIP68Test(BitcoinTestFramework):
         super().__init__()
         self.num_nodes = 2
         self.setup_clean_chain = False
-
-    def setup_network(self):
-        self.nodes = []
-        self.nodes.append(start_node(0, self.options.tmpdir))
-        self.nodes.append(start_node(1, self.options.tmpdir, ["-acceptnonstdtxn=0"]))
-        self.is_network_split = False
-        self.relayfee = self.nodes[0].getnetworkinfo()["relayfee"]
-        connect_nodes(self.nodes[0], 1)
+        self.extra_args = [[], ["-acceptnonstdtxn=0"]]
 
     def run_test(self):
+        self.relayfee = self.nodes[0].getnetworkinfo()["relayfee"]
+
         # Generate some coins
         self.nodes[0].generate(110)
 
@@ -378,8 +373,8 @@ class BIP68Test(BitcoinTestFramework):
         # activation should happen at block height 432 (3 periods)
         min_activation_height = 432
         height = self.nodes[0].getblockcount()
-        assert(height < 432)
-        self.nodes[0].generate(432-height)
+        assert(height < min_activation_height)
+        self.nodes[0].generate(min_activation_height-height)
         assert(get_bip9_status(self.nodes[0], 'csv')['status'] == 'active')
         sync_blocks(self.nodes)
 
