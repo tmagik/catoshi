@@ -16,7 +16,6 @@ test that enforcement has not triggered (which triggers ACTIVE)
 test that enforcement has triggered
 """
 
-from test_framework.blockstore import BlockStore
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import *
 from test_framework.mininode import CTransaction, NetworkThread
@@ -32,11 +31,7 @@ class BIP9SoftForksTest(ComparisonTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 1
-
-    def setup_network(self):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir,
-                                 extra_args=[['-whitelist=127.0.0.1']],
-                                 binary=[self.options.testbinary])
+        self.extra_args = [['-whitelist=127.0.0.1']]
 
     def run_test(self):
         self.test = TestManager(self, self.options.tmpdir)
@@ -200,16 +195,14 @@ class BIP9SoftForksTest(ComparisonTestFramework):
         yield TestInstance([[block, False]])
 
         # Restart all
-        self.test.block_store.close()
+        self.test.clear_all_connections()
         stop_nodes(self.nodes)
-        shutil.rmtree(self.options.tmpdir)
+        shutil.rmtree(self.options.tmpdir + "/node0")
         self.setup_chain()
         self.setup_network()
-        self.test.block_store = BlockStore(self.options.tmpdir)
-        self.test.clear_all_connections()
         self.test.add_all_connections(self.nodes)
-        NetworkThread().start() # Start up network handling in another thread
-
+        NetworkThread().start()
+        self.test.test_nodes[0].wait_for_verack()
 
     def get_tests(self):
         for test in itertools.chain(
