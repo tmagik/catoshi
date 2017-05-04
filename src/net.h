@@ -610,9 +610,9 @@ public:
 
 
 
-class CTransaction;
-void RelayTransaction(const CTransaction& tx);
-void RelayTransaction(const CTransaction& tx, const CDataStream& ss);
+class Transaction;
+void RelayTransaction(const Transaction& tx);
+void RelayTransaction(const Transaction& tx, const CDataStream& ss);
 
 /** Access to the (IP) address database (peers.dat) */
 class CAddrDB

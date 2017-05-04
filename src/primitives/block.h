@@ -1,11 +1,18 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_PRIMITIVES_BLOCK_H
-#define BITCOIN_PRIMITIVES_BLOCK_H
 
+#ifndef CODECOIN_PRIMITIVES_BLOCK_H
+#define CODECOIN_PRIMITIVES_BLOCK_H
+
+#include "codecoin.h"
 #include "primitives/transaction.h"
 #include "serialize.h"
 #include "uintBIG.h"
@@ -19,6 +26,12 @@ static const unsigned int MAX_BLOCK_SIZE = 1000000;
  * to everyone and the block is added to the block chain.  The first transaction
  * in the block is a special one that creates a new coin owned by the creator
  * of the block.
+ */
+/** Catoshi: TODO: first class validating mobile-friendly wallet that can pull
+ * 'historical' blocks that have been checkpoint validated from the p2p network
+ * or from trusted servers. Ideally clients that do not keep full blockchains 
+ * but are staking would pay fees to retrieve blocks from nodes that have a full
+ * copy. Call this proof-of-data, or proof-of-history
  */
 class CBlockHeader
 {

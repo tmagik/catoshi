@@ -80,6 +80,27 @@ public:
     }
 };
 
+/* was in CBlockHeader:: class. Put it back eventually */
+#if defined(FEATURE_MINIMUM_BLOCK_TIME)
+void UpdateTime(CBlockHeader* pblock, const CBlockIndex* pindexPrev)
+{
+	/* This is tighter tolerance than original Satoshi client,
+         * to keep time monotonically increasing. Theoretically,
+         * this gives more power to nodes that drop (or at least do
+         * not forward) blocks with a future timestamp. In practice
+         * this is rather hard to test without market-motivated miners.
+	 * Carefully check coin's AcceptBlockTimestamp. If the check
+         * is <= MINIMUM_BLOCK_SPACING, you need the +1 */
+	nTime = max(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1, GetBlockTime());
+	nTime = max(GetAdjustedTime(), GetBlockTime());
+
+#if !defined(PPCOINSTAKE)
+	// Updating time can change work required on testnet:
+	if (fTestNet)
+		nBits = GetNextTrustRequired(pindexPrev, this);
+#endif
+}
+#else
 void UpdateTime(CBlockHeader* pblock, const CBlockIndex* pindexPrev)
 {
     pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
@@ -88,6 +109,7 @@ void UpdateTime(CBlockHeader* pblock, const CBlockIndex* pindexPrev)
     if (Params().AllowMinDifficultyBlocks())
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock);
 }
+#endif
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {

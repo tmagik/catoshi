@@ -22,7 +22,6 @@
 #include <db_cxx.h>
 
 class CDiskBlockIndex;
-class COutPoint;
 
 struct CBlockLocator;
 
