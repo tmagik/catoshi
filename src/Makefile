@@ -321,11 +321,11 @@ test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
 	./test_$(COIN_BRAND)
 
 regression: test FORCE
-	$(MAKE) COIN_BRAND=givecoin test
-	$(MAKE) COIN_BRAND=grantstake test
-	$(MAKE) COIN_BRAND=cleanwatercoin test
-	$(MAKE) COIN_BRAND=hamburger test
-	$(MAKE) COIN_BRAND=kittycoin test
+	$(MAKE) COIN_BRAND=litecoin test
+#	$(MAKE) COIN_BRAND=grantcoin test
+#	$(MAKE) COIN_BRAND=grantstake test
+#	$(MAKE) COIN_BRAND=hamburger test
+#	$(MAKE) COIN_BRAND=kittycoin test
 	
 
 $(TESTDIR):
@@ -344,40 +344,48 @@ D_LIBS += -lleveldb
 -include $(OBJDIR)/*.P
 -include $(OBJDIR)/test/*.P
 
+ifeq ($(V),1)
+V_CXX=
+V_LINK=
+else
+V_CXX=@echo "   $(CXX)        $<" ;
+V_LNK=@echo "   $(LINK)       $<" ;
+endif
+
 $(OBJDIR)/build.h: FORCE
 	/bin/sh ../share/genbuild.sh $(OBJDIR)/build.h
 clientversion.cpp: $(OBJDIR)/build.h
 DEFS += -DHAVE_BUILD_INFO -DHAVE_SYS_SELECT_H
 
 $(OBJDIR)/%-sse2.o: %-sse2.cpp
-	$(CXX) -c $(xCXXFLAGS) -msse2 -MMD -MF $(@:%.o=%.d) -o $@ $<
+	$(V_CXX) $(CXX) -c $(xCXXFLAGS) -msse2 -MMD -MF $(@:%.o=%.d) -o $@ $<
 	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
 $(OBJDIR)/%.o: %.c
-	$(CXX) -c $(xCXXFLAGS) -fpermissive -MMD -MF $(@:%.o=%.d) -o $@ $<
+	$(V_CXX) $(CXX) -c $(xCXXFLAGS) -fpermissive -MMD -MF $(@:%.o=%.d) -o $@ $<
 	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
 $(OBJDIR)/%.o: %.cpp
-	$(CXX) -c $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
+	$(V_CXX) $(CXX) -c $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
 	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
 $(COIN_BRAND)d: $(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
-	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(D_LIBS)
+	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(D_LIBS)
 
 $(COIN_BRAND)-tx: $(TX_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
-	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(TX_LIBS)
+	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(TX_LIBS)
 
 $(COIN_BRAND)-cli: $(CLI_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
-	$(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(CLI_LIBS)
+	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(CLI_LIBS)
 
 
 

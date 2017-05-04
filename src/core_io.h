@@ -10,7 +10,8 @@
 
 class CBlock;
 class CScript;
-class CTransaction;
+//class CTransaction;
+#include "primitives/transaction.h"
 class uint256;
 class UniValue;
 

@@ -2,16 +2,15 @@
 // Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 #ifndef _CODECOIN_BLOOM_H
 #define _CODECOIN_BLOOM_H
 
-
 #include "serialize.h"
+#include "primitives/transaction.h"
 
 #include <vector>
 
-class COutPoint;
-class CTransaction;
 class uint256;
 
 //! 20,000 items with fp rate < 0.1% or 10,000 items and <0.0001%

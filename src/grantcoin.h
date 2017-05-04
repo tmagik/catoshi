@@ -15,8 +15,8 @@ static const int COIN_DECIMALS = 6; /* decimal places for coin */
 #define COIN_DECIMALS_FMT "06"
 
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
-static const unsigned int MAX_BLOCK_SIZE = 1000000;
-static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
+//static const unsigned int MAX_BLOCK_SIZE = 1000000; // Segwit will move this around
+//static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 
 /** No amount larger than this (in satoshi) is valid */
 static const int64_t MAX_MONEY = 50000000000 * COIN;
@@ -45,6 +45,7 @@ static const int MIN_FREE_PRIORITY = COIN * 960 / 250;
 // TODO: not needed for GRT???
 static const int RETARGET_INTERVAL = 36;
 
+#define FEATURE_MINIMUM_BLOCK_TIME
 /** Minimum block time spacing (hard limit) **/
 static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 
@@ -64,5 +65,12 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 // Faster bootstraps with xz. Probably only works on mac/linux
 #define USE_BOOTSTRAP_XZ
 #define USE_BOOTSTRAP_GZ	// might work on android too
+
+/* primitives/<stuff> needs this */
+#define BITCOIN_COMPAT
+
+/* allow for overloads.. */
+#define CTransaction TransactionGRT
+#define CMutableTransaction MutableTransactionGRT
 
 #endif

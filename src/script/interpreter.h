@@ -15,7 +15,7 @@
 
 class CPubKey;
 class CScript;
-class CTransaction;
+//class CTransaction;  //FIXME what is advantage of forward declaration vs just include
 class uint256;
 
 /** Signature hash types/flags */
