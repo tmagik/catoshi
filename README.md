@@ -1,61 +1,82 @@
-libsecp256k1
-============
+Bitcoin Core integration/staging tree
+=====================================
 
-[![Build Status](https://travis-ci.org/bitcoin-core/secp256k1.svg?branch=master)](https://travis-ci.org/bitcoin-core/secp256k1)
+[![Build Status](https://travis-ci.org/bitcoin/bitcoin.svg?branch=master)](https://travis-ci.org/bitcoin/bitcoin)
 
-Optimized C library for EC operations on curve secp256k1.
+https://bitcoincore.org
 
-This library is a work in progress and is being used to research best practices. Use at your own risk.
+What is Bitcoin?
+----------------
 
-Features:
-* secp256k1 ECDSA signing/verification and key generation.
-* Adding/multiplying private/public keys.
-* Serialization/parsing of private keys, public keys, signatures.
-* Constant time, constant memory access signing and pubkey generation.
-* Derandomized DSA (via RFC6979 or with a caller provided function.)
-* Very efficient implementation.
+Bitcoin is an experimental digital currency that enables instant payments to
+anyone, anywhere in the world. Bitcoin uses peer-to-peer technology to operate
+with no central authority: managing transactions and issuing money are carried
+out collectively by the network. Bitcoin Core is the name of open source
+software which enables the use of this currency.
 
-Implementation details
-----------------------
+For more information, as well as an immediately useable, binary version of
+the Bitcoin Core software, see https://bitcoin.org/en/download, or read the
+[original whitepaper](https://bitcoincore.org/bitcoin.pdf).
 
-* General
-  * No runtime heap allocation.
-  * Extensive testing infrastructure.
-  * Structured to facilitate review and analysis.
-  * Intended to be portable to any system with a C89 compiler and uint64_t support.
-  * Expose only higher level interfaces to minimize the API surface and improve application security. ("Be difficult to use insecurely.")
-* Field operations
-  * Optimized implementation of arithmetic modulo the curve's field size (2^256 - 0x1000003D1).
-    * Using 5 52-bit limbs (including hand-optimized assembly for x86_64, by Diederik Huys).
-    * Using 10 26-bit limbs.
-  * Field inverses and square roots using a sliding window over blocks of 1s (by Peter Dettman).
-* Scalar operations
-  * Optimized implementation without data-dependent branches of arithmetic modulo the curve's order.
-    * Using 4 64-bit limbs (relying on __int128 support in the compiler).
-    * Using 8 32-bit limbs.
-* Group operations
-  * Point addition formula specifically simplified for the curve equation (y^2 = x^3 + 7).
-  * Use addition between points in Jacobian and affine coordinates where possible.
-  * Use a unified addition/doubling formula where necessary to avoid data-dependent branches.
-  * Point/x comparison without a field inversion by comparison in the Jacobian coordinate space.
-* Point multiplication for verification (a*P + b*G).
-  * Use wNAF notation for point multiplicands.
-  * Use a much larger window for multiples of G, using precomputed multiples.
-  * Use Shamir's trick to do the multiplication with the public key and the generator simultaneously.
-  * Optionally (off by default) use secp256k1's efficiently-computable endomorphism to split the P multiplicand into 2 half-sized ones.
-* Point multiplication for signing
-  * Use a precomputed table of multiples of powers of 16 multiplied with the generator, so general multiplication becomes a series of additions.
-  * Access the table with branch-free conditional moves so memory access is uniform.
-  * No data-dependent branches
-  * The precomputed tables add and eventually subtract points for which no known scalar (private key) is known, preventing even an attacker with control over the private key used to control the data internally.
+License
+-------
 
-Build steps
------------
+Bitcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
+information or see https://opensource.org/licenses/MIT.
 
-libsecp256k1 is built using autotools:
+Development Process
+-------------------
 
-    $ ./autogen.sh
-    $ ./configure
-    $ make
-    $ ./tests
-    $ sudo make install  # optional
+The `master` branch is regularly built and tested, but is not guaranteed to be
+completely stable. [Tags](https://github.com/bitcoin/bitcoin/tags) are created
+regularly to indicate new official, stable release versions of Bitcoin Core.
+
+The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The developer [mailing list](https://lists.linuxfoundation.org/mailman/listinfo/bitcoin-dev)
+should be used to discuss complicated or controversial changes before working
+on a patch set.
+
+Developer IRC can be found on Freenode at #bitcoin-core-dev.
+
+Testing
+-------
+
+Testing and code review is the bottleneck for development; we get more pull
+requests than we can review and test on short notice. Please be patient and help out by testing
+other people's pull requests, and remember this is a security-critical project where any mistake might cost people
+lots of money.
+
+### Automated Testing
+
+Developers are strongly encouraged to write [unit tests](src/test/README.md) for new code, and to
+submit new unit tests for old code. Unit tests can be compiled and run
+(assuming they weren't disabled in configure) with: `make check`. Further details on running
+and extending unit tests can be found in [/src/test/README.md](/src/test/README.md).
+
+There are also [regression and integration tests](/test), written
+in Python, that are run automatically on the build server.
+These tests can be run (if the [test dependencies](/test) are installed) with: `test/functional/test_runner.py`
+
+The Travis CI system makes sure that every pull request is built for Windows, Linux, and OS X, and that unit/sanity tests are run automatically.
+
+### Manual Quality Assurance (QA) Testing
+
+Changes should be tested by somebody other than the developer who wrote the
+code. This is especially important for large or high-risk changes. It is useful
+to add a test plan to the pull request description if testing the changes is
+not straightforward.
+
+Translations
+------------
+
+Changes to translations as well as new translations can be submitted to
+[Bitcoin Core's Transifex page](https://www.transifex.com/projects/p/bitcoin/).
+
+Translations are periodically pulled from Transifex and merged into the git repository. See the
+[translation process](doc/translation_process.md) for details on how this works.
+
+**Important**: We do not accept translation changes as GitHub pull requests because the next
+pull from Transifex would automatically overwrite them again.
+
+Translators should also subscribe to the [mailing list](https://groups.google.com/forum/#!forum/bitcoin-translators).
