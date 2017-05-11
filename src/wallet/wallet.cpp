@@ -621,12 +621,9 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
 
         // if we are using HD, replace the HD master key (seed) with a new one
         if (IsHDEnabled()) {
-            CKey key;
-            CPubKey masterPubKey = GenerateNewHDMasterKey();
-            // preserve the old chains version to not break backward compatibility
-            CHDChain oldChain = GetHDChain();
-            if (!SetHDMasterKey(masterPubKey, &oldChain))
+            if (!SetHDMasterKey(GenerateNewHDMasterKey())) {
                 return false;
+            }
         }
 
         NewKeyPool();
@@ -1124,12 +1121,12 @@ void CWallet::TransactionAddedToMempool(const CTransactionRef& ptx) {
 
 void CWallet::BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex *pindex, const std::vector<CTransactionRef>& vtxConflicted) {
     LOCK2(cs_main, cs_wallet);
-    // TODO: Tempoarily ensure that mempool removals are notified before
+    // TODO: Temporarily ensure that mempool removals are notified before
     // connected transactions.  This shouldn't matter, but the abandoned
     // state of transactions in our wallet is currently cleared when we
     // receive another notification and there is a race condition where
     // notification of a connected conflict might cause an outside process
-    // to abandon a transaction and then have it inadvertantly cleared by
+    // to abandon a transaction and then have it inadvertently cleared by
     // the notification that the conflicted transaction was evicted.
 
     for (const CTransactionRef& ptx : vtxConflicted) {
@@ -1324,17 +1321,14 @@ CPubKey CWallet::GenerateNewHDMasterKey()
     return pubkey;
 }
 
-bool CWallet::SetHDMasterKey(const CPubKey& pubkey, CHDChain *possibleOldChain)
+bool CWallet::SetHDMasterKey(const CPubKey& pubkey)
 {
     LOCK(cs_wallet);
     // store the keyid (hash160) together with
     // the child index counter in the database
     // as a hdchain object
     CHDChain newHdChain;
-    if (possibleOldChain) {
-        // preserve the old chains version
-        newHdChain.nVersion = possibleOldChain->nVersion;
-    }
+    newHdChain.nVersion = CanSupportFeature(FEATURE_HD_SPLIT) ? CHDChain::VERSION_HD_CHAIN_SPLIT : CHDChain::VERSION_HD_BASE;
     newHdChain.masterKeyID = pubkey.GetID();
     SetHDChain(newHdChain, false);
 
@@ -2455,7 +2449,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                         }
                     }
 
-                    if (txout.IsDust(dustRelayFee))
+                    if (IsDust(txout, ::dustRelayFee))
                     {
                         if (recipient.fSubtractFeeFromAmount && nFeeRet > 0)
                         {
@@ -2520,16 +2514,16 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                     // We do not move dust-change to fees, because the sender would end up paying more than requested.
                     // This would be against the purpose of the all-inclusive feature.
                     // So instead we raise the change and deduct from the recipient.
-                    if (nSubtractFeeFromAmount > 0 && newTxOut.IsDust(dustRelayFee))
+                    if (nSubtractFeeFromAmount > 0 && IsDust(newTxOut, ::dustRelayFee))
                     {
-                        CAmount nDust = newTxOut.GetDustThreshold(dustRelayFee) - newTxOut.nValue;
+                        CAmount nDust = GetDustThreshold(newTxOut, ::dustRelayFee) - newTxOut.nValue;
                         newTxOut.nValue += nDust; // raise change until no more dust
                         for (unsigned int i = 0; i < vecSend.size(); i++) // subtract from first recipient
                         {
                             if (vecSend[i].fSubtractFeeFromAmount)
                             {
                                 txNew.vout[i].nValue -= nDust;
-                                if (txNew.vout[i].IsDust(dustRelayFee))
+                                if (IsDust(txNew.vout[i], ::dustRelayFee))
                                 {
                                     strFailReason = _("The transaction amount is too small to send after the fee has been deducted");
                                     return false;
@@ -2541,7 +2535,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
 
                     // Never create dust outputs; if we would, just
                     // add the dust to the fee.
-                    if (newTxOut.IsDust(dustRelayFee))
+                    if (IsDust(newTxOut, ::dustRelayFee))
                     {
                         nChangePosInOut = -1;
                         nFeeRet += nChange;
@@ -2563,9 +2557,10 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                         std::vector<CTxOut>::iterator position = txNew.vout.begin()+nChangePosInOut;
                         txNew.vout.insert(position, newTxOut);
                     }
-                }
-                else
+                } else {
                     reservekey.ReturnKey();
+                    nChangePosInOut = -1;
+                }
 
                 // Fill vin
                 //
@@ -2777,17 +2772,12 @@ CAmount CWallet::GetRequiredFee(unsigned int nTxBytes)
     return std::max(minTxFee.GetFee(nTxBytes), ::minRelayTxFee.GetFee(nTxBytes));
 }
 
-CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool, const CBlockPolicyEstimator& estimator)
+CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool, const CBlockPolicyEstimator& estimator, bool ignoreUserSetFee)
 {
     // payTxFee is the user-set global for desired feerate
-    return GetMinimumFee(nTxBytes, nConfirmTarget, pool, estimator, payTxFee.GetFee(nTxBytes));
-}
-
-CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool, const CBlockPolicyEstimator& estimator, CAmount targetFee)
-{
-    CAmount nFeeNeeded = targetFee;
+    CAmount nFeeNeeded = payTxFee.GetFee(nTxBytes);
     // User didn't set: use -txconfirmtarget to estimate...
-    if (nFeeNeeded == 0) {
+    if (nFeeNeeded == 0 || ignoreUserSetFee) {
         int estimateFoundTarget = nConfirmTarget;
         nFeeNeeded = estimator.estimateSmartFee(nConfirmTarget, &estimateFoundTarget, pool).GetFee(nTxBytes);
         // ... unless we don't have enough mempool data for estimatefee, then use fallbackFee
