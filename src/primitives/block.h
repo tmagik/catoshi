@@ -17,6 +17,10 @@
 #include "serialize.h"
 #include "uintBIG.h"
 
+#if defined(BRAND_grantcoin)
+#include "keystore.h"
+#endif
+
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
 
@@ -33,7 +37,7 @@ static const unsigned int MAX_BLOCK_SIZE = 1000000;
  * but are staking would pay fees to retrieve blocks from nodes that have a full
  * copy. Call this proof-of-data, or proof-of-history
  */
-class CBlockHeader
+class BlockHeader
 {
 public:
     // header
@@ -45,7 +49,7 @@ public:
     uint32_t nBits;
     uint32_t nNonce;
 
-    CBlockHeader()
+    BlockHeader()
     {
         SetNull();
     }
@@ -65,7 +69,7 @@ public:
 
     void SetNull()
     {
-        nVersion = CBlockHeader::CURRENT_VERSION;
+        nVersion = BlockHeader::CURRENT_VERSION;
         hashPrevBlock = 0;
         hashMerkleRoot = 0;
         nTime = 0;
@@ -88,26 +92,60 @@ public:
     }
 };
 
+#if defined(BRAND_grantcoin)
+class BlockHeaderGRT : public BlockHeader
+{
+public:
+    static const int VERSION_STAKE_START=2; // not actually used, remove?
+    static const int CURRENT_VERSION=1;
 
-class CBlock : public CBlockHeader
+    uint256 GetPowHash() const
+    {
+        return GetHash();
+    }
+};
+#endif
+
+#if defined(BRAND_grantcoin)
+class BlockGRT : public BlockHeaderGRT
+#else
+class Block : public BlockHeader
+#endif
 {
 public:
     // network and disk
     std::vector<CTransaction> vtx;
+#if defined(BRAND_grantcoin)
+	// ppcoin: block signature - signed by coin base txout[0]'s owner
+	std::vector<unsigned char> BlockSig;
+#endif
 
     // memory only
     mutable std::vector<uint256> vMerkleTree;
 
-    CBlock()
+#if defined(BRAND_grantcoin)
+    BlockGRT()
     {
         SetNull();
     }
 
-    CBlock(const CBlockHeader &header)
+    BlockGRT(const BlockHeaderGRT &header)
     {
         SetNull();
-        *((CBlockHeader*)this) = header;
+        *((BlockHeaderGRT*)this) = header;
     }
+#else
+    Block()
+    {
+        SetNull();
+    }
+
+    Block(const BlockHeader &header)
+    {
+        SetNull();
+        *((BlockHeader*)this) = header;
+    }
+#endif
 
     ADD_SERIALIZE_METHODS;
 
@@ -115,18 +153,24 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(*(CBlockHeader*)this);
         READWRITE(vtx);
+#if defined(BRAND_grantcoin)
+	READWRITE(BlockSig);
+#endif
     }
 
     void SetNull()
     {
-        CBlockHeader::SetNull();
+        BlockHeader::SetNull();
         vtx.clear();
+#if defined(BRAND_grantcoin)
+	BlockSig.clear();
+#endif
         vMerkleTree.clear();
     }
 
-    CBlockHeader GetBlockHeader() const
+    BlockHeader GetBlockHeader() const
     {
-        CBlockHeader block;
+        BlockHeader block;
         block.nVersion       = nVersion;
         block.hashPrevBlock  = hashPrevBlock;
         block.hashMerkleRoot = hashMerkleRoot;
@@ -147,6 +191,35 @@ public:
     std::string ToString() const;
 };
 
+#if 0
+#if defined(BRAND_grantcoin)
+/* this is probably not the right way to abstract this */
+class BlockGRT : public Block
+{
+	std::vector<unsigned char> BlockSig;
+	template <typename Stream, typename Operation>
+	inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+		READWRITE(*(CBlockHeader*)this);
+		READWRITE(vtx);
+		READWRITE(BlockSig);
+	}
+
+	void SetNull()
+	{
+		BlockHeaderGRT::SetNull()
+		vtx.clear();
+		BlockSig.clear();
+		vMerkleTree.clear();
+	}
+
+	bool isProofOfStake() const
+	{ return false }
+
+	bool SignBlock(const CKeyStore& keystore);
+	bool CheckBlockSignature() const;
+};
+#endif
+#endif
 
 /** Describes a place in the block chain to another node such that if the
  * other node doesn't have the same branch, it can find a recent common trunk.
@@ -183,4 +256,4 @@ struct CBlockLocator
     }
 };
 
-#endif // BITCOIN_PRIMITIVES_BLOCK_H
+#endif // CODECOIN_PRIMITIVES_BLOCK_H

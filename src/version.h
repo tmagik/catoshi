@@ -26,6 +26,8 @@ static const int MIN_PEER_PROTO_VERSION = 70012;
 /* grantstake should probably actually use 70002 */
 static const int PROTOCOL_VERSION = 70001;
 static const int MIN_PEER_PROTO_VERSION = 60006;
+//! initial proto version, to be increased after version/verack negotiation
+static const int INIT_PROTO_VERSION = 209;
 #else
 static const int PROTOCOL_VERSION = 70003;
 

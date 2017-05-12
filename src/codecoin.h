@@ -38,6 +38,16 @@
 #define BRAND_SYM BRAND_CODE
 #endif
 
+#if defined(BITCOIN_COMPAT)
+/* define these for compat with existing code */
+#ifndef CBlock
+#define CBlock Block
+#endif
+#ifndef CBlockHeader
+#define CBlockHeader BlockHeader
+#endif
+#endif
+
 /* main.h do we always CheckProofOfWork in CheckIndex */
 /* Litecoin does not do so for performance reasons */
 #if defined(BRAND_bluecoin) || defined(BRAND_uro) || defined(BRAND_givestake)

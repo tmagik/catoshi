@@ -136,9 +136,9 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDe
     }
 
     result.push_back(Pair("tx", txinfo));
-    result.push_back(Pair("signature", HexStr(block.vchBlockSig.begin(), block.vchBlockSig.end())));
+    result.push_back(Pair("signature", HexStr(block.BlockSig.begin(), block.BlockSig.end())));
 #elif defined(BRAND_grantcoin)
-    	result.push_back(Pair("signature", HexStr(block.vchBlockSig.begin(), block.vchBlockSig.end())));
+    	result.push_back(Pair("signature", HexStr(block.BlockSig.begin(), block.BlockSig.end())));
 #endif /* PPCCOINSTAKE */
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
