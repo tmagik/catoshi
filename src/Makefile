@@ -43,7 +43,7 @@ DEFS += -DBOOST_NO_CXX11_SCOPED_ENUMS
 
 OBJDIR = obj/$(COIN_BRAND)
 TESTDIR = $(OBJDIR)/test
-SUBDIRS = $(OBJDIR)/crypto $(OBJDIR)/primitives $(OBJDIR)/script $(OBJDIR)/compat $(OBJDIR)/univalue 
+SUBDIRS = $(OBJDIR)/crypto $(OBJDIR)/primitives $(OBJDIR)/script $(OBJDIR)/compat $(OBJDIR)/univalue $(OBJDIR)/$(COIN_BRAND)
 SECP256K1_INCLUDE_PATH = $(CURDIR)/secp256k1/include
 SECP256K1_LIB_PATH = $(CURDIR)/secp256k1/.libs
 
@@ -157,7 +157,7 @@ UTIL_OBJS= \
     $(OBJDIR)/compat/glibc_sanity.o \
     $(OBJDIR)/compat/glibcxx_sanity.o \
     $(OBJDIR)/compat/strnlen.o \
-    $(OBJDIR)/chainparamsbase.o \
+    $(OBJDIR)/$(COIN_BRAND)/base.o \
     $(OBJDIR)/clientversion.o \
     $(OBJDIR)/random.o \
     $(OBJDIR)/rpcprotocol.o \
@@ -187,7 +187,7 @@ COMMON_OBJS = \
     $(OBJDIR)/allocators.o \
     $(OBJDIR)/amount.o \
     $(OBJDIR)/base58.o \
-    $(OBJDIR)/chainparams.o \
+    $(OBJDIR)/$(COIN_BRAND)/params.o \
     $(OBJDIR)/coins.o \
     $(OBJDIR)/compressor.o \
     $(OBJDIR)/core_read.o \
@@ -219,7 +219,6 @@ D_OBJS= \
     $(UTIL_OBJS) \
     $(CRYPTO_OBJS) \
     $(COMMON_OBJS) \
-    $(OBJDIR)/$(COIN_BRAND).o \
     $(OBJDIR)/addrman.o \
     $(OBJDIR)/alert.o \
     $(OBJDIR)/bitcoind.o \

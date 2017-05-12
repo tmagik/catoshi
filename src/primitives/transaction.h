@@ -257,6 +257,8 @@ public:
     std::string ToString() const;
 };
 
+class MutableTransactionGRT;
+
 class TransactionGRT : public Transaction
 {
 	enum GetMinFee_mode
@@ -267,7 +269,19 @@ class TransactionGRT : public Transaction
 	};
 
 public:
+/** TODO: this goes into src/policy/fees.cpp when latest bitcoin code is merged */
+/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
+	const static int64_t nMinTxFee = CENT;
+/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
+	const static int64_t nMinRelayFee = CENT;
+
     uint32_t nTime; // FIXME just make this 'Time'  
+
+    /** Construct a CTransaction that qualifies as IsNull() */
+    TransactionGRT();
+
+    /** Convert a CMutableTransaction into a CTransaction. */
+    TransactionGRT(const MutableTransactionGRT &tx);
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
@@ -285,6 +299,13 @@ public:
 	//void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash);
 
 	int64_t GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK, unsigned int nBytes=0) const;
+
+    /* What stake (ppcoin derivatives, + grantcoin do */
+    bool IsCoinBase() const
+    {
+        return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+    }
+
 
 };
 
@@ -321,6 +342,10 @@ class MutableTransactionGRT : public MutableTransaction
 {
 public:
     uint32_t nTime;
+
+    MutableTransactionGRT();
+    MutableTransactionGRT(const TransactionGRT& tx);
+
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {

@@ -72,5 +72,7 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 /* allow for overloads.. */
 #define CTransaction TransactionGRT
 #define CMutableTransaction MutableTransactionGRT
+#define CBlockHeader BlockHeaderGRT
+#define CBlock BlockGRT
 
 #endif

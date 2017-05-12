@@ -1540,9 +1540,9 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
 			// ppcoin: enforce transaction fees for every block
 			if (nSpendHeight >= CUTOFF_POS_BLOCK)
 #endif // hackity if
-        if (nTxFee < GetMinFee()) // CODECOIN TODO: redundant check if we use GetMinFee below
+        if (nTxFee < tx.GetMinFee()) // CODECOIN TODO: redundant check if we use GetMinFee below
             return state.DoS(100, error("CheckInputs() : %s nTxFee not paying required fee=%s, paid=%s",
-	tx.GetHash().ToString(), FormatMoney(GetMinFee()), FormatMoney(nTxFee)),
+	tx.GetHash().ToString(), FormatMoney(tx.GetMinFee()), FormatMoney(nTxFee)),
                              REJECT_INVALID, "bad-txns-fee-too-low");
 #endif
         nFees += nTxFee; // TODO: check this with ppcoin logic. May not be correct for PPCOINSTAKE
@@ -1800,7 +1800,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     int64_t nTimeStart = GetTimeMicros();
     CAmount nFees = 0;
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
 	int64_t nValueIn = 0;
 	int64_t nValueOut = 0;
 #endif
@@ -1819,8 +1819,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (nSigOps > MAX_BLOCK_SIGOPS)
             return state.DoS(100, error("ConnectBlock() : too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");
-
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+	if (tx.IsCoinBase())
+	{
+		nValueOut += tx.GetValueOut();
+	} else
+#else
         if (!tx.IsCoinBase())
+#endif
         {
             if (!view.HaveInputs(tx))
                 return state.DoS(100, error("ConnectBlock() : inputs missing/spent"),
@@ -1837,9 +1843,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                                      REJECT_INVALID, "bad-blk-sigops");
             }
 
-#if defined(PPCOINSTAKE)
+#if defined(PPCOINSTAKE) //FIXME: does GRT need this??
 			int64_t nTxValueIn = view.GetValueIn(tx);
-			int64_t nTxValueOut = tx.GetValueOut();
+			int64_t nTxValueOut = view.GetValueOut(tx);
 			nValueIn += nTxValueIn;
 			nValueOut += nTxValueOut;
 			if (!tx.IsCoinStake())
@@ -4393,7 +4399,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             // which would need headers[n].has_signature()
             // TODO: check assembly that compiler is indeed smart
 #if defined(BRAND_grantcoin)
-            if CBlock::has_signature_serialization
+	    #warning "FIXME later"
+            //if CBlock::has_signature_serialization
                 if (ReadCompactSize(vRecv)) // Should be 0, but assume nothing, try to warn.
                     LogPrintf("header from peer %d had non-zero blocksiq count!\n", pfrom->GetId());
 #endif

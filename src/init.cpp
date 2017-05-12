@@ -853,7 +853,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     int64_t nStart;
 
-#if defined(USE_SSE2)
+#if defined(USE_SSE2) && defined(USE_SCRYPT)
     scrypt_detect_sse2();
 #endif
 

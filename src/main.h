@@ -151,6 +151,11 @@ extern bool fAlerts;
 /** Best header we've seen so far (used for getheaders queries' starting points). */
 extern CBlockIndex *pindexBestHeader;
 
+#if defined(FEATURE_CFG_MAXFUTURE)
+// Maximum future timestamp we will accept in ProcessBlock. FIXME somewhere else
+extern int64_t nMaxFutureTime;
+#endif
+
 /** Minimum disk space required - used in CheckDiskSpace() */
 static const uint64_t nMinDiskSpace = 52428800;
 

@@ -8,7 +8,8 @@
 #include <string>
 #include <vector>
 
-class CBlock;
+//class CBlock;
+#include "primitives/block.h"
 class CScript;
 //class CTransaction;
 #include "primitives/transaction.h"
