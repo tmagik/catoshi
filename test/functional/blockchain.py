@@ -24,8 +24,6 @@ from test_framework.util import (
     assert_raises_jsonrpc,
     assert_is_hex_string,
     assert_is_hash_string,
-    start_nodes,
-    connect_nodes_bi,
 )
 
 
@@ -35,12 +33,6 @@ class BlockchainTest(BitcoinTestFramework):
         super().__init__()
         self.setup_clean_chain = False
         self.num_nodes = 2
-
-    def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
-        connect_nodes_bi(self.nodes, 0, 1)
-        self.is_network_split = False
-        self.sync_all()
 
     def run_test(self):
         self._test_gettxoutsetinfo()
