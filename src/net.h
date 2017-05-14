@@ -14,6 +14,7 @@
 #include "hash.h"
 #include "limitedmap.h"
 #include "netaddress.h"
+#include "policy/feerate.h"
 #include "protocol.h"
 #include "random.h"
 #include "streams.h"
@@ -611,7 +612,6 @@ public:
     CCriticalSection cs_filter;
     CBloomFilter* pfilter;
     std::atomic<int> nRefCount;
-    const NodeId id;
 
     const uint64_t nKeyedNetGroup;
     std::atomic_bool fPauseRecv;
@@ -682,6 +682,7 @@ public:
 private:
     CNode(const CNode&);
     void operator=(const CNode&);
+    const NodeId id;
 
 
     const uint64_t nLocalHostNonce;
@@ -699,15 +700,15 @@ private:
 public:
 
     NodeId GetId() const {
-      return id;
+        return id;
     }
 
     uint64_t GetLocalNonce() const {
-      return nLocalHostNonce;
+        return nLocalHostNonce;
     }
 
     int GetMyStartingHeight() const {
-      return nMyStartingHeight;
+        return nMyStartingHeight;
     }
 
     int GetRefCount()
@@ -758,7 +759,7 @@ public:
         // after addresses were pushed.
         if (_addr.IsValid() && !addrKnown.contains(_addr.GetKey())) {
             if (vAddrToSend.size() >= MAX_ADDR_TO_SEND) {
-                vAddrToSend[insecure_rand.rand32() % vAddrToSend.size()] = _addr;
+                vAddrToSend[insecure_rand.randrange(vAddrToSend.size())] = _addr;
             } else {
                 vAddrToSend.push_back(_addr);
             }
