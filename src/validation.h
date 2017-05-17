@@ -11,10 +11,10 @@
 #endif
 
 #include "amount.h"
-#include "chain.h"
 #include "coins.h"
 #include "fs.h"
 #include "protocol.h" // For CMessageHeader::MessageStartChars
+#include "policy/feerate.h"
 #include "script/script_error.h"
 #include "sync.h"
 #include "versionbits.h"
@@ -132,7 +132,8 @@ static const bool DEFAULT_PERMIT_BAREMULTISIG = true;
 static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
 static const bool DEFAULT_TXINDEX = false;
 static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
-
+/** Default for -persistmempool */
+static const bool DEFAULT_PERSIST_MEMPOOL = true;
 /** Default for -mempoolreplacement */
 static const bool DEFAULT_ENABLE_REPLACEMENT = true;
 /** Default for using fee filter */
@@ -145,6 +146,9 @@ static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
 static const int MAX_UNCONNECTING_HEADERS = 10;
 
 static const bool DEFAULT_PEERBLOOMFILTERS = true;
+
+/** Default for -stopatheight */
+static const int DEFAULT_STOPATHEIGHT = 0;
 
 struct BlockHasher
 {
