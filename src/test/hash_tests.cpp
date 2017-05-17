@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2015 The Bitcoin Core developers
+// Copyright (c) 2013-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,8 +9,6 @@
 #include <vector>
 
 #include <boost/test/unit_test.hpp>
-
-using namespace std;
 
 BOOST_FIXTURE_TEST_SUITE(hash_tests, BasicTestingSetup)
 
@@ -122,6 +120,14 @@ BOOST_AUTO_TEST_CASE(siphash)
         hasher3.Write(uint64_t(x)|(uint64_t(x+1)<<8)|(uint64_t(x+2)<<16)|(uint64_t(x+3)<<24)|
                      (uint64_t(x+4)<<32)|(uint64_t(x+5)<<40)|(uint64_t(x+6)<<48)|(uint64_t(x+7)<<56));
     }
+
+    CHashWriter ss(SER_DISK, CLIENT_VERSION);
+    CMutableTransaction tx;
+    // Note these tests were originally written with tx.nVersion=1
+    // and the test would be affected by default tx version bumps if not fixed.
+    tx.nVersion = 1;
+    ss << tx;
+    BOOST_CHECK_EQUAL(SipHashUint256(1, 2, ss.GetHash()), 0x79751e980c2a0a35ULL);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
