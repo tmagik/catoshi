@@ -1,3 +1,7 @@
+// Copyright (c) 2016 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "wallet/test/wallet_test_fixture.h"
 
 #include "rpc/server.h"
@@ -10,7 +14,8 @@ WalletTestingSetup::WalletTestingSetup(const std::string& chainName):
     bitdb.MakeMock();
 
     bool fFirstRun;
-    pwalletMain = new CWallet("wallet_test.dat");
+    std::unique_ptr<CWalletDBWrapper> dbw(new CWalletDBWrapper(&bitdb, "wallet_test.dat"));
+    pwalletMain = new CWallet(std::move(dbw));
     pwalletMain->LoadWallet(fFirstRun);
     RegisterValidationInterface(pwalletMain);
 
