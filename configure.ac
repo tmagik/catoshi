@@ -549,6 +549,8 @@ AC_CHECK_DECLS([bswap_16, bswap_32, bswap_64],,,
                  #include <byteswap.h>
                  #endif])
 
+AC_CHECK_DECLS([__builtin_clz, __builtin_clzl, __builtin_clzll])
+
 dnl Check for MSG_NOSIGNAL
 AC_MSG_CHECKING(for MSG_NOSIGNAL)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/socket.h>]],
@@ -676,6 +678,10 @@ AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_THREAD
 AX_BOOST_CHRONO
 
+dnl Boost 1.56 through 1.62 allow using std::atomic instead of its own atomic
+dnl counter implementations. In 1.63 and later the std::atomic approach is default.
+m4_pattern_allow(DBOOST_AC_USE_STD_ATOMIC) dnl otherwise it's treated like a macro
+BOOST_CPPFLAGS="-DBOOST_SP_USE_STD_ATOMIC -DBOOST_AC_USE_STD_ATOMIC $BOOST_CPPFLAGS"
 
 if test x$use_reduce_exports = xyes; then
   AC_MSG_CHECKING([for working boost reduced exports])
@@ -1157,6 +1163,7 @@ AC_SUBST(QR_LIBS)
 AC_CONFIG_FILES([Makefile src/Makefile doc/man/Makefile share/setup.nsi share/qt/Info.plist test/functional/config.ini])
 AC_CONFIG_FILES([test/util/buildenv.py],[chmod +x test/util/buildenv.py])
 AC_CONFIG_FILES([contrib/devtools/split-debug.sh],[chmod +x contrib/devtools/split-debug.sh])
+AC_CONFIG_FILES([doc/Doxyfile])
 AC_CONFIG_LINKS([test/functional/test_runner.py:test/functional/test_runner.py])
 AC_CONFIG_LINKS([test/util/bitcoin-util-test.py:test/util/bitcoin-util-test.py])
 AC_CONFIG_LINKS([test/util/bctest.py:test/util/bctest.py])

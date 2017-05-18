@@ -11,10 +11,10 @@
 #endif
 
 #include "amount.h"
-#include "chain.h"
 #include "coins.h"
 #include "fs.h"
 #include "protocol.h" // For CMessageHeader::MessageStartChars
+#include "policy/feerate.h"
 #include "script/script_error.h"
 #include "sync.h"
 #include "versionbits.h"
@@ -39,6 +39,7 @@ class CChainParams;
 class CInv;
 class CConnman;
 class CScriptCheck;
+class CBlockPolicyEstimator;
 class CTxMemPool;
 class CValidationInterface;
 class CValidationState;
@@ -131,7 +132,8 @@ static const bool DEFAULT_PERMIT_BAREMULTISIG = true;
 static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
 static const bool DEFAULT_TXINDEX = false;
 static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
-
+/** Default for -persistmempool */
+static const bool DEFAULT_PERSIST_MEMPOOL = true;
 /** Default for -mempoolreplacement */
 static const bool DEFAULT_ENABLE_REPLACEMENT = true;
 /** Default for using fee filter */
@@ -145,6 +147,9 @@ static const int MAX_UNCONNECTING_HEADERS = 10;
 
 static const bool DEFAULT_PEERBLOOMFILTERS = true;
 
+/** Default for -stopatheight */
+static const int DEFAULT_STOPATHEIGHT = 0;
+
 struct BlockHasher
 {
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
@@ -152,6 +157,7 @@ struct BlockHasher
 
 extern CScript COINBASE_FLAGS;
 extern CCriticalSection cs_main;
+extern CBlockPolicyEstimator feeEstimator;
 extern CTxMemPool mempool;
 typedef boost::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
 extern BlockMap mapBlockIndex;
@@ -432,18 +438,6 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
  *  set; UTXO-related validity checks are done in ConnectBlock(). */
 bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev, int64_t nAdjustedTime);
 bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev);
-
-/** Apply the effects of this block (with given index) on the UTXO set represented by coins.
- *  Validity checks that depend on the UTXO set are also done; ConnectBlock()
- *  can fail if those validity checks fail (among other reasons). */
-bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins,
-                  const CChainParams& chainparams, bool fJustCheck = false);
-
-/** Undo the effects of this block (with given index) on the UTXO set represented by coins.
- *  In case pfClean is provided, operation will try to be tolerant about errors, and *pfClean
- *  will be true if no problems were found. Otherwise, the return value will be false in case
- *  of problems. Note that in any case, coins may be modified. */
-bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockIndex* pindex, CCoinsViewCache& coins, bool* pfClean = NULL);
 
 /** Check a block is completely valid from start to finish (only works on top of our current best block, with cs_main held) */
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
