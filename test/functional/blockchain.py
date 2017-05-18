@@ -6,6 +6,11 @@
 
 Test the following RPCs:
     - gettxoutsetinfo
+    - getdifficulty
+    - getbestblockhash
+    - getblockhash
+    - getblockheader
+    - getnetworkhashps
     - verifychain
 
 Tests correspond to code in rpc/blockchain.cpp.
@@ -19,8 +24,6 @@ from test_framework.util import (
     assert_raises_jsonrpc,
     assert_is_hex_string,
     assert_is_hash_string,
-    start_nodes,
-    connect_nodes_bi,
 )
 
 
@@ -31,15 +34,11 @@ class BlockchainTest(BitcoinTestFramework):
         self.setup_clean_chain = False
         self.num_nodes = 2
 
-    def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
-        connect_nodes_bi(self.nodes, 0, 1)
-        self.is_network_split = False
-        self.sync_all()
-
     def run_test(self):
         self._test_gettxoutsetinfo()
         self._test_getblockheader()
+        self._test_getdifficulty()
+        self._test_getnetworkhashps()
         self.nodes[0].verifychain(4, 0)
 
     def _test_gettxoutsetinfo(self):
@@ -57,7 +56,8 @@ class BlockchainTest(BitcoinTestFramework):
     def _test_getblockheader(self):
         node = self.nodes[0]
 
-        assert_raises_jsonrpc(-5, "Block not found", node.getblockheader, "nonsense")
+        assert_raises_jsonrpc(-5, "Block not found",
+                              node.getblockheader, "nonsense")
 
         besthash = node.getbestblockhash()
         secondbesthash = node.getblockhash(199)
@@ -78,6 +78,17 @@ class BlockchainTest(BitcoinTestFramework):
         assert isinstance(header['version'], int)
         assert isinstance(int(header['versionHex'], 16), int)
         assert isinstance(header['difficulty'], Decimal)
+
+    def _test_getdifficulty(self):
+        difficulty = self.nodes[0].getdifficulty()
+        # 1 hash in 2 should be valid, so difficulty should be 1/2**31
+        # binary => decimal => binary math is why we do this check
+        assert abs(difficulty * 2**31 - 1) < 0.0001
+
+    def _test_getnetworkhashps(self):
+        hashes_per_second = self.nodes[0].getnetworkhashps()
+        # This should be 2 hashes every 10 minutes or 1/300
+        assert abs(hashes_per_second * 300 - 1) < 0.0001
 
 if __name__ == '__main__':
     BlockchainTest().main()
