@@ -59,7 +59,6 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/bind.hpp>
-#include <boost/function.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
@@ -215,6 +214,7 @@ void Shutdown()
 
     if (fFeeEstimatesInitialized)
     {
+        ::feeEstimator.FlushUnconfirmed(::mempool);
         fs::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
         CAutoFile est_fileout(fsbridge::fopen(est_path, "wb"), SER_DISK, CLIENT_VERSION);
         if (!est_fileout.IsNull())
