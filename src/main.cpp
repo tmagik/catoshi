@@ -83,6 +83,11 @@ static void CheckBlockIndex();
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
+// FIXME: move somewhere cleaner
+#if defined(FEATURE_CFG_MAXFUTURE)
+int64_t nMaxFutureTime = 15*60; /* 15 minutes */
+#endif
+
 // Internal stuff
 namespace {
 
@@ -1879,10 +1884,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 #if defined(PPCOINSTAKE)
 	// relocated to Checkblock (need isProofOfWork)
 #else
-    if (block.vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
+    if (block.vtx[0].GetValueOut() > GetBlockValue(pindex, nFees))
         return state.DoS(100,
                          error("ConnectBlock() : coinbase pays too much (actual=%d vs limit=%d)",
-                               block.vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees)),
+                               block.vtx[0].GetValueOut(), GetBlockValue(pindex, nFees)),
                                REJECT_INVALID, "bad-cb-amount");
 #endif
 
@@ -2669,9 +2674,16 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
                          REJECT_INVALID, "high-hash");
 
     // Check timestamp
+#if defined(FEATURE_CFG_MAXFUTURE)
+    if (block.GetBlockTime() > GetAdjustedTime() + nMaxFutureTime)
+        return state.DoS(25, error("CheckBlockHeader() : block timestamp is %" PRId64 "s in the future",
+                      block.GetBlockTime() - GetAdjustedTime()),
+                             REJECT_INVALID, "time-too-new");
+#else
     if (block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
         return state.Invalid(error("CheckBlockHeader() : block timestamp too far in the future"),
                              REJECT_INVALID, "time-too-new");
+#endif
 
     return true;
 }

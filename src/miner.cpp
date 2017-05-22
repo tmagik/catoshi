@@ -81,9 +81,10 @@ public:
 };
 
 /* was in CBlockHeader:: class. Put it back eventually */
-#if defined(FEATURE_MINIMUM_BLOCK_TIME)
 void UpdateTime(CBlockHeader* pblock, const CBlockIndex* pindexPrev)
 {
+#if defined(FEATURE_MINIMUM_BLOCK_TIME)
+	int64_t nTime = 0;
 	/* This is tighter tolerance than original Satoshi client,
          * to keep time monotonically increasing. Theoretically,
          * this gives more power to nodes that drop (or at least do
@@ -91,25 +92,24 @@ void UpdateTime(CBlockHeader* pblock, const CBlockIndex* pindexPrev)
          * this is rather hard to test without market-motivated miners.
 	 * Carefully check coin's AcceptBlockTimestamp. If the check
          * is <= MINIMUM_BLOCK_SPACING, you need the +1 */
-	nTime = max(pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1, GetBlockTime());
-	nTime = max(GetAdjustedTime(), GetBlockTime());
-
-#if !defined(PPCOINSTAKE)
-	// Updating time can change work required on testnet:
-	if (fTestNet)
-		nBits = GetNextTrustRequired(pindexPrev, this);
-#endif
-}
+	nTime = std::max({ 	pindexPrev->GetBlockTime()+MINIMUM_BLOCK_SPACING+1,
+				GetAdjustedTime(),
+				(int64_t)(pblock->nTime) });
+	/* TODO: have better error recovery. Possible DoS here. Also
+	 * throw an error ~6 months (July 2037) before bad things happen */
+	if ((nTime + 6*30*24*60*60) > std::numeric_limits<int32_t>::max())
+		throw runtime_error("nTime overflow imminent!!");
+	assert (nTime < INT32_MAX);
+	pblock->nTime = nTime;
 #else
-void UpdateTime(CBlockHeader* pblock, const CBlockIndex* pindexPrev)
-{
     pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-
+#endif
+#if !defined(PPCOINSTAKE)
     // Updating time can change work required on testnet:
     if (Params().AllowMinDifficultyBlocks())
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock);
-}
 #endif
+}
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -343,7 +343,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
 
         // Compute final coinbase transaction.
-        txNew.vout[0].nValue = GetBlockValue(nHeight, nFees);
+        // FIXME: remove this extra work for GetBlockValue abstraction
+        CBlockIndex indexDummy(*pblock);
+        indexDummy.pprev = pindexPrev;
+	indexDummy.nHeight = nHeight;
+        txNew.vout[0].nValue = GetBlockValue(&indexDummy, nFees);
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
@@ -482,10 +486,18 @@ void static BitcoinMiner(CWallet *pwallet)
             uint256 thash;
             while (true) {
                 unsigned int nHashesDone = 0;
-                char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
+#if defined(USE_SCRYPT)
+//                char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
+#endif
                 while(true)
                 {
-                    scrypt_1024_1_1_256_sp(BEGIN(pblock->nVersion), BEGIN(thash), scratchpad);
+#if defined(USE_SCRYPT)
+//                    scrypt_1024_1_1_256_sp(BEGIN(pblock->nVersion), BEGIN(thash), scratchpad);
+#else
+#endif
+                    /* possibly slow, but modular and effective */
+                    thash = pblock->GetHash();
+                    
                     if (thash <= hashTarget)
                     {
                         // Found a solution

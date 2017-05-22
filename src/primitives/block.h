@@ -99,10 +99,8 @@ public:
     static const int VERSION_STAKE_START=2; // not actually used, remove?
     static const int CURRENT_VERSION=1;
 
-    uint256 GetPowHash() const
-    {
-        return GetHash();
-    }
+    /* FIXME: understand why bitcoin moved GetHash/GetPoWHash out
+       of the header file and into block.cpp. Performance? Readability? */
 };
 #endif
 
@@ -168,9 +166,11 @@ public:
         vMerkleTree.clear();
     }
 
-    BlockHeader GetBlockHeader() const
+    /* There is probably some C++ way to handle this with templates better,
+     * rather than depending on a #define of CBlockHeader. Fix later */
+    CBlockHeader GetBlockHeader() const
     {
-        BlockHeader block;
+        CBlockHeader block;
         block.nVersion       = nVersion;
         block.hashPrevBlock  = hashPrevBlock;
         block.hashMerkleRoot = hashMerkleRoot;

@@ -92,6 +92,7 @@ public:
         genesis.nNonce   = 413974755;
 
         hashGenesisBlock = genesis.GetHash();
+	cout << genesis.ToString();
         assert(hashGenesisBlock == uint256("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a"));
         assert(genesis.hashMerkleRoot == uint256("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
 

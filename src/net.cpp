@@ -1241,17 +1241,19 @@ void ThreadOpenConnections()
         CSemaphoreGrant grant(*semOutbound);
         boost::this_thread::interruption_point();
 
-#if defined(FEATURE_FIXEDSEEDS)
         // Add seed nodes if DNS seeds are all down (an infrastructure attack?).
         if (addrman.size() == 0 && (GetTime() - nStart > 60)) {
+#if defined(FEATURE_FIXEDSEEDS)
             static bool done = false;
             if (!done) {
                 LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
                 addrman.Add(Params().FixedSeeds(), CNetAddr("127.0.0.1"));
                 done = true;
             }
-        }
+#else
+            LogPrintf("DNS seeds appear unavailable! Maybe enable FEATURE_FIXEDSEEDS?\n");
 #endif
+        }
 
         //
         // Choose an address to connect to based on most recently seen

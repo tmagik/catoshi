@@ -11,7 +11,9 @@
 //#endif
 
 #if defined(BRAND_litecoin)
-#include "litecoin.h"
+#include "litecoin/litecoin.h"
+#elif defined(BRAND_grantcoin)
+#include "grantcoin/grantcoin.h"
 #elif defined(BRAND_solarcoin)
 #include "solarcoin.h"
 #elif defined(BRAND_catcoin)
@@ -20,8 +22,6 @@
 #include "kittycoin.h"
 #elif defined(BRAND_uro)
 #include "uro.h"
-#elif defined(BRAND_grantcoin)
-#include "grantcoin.h"
 #elif defined(BRAND_grantstake)
 #include "grantstake.h"
 #elif defined(BRAND_givecoin) || defined(BRAND_givestake)

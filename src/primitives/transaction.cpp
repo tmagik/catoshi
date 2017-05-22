@@ -62,7 +62,7 @@ std::string TxOut::ToString() const
 MutableTransaction::MutableTransaction() : nVersion(Transaction::CURRENT_VERSION), nLockTime(0) {}
 MutableTransaction::MutableTransaction(const Transaction& tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime) {}
 
-uint256 MutableTransaction::GetHash() const
+uint256 CMutableTransaction::GetHash() const
 {
     return SerializeHash(*this);
 }
@@ -78,11 +78,103 @@ Transaction::Transaction(const MutableTransaction &tx) : nVersion(tx.nVersion), 
     UpdateHash();
 }
 
-Transaction& Transaction::operator=(const Transaction &tx) {
-    *const_cast<int*>(&nVersion) = tx.nVersion;
+#if defined(BRAND_grantcoin)
+TransactionGRT::TransactionGRT() : Transaction(), nTime(0) {}
+
+TransactionGRT::TransactionGRT(const MutableTransactionGRT &tx) : Transaction((MutableTransaction)tx), nTime(tx.nTime) {
+    UpdateHash();
+}
+
+MutableTransactionGRT::MutableTransactionGRT() : MutableTransaction(), nTime(0) {}
+MutableTransactionGRT::MutableTransactionGRT(const TransactionGRT& tx) : 
+		MutableTransaction((MutableTransaction)tx), nTime(tx.nTime) {}
+
+/* Same as Transaction::UpdateHash() above, but different types.
+ * This seems like a good job for a template */
+void TransactionGRT::UpdateHash() const
+{
+    *const_cast<uint256*>(&hash) = SerializeHash(*this);
+}
+
+/* PPCoin/Grantcoin destroy the 0.01 COIN per kb fee to reduce money supply,
+ * which does not quite line up with Bitcoin, so replicate the PPCoin code here */
+/* FIXME: nBytes is currently not used */
+int64_t TransactionGRT::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
+				enum GetMinFee_mode mode, unsigned int optnBytes) const
+{
+    // Base fee is either nMinTxFee or nMinRelayTxFee
+    int64_t nBaseFee = (mode == GMF_RELAY) ? nMinRelayTxFee : nMinTxFee;
+
+// here be dragons. put on fireproof regression tests before taunting this code
+#if defined(BRAND_cleanwatercoin)
+    unsigned int nBytes = optnBytes;
+#elif defined(BRAND_kittycoin)
+    unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
+#else
+#warning "hack for coincontroldialog.cpp that needs nBytes"
+    unsigned int nBytes = std::max(optnBytes,
+                ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION));
+#endif
+    unsigned int nNewBlockSize = nBlockSize + nBytes;
+    int64_t nMinFee = (1 + (int64_t)nBytes / 1000) * nBaseFee;
+
+#if defined(FEATURE_ALLOW_FREE_TX) /* likely safe to deprecate this */
+    if (fAllowFree)
+    {
+        // There is a free transaction area in blocks created by most miners,
+        // * If we are relaying we allow transactions up to DEFAULT_BLOCK_PRIORITY_SIZE - 1000
+        //   to be considered to fall into this category. We don't want to encourage sending
+        //   multiple transactions instead of one big transaction to avoid fees.
+        // * If we are creating a transaction we allow transactions up to 1,000 bytes
+        //   to be considered safe and assume they can likely make it into this section.
+        if (nBytes < (mode == GMF_SEND ? 1000 : (DEFAULT_BLOCK_PRIORITY_SIZE - 1000)))
+            nMinFee = 0;
+    }
+#endif
+
+    // This code can be removed after enough miners have upgraded to version 0.9.
+    // Until then, be safe when sending and require a fee if any output
+    // is less than CENT:
+    if (nMinFee < nBaseFee && mode == GMF_SEND)
+    {
+        for (const CTxOut& txout: vout)
+            if (txout.nValue < CENT)
+                nMinFee = nBaseFee;
+    }
+
+    // Raise the price as the block approaches full
+    if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN/2)
+    {
+        if (nNewBlockSize >= MAX_BLOCK_SIZE_GEN)
+            return MAX_MONEY;
+        nMinFee *= MAX_BLOCK_SIZE_GEN / (MAX_BLOCK_SIZE_GEN - nNewBlockSize);
+    }
+
+    if (!MoneyRange(nMinFee))
+        nMinFee = MAX_MONEY;
+    return nMinFee;
+}
+
+#if 0
+/* Bitcoin/litecoin used int*, why is this not int32_t/uint32_t like the header? */
+TransactionGRT& TransactionGRT::operator=(const TransactionGRT &tx) {
+    *const_cast<int32_t*>(&nVersion) = tx.nVersion;
+    *const_cast<uint32_t*>(&nTime) = tx.nTime;
     *const_cast<std::vector<TxIn>*>(&vin) = tx.vin;
     *const_cast<std::vector<TxOut>*>(&vout) = tx.vout;
-    *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
+    *const_cast<uint32_t*>(&nLockTime) = tx.nLockTime;
+    *const_cast<uint256*>(&hash) = tx.hash;
+    return *this;
+}a
+#endif
+#endif
+
+
+Transaction& Transaction::operator=(const Transaction &tx) {
+    *const_cast<int32_t*>(&nVersion) = tx.nVersion;
+    *const_cast<std::vector<TxIn>*>(&vin) = tx.vin;
+    *const_cast<std::vector<TxOut>*>(&vout) = tx.vout;
+    *const_cast<uint32_t*>(&nLockTime) = tx.nLockTime;
     *const_cast<uint256*>(&hash) = tx.hash;
     return *this;
 }

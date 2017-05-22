@@ -3,7 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "chainparamsbase.h"
+/* Pull in RPC port and other compile time things */
+#include "codecoin.h"
 
 #include "util.h"
 
@@ -22,7 +23,7 @@ public:
     CBaseMainParams()
     {
         networkID = CBaseChainParams::MAIN;
-        nRPCPort = 9332;
+        nRPCPort = RPC_PORT;
     }
 };
 static CBaseMainParams mainParams;
@@ -36,8 +37,8 @@ public:
     CBaseTestNetParams()
     {
         networkID = CBaseChainParams::TESTNET;
-        nRPCPort = 19332;
-        strDataDir = "testnet3";
+        nRPCPort = RPC_PORT_TESTNET;
+        strDataDir = "testnet";
     }
 };
 static CBaseTestNetParams testNetParams;
