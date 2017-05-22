@@ -15,12 +15,12 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
-uint256 CBlockHeader::GetHash() const
+uint256 BlockHeader::GetHash() const
 {
     return Hash(BEGIN(nVersion), END(nNonce));
 }
 
-uint256 CBlockHeader::GetPoWHash() const
+uint256 BlockHeader::GetPoWHash() const
 {
 #if defined(LITECOIN_SCRYPT_POWHASH)
     uint256 thash;

@@ -181,10 +181,11 @@ class MutableTransaction;
  */
 class Transaction
 {
-private:
-    /** Memory only. */
-    const uint256 hash;
+private: /* only makes sense for this class */
     void UpdateHash() const;
+
+protected: /* derived classes can implement UpdateHash */
+    const uint256 hash;
 
 public:
     static const int32_t CURRENT_VERSION=1;
@@ -261,6 +262,9 @@ class MutableTransactionGRT;
 
 class TransactionGRT : public Transaction
 {
+private:
+	void UpdateHash() const;
+	
 	enum GetMinFee_mode
 	{
 		GMF_BLOCK,
@@ -273,7 +277,7 @@ public:
 /** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
 	const static int64_t nMinTxFee = CENT;
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
-	const static int64_t nMinRelayFee = CENT;
+	const static int64_t nMinRelayTxFee = CENT;
 
     uint32_t nTime; // FIXME just make this 'Time'  
 
@@ -287,7 +291,6 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(*const_cast<int32_t*>(&this->nVersion));
         nVersion = this->nVersion;
-        READWRITE(*const_cast<uint32_t*>(&nTime));
         READWRITE(*const_cast<std::vector<TxIn>*>(&vin));
         READWRITE(*const_cast<std::vector<TxOut>*>(&vout));
         READWRITE(*const_cast<uint32_t*>(&nLockTime));
@@ -310,10 +313,14 @@ public:
 };
 
 /** A mutable version of CTransaction. */
+/* let codecoin.h/BITCOIN_COMPAT defines instantiate the right class name */
 class MutableTransaction
 {
 public:
     int32_t nVersion;
+#if 0 && defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+    uint32_t nTime;
+#endif
     std::vector<TxIn> vin;
     std::vector<TxOut> vout;
     uint32_t nLockTime;
@@ -327,6 +334,9 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(this->nVersion);
         nVersion = this->nVersion;
+#if 0 && defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+        READWRITE(nTime);
+#endif
         READWRITE(vin);
         READWRITE(vout);
         READWRITE(nLockTime);
@@ -338,25 +348,25 @@ public:
     uint256 GetHash() const;
 };
 
-class MutableTransactionGRT : public MutableTransaction
+class MutableTransactionGRT: public MutableTransaction
 {
 public:
-    uint32_t nTime;
+	uint32_t nTime; // FIXME: evaluate if this should be signed or unsigned
 
-    MutableTransactionGRT();
-    MutableTransactionGRT(const TransactionGRT& tx);
+	MutableTransactionGRT();
+	MutableTransactionGRT(const TransactionGRT& tx);
 
+	template <typename Stream, typename Operation>
+	inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+		READWRITE(this->nVersion);
+		nVersion = this->nVersion;
+		READWRITE(nTime);
+		READWRITE(vin);
+		READWRITE(vout);
+		READWRITE(nLockTime);
+	}
 
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(this->nVersion);
-        nVersion = this->nVersion;
-        READWRITE(nTime);
-        READWRITE(vin);
-        READWRITE(vout);
-        READWRITE(nLockTime);
-    }
-
+	uint256 GetHash() const;
 };
 
 #if defined(BITCOIN_COMPAT)

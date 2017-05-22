@@ -389,7 +389,7 @@ bool SelectParamsFromCommandLine()
 
 const string strMessageMagic = "Litecoin Signed Message:\n";
 
-CAmount GetBlockValue(int nHeight, const CAmount& nFees)
+CAmount Litecoin_PoWReward(int nHeight, const CAmount& nFees)
 {
     CAmount nSubsidy = 50 * COIN;
     int halvings = nHeight / Params().SubsidyHalvingInterval();
@@ -402,6 +402,12 @@ CAmount GetBlockValue(int nHeight, const CAmount& nFees)
     nSubsidy >>= halvings;
 
     return nSubsidy + nFees;
+}
+
+int64_t CBlockIndex::GetSeigniorage(int64_t nFees, int64_t CoinAge) const
+{
+	assert(IsProofOfWork());
+	return Litecoin_PoWReward(nHeight, nFees);
 }
 
 //Checks for 'hardcoded' block timestamps

@@ -157,7 +157,7 @@ UTIL_OBJS= \
     $(OBJDIR)/compat/glibc_sanity.o \
     $(OBJDIR)/compat/glibcxx_sanity.o \
     $(OBJDIR)/compat/strnlen.o \
-    $(OBJDIR)/$(COIN_BRAND)/base.o \
+    $(OBJDIR)/chainbaseparams.o \
     $(OBJDIR)/clientversion.o \
     $(OBJDIR)/random.o \
     $(OBJDIR)/rpcprotocol.o \

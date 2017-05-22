@@ -8,6 +8,7 @@
 #ifndef CODECOIN_NET_H
 #define CODECOIN_NET_H
 
+#include "codecoin.h"
 #include "bloom.h"
 #include "compat.h"
 #include "hash.h"
@@ -608,11 +609,10 @@ public:
     static uint64_t GetTotalBytesSent();
 };
 
-
-
-class Transaction;
-void RelayTransaction(const Transaction& tx);
-void RelayTransaction(const Transaction& tx, const CDataStream& ss);
+/* maybe use virtual functions here instead of BITCOIN_COMPAT #define hacks */
+class CTransaction;
+void RelayTransaction(const CTransaction& tx);
+void RelayTransaction(const CTransaction& tx, const CDataStream& ss);
 
 /** Access to the (IP) address database (peers.dat) */
 class CAddrDB
