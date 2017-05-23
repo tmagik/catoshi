@@ -15,6 +15,9 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
+/* WARNING: lots of assumptions here about the compiler and memory layout,
+   since we have this nice SerializationOp abstraction, and then proceed
+   to ignore it when generating the hash. Works fast, until it doesn't */
 uint256 BlockHeader::GetHash() const
 {
     return Hash(BEGIN(nVersion), END(nNonce));

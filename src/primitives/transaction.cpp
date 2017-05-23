@@ -74,14 +74,16 @@ void Transaction::UpdateHash() const
 
 Transaction::Transaction() : hash(0), nVersion(Transaction::CURRENT_VERSION), vin(), vout(), nLockTime(0) { }
 
-Transaction::Transaction(const MutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime) {
-    UpdateHash();
+Transaction::Transaction(const MutableTransaction &tx, bool Update) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime) {
+	if (Update)
+		UpdateHash();
 }
 
 #if defined(BRAND_grantcoin)
 TransactionGRT::TransactionGRT() : Transaction(), nTime(0) {}
 
-TransactionGRT::TransactionGRT(const MutableTransactionGRT &tx) : Transaction((MutableTransaction)tx), nTime(tx.nTime) {
+TransactionGRT::TransactionGRT(const MutableTransactionGRT &tx) : 
+	Transaction((MutableTransaction)tx, /* Update = */ false), nTime(tx.nTime) {
     UpdateHash();
 }
 
