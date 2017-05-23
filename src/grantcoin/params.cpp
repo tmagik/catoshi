@@ -62,7 +62,7 @@ public:
         pchMessageStart[1] = 0xe7;
         pchMessageStart[2] = 0xe1;
         pchMessageStart[3] = 0xe4;
-        nDefaultPort = 9982;
+        nDefaultPort = 9982; /* P2P_PORT */
         bnProofOfWorkLimit = ~uint256(0) >> 28; // Reduced initial difficulty from Peercoin's 32
         nEnforceBlockUpgradeMajority = 750;
         nRejectBlockOutdatedMajority = 950;
@@ -78,10 +78,13 @@ public:
          */
         const char* pszTimestamp = "The Courier-Journal 21-MAR-2015 Prince Charles calls for a revolution";
         CMutableTransaction txNew;
+        txNew.nTime = 1427081625;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
         txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
-        txNew.vout[0].SetNull(); // Technically the constructor should do this already
+        txNew.vout[0].nValue = 0; /* SetEmpty() used to do this */
+        txNew.vout[0].scriptPubKey.clear(); /* maybe put it back?? */
+
         genesis.vtx.push_back(txNew);
         genesis.hashPrevBlock = 0;
         genesis.hashMerkleRoot = genesis.BuildMerkleTree();
@@ -91,10 +94,9 @@ public:
         genesis.nBits    = 0x1d0fffff;
         genesis.nNonce   = 413974755;
 
-        hashGenesisBlock = genesis.GetHash();
-	cout << genesis.ToString();
-        assert(hashGenesisBlock == uint256("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a"));
+        //cout << genesis.ToString();
         assert(genesis.hashMerkleRoot == uint256("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
+        assert(genesis.GetHash() == uint256("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a"));
 
         vSeeds.push_back(CDNSSeedData("grantcoin.net", "seed1.grantcoin.net"));
         vSeeds.push_back(CDNSSeedData("grantcoin.net", "seed2.grantcoin.net"));
@@ -133,11 +135,11 @@ public:
     CTestNetParams() {
         networkID = CBaseChainParams::TESTNET;
         strNetworkID = "test";
-        pchMessageStart[0] = 0xfc;
-        pchMessageStart[1] = 0xc1;
-        pchMessageStart[2] = 0xb7;
-        pchMessageStart[3] = 0xdc;
-        nDefaultPort = 9984;
+        pchMessageStart[0] = 0xe2;
+        pchMessageStart[1] = 0xe7;
+        pchMessageStart[2] = 0xe1;
+        pchMessageStart[3] = 0xe5;
+        nDefaultPort = 9984; /* P2P_PORT_TESTNET */
         nEnforceBlockUpgradeMajority = 51;
         nRejectBlockOutdatedMajority = 75;
         nToCheckBlockUpgradeMajority = 100;
@@ -146,15 +148,31 @@ public:
         nTargetSpacing = 1.5 * 60; // 1.5 minutes
         nMaxTipAge = 0x7fffffff;
 
-        //! Modify the testnet genesis block so the timestamp is valid for a later start.
-        genesis.nTime = 1317798646;
-        genesis.nNonce = 385270584;
-        hashGenesisBlock = genesis.GetHash();
-        assert(hashGenesisBlock == uint256("0x000000075c9bddc6a4638910415b2995febabf9dd8b634f0832da86c5bab2df5"));
+        //! Modify the genesis block for the testnet
+        const char* pszTimestamp = "Reuters 10-OCT-2015 Hundreds of thousands protest in Berlin against EU-US trade deal";
+        CMutableTransaction txNew;
+        txNew.nTime = 1444509104;
+        txNew.vin.resize(1);
+        txNew.vout.resize(1);
+        txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
+        txNew.vout[0].nValue = 0; /* SetEmpty() used to do this */
+        txNew.vout[0].scriptPubKey.clear(); /* maybe put it back?? */
+        genesis.vtx.assign(1, txNew); /* clobber the base class TX */
+        genesis.hashPrevBlock = 0;
+        genesis.hashMerkleRoot = genesis.BuildMerkleTree();
+        genesis.nVersion = 1;
+        genesis.nTime    = 1444510495;
+//const CBigNum bnInitialHashTarget(~uint256(0) >> 28);  // Reduced from Peercoin's 40
+        genesis.nBits    = 0x1d0fffff;
+        genesis.nNonce   = 87045764;
+
+	cout << genesis.ToString();
+        assert(genesis.hashMerkleRoot == uint256("650de4987865a27a1c248908c6a93b9d55931ee3df0e97a845c0915bb53a362f"));
+        assert(genesis.GetHash() == uint256("000000075c9bddc6a4638910415b2995febabf9dd8b634f0832da86c5bab2df5"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("seed.grantcoin.orb", "seed1.grantcoin.org"));
+        vSeeds.push_back(CDNSSeedData("testseed.grantcoin.org", "testseed.grt.7el.us"));
 
         base58Prefixes[PUBKEY_ADDRESS] = { 65 };  // grantcoin test blockchain: addresses begin with 'T'
         base58Prefixes[SCRIPT_ADDRESS] = { 127 }; // grantcoin test blockchain: addresses begin with 't'

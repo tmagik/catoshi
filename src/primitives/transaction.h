@@ -204,7 +204,10 @@ public:
     Transaction();
 
     /** Convert a CMutableTransaction into a CTransaction. */
-    Transaction(const MutableTransaction &tx);
+    /** Optional argument allows derived classes to construct
+        a base class with no hash update, since the child does
+        it again */
+    Transaction(const MutableTransaction &tx, bool Update=true);
 
     Transaction& operator=(const Transaction& tx);
 
@@ -287,10 +290,14 @@ public:
     /** Convert a CMutableTransaction into a CTransaction. */
     TransactionGRT(const MutableTransactionGRT &tx);
 
+    /* must be replicated or serialization is pulled from base object */
+    ADD_SERIALIZE_METHODS;
+
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(*const_cast<int32_t*>(&this->nVersion));
         nVersion = this->nVersion;
+        READWRITE(*const_cast<uint32_t*>(&this->nTime));
         READWRITE(*const_cast<std::vector<TxIn>*>(&vin));
         READWRITE(*const_cast<std::vector<TxOut>*>(&vout));
         READWRITE(*const_cast<uint32_t*>(&nLockTime));

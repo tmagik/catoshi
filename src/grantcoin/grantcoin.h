@@ -6,8 +6,9 @@
 
 static const int RPC_PORT = 9983;
 static const int RPC_PORT_TESTNET = 9985;
-static const int P2P_PORT = 9982;
-static const int P2P_PORT_TESTNET = 9984;
+
+//static const int P2P_PORT = 9982; // deprecated, in params.cpp
+//static const int P2P_PORT_TESTNET = 9984; // deprecated, in params.cpp
 
 static const int64_t COIN = 1000000;
 static const int64_t CENT = 10000;
