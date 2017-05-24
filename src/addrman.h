@@ -19,23 +19,26 @@
 
 #include <map>
 #include <set>
-#include <inttypes.h>
+#include <stdint.h>
 #include <vector>
 
-/** 
- * Extended statistics about a CAddress 
+/**
+ * Extended statistics about a CAddress
  */
 class CAddrInfo : public CAddress
 {
+
+
+public:
+    //! last try whatsoever by us (memory only)
+    int64_t nLastTry;
+
 private:
     //! where knowledge about this address first came from
     CNetAddr source;
 
     //! last successful connection by us
     int64_t nLastSuccess;
-
-    //! last try whatsoever by us:
-    // int64_t CAddress::nLastTry
 
     //! connection attempts since last successful attempt
     int nAttempts;
@@ -109,15 +112,15 @@ public:
 /** Stochastic address manager
  *
  * Design goals:
- *  * Keep the address tables in-memory, and asynchronously dump the entire to able in peers.dat.
+ *  * Keep the address tables in-memory, and asynchronously dump the entire table to peers.dat.
  *  * Make sure no (localized) attacker can fill the entire table with his nodes/addresses.
  *
  * To that end:
  *  * Addresses are organized into buckets.
- *    * Address that have not yet been tried go into 1024 "new" buckets.
- *      * Based on the address range (/16 for IPv4) of source of the information, 64 buckets are selected at random
- *      * The actual bucket is chosen from one of these, based on the range the address itself is located.
- *      * One single address can occur in up to 8 different buckets, to increase selection chances for addresses that
+ *    * Addresses that have not yet been tried go into 1024 "new" buckets.
+ *      * Based on the address range (/16 for IPv4) of the source of information, 64 buckets are selected at random.
+ *      * The actual bucket is chosen from one of these, based on the range in which the address itself is located.
+ *      * One single address can occur in up to 8 different buckets to increase selection chances for addresses that
  *        are seen frequently. The chance for increasing this multiplicity decreases exponentially.
  *      * When adding a new address to a full bucket, a randomly chosen entry (with a bias favoring less recently seen
  *        ones) is removed from it first.
@@ -234,9 +237,8 @@ protected:
     //! Mark an entry as attempted to connect.
     void Attempt_(const CService &addr, int64_t nTime);
 
-    //! Select an address to connect to.
-    //! nUnkBias determines how much to favor new addresses over tried ones (min=0, max=100)
-    CAddress Select_();
+    //! Select an address to connect to, if newOnly is set to true, only the new table is selected from.
+    CAddrInfo Select_(bool newOnly);
 
 #ifdef DEBUG_ADDRMAN
     //! Perform consistency check. Returns an error code or zero.
@@ -281,8 +283,8 @@ public:
      */
     template<typename Stream>
     void Serialize(Stream &s, int nType, int nVersionDummy) const
-        {
-            LOCK(cs);
+    {
+        LOCK(cs);
 
         unsigned char nVersion = 1;
         s << nVersion;
@@ -293,32 +295,32 @@ public:
 
         int nUBuckets = ADDRMAN_NEW_BUCKET_COUNT ^ (1 << 30);
         s << nUBuckets;
-                std::map<int, int> mapUnkIds;
-                int nIds = 0;
+        std::map<int, int> mapUnkIds;
+        int nIds = 0;
         for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++) {
-                    mapUnkIds[(*it).first] = nIds;
+            mapUnkIds[(*it).first] = nIds;
             const CAddrInfo &info = (*it).second;
             if (info.nRefCount) {
                 assert(nIds != nNew); // this means nNew was wrong, oh ow
                 s << info;
-                        nIds++;
-                    }
-                }
-                nIds = 0;
+                nIds++;
+            }
+        }
+        nIds = 0;
         for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++) {
             const CAddrInfo &info = (*it).second;
             if (info.fInTried) {
                 assert(nIds != nTried); // this means nTried was wrong, oh ow
                 s << info;
-                        nIds++;
-                    }
-                }
+                nIds++;
+            }
+        }
         for (int bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; bucket++) {
             int nSize = 0;
             for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++) {
                 if (vvNew[bucket][i] != -1)
                     nSize++;
-                    }
+            }
             s << nSize;
             for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++) {
                 if (vvNew[bucket][i] != -1) {
@@ -344,7 +346,7 @@ public:
         s >> nKey;
         s >> nNew;
         s >> nTried;
-                int nUBuckets = 0;
+        int nUBuckets = 0;
         s >> nUBuckets;
         if (nVersion != 0) {
             nUBuckets ^= (1 << 30);
@@ -355,7 +357,7 @@ public:
             CAddrInfo &info = mapInfo[n];
             s >> info;
             mapAddr[info] = n;
-                    info.nRandomPos = vRandom.size();
+            info.nRandomPos = vRandom.size();
             vRandom.push_back(n);
             if (nVersion != 1 || nUBuckets != ADDRMAN_NEW_BUCKET_COUNT) {
                 // In case the new table data cannot be used (nVersion unknown, or bucket count wrong),
@@ -364,50 +366,50 @@ public:
                 int nUBucketPos = info.GetBucketPosition(nKey, true, nUBucket);
                 if (vvNew[nUBucket][nUBucketPos] == -1) {
                     vvNew[nUBucket][nUBucketPos] = n;
-                        info.nRefCount++;
-                    }
+                    info.nRefCount++;
                 }
+            }
         }
         nIdCount = nNew;
 
         // Deserialize entries from the tried table.
-                int nLost = 0;
+        int nLost = 0;
         for (int n = 0; n < nTried; n++) {
-                    CAddrInfo info;
+            CAddrInfo info;
             s >> info;
             int nKBucket = info.GetTriedBucket(nKey);
             int nKBucketPos = info.GetBucketPosition(nKey, false, nKBucket);
             if (vvTried[nKBucket][nKBucketPos] == -1) {
-                        info.nRandomPos = vRandom.size();
-                        info.fInTried = true;
+                info.nRandomPos = vRandom.size();
+                info.fInTried = true;
                 vRandom.push_back(nIdCount);
                 mapInfo[nIdCount] = info;
                 mapAddr[info] = nIdCount;
                 vvTried[nKBucket][nKBucketPos] = nIdCount;
                 nIdCount++;
-                    } else {
-                        nLost++;
-                    }
-                }
+            } else {
+                nLost++;
+            }
+        }
         nTried -= nLost;
 
         // Deserialize positions in the new table (if possible).
         for (int bucket = 0; bucket < nUBuckets; bucket++) {
-                    int nSize = 0;
+            int nSize = 0;
             s >> nSize;
             for (int n = 0; n < nSize; n++) {
-                        int nIndex = 0;
+                int nIndex = 0;
                 s >> nIndex;
                 if (nIndex >= 0 && nIndex < nNew) {
                     CAddrInfo &info = mapInfo[nIndex];
                     int nUBucketPos = info.GetBucketPosition(nKey, true, bucket);
                     if (nVersion == 1 && nUBuckets == ADDRMAN_NEW_BUCKET_COUNT && vvNew[bucket][nUBucketPos] == -1 && info.nRefCount < ADDRMAN_NEW_BUCKETS_PER_ADDRESS) {
-                            info.nRefCount++;
+                        info.nRefCount++;
                         vvNew[bucket][nUBucketPos] = nIndex;
-                        }
                     }
                 }
             }
+        }
 
         // Prune new entries with refcount 0 (as a result of collisions).
         int nLostUnk = 0;
@@ -418,7 +420,7 @@ public:
                 nLostUnk++;
             } else {
                 it++;
-        }
+            }
         }
         if (nLost + nLostUnk > 0) {
             LogPrint("addrman", "addrman lost %i new and %i tried addresses due to collisions\n", nLostUnk, nLost);
@@ -447,9 +449,9 @@ public:
             }
         }
 
-         nIdCount = 0;
-         nTried = 0;
-         nNew = 0;
+        nIdCount = 0;
+        nTried = 0;
+        nNew = 0;
     }
 
     CAddrMan()
@@ -459,11 +461,11 @@ public:
 
     ~CAddrMan()
     {
-        nKey = uint256(0);
+        nKey.SetNull();
     }
 
     //! Return the number of (unique) addresses in all tables.
-    int size()
+    size_t size() const
     {
         return vRandom.size();
     }
@@ -536,15 +538,14 @@ public:
 
     /**
      * Choose an address to connect to.
-     * nUnkBias determines how much "new" entries are favored over "tried" ones (0-100).
      */
-    CAddress Select()
+    CAddrInfo Select(bool newOnly = false)
     {
-        CAddress addrRet;
+        CAddrInfo addrRet;
         {
             LOCK(cs);
             Check();
-            addrRet = Select_();
+            addrRet = Select_(newOnly);
             Check();
         }
         return addrRet;
@@ -573,6 +574,12 @@ public:
             Check();
         }
     }
+    
+    //! Ensure that bucket placement is always the same for testing purposes.
+    void MakeDeterministic(){
+        nKey.SetNull(); //Do not use outside of tests.
+    }
+
 };
 
 #endif // BITCOIN_ADDRMAN_H

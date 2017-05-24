@@ -4,8 +4,12 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "amount.h"
+#include "codecoin.h"
 
 #include "tinyformat.h"
+
+/* TODO: move to params */
+const std::string CURRENCY_UNIT = BRAND_CODE;
 
 CFeeRate::CFeeRate(const CAmount& nFeePaid, size_t nSize)
 {
@@ -17,10 +21,6 @@ CFeeRate::CFeeRate(const CAmount& nFeePaid, size_t nSize)
 
 CAmount CFeeRate::GetFee(size_t nSize) const
 {
-    // Round up nSize to the nearest 1000
-    CAmount mod = nSize % 1000;
-    if (mod > 0)
-        nSize = nSize - mod + 1000;
     CAmount nFee = nSatoshisPerK*nSize / 1000;
 
     if (nFee == 0 && nSatoshisPerK > 0)
@@ -31,5 +31,5 @@ CAmount CFeeRate::GetFee(size_t nSize) const
 
 std::string CFeeRate::ToString() const
 {
-    return strprintf("%d.%08d LTC/kB", nSatoshisPerK / COIN, nSatoshisPerK % COIN);
+    return strprintf("%d.%08d %s/kB", nSatoshisPerK / COIN, nSatoshisPerK % COIN, CURRENCY_UNIT);
 }
