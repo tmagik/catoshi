@@ -82,6 +82,12 @@ Security
 --------
 To help make your bitcoin installation more secure by making certain attacks impossible to
 exploit even if a vulnerability is found, binaries are hardened by default.
+This can be disabled with:
+
+Hardening Flags:
+
+	./configure --enable-hardening
+	./configure --disable-hardening
 
 
 Hardening enables the following features:

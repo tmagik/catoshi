@@ -1,18 +1,35 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2015 The Bitcoin Core developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 /* Pull in RPC port and other compile time things */
 #include "codecoin.h"
 
+#include "tinyformat.h"
 #include "util.h"
 
 #include <assert.h>
 
-#include <boost/assign/list_of.hpp>
+const std::string CBaseChainParams::MAIN = "main";
+const std::string CBaseChainParams::TESTNET = "test";
+const std::string CBaseChainParams::REGTEST = "regtest";
 
-using namespace boost::assign;
+void AppendParamsHelpMessages(std::string& strUsage, bool debugHelp)
+{
+    strUsage += HelpMessageGroup(_("Chain selection options:"));
+    strUsage += HelpMessageOpt("-testnet", _("Use the test chain"));
+    if (debugHelp) {
+        strUsage += HelpMessageOpt("-regtest", "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
+                                   "This is intended for regression testing tools and app development.");
+    }
+}
 
 /**
  * Main network
