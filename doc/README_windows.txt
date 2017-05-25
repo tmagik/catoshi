@@ -1,4 +1,4 @@
-Codecoin Core 0.10.4
+Codecoin Core 0.12.1
 =====================
 
 Intro

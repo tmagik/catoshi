@@ -172,4 +172,4 @@ public:
 typedef CBitcoinExtKeyBase<CExtKey, 74, CChainParams::EXT_SECRET_KEY> CBitcoinExtKey;
 typedef CBitcoinExtKeyBase<CExtPubKey, 74, CChainParams::EXT_PUBLIC_KEY> CBitcoinExtPubKey;
 
-#endif // BITCOIN_BASE58_H
+#endif // CODECOIN_BASE58_H

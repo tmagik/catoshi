@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Copyright *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -12,7 +12,9 @@
 #include "walletmodel.h"
 
 #include "base58.h"
-#include "wallet.h"
+#include "wallet/wallet.h"
+
+#include <boost/foreach.hpp>
 
 #include <QFont>
 #include <QDebug>
@@ -86,7 +88,7 @@ public:
             BOOST_FOREACH(const PAIRTYPE(CTxDestination, CAddressBookData)& item, wallet->mapAddressBook)
             {
                 const CBitcoinAddress& address = item.first;
-                    bool fMine = IsMine(*wallet, address.Get());
+                bool fMine = IsMine(*wallet, address.Get());
                 AddressTableEntry::Type addressType = translateTransactionType(
                         QString::fromStdString(item.second.purpose), fMine);
                 const std::string& strName = item.second.name;
@@ -283,12 +285,12 @@ bool AddressTableModel::setData(const QModelIndex &index, const QVariant &value,
             // Double-check that we're not overwriting a receiving address
             else if(rec->type == AddressTableEntry::Sending)
             {
-                    // Remove old entry
+                // Remove old entry
                 wallet->DelAddressBook(curAddress);
-                    // Add new entry with new address
+                // Add new entry with new address
                 wallet->SetAddressBook(newAddress, rec->label.toStdString(), strPurpose);
-                }
             }
+        }
         return true;
     }
     return false;

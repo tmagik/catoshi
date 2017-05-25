@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
+// Copyright (c) 2011-2013 The Bitcoin Core developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -39,7 +39,7 @@ public:
         Conflicted,         /**< Conflicts with other transaction or mempool **/
         /// Generated (mined) transactions
         Immature,           /**< Mined but waiting for maturity */
-        MaturesWarning, /**< Transaction will likely not mature because no nodes have confirmed */
+        MaturesWarning,     /**< Transaction will likely not mature because no nodes have confirmed */
         NotAccepted         /**< Mined but not accepted */
     };
 
@@ -50,7 +50,6 @@ public:
 
     /** @name Generated (mined) transactions
        @{*/
-    Maturity maturity;
     int matures_in;
     /**@}*/
 
@@ -145,4 +144,4 @@ public:
     bool statusUpdateNeeded();
 };
 
-#endif // TRANSACTIONRECORD_H
+#endif // BITCOIN_QT_TRANSACTIONRECORD_H

@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -29,19 +29,22 @@ class OptionsModel : public QAbstractListModel
     Q_OBJECT
 
 public:
-    explicit OptionsModel(QObject *parent = 0);
+    explicit OptionsModel(QObject *parent = 0, bool resetSettings = false);
 
     enum OptionID {
-        StartAtStartup,    // bool
-        MinimizeToTray,    // bool
-        MapPortUPnP,       // bool
-        MinimizeOnClose,   // bool
-        ProxyUse,          // bool
-        ProxyIP,           // QString
+        StartAtStartup,         // bool
+        MinimizeToTray,         // bool
+        MapPortUPnP,            // bool
+        MinimizeOnClose,        // bool
+        ProxyUse,               // bool
+        ProxyIP,                // QString
         ProxyPort,              // int
-        DisplayUnit,       // BitcoinUnits::Unit
+        ProxyUseTor,            // bool
+        ProxyIPTor,             // QString
+        ProxyPortTor,           // int
+        DisplayUnit,            // BitcoinUnits::Unit
         ThirdPartyTxUrls,       // QString
-        Language,          // QString
+        Language,               // QString
         CoinControlFeatures,    // bool
         ThreadsScriptVerif,     // int
         DatabaseCache,          // int
@@ -50,7 +53,7 @@ public:
         OptionIDRowCount,
     };
 
-    void Init();
+    void Init(bool resetSettings = false);
     void Reset();
 
     int rowCount(const QModelIndex & parent = QModelIndex()) const;
@@ -86,7 +89,7 @@ private:
     /// Add option to list of GUI options overridden through command line/config file
     void addOverriddenOption(const std::string &option);
 
-signals:
+Q_SIGNALS:
     void displayUnitChanged(int unit);
     void coinControlFeaturesChanged(bool);
 };

@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2012 The Bitcoin developers
+// Copyright (c) 2012-2015 The Bitcoin Core developers
 // Copyright (c) 2009-2012 The *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -20,6 +20,7 @@
 class CBasicKeyStore;
 class CWallet;
 class uint256;
+class CBlockIndex;
 
 /** General change type (added, updated, removed). */
 enum ChangeType
@@ -80,20 +81,8 @@ public:
     /** Show message box. */
     boost::signals2::signal<bool (const std::string& message, const std::string& caption, unsigned int style), boost::signals2::last_value<bool> > ThreadSafeMessageBox;
 
-    /** Ask the user whether they want to pay a fee or not. */
-    boost::signals2::signal<bool (int64_t nFeeRequired), boost::signals2::last_value<bool> > ThreadSafeAskFee;
-
-    /** Handle a URL passed at the command line. */
-    boost::signals2::signal<void (const std::string& strURI)> ThreadSafeHandleURI;
-
     /** Progress message during initialization. */
     boost::signals2::signal<void (const std::string &message)> InitMessage;
-
-    /** Translate a message to the native language of the user. */
-    boost::signals2::signal<std::string (const char* psz)> Translate;
-
-    /** Block chain changed. */
-    boost::signals2::signal<void ()> NotifyBlocksChanged;
 
     /** Number of network connections changed. */
     boost::signals2::signal<void (int newNumConnections)> NotifyNumConnectionsChanged;
@@ -111,19 +100,12 @@ public:
     boost::signals2::signal<void (const std::string &title, int nProgress)> ShowProgress;
 
     /** New block has been accepted */
-    boost::signals2::signal<void (const uint256& hash)> NotifyBlockTip;
+    boost::signals2::signal<void (bool, const CBlockIndex *)> NotifyBlockTip;
+
+    /** Banlist did change. */
+    boost::signals2::signal<void (void)> BannedListChanged;
 };
 
 extern CClientUIInterface uiInterface;
-
-/**
- * Translation function: Call Translate signal on UI interface, which returns a boost::optional result.
- * If no translation slot is registered, nothing is returned, and simply return the input.
- */
-inline std::string _(const char* psz)
-{
-    boost::optional<std::string> rv = uiInterface.Translate(psz);
-    return rv ? (*rv) : psz;
-}
 
 #endif // CODECOIN_UI_INTERFACE_H

@@ -10,6 +10,7 @@
 
 #include "checkpoints.h"
 
+#include "chain.h"
 #include "chainparams.h"
 #include "main.h"
 #include "uintBIG.h"
@@ -21,16 +22,14 @@
 namespace Checkpoints {
 
     /**
-     * How many times we expect transactions after the last checkpoint to
-     * be slower. This number is a compromise, as it can't be accurate for
-     * every system. When reindexing from a fast disk with a slow CPU, it
+     * How many times slower we expect checking transactions after the last
+     * checkpoint to be (from checking signatures, which is skipped up to the
+     * last checkpoint). This number is a compromise, as it can't be accurate
+     * for every system. When reindexing from a fast disk with a slow CPU, it
      * can be up to 20, while when downloading from a slow network with a
      * fast multicore CPU, it won't be much higher than 1.
-     * 
-     * 2017: FIXME: assumptions above need to be checked, verification
-     * feels much much slower with sigcheck on recent Bitcoin chainsyncs
      */
-    static const double SIGCHECK_VERIFICATION_FACTOR = 20.0;
+    static const double SIGCHECK_VERIFICATION_FACTOR = 5.0;
 
     bool fEnabled = true;
 
@@ -47,7 +46,7 @@ namespace Checkpoints {
     }
 
     //! Guess how far we are in the verification process at the given block index
-    double GuessVerificationProgress(CBlockIndex *pindex, bool fSigchecks) {
+    double GuessVerificationProgress(const CCheckpointData& data, CBlockIndex *pindex, bool fSigchecks) {
         if (pindex==NULL)
             return 0.0;
 
@@ -58,8 +57,6 @@ namespace Checkpoints {
         double fWorkAfter = 0.0;  // Amount of work left after pindex (estimated)
         // Work is defined as: 1.0 per transaction before the last checkpoint, and
         // fSigcheckVerificationFactor per transaction after.
-
-        const CCheckpointData &data = Params().Checkpoints();
 
         if (pindex->nChainTx <= data.nTransactionsLastCheckpoint) {
             double nCheapBefore = pindex->nChainTx;
@@ -78,22 +75,19 @@ namespace Checkpoints {
         return fWorkBefore / (fWorkBefore + fWorkAfter);
     }
 
-    int GetTotalBlocksEstimate()
+    int GetTotalBlocksEstimate(const CCheckpointData& data)
     {
-        if (!fEnabled)
-            return 0;
+        const MapCheckpoints& checkpoints = data.mapCheckpoints;
 
-        const MapCheckpoints& checkpoints = *Params().Checkpoints().mapCheckpoints;
+        if (checkpoints.empty())
+            return 0;
 
         return checkpoints.rbegin()->first;
     }
 
-    CBlockIndex* GetLastCheckpoint()
+    CBlockIndex* GetLastCheckpoint(const CCheckpointData& data)
     {
-        if (!fEnabled)
-            return NULL;
-
-        const MapCheckpoints& checkpoints = *Params().Checkpoints().mapCheckpoints;
+        const MapCheckpoints& checkpoints = data.mapCheckpoints;
 
         BOOST_REVERSE_FOREACH(const MapCheckpoints::value_type& i, checkpoints)
         {

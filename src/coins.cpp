@@ -1,9 +1,15 @@
-// Copyright (c) 2012-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2012-2015 The Bitcoin developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "coins.h"
 
+#include "memusage.h"
 #include "random.h"
 
 #include <assert.h>
@@ -106,6 +112,7 @@ bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
 
 CCoinsModifier CCoinsViewCache::ModifyCoins(const uint256 &txid) {
     assert(!hasModifier);
+    hasModifier = true;
     std::pair<CCoinsMap::iterator, bool> ret = cacheCoins.insert(std::make_pair(txid, CCoinsCacheEntry()));
     if (ret.second) {
         if (!base->GetCoins(txid, ret.first->second.coins)) {
@@ -246,10 +253,7 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
     return tx.ComputePriority(dResult);
 }
 
-CCoinsModifier::CCoinsModifier(CCoinsViewCache& cache_, CCoinsMap::iterator it_) : cache(cache_), it(it_) {
-    assert(!cache.hasModifier);
-    cache.hasModifier = true;
-}
+CCoinsModifier::CCoinsModifier(CCoinsViewCache& cache_, CCoinsMap::iterator it_) : cache(cache_), it(it_) {}
 
 CCoinsModifier::~CCoinsModifier()
 {

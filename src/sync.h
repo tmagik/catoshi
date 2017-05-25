@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2009-2015 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_SYNC_H
@@ -21,9 +21,6 @@
 ////////////////////////////////////////////////
 
 /*
- 
- 
- 
 CCriticalSection mutex;
     boost::recursive_mutex mutex;
 
@@ -42,11 +39,7 @@ ENTER_CRITICAL_SECTION(mutex); // no RAII
 
 LEAVE_CRITICAL_SECTION(mutex); // no RAII
     mutex.unlock();
- 
- 
- 
  */
-
 
 ///////////////////////////////
 //                           //
@@ -54,30 +47,34 @@ LEAVE_CRITICAL_SECTION(mutex); // no RAII
 //                           //
 ///////////////////////////////
 
-// Template mixin that adds -Wthread-safety locking annotations to a
-// subset of the mutex API.
+/**
+ * Template mixin that adds -Wthread-safety locking
+ * annotations to a subset of the mutex API.
+ */
 template <typename PARENT>
 class LOCKABLE AnnotatedMixin : public PARENT
 {
 public:
     void lock() EXCLUSIVE_LOCK_FUNCTION()
     {
-      PARENT::lock();
+        PARENT::lock();
     }
 
     void unlock() UNLOCK_FUNCTION()
     {
-      PARENT::unlock();
+        PARENT::unlock();
     }
 
     bool try_lock() EXCLUSIVE_TRYLOCK_FUNCTION(true)
     {
-      return PARENT::try_lock();
+        return PARENT::try_lock();
     }
 };
 
-/** Wrapped boost mutex: supports recursive locking, but no waiting  */
-// TODO: We should move away from using the recursive lock by default.
+/**
+ * Wrapped boost mutex: supports recursive locking, but no waiting
+ * TODO: We should move away from using the recursive lock by default.
+ */
 typedef AnnotatedMixin<boost::recursive_mutex> CCriticalSection;
 
 /** Wrapped boost mutex: supports waiting but not recursive locking */
@@ -92,9 +89,7 @@ void LeaveCritical();
 std::string LocksHeld();
 void AssertLockHeldInternal(const char* pszName, const char* pszFile, int nLine, void* cs);
 #else
-void static inline EnterCritical(const char* pszName, const char* pszFile, int nLine, void* cs, bool fTry = false)
-{
-}
+void static inline EnterCritical(const char* pszName, const char* pszFile, int nLine, void* cs, bool fTry = false) {}
 void static inline LeaveCritical() {}
 void static inline AssertLockHeldInternal(const char* pszName, const char* pszFile, int nLine, void* cs) {}
 #endif
@@ -105,8 +100,8 @@ void PrintLockContention(const char* pszName, const char* pszFile, int nLine);
 #endif
 
 /** Wrapper around boost::unique_lock<Mutex> */
-template<typename Mutex>
-class CMutexLock
+template <typename Mutex>
+class SCOPED_LOCKABLE CMutexLock
 {
 private:
     boost::unique_lock<Mutex> lock;
@@ -118,7 +113,7 @@ private:
         if (!lock.try_lock()) {
             PrintLockContention(pszName, pszFile, nLine);
 #endif
-        lock.lock();
+            lock.lock();
 #ifdef DEBUG_LOCKCONTENTION
         }
 #endif
@@ -134,7 +129,7 @@ private:
     }
 
 public:
-    CMutexLock(Mutex& mutexIn, const char* pszName, const char* pszFile, int nLine, bool fTry = false) : lock(mutexIn, boost::defer_lock)
+    CMutexLock(Mutex& mutexIn, const char* pszName, const char* pszFile, int nLine, bool fTry = false) EXCLUSIVE_LOCK_FUNCTION(mutexIn) : lock(mutexIn, boost::defer_lock)
     {
         if (fTry)
             TryEnter(pszName, pszFile, nLine);
@@ -142,7 +137,18 @@ public:
             Enter(pszName, pszFile, nLine);
     }
 
-    ~CMutexLock()
+    CMutexLock(Mutex* pmutexIn, const char* pszName, const char* pszFile, int nLine, bool fTry = false) EXCLUSIVE_LOCK_FUNCTION(pmutexIn)
+    {
+        if (!pmutexIn) return;
+
+        lock = boost::unique_lock<Mutex>(*pmutexIn, boost::defer_lock);
+        if (fTry)
+            TryEnter(pszName, pszFile, nLine);
+        else
+            Enter(pszName, pszFile, nLine);
+    }
+
+    ~CMutexLock() UNLOCK_FUNCTION()
     {
         if (lock.owns_lock())
             LeaveCritical();
@@ -157,19 +163,19 @@ public:
 typedef CMutexLock<CCriticalSection> CCriticalBlock;
 
 #define LOCK(cs) CCriticalBlock criticalblock(cs, #cs, __FILE__, __LINE__)
-#define LOCK2(cs1,cs2) CCriticalBlock criticalblock1(cs1, #cs1, __FILE__, __LINE__),criticalblock2(cs2, #cs2, __FILE__, __LINE__)
-#define TRY_LOCK(cs,name) CCriticalBlock name(cs, #cs, __FILE__, __LINE__, true)
+#define LOCK2(cs1, cs2) CCriticalBlock criticalblock1(cs1, #cs1, __FILE__, __LINE__), criticalblock2(cs2, #cs2, __FILE__, __LINE__)
+#define TRY_LOCK(cs, name) CCriticalBlock name(cs, #cs, __FILE__, __LINE__, true)
 
-#define ENTER_CRITICAL_SECTION(cs) \
-    { \
+#define ENTER_CRITICAL_SECTION(cs)                            \
+    {                                                         \
         EnterCritical(#cs, __FILE__, __LINE__, (void*)(&cs)); \
-        (cs).lock(); \
+        (cs).lock();                                          \
     }
 
 #define LEAVE_CRITICAL_SECTION(cs) \
-    { \
-        (cs).unlock(); \
-        LeaveCritical(); \
+    {                              \
+        (cs).unlock();             \
+        LeaveCritical();           \
     }
 
 class CSemaphore
@@ -214,7 +220,7 @@ public:
 class CSemaphoreGrant
 {
 private:
-    CSemaphore *sem;
+    CSemaphore* sem;
     bool fHaveGrant;
 
 public:

@@ -1,10 +1,15 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2015 The Bitcoin Core developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_SCRIPT_STANDARD_H
-#define BITCOIN_SCRIPT_STANDARD_H
+#ifndef CODECOIN_SCRIPT_STANDARD_H
+#define CODECOIN_SCRIPT_STANDARD_H
 
 #include "script/interpreter.h"
 #include "uintBIG.h"
@@ -13,6 +18,8 @@
 
 #include <stdint.h>
 
+static const bool DEFAULT_ACCEPT_DATACARRIER = true;
+
 class CKeyID;
 class CScript;
 
@@ -20,12 +27,13 @@ class CScript;
 class CScriptID : public uint160
 {
 public:
-    CScriptID() : uint160(0) {}
+    CScriptID() : uint160() {}
     CScriptID(const CScript& in);
     CScriptID(const uint160& in) : uint160(in) {}
 };
 
-static const unsigned int MAX_OP_RETURN_RELAY = 80;      //! bytes
+static const unsigned int MAX_OP_RETURN_RELAY = 83; //! bytes (+1 for OP_RETURN, +2 for the pushdata opcodes)
+extern bool fAcceptDatacarrier;
 extern unsigned nMaxDatacarrierBytes;
 
 /**
@@ -38,23 +46,6 @@ extern unsigned nMaxDatacarrierBytes;
  * details.
  */
 static const unsigned int MANDATORY_SCRIPT_VERIFY_FLAGS = SCRIPT_VERIFY_P2SH;
-
-/**
- * Standard script verification flags that standard transactions will comply
- * with. However scripts violating these flags may still be present in valid
- * blocks and we must accept those blocks.
- */
-static const unsigned int STANDARD_SCRIPT_VERIFY_FLAGS = MANDATORY_SCRIPT_VERIFY_FLAGS |
-                                                         SCRIPT_VERIFY_DERSIG |
-                                                         SCRIPT_VERIFY_STRICTENC |
-                                                         SCRIPT_VERIFY_MINIMALDATA |
-                                                         SCRIPT_VERIFY_NULLDUMMY |
-                                                         SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS |
-                                                         SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY |
-                                                         SCRIPT_VERIFY_LOW_S;
-
-/** For convenience, standard but not mandatory verify flags. */
-static const unsigned int STANDARD_NOT_MANDATORY_VERIFY_FLAGS = STANDARD_SCRIPT_VERIFY_FLAGS & ~MANDATORY_SCRIPT_VERIFY_FLAGS;
 
 enum txnouttype
 {
@@ -85,12 +76,11 @@ typedef boost::variant<CNoDestination, CKeyID, CScriptID> CTxDestination;
 const char* GetTxnOutputType(txnouttype t);
 
 bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<std::vector<unsigned char> >& vSolutionsRet);
-int ScriptSigArgsExpected(txnouttype t, const std::vector<std::vector<unsigned char> >& vSolutions);
-bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType);
 bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet);
 bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<CTxDestination>& addressRet, int& nRequiredRet);
 
 CScript GetScriptForDestination(const CTxDestination& dest);
+CScript GetScriptForRawPubKey(const CPubKey& pubkey);
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
 
 #endif // BITCOIN_SCRIPT_STANDARD_H

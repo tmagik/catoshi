@@ -123,5 +123,3 @@ Launch Daemon with a dedicated bitcoin user.
 
 Auto respawning is currently only configured for Upstart and systemd.
 Reasonable defaults have been chosen but YMMV.
-
-

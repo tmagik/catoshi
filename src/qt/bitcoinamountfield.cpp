@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2014 The Bitcoin developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Copyright (c) 2009-2012 The *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, Grant, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -66,7 +66,7 @@ public:
     void setValue(const CAmount& value)
     {
         lineEdit()->setText(BitcoinUnits::format(currentUnit, value, false, BitcoinUnits::separatorAlways));
-        emit valueChanged();
+        Q_EMIT valueChanged();
     }
 
     void stepBy(int steps)
@@ -171,11 +171,12 @@ protected:
 
     StepEnabled stepEnabled() const
     {
-        StepEnabled rv = 0;
         if (isReadOnly()) // Disable steps when AmountSpinBox is read-only
             return StepNone;
-        if(text().isEmpty()) // Allow step-up with empty field
+        if (text().isEmpty()) // Allow step-up with empty field
             return StepUpEnabled;
+
+        StepEnabled rv = 0;
         bool valid = false;
         CAmount val = value(&valid);
         if(valid)
@@ -188,13 +189,13 @@ protected:
         return rv;
     }
 
-signals:
+Q_SIGNALS:
     void valueChanged();
 };
 
 #include "bitcoinamountfield.moc"
 
-BitcoinAmountField::BitcoinAmountField(QWidget *parent):
+BitcoinAmountField::BitcoinAmountField(QWidget *parent) :
     QWidget(parent),
     amount(0)
 {
@@ -226,7 +227,7 @@ BitcoinAmountField::BitcoinAmountField(QWidget *parent):
 
 void BitcoinAmountField::clear()
 {
-        amount->clear();
+    amount->clear();
     unit->setCurrentIndex(0);
 }
 
@@ -282,7 +283,6 @@ void BitcoinAmountField::setValue(const CAmount& value)
 void BitcoinAmountField::setReadOnly(bool fReadOnly)
 {
     amount->setReadOnly(fReadOnly);
-    unit->setEnabled(!fReadOnly);
 }
 
 void BitcoinAmountField::unitChanged(int idx)
@@ -297,7 +297,7 @@ void BitcoinAmountField::unitChanged(int idx)
 }
 
 void BitcoinAmountField::setDisplayUnit(int newUnit)
-    {
+{
     unit->setValue(newUnit);
 }
 

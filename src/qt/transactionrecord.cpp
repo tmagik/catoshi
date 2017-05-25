@@ -1,20 +1,23 @@
-// Copyright (c) 2011-2014 The Bitcoin developers
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "transactionrecord.h"
 
 #include "base58.h"
+#include "consensus/consensus.h"
+#include "main.h"
 #include "timedata.h"
-#include "wallet.h"
+#include "wallet/wallet.h"
 
 #include <stdint.h>
+
+#include <boost/foreach.hpp>
 
 /* Return positive answer if transaction should be shown in list.
  */
@@ -58,7 +61,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                 CTxDestination address;
                 sub.idx = parts.size(); // sequence number
                 sub.credit = txout.nValue;
-                sub.involvesWatchAddress = mine == ISMINE_WATCH_ONLY;
+                sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
                 if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address))
                 {
                     // Received by Bitcoin Address
@@ -88,7 +91,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         BOOST_FOREACH(const CTxIn& txin, wtx.vin)
         {
             isminetype mine = wallet->IsMine(txin);
-            if(mine == ISMINE_WATCH_ONLY) involvesWatchAddress = true;
+            if(mine & ISMINE_WATCH_ONLY) involvesWatchAddress = true;
             if(fAllFromMe > mine) fAllFromMe = mine;
         }
 
@@ -96,7 +99,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
         {
             isminetype mine = wallet->IsMine(txout);
-            if(mine == ISMINE_WATCH_ONLY) involvesWatchAddress = true;
+            if(mine & ISMINE_WATCH_ONLY) involvesWatchAddress = true;
             if(fAllToMe > mine) fAllToMe = mine;
         }
 
@@ -190,7 +193,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
     status.depth = wtx.GetDepthInMainChain();
     status.cur_num_blocks = chainActive.Height();
 
-    if (!IsFinalTx(wtx, chainActive.Height() + 1))
+    if (!CheckFinalTx(wtx))
     {
         if (wtx.nLockTime < LOCKTIME_THRESHOLD)
         {
@@ -215,11 +218,11 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
                 status.matures_in = wtx.GetBlocksToMaturity();
 
                 // Check if the block was requested by anyone
-        if (GetAdjustedTime() - wtx.nTimeReceived > 2 * 60 && wtx.GetRequestCount() == 0)
+                if (GetAdjustedTime() - wtx.nTimeReceived > 2 * 60 && wtx.GetRequestCount() == 0)
                     status.status = TransactionStatus::MaturesWarning;
-        }
+            }
             else
-        {
+            {
                 status.status = TransactionStatus::NotAccepted;
             }
         }
@@ -235,13 +238,13 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
             status.status = TransactionStatus::Conflicted;
         }
         else if (GetAdjustedTime() - wtx.nTimeReceived > 2 * 60 && wtx.GetRequestCount() == 0)
-            {
+        {
             status.status = TransactionStatus::Offline;
-            }
+        }
         else if (status.depth == 0)
-            {
+        {
             status.status = TransactionStatus::Unconfirmed;
-            }
+        }
         else if (status.depth < RecommendedNumConfirmations)
         {
             status.status = TransactionStatus::Confirming;

@@ -13,13 +13,14 @@
 #include "csvmodelwriter.h"
 #include "editaddressdialog.h"
 #include "guiutil.h"
+#include "platformstyle.h"
 
 #include <QIcon>
 #include <QMenu>
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
 
-AddressBookPage::AddressBookPage(Mode mode, Tabs tab, QWidget *parent) :
+AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode mode, Tabs tab, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AddressBookPage),
     model(0),
@@ -28,12 +29,17 @@ AddressBookPage::AddressBookPage(Mode mode, Tabs tab, QWidget *parent) :
 {
     ui->setupUi(this);
 
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    ui->newAddress->setIcon(QIcon());
-    ui->copyAddress->setIcon(QIcon());
-    ui->deleteAddress->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-#endif
+    if (!platformStyle->getImagesOnButtons()) {
+        ui->newAddress->setIcon(QIcon());
+        ui->copyAddress->setIcon(QIcon());
+        ui->deleteAddress->setIcon(QIcon());
+        ui->exportButton->setIcon(QIcon());
+    } else {
+        ui->newAddress->setIcon(platformStyle->SingleColorIcon(":/icons/add"));
+        ui->copyAddress->setIcon(platformStyle->SingleColorIcon(":/icons/editcopy"));
+        ui->deleteAddress->setIcon(platformStyle->SingleColorIcon(":/icons/remove"));
+        ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/export"));
+    }
 
     switch(mode)
     {
@@ -60,12 +66,11 @@ AddressBookPage::AddressBookPage(Mode mode, Tabs tab, QWidget *parent) :
     switch(tab)
     {
     case SendingTab:
-        ui->labelExplanation->setText(tr("These are your " COIN_upper " addresses for sending payments. Always check the amount and the receiving address before sending coins."));
+        ui->labelExplanation->setText(tr("These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins."));
         ui->deleteAddress->setVisible(true);
-        ui->signMessage->setVisible(false);
         break;
     case ReceivingTab:
-        ui->labelExplanation->setText(tr("These are your " COIN_upper " addresses for receiving payments. It is recommended to use a new receiving address for each transaction."));
+        ui->labelExplanation->setText(tr("These are your Bitcoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction."));
         ui->deleteAddress->setVisible(false);
         break;
     }
@@ -138,7 +143,7 @@ void AddressBookPage::setModel(AddressTableModel *model)
 #endif
 
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
-            this, SLOT(selectionChanged()));
+        this, SLOT(selectionChanged()));
 
     // Select row for newly created address
     connect(model, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(selectNewAddress(QModelIndex,int,int)));
@@ -168,8 +173,8 @@ void AddressBookPage::onEditAction()
         return;
 
     EditAddressDialog dlg(
-            tab == SendingTab ?
-            EditAddressDialog::EditSendingAddress :
+        tab == SendingTab ?
+        EditAddressDialog::EditSendingAddress :
         EditAddressDialog::EditReceivingAddress, this);
     dlg.setModel(model);
     QModelIndex origIndex = proxyModel->mapToSource(indexes.at(0));
@@ -183,9 +188,9 @@ void AddressBookPage::on_newAddress_clicked()
         return;
 
     EditAddressDialog dlg(
-            tab == SendingTab ?
-            EditAddressDialog::NewSendingAddress :
-            EditAddressDialog::NewReceivingAddress, this);
+        tab == SendingTab ?
+        EditAddressDialog::NewSendingAddress :
+        EditAddressDialog::NewReceivingAddress, this);
     dlg.setModel(model);
     if(dlg.exec())
     {
@@ -248,8 +253,7 @@ void AddressBookPage::done(int retval)
     // Figure out which address was selected, and return it
     QModelIndexList indexes = table->selectionModel()->selectedRows(AddressTableModel::Address);
 
-    foreach (QModelIndex index, indexes)
-    {
+    Q_FOREACH (const QModelIndex& index, indexes) {
         QVariant address = table->model()->data(index);
         returnValue = address.toString();
     }
