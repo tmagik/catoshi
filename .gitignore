@@ -51,3 +51,22 @@ qrc_*.cpp
 .DS_Store
 build
 
+#lcov
+*.gcno
+/*.info
+test_bitcoin.coverage/
+total.coverage/
+coverage_percent.txt
+
+#build tests
+linux-coverage-build
+linux-build
+win32-build
+qa/pull-tester/run-bitcoind-for-test.sh
+qa/pull-tester/tests-config.sh
+qa/pull-tester/cache/*
+qa/pull-tester/test.*/*
+
+!src/leveldb*/Makefile
+
+/doc/doxygen/

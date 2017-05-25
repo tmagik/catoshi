@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -11,6 +11,7 @@
 #define _CODECOIN_QT_OPTIONSDIALOG_H
 
 #include <QDialog>
+#include <QValidator>
 
 class OptionsModel;
 class QValidatedLineEdit;
@@ -22,6 +23,18 @@ QT_END_NAMESPACE
 namespace Ui {
 class OptionsDialog;
 }
+
+/** Proxy address widget validator, checks for a valid proxy address.
+ */
+class ProxyAddressValidator : public QValidator
+{
+    Q_OBJECT
+
+public:
+    explicit ProxyAddressValidator(QObject *parent);
+
+    State validate(QString &input, int &pos) const;
+};
 
 /** Preferences dialog. */
 class OptionsDialog : public QDialog
@@ -35,14 +48,7 @@ public:
     void setModel(OptionsModel *model);
     void setMapper();
 
-protected:
-    bool eventFilter(QObject *object, QEvent *event);
-
-private slots:
-    /* enable OK button */
-    void enableOkButton();
-    /* disable OK button */
-    void disableOkButton();
+private Q_SLOTS:
     /* set OK button state (enabled / disabled) */
     void setOkButtonState(bool fState);
     void on_resetButton_clicked();
@@ -51,16 +57,17 @@ private slots:
 
     void showRestartWarning(bool fPersistent = false);
     void clearStatusLabel();
-    void doProxyIpChecks(QValidatedLineEdit *pUiProxyIp, int nProxyPort);
+    void updateProxyValidationState();
+    /* query the networks, for which the default proxy is used */
+    void updateDefaultProxyNets();
 
-signals:
+Q_SIGNALS:
     void proxyIpChecks(QValidatedLineEdit *pUiProxyIp, int nProxyPort);
 
 private:
     Ui::OptionsDialog *ui;
     OptionsModel *model;
     QDataWidgetMapper *mapper;
-    bool fProxyIpValid;
 };
 
 #endif // BITCOIN_QT_OPTIONSDIALOG_H

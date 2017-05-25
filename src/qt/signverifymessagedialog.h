@@ -1,5 +1,4 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -13,6 +12,7 @@
 
 #include <QDialog>
 
+class PlatformStyle;
 class WalletModel;
 
 namespace Ui {
@@ -24,7 +24,7 @@ class SignVerifyMessageDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SignVerifyMessageDialog(QWidget *parent);
+    explicit SignVerifyMessageDialog(const PlatformStyle *platformStyle, QWidget *parent);
     ~SignVerifyMessageDialog();
 
     void setModel(WalletModel *model);
@@ -40,8 +40,9 @@ protected:
 private:
     Ui::SignVerifyMessageDialog *ui;
     WalletModel *model;
+    const PlatformStyle *platformStyle;
 
-private slots:
+private Q_SLOTS:
     /* sign message */
     void on_addressBookButton_SM_clicked();
     void on_pasteButton_SM_clicked();

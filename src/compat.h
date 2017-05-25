@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2015 The Bitcoin developers
 // Copyright (c) 2017 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
@@ -91,7 +91,9 @@ typedef u_int SOCKET;
 #define THREAD_PRIORITY_ABOVE_NORMAL    (-2)
 #endif
 
-size_t strnlen_int( const char *start, size_t max_len);
+#if HAVE_DECL_STRNLEN == 0
+size_t strnlen( const char *start, size_t max_len);
+#endif // HAVE_DECL_STRNLEN
 
 bool static inline IsSelectableSocket(SOCKET s) {
 #ifdef WIN32

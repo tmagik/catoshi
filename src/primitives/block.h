@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Copyright (c) 2009-2012 The *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -7,7 +7,6 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-
 
 #ifndef CODECOIN_PRIMITIVES_BLOCK_H
 #define CODECOIN_PRIMITIVES_BLOCK_H
@@ -20,9 +19,6 @@
 #if defined(BRAND_grantcoin)
 #include "keystore.h"
 #endif
-
-/** The maximum allowed size for a serialized block, in bytes (network rule) */
-static const unsigned int MAX_BLOCK_SIZE = 1000000;
 
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
@@ -41,7 +37,7 @@ class BlockHeader
 {
 public:
     // header
-    static const int32_t CURRENT_VERSION=4;
+    static const int32_t CURRENT_VERSION=2;
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
@@ -69,9 +65,9 @@ public:
 
     void SetNull()
     {
-        nVersion = BlockHeader::CURRENT_VERSION;
-        hashPrevBlock = 0;
-        hashMerkleRoot = 0;
+        nVersion = 0;
+        hashPrevBlock.SetNull();
+        hashMerkleRoot.SetNull();
         nTime = 0;
         nBits = 0;
         nNonce = 0;
@@ -164,6 +160,7 @@ public:
 	BlockSig.clear();
 #endif
         vMerkleTree.clear();
+        fChecked = false;
     }
 
     /* There is probably some C++ way to handle this with templates better,
@@ -180,46 +177,9 @@ public:
         return block;
     }
 
-    // Build the in-memory merkle tree for this block and return the merkle root.
-    // If non-NULL, *mutated is set to whether mutation was detected in the merkle
-    // tree (a duplication of transactions in the block leading to an identical
-    // merkle root).
-    uint256 BuildMerkleTree(bool* mutated = NULL) const;
-
-    std::vector<uint256> GetMerkleBranch(int nIndex) const;
-    static uint256 CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex);
     std::string ToString() const;
 };
 
-#if 0
-#if defined(BRAND_grantcoin)
-/* this is probably not the right way to abstract this */
-class BlockGRT : public Block
-{
-	std::vector<unsigned char> BlockSig;
-	template <typename Stream, typename Operation>
-	inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-		READWRITE(*(CBlockHeader*)this);
-		READWRITE(vtx);
-		READWRITE(BlockSig);
-	}
-
-	void SetNull()
-	{
-		BlockHeaderGRT::SetNull()
-		vtx.clear();
-		BlockSig.clear();
-		vMerkleTree.clear();
-	}
-
-	bool isProofOfStake() const
-	{ return false }
-
-	bool SignBlock(const CKeyStore& keystore);
-	bool CheckBlockSignature() const;
-};
-#endif
-#endif
 
 /** Describes a place in the block chain to another node such that if the
  * other node doesn't have the same branch, it can find a recent common trunk.

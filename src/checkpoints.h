@@ -6,6 +6,7 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 #ifndef _CODECOIN_CHECKPOINT_H
 #define _CODECOIN_CHECKPOINT_H
 
@@ -13,39 +14,24 @@
 
 #include <map>
 
-class uint256;
 class CBlockIndex;
-class CSyncCheckpoint;
+struct CCheckpointData;
 
-/** 
+/**
  * Block-chain checkpoints are compiled-in sanity checks.
  * They are updated every release or three.
  */
 namespace Checkpoints
 {
-typedef std::map<int, uint256> MapCheckpoints;
-
-struct CCheckpointData {
-    const MapCheckpoints *mapCheckpoints;
-    int64_t nTimeLastCheckpoint;
-    int64_t nTransactionsLastCheckpoint;
-    double fTransactionsPerDay;
-};
-
-//! Returns true if block passes checkpoint checks
-    bool CheckBlock(int nHeight, const uint256& hash);
 
 //! Return conservative estimate of total number of blocks, 0 if unknown
-    int GetTotalBlocksEstimate();
+int GetTotalBlocksEstimate(const CCheckpointData& data);
 
 //! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
-CBlockIndex* GetLastCheckpoint();
+CBlockIndex* GetLastCheckpoint(const CCheckpointData& data);
 
-double GuessVerificationProgress(CBlockIndex* pindex, bool fSigchecks = true);
+double GuessVerificationProgress(const CCheckpointData& data, CBlockIndex* pindex, bool fSigchecks = true);
 
-    extern bool fEnabled;
-
-extern const CCheckpointData data;
 
 
 #if !defined(SYNC_CHECKPOINTS)
@@ -170,5 +156,6 @@ public:
 };
 #endif /* SYNC_CHECKPOINTS */
 
-#endif /* _CODECOIN_CHECKPOINT_H */
+} //namespace Checkpoints
 
+#endif /* _CODECOIN_CHECKPOINT_H */

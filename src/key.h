@@ -1,27 +1,21 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Copyright (c) 2009-2014 The *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
-// Distributed under the Affero GNU General public license version 3
-// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
+#ifndef CODECOIN_KEY_H
+#define CODECOIN_KEY_H
 
-#ifndef _CODECOIN_KEY_H
-#define _CODECOIN_KEY_H
-
-#include "allocators.h"
+#include "pubkey.h"
 #include "serialize.h"
-#include "uintBIG.h"
+#include "support/allocators/secure.h"
+#include "uint256.h"
 
 #include <stdexcept>
 #include <vector>
 
-class CPubKey;
-
-struct CExtPubKey;
 
 /** 
  * secp256k1:
@@ -54,7 +48,7 @@ private:
     unsigned char vch[32];
 
     //! Check whether the 32-byte array pointed to be vch is valid keydata.
-    bool static Check(const unsigned char *vch);
+    bool static Check(const unsigned char* vch);
 
 public:
     //! Construct an invalid private key.
@@ -83,7 +77,7 @@ public:
     }
 
     //! Initialize using begin and end iterators to byte data.
-    template<typename T>
+    template <typename T>
     void Set(const T pbegin, const T pend, bool fCompressedIn)
     {
         if (pend - pbegin != 32) {
@@ -101,8 +95,8 @@ public:
 
     //! Simple read-only vector-like interface.
     unsigned int size() const { return (fValid ? 32 : 0); }
-    const unsigned char *begin() const { return vch; }
-    const unsigned char *end() const { return vch + size(); }
+    const unsigned char* begin() const { return vch; }
+    const unsigned char* end() const { return vch + size(); }
 
     //! Check whether this private key is valid.
     bool IsValid() const { return fValid; }
@@ -111,7 +105,7 @@ public:
     bool IsCompressed() const { return fCompressed; }
 
     //! Initialize from a CPrivKey (serialized OpenSSL private key data).
-    bool SetPrivKey(const CPrivKey &vchPrivKey, bool fCompressed);
+    bool SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed);
 
     //! Generate a new private key using a cryptographic PRNG.
     void MakeNewKey(bool fCompressed);
@@ -130,8 +124,7 @@ public:
 
     /**
      * Create a DER-serialized signature.
-     * The test_case parameter tweaks the deterministic nonce, and is only for
-     * testing. It should be zero for normal use.
+     * The test_case parameter tweaks the deterministic nonce.
      */
     bool Sign(const uint256& hash, std::vector<unsigned char>& vchSig, uint32_t test_case = 0) const;
 
@@ -142,10 +135,10 @@ public:
      *                  0x1D = second key with even y, 0x1E = second key with odd y,
      *                  add 0x04 for compressed keys.
      */
-    bool SignCompact(const uint256 &hash, std::vector<unsigned char>& vchSig) const;
+    bool SignCompact(const uint256& hash, std::vector<unsigned char>& vchSig) const;
 
     //! Derive BIP32 child key.
-    bool Derive(CKey& keyChild, unsigned char ccChild[32], unsigned int nChild, const unsigned char cc[32]) const;
+    bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
 
     /**
      * Verify thoroughly whether a private key and a public key match.
@@ -164,13 +157,13 @@ struct CExtKey {
     unsigned char nDepth;
     unsigned char vchFingerprint[4];
     unsigned int nChild;
-    unsigned char vchChainCode[32];
+    ChainCode chaincode;
     CKey key;
 
     friend bool operator==(const CExtKey& a, const CExtKey& b)
     {
         return a.nDepth == b.nDepth && memcmp(&a.vchFingerprint[0], &b.vchFingerprint[0], 4) == 0 && a.nChild == b.nChild &&
-               memcmp(&a.vchChainCode[0], &b.vchChainCode[0], 32) == 0 && a.key == b.key;
+               a.chaincode == b.chaincode && a.key == b.key;
     }
 
     void Encode(unsigned char code[74]) const;
@@ -180,7 +173,13 @@ struct CExtKey {
     void SetMaster(const unsigned char* seed, unsigned int nSeedLen);
 };
 
-/** Check that required EC support is available at runtime */
+/** Initialize the elliptic curve support. May not be called twice without calling ECC_Stop first. */
+void ECC_Start(void);
+
+/** Deinitialize the elliptic curve support. No-op if ECC_Start wasn't called first. */
+void ECC_Stop(void);
+
+/** Check that required EC support is available at runtime. */
 bool ECC_InitSanityCheck(void);
 
 #endif // BITCOIN_KEY_H

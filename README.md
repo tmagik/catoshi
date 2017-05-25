@@ -37,18 +37,20 @@ It is currently not particularly usefull except as a catbox for n00b
 developers. I mean, it's a developer sandbox that's a safe space to try
 things that would get you flamed on bitcointalk.
 
-###Why the Catbox?
+Developers work in their own trees, then submit pull requests when they think
+their feature or bug fix is ready.
 
-Because, frankly, right now this code stinks. It's a big pile of crap, and
-I'm taking a bunch of other crapcoin and other stinky bits like p2pool and
-counterparty and mixing it all up like a big compost pile.
+If it is a simple/trivial/non-controversial change, then one of the Bitcoin
+development team members simply pulls it.
 
-But there's a point here. If your shit stinks, you're composting it wrong.
-I grow commodities, and if you're a farmer, all the micronutrients and
-fertilizer in a biomass-based catbox start looking like the most valuable 
-thing in the world.
+If it is a *more complicated or potentially controversial* change, then the patch
+submitter will be asked to start a discussion (if they haven't already) on the
+[mailing list](http://sourceforge.net/mailarchive/forum.php?forum_name=bitcoin-development).
 
-And this:
+The patch will be accepted if there is broad consensus that it is a good thing.
+Developers should expect to rework and resubmit patches if the code doesn't
+match the project's coding conventions (see [doc/coding.md](doc/coding.md)) or are
+controversial.
 
 Seymour Cray was a friend of my dad's. I asked him what it was like to know
 the genius who had built the world's first supercomputer company. My dad said,
@@ -121,3 +123,16 @@ Unit tests for the GUI code are in `src/qt/test/`. To compile and run them:
     make -f Makefile.test
     ./catcoin-qt_test
 
+Run with the -testnet option to run with "play bitcoins" on the test network, if you
+are testing multi-machine code that needs to operate across the internet.
+
+If you are testing something that can run on one machine, run with the -regtest option.
+In regression test mode, blocks can be created on-demand; see qa/rpc-tests/ for tests
+that run in -regtest mode.
+
+**DEBUG_LOCKORDER**
+
+Bitcoin Core is a multithreaded application, and deadlocks or other multithreading bugs
+can be very difficult to track down. Compiling with -DDEBUG_LOCKORDER (configure
+CXXFLAGS="-DDEBUG_LOCKORDER -g") inserts run-time checks to keep track of which locks
+are held, and adds warnings to the debug.log file if inconsistencies are detected.

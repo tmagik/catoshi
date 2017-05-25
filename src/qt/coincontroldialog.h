@@ -1,3 +1,4 @@
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunmity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -5,8 +6,9 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-#ifndef COINCONTROLDIALOG_H
-#define COINCONTROLDIALOG_H
+
+#ifndef CODECOIN_COINCONTROLDIALOG_H
+#define CODECOIN_COINCONTROLDIALOG_H
 
 #include "amount.h"
 
@@ -19,6 +21,7 @@
 #include <QString>
 #include <QTreeWidgetItem>
 
+class PlatformStyle;
 class WalletModel;
 
 class CCoinControl;
@@ -28,39 +31,44 @@ namespace Ui {
     class CoinControlDialog;
 }
 
+#define ASYMP_UTF8 "\xE2\x89\x88"
+
 class CoinControlDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit CoinControlDialog(QWidget *parent = 0);
+    explicit CoinControlDialog(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~CoinControlDialog();
 
     void setModel(WalletModel *model);
-    
+
     // static because also called from sendcoinsdialog
     static void updateLabels(WalletModel*, QDialog*);
     static QString getPriorityLabel(double dPriority, double mempoolEstimatePriority);
-    
+
     static QList<CAmount> payAmounts;
     static CCoinControl *coinControl;
+    static bool fSubtractFeeFromAmount;
 
 private:
     Ui::CoinControlDialog *ui;
     WalletModel *model;
     int sortColumn;
     Qt::SortOrder sortOrder;
-    
+
     QMenu *contextMenu;
     QTreeWidgetItem *contextMenuItem;
     QAction *copyTransactionHashAction;
     QAction *lockAction;
     QAction *unlockAction;
-    
+
+    const PlatformStyle *platformStyle;
+
     QString strPad(QString, int, QString);
     void sortView(int, Qt::SortOrder);
     void updateView();
-    
+
     enum
     {
         COLUMN_CHECKBOX,
@@ -76,7 +84,7 @@ private:
         COLUMN_PRIORITY_INT64,
         COLUMN_DATE_INT64
     };
-    
+
     // some columns have a hidden column containing the value used for sorting
     int getMappedColumn(int column, bool fVisibleColumn = true)
     {
@@ -102,7 +110,7 @@ private:
         return column;
     }
 
-private slots:
+private Q_SLOTS:
     void showMenu(const QPoint &);
     void copyAmount();
     void copyLabel();
@@ -127,4 +135,4 @@ private slots:
     void updateLabelLocked();
 };
 
-#endif // _COINCONTROLDIALOG_H
+#endif // BITCOIN_QT_COINCONTROLDIALOG_H

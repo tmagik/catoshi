@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2014 The Bitcoin Core developers
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
@@ -9,7 +9,6 @@
 #include "noui.h"
 
 #include "ui_interface.h"
-#include "codecoin.h"
 #include "util.h"
 
 #include <cstdio>
@@ -43,7 +42,7 @@ static bool noui_ThreadSafeMessageBox(const std::string& message, const std::str
     return false;
 }
 
-static void noui_InitMessage(const std::string &message)
+static void noui_InitMessage(const std::string& message)
 {
     LogPrintf("init message: %s\n", message);
 }

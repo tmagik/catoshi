@@ -4,8 +4,6 @@
 
 #include "timedata.h"
 
-#include "codecoin.h"
-
 #include "netbase.h"
 #include "sync.h"
 #include "ui_interface.h"
@@ -44,10 +42,8 @@ static int64_t abs64(int64_t n)
 
 #define BITCOIN_TIMEDATA_MAX_SAMPLES 200
 
-void AddTimeData(const CNetAddr& ip, int64_t nTime)
+void AddTimeData(const CNetAddr& ip, int64_t nOffsetSample)
 {
-    int64_t nOffsetSample = nTime - GetTime();
-
     LOCK(cs_nTimeOffset);
     // Ignore duplicates
     static set<CNetAddr> setKnown;
@@ -59,7 +55,7 @@ void AddTimeData(const CNetAddr& ip, int64_t nTime)
     // Add data
     static CMedianFilter<int64_t> vTimeOffsets(BITCOIN_TIMEDATA_MAX_SAMPLES, 0);
     vTimeOffsets.input(nOffsetSample);
-    LogPrintf("Added time data, samples %d, offset %+d (%+d minutes)\n", vTimeOffsets.size(), nOffsetSample, nOffsetSample/60);
+    LogPrint("net","added time data, samples %d, offset %+d (%+d minutes)\n", vTimeOffsets.size(), nOffsetSample, nOffsetSample/60);
 
     // There is a known issue here (see issue #4521):
     //
@@ -83,7 +79,7 @@ void AddTimeData(const CNetAddr& ip, int64_t nTime)
         int64_t nMedian = vTimeOffsets.median();
         std::vector<int64_t> vSorted = vTimeOffsets.sorted();
         // Only let other nodes change our time by so much
-        if (abs64(nMedian) < 35 * 60)
+        if (abs64(nMedian) < 70 * 60)
         {
             nTimeOffset = nMedian;
         }
@@ -103,18 +99,17 @@ void AddTimeData(const CNetAddr& ip, int64_t nTime)
                 if (!fMatch)
                 {
                     fDone = true;
-                    string strMessage = _("Warning: Please check that your computer's date and time are correct! If your clock is wrong Litecoin Core will not work properly.");
+                    string strMessage = _("Please check that your computer's date and time are correct! If your clock is wrong Bitcoin Core will not work properly.");
                     strMiscWarning = strMessage;
-                    LogPrintf("*** %s\n", strMessage);
                     uiInterface.ThreadSafeMessageBox(strMessage, "", CClientUIInterface::MSG_WARNING);
                 }
             }
         }
-        if (fDebug) {
-            BOOST_FOREACH(int64_t n, vSorted)
-                LogPrintf("%+d  ", n);
-            LogPrintf("|  ");
-        }
-        LogPrintf("nTimeOffset = %+d  (%+d minutes)\n", nTimeOffset, nTimeOffset/60);
+        
+        BOOST_FOREACH(int64_t n, vSorted)
+            LogPrint("net", "%+d  ", n);
+        LogPrint("net", "|  ");
+        
+        LogPrint("net", "nTimeOffset = %+d  (%+d minutes)\n", nTimeOffset, nTimeOffset/60);
     }
 }
