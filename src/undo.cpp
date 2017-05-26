@@ -1,7 +1,9 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html#include "main.h"
+
 #include "main.h"
+#include "hash.h"
 #include "util.h"
 #include "clientversion.h"
 

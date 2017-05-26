@@ -4,6 +4,10 @@
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// see file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
@@ -467,13 +471,13 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Bitcoin
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Bitcoin
-    // Mac: ~/Library/Application Support/Bitcoin
-    // Unix: ~/.bitcoin
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\catoshi\coin_brand
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Catoshi\coin_brand
+    // Mac: ~/Library/Application Support/catoshi/coin_brand
+    // Unix: ~/.catoshi/coin_brand
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Bitcoin";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "catoshi" / BRAND_lower;
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -483,10 +487,12 @@ boost::filesystem::path GetDefaultDataDir()
         pathRet = fs::path(pszHome);
 #ifdef MAC_OSX
     // Mac
-    return pathRet / "Library/Application Support/Bitcoin";
+    pathRet /= "Library/Application Support";
+    TryCreateDirectory(pathRet);
+    return pathRet / "catoshi" / BRAND_lower;
 #else
     // Unix
-    return pathRet / ".bitcoin";
+    return pathRet / ".catoshi" / BRAND_lower;
 #endif
 #endif
 }
