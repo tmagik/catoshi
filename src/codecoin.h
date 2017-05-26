@@ -12,6 +12,8 @@
 
 #if defined(BRAND_litecoin)
 #include "litecoin/litecoin.h"
+#elif defined(BRAND_bitcoin)
+#include "bitcoin/bitcoin.h"
 #elif defined(BRAND_grantcoin)
 #include "grantcoin/grantcoin.h"
 #elif defined(BRAND_solarcoin)

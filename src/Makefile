@@ -333,7 +333,8 @@ test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
 
 regression: test FORCE
 	$(MAKE) COIN_BRAND=litecoin test
-#	$(MAKE) COIN_BRAND=grantcoin test
+	$(MAKE) COIN_BRAND=bitcoin test
+	$(MAKE) COIN_BRAND=grantcoin test
 #	$(MAKE) COIN_BRAND=grantstake test
 #	$(MAKE) COIN_BRAND=hamburger test
 #	$(MAKE) COIN_BRAND=kittycoin test
