@@ -61,7 +61,7 @@ uint256 TxOut::GetHash() const
 
 std::string TxOut::ToString() const
 {
-    return strprintf("TxOut(nValue=%d.%08d, scriptPubKey=%s)", nValue / COIN, nValue % COIN, HexStr(scriptPubKey)).substr(0,30));
+    return strprintf("TxOut(nValue=%d.%08d, scriptPubKey=%s)", nValue / COIN, nValue % COIN, HexStr(scriptPubKey).substr(0,30));
 }
 
 MutableTransaction::MutableTransaction() : nVersion(Transaction::CURRENT_VERSION), nLockTime(0) {}
@@ -77,7 +77,7 @@ void Transaction::UpdateHash() const
     *const_cast<uint256*>(&hash) = SerializeHash(*this);
 }
 
-Transaction::Transaction() : hash(0), nVersion(Transaction::CURRENT_VERSION), vin(), vout(), nLockTime(0) { }
+Transaction::Transaction() : nVersion(Transaction::CURRENT_VERSION), vin(), vout(), nLockTime(0) { }
 
 Transaction::Transaction(const MutableTransaction &tx, bool Update) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime) {
 	if (Update)

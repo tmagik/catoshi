@@ -4,6 +4,30 @@
 #ifndef CODECOIN_grantcoin_H
 #define CODECOIN_grantcoin_H
 
+/* ========= Things defined in bitcoin@0.12/consensus/consensus.h  ========= */
+
+/** The maximum allowed size for a serialized block, in bytes (network rule) */
+static const unsigned int MAX_BLOCK_SIZE =   1000000; // Segwit will move this around
+static const unsigned int MAX_BLOCK_SIZE_GEN = 1000000/2;
+
+/** The maximum allowed number of signature check operations in a block (network rule) */
+static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
+
+/** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
+static const int COINBASE_MATURITY = 500;
+
+/** Flags for nSequence and nLockTime locks */
+#warning "check validity for grantcoin"
+enum {
+    /* Interpret sequence numbers as relative lock-time constraints. */
+    LOCKTIME_VERIFY_SEQUENCE = (1 << 0),
+
+    /* Use GetMedianTimePast() instead of nTime for end point timestamp. */
+    LOCKTIME_MEDIAN_TIME_PAST = (1 << 1),
+};
+
+/* ========= End defines from bitcoin@0.12/consensus/consensus.h  ========= */
+
 static const int RPC_PORT = 9983;
 static const int RPC_PORT_TESTNET = 9985;
 
@@ -15,16 +39,10 @@ static const int64_t CENT = 10000;
 static const int COIN_DECIMALS = 6; /* decimal places for coin */
 #define COIN_DECIMALS_FMT "06"
 
-/** The maximum allowed size for a serialized block, in bytes (network rule) */
-//static const unsigned int MAX_BLOCK_SIZE =   1000000; // Segwit will move this around
-static const unsigned int MAX_BLOCK_SIZE_GEN = 1000000/2;
-
 /** No amount larger than this (in satoshi) is valid */
 static const int64_t MAX_MONEY = 50000000000 * COIN;
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 
-/** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
-static const int COINBASE_MATURITY = 500;
 
 static const int STAKE_TARGET_SPACING = 1.5 * 60; // 90-second block spacing 
 static const unsigned int nStakeMinAge = 60 * 60 * 24; // minimum age for coin age (24 hours)
@@ -73,7 +91,7 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 /* allow for overloads.. */
 #define CTransaction TransactionGRT
 #define CMutableTransaction MutableTransactionGRT
-#define CBlockHeader BlockHeaderGRT
+#define CBlockHeader BlockHeader
 #define CBlock BlockGRT
 
 #endif

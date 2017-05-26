@@ -1,9 +1,15 @@
 // Copyright (c) 2012-2015 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_DBWRAPPER_H
-#define BITCOIN_DBWRAPPER_H
+
+#ifndef CODECOIN_DBWRAPPER_H
+#define CODECOIN_DBWRAPPER_H
 
 #include "clientversion.h"
 #include "serialize.h"
@@ -135,9 +141,6 @@ public:
 class CDBWrapper
 {
 private:
-    //! custom environment this database is using (may be NULL in case of default environment)
-    leveldb::Env* penv;
-
     //! database options used
     leveldb::Options options;
 
@@ -171,12 +174,11 @@ public:
     /**
      * @param[in] path        Location in the filesystem where leveldb data will be stored.
      * @param[in] nCacheSize  Configures various leveldb cache settings.
-     * @param[in] fMemory     If true, use leveldb's memory environment.
      * @param[in] fWipe       If true, remove all existing data.
      * @param[in] obfuscate   If true, store data obfuscated via simple XOR. If false, XOR
      *                        with a zero'd byte array.
      */
-    CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false, bool obfuscate = false);
+    CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fWipe = false, bool obfuscate = false);
     ~CDBWrapper();
 
     template <typename K, typename V>

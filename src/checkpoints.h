@@ -44,7 +44,7 @@ double GuessVerificationProgress(const CCheckpointData& data, CBlockIndex* pinde
 
 	inline void AskForPendingSyncCheckpoint(CNode* pfrom){ return; };
 */
-} //end namespace Checkpoints
+
 #else /* SYNC_CHECKPOINTS */
     extern uint256 hashSyncCheckpoint;
     extern CSyncCheckpoint checkpointMessage;
@@ -156,6 +156,6 @@ public:
 };
 #endif /* SYNC_CHECKPOINTS */
 
-} //namespace Checkpoints
+}; //namespace Checkpoints
 
-#endif /* _CODECOIN_CHECKPOINT_H */
+#endif /* CODECOIN_CHECKPOINT_H */

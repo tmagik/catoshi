@@ -149,7 +149,7 @@ public:
     {
         uint256 ret;
         for (unsigned int i = 0; i < uint256::WIDTH; i++){
-            ret.pn[i] = pn[i];
+            ret.data[i] = data[i];
         }
         return ret;
     }

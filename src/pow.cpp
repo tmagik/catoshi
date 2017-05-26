@@ -14,7 +14,7 @@
 #include "arith_uint256.h"
 #include "chain.h"
 #include "primitives/block.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "util.h"
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)

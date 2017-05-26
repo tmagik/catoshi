@@ -15,7 +15,7 @@
 #include "hash.h"
 #include "main.h"
 #include "pow.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <stdint.h>
 
@@ -34,7 +34,7 @@ static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
 
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe, true) 
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fWipe, true) 
 {
 }
 
@@ -76,7 +76,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
     return db.WriteBatch(batch);
 }
 
-CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fMemory, fWipe) {
+CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fWipe) : CDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fWipe) {
 }
 
 #if defined(PPCOINSTAKE)

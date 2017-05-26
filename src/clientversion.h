@@ -30,8 +30,6 @@
  */
 #define COPYRIGHT_YEAR 2016
 
-#endif //HAVE_CONFIG_H
-
 /**
  * Converts the parameter X to a string after macro replacement on X has been performed.
  * Don't merge these into one macro!

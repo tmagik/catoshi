@@ -43,13 +43,20 @@ DEFS += -DBOOST_NO_CXX11_SCOPED_ENUMS
 
 OBJDIR = obj/$(COIN_BRAND)
 TESTDIR = $(OBJDIR)/test
-SUBDIRS = $(OBJDIR)/crypto $(OBJDIR)/primitives $(OBJDIR)/script $(OBJDIR)/compat $(OBJDIR)/univalue $(OBJDIR)/$(COIN_BRAND)
-SECP256K1_INCLUDE_PATH = $(CURDIR)/secp256k1/include
-SECP256K1_LIB_PATH = $(CURDIR)/secp256k1/.libs
+SUBDIRS = \
+	$(OBJDIR)/crypto \
+	$(OBJDIR)/primitives \
+	$(OBJDIR)/wallet \
+	$(OBJDIR)/script \
+	$(OBJDIR)/compat \
+	$(OBJDIR)/consensus \
+	$(OBJDIR)/policy \
+	$(OBJDIR)/support \
+	$(OBJDIR)/$(COIN_BRAND)
 
 DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/$(OBJDIR) $(BOOST_INCLUDE_PATH) $(BDB_INCLUDE_PATH) $(SECP256K1_INCLUDE_PATH))
-LIBS = $(addprefix -L,$(BOOST_LIB_PATH) $(BDB_LIB_PATH) $(SECP256K1_LIB_PATH))
-BOOST_LIBS = -lboost_system -lboost_filesystem -lboost_program_options -lboost_thread
+LIBS = -lunivalue
+BOOST_LIBS = -lboost_system -lboost_filesystem -lboost_program_options -lboost_thread -lboost_chrono
 
 TESTDEFS = -DTEST_DATA_DIR=$(abspath test/data)
 
@@ -72,8 +79,11 @@ D_LIBS = $(LIBS) \
    -l boost_filesystem$(BOOST_LIB_SUFFIX) \
    -l boost_program_options$(BOOST_LIB_SUFFIX) \
    -l boost_thread$(BOOST_LIB_SUFFIX) \
+   -l boost_chrono$(BOOST_LIB_SUFFIX) \
    -l db_cxx$(BDB_LIB_SUFFIX) \
    -l secp256k1 \
+   -l event \
+   -l event_pthreads \
    -l ssl \
    -l crypto \
 
@@ -101,7 +111,7 @@ D_LIBS+= \
 
 #TODO: simplify above
 TX_LIBS = $(LIBS) $(BOOST_LIBS) -lsecp256k1 -lssl -lcrypto -lpthread
-CLI_LIBS = $(LIBS) $(BOOST_LIBS) -lssl -lcrypto
+CLI_LIBS = $(LIBS) $(BOOST_LIBS) -lssl -lcrypto -levent
 
 # Hardening
 # Make some classes of vulnerabilities unexploitable in case one is discovered.
@@ -154,14 +164,15 @@ STAKE_OBJS = \
     $(OBJDIR)/kernelrecord.o
 
 UTIL_OBJS= \
+    $(OBJDIR)/support/pagelocker.o \
+    $(OBJDIR)/chainbaseparams.o \
+    $(OBJDIR)/clientversion.o \
     $(OBJDIR)/compat/glibc_sanity.o \
     $(OBJDIR)/compat/glibcxx_sanity.o \
     $(OBJDIR)/compat/strnlen.o \
-    $(OBJDIR)/chainbaseparams.o \
-    $(OBJDIR)/clientversion.o \
     $(OBJDIR)/random.o \
     $(OBJDIR)/rpcprotocol.o \
-    $(OBJDIR)/rpcclient.o \
+    $(OBJDIR)/support/cleanse.o \
     $(OBJDIR)/sync.o \
     $(OBJDIR)/uint256.o \
     $(OBJDIR)/util.o \
@@ -173,27 +184,20 @@ CRYPTO_OBJS = \
     $(OBJDIR)/crypto/hmac_sha256.o \
     $(OBJDIR)/crypto/hmac_sha512.o \
     $(OBJDIR)/crypto/ripemd160.o \
-    $(OBJDIR)/crypto/rfc6979_hmac_sha256.o \
     $(OBJDIR)/crypto/sha256.o \
     $(OBJDIR)/crypto/sha512.o \
     $(OBJDIR)/crypto/sha1.o
 
-UNIVALUE_OBJS = \
-    $(OBJDIR)/univalue/univalue.o \
-    $(OBJDIR)/univalue/univalue_read.o \
-    $(OBJDIR)/univalue/univalue_write.o \
-
 COMMON_OBJS = \
-    $(OBJDIR)/allocators.o \
     $(OBJDIR)/amount.o \
+    $(OBJDIR)/arith_uint256.o \
     $(OBJDIR)/base58.o \
     $(OBJDIR)/$(COIN_BRAND)/params.o \
     $(OBJDIR)/coins.o \
     $(OBJDIR)/compressor.o \
+    $(OBJDIR)/consensus/merkle.o \
     $(OBJDIR)/core_read.o \
     $(OBJDIR)/core_write.o \
-    $(OBJDIR)/ecwrapper.o \
-    $(OBJDIR)/eccryptoverify.o \
     $(OBJDIR)/hash.o \
     $(OBJDIR)/key.o \
     $(OBJDIR)/keystore.o \
@@ -202,6 +206,7 @@ COMMON_OBJS = \
     $(OBJDIR)/primitives/transaction.o \
     $(OBJDIR)/protocol.o \
     $(OBJDIR)/pubkey.o \
+    $(OBJDIR)/scheduler.o \
     $(OBJDIR)/script/interpreter.o \
     $(OBJDIR)/script/script.o \
     $(OBJDIR)/script/script_error.o \
@@ -215,19 +220,20 @@ D_OBJS= \
     $(OBJDIR)/init.o \
     $(OBJDIR)/rpcserver.o \
     $(OBJDIR)/net.o \
-    $(UNIVALUE_OBJS) \
     $(UTIL_OBJS) \
     $(CRYPTO_OBJS) \
     $(COMMON_OBJS) \
     $(OBJDIR)/addrman.o \
     $(OBJDIR)/alert.o \
     $(OBJDIR)/bitcoind.o \
-    $(OBJDIR)/crypter.o \
     $(OBJDIR)/chain.o \
     $(OBJDIR)/checkpoints.o \
-    $(OBJDIR)/crypter.o \
-    $(OBJDIR)/db.o \
+    $(OBJDIR)/dbwrapper.o \
+    $(OBJDIR)/httprpc.o \
+    $(OBJDIR)/httpserver.o \
     $(OBJDIR)/merkleblock.o \
+    $(OBJDIR)/policy/fees.o \
+    $(OBJDIR)/policy/policy.o \
     $(OBJDIR)/pow.o \
     $(OBJDIR)/rest.o \
     $(OBJDIR)/rpcblockchain.o \
@@ -237,11 +243,14 @@ D_OBJS= \
     $(OBJDIR)/script/bitcoinconsensus.o \
     $(OBJDIR)/script/sigcache.o \
     $(OBJDIR)/timedata.o \
+    $(OBJDIR)/torcontrol.o \
     $(OBJDIR)/txmempool.o \
+    $(OBJDIR)/validationinterface.o \
+    $(OBJDIR)/versionbits.o \
     $(OBJDIR)/undo.o \
     $(OBJDIR)/bloom.o \
     $(OBJDIR)/noui.o \
-    $(OBJDIR)/leveldbwrapper.o \
+    $(OBJDIR)/dbwrapper.o \
     $(OBJDIR)/txdb.o
 
 #MINER_OBJS
@@ -250,11 +259,14 @@ D_OBJS += \
     $(OBJDIR)/miner.o
 
 WALLET_OBJS = \
-    $(OBJDIR)/wallet.o \
-    $(OBJDIR)/walletdb.o \
-    $(OBJDIR)/wallet_ismine.o \
-    $(OBJDIR)/rpcdump.o \
-    $(OBJDIR)/rpcwallet.o 
+    $(OBJDIR)/wallet/crypter.o \
+    $(OBJDIR)/wallet/db.o \
+    $(OBJDIR)/wallet/wallet.o \
+    $(OBJDIR)/wallet/walletdb.o \
+    $(OBJDIR)/wallet/wallet_ismine.o \
+    $(OBJDIR)/wallet/rpcdump.o \
+    $(OBJDIR)/wallet/rpcwallet.o \
+    $(OBJDIR)/policy/rbf.o
 
 X11_OBJS = \
     $(OBJDIR)/cubehash.o \
@@ -311,8 +323,8 @@ ifeq ($(COIN_BRAND),bluecoin)
 COMMON_OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
 endif
 
-TX_OBJS= $(UTIL_OBJS) $(UNIVALUE_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) bitcoin-tx.cpp
-CLI_OBJS= $(UTIL_OBJS) bitcoin-cli.cpp
+TX_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) bitcoin-tx.cpp
+CLI_OBJS= $(UTIL_OBJS) rpcclient.cpp bitcoin-cli.cpp
 
 all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d $(COIN_BRAND)-cli $(COIN_BRAND)-tx
 

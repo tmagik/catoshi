@@ -4,54 +4,28 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-
 #include "chainparams.h"
+#include "consensus/merkle.h"
 
-#include "random.h"
+#include "tinyformat.h"
 #include "util.h"
 #include "utilstrencodings.h"
 
-#include <inttypes.h>
+#include <cinttypes>
 #include <assert.h>
 
 #include <boost/assign/list_of.hpp>
 
-using namespace std;
-
-struct SeedSpec6 {
-    uint8_t addr[16];
-    uint16_t port;
-};
+//using namespace std;
 
 /**
  * Main network
  */
 
-/**
- * What makes a good checkpoint block?
- * + Is surrounded by blocks with reasonable timestamps
- *   (no blocks before with a timestamp after, none after with
- *    timestamp before)
- * + Contains no strange transactions
- */
-static Checkpoints::MapCheckpoints mapCheckpoints =
-	boost::assign::map_list_of
-	(     0, uint256("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a"))
-//	(33000, uint256("0x"))
-	;
-const Checkpoints::CCheckpointData data = {
-	&mapCheckpoints,
-	1434870875, 	// * UNIX timestamp of last checkpoint block
-	106400,		// * total number of transactions between genesis and last checkpoint
-				//	 (the tx=... number in the SetBestChain debug.log lines)
-	1000.0		// * estimated number of transactions per day after checkpoint
-};
-
 
 class CMainParams : public CChainParams {
 public:
     CMainParams() {
-        networkID = CBaseChainParams::MAIN;
         strNetworkID = "grantcoin";
         /** 
          * The message start string is designed to be unlikely to occur in normal data.
@@ -63,13 +37,16 @@ public:
         pchMessageStart[2] = 0xe1;
         pchMessageStart[3] = 0xe4;
         nDefaultPort = 9982; /* P2P_PORT */
-        bnProofOfWorkLimit = ~uint256(0) >> 28; // Reduced initial difficulty from Peercoin's 32
-        nEnforceBlockUpgradeMajority = 750;
-        nRejectBlockOutdatedMajority = 950;
-        nToCheckBlockUpgradeMajority = 1000;
-        nMinerThreads = 0;
-        nTargetTimespan = 3.5 * 24 * 60 * 60; // 3.5 days FIXME not used for GRT?
-        nTargetSpacing = 1.5 * 60; // 1.5 minutes
+        //consensus.powLimit = ~uint256S(0) >> 28; // Reduced initial difficulty from Peercoin's 32
+        consensus.powLimit = uint256S("0000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        consensus.nMajorityEnforceBlockUpgrade = 750;
+        consensus.nMajorityRejectBlockOutdated = 950;
+        consensus.nMajorityWindow = 1000;
+        consensus.nPowTargetTimespan = 3.5 * 24 * 60 * 60; // 3.5 days FIXME not used for GRT?
+        consensus.nPowTargetSpacing = 1.5 * 60; // 1.5 minutes
+        consensus.nMinerConfirmationWindow = 3360;
+        consensus.nRuleChangeActivationThreshold = 3024; /* 90% of miners */
+
         nMaxTipAge = 24 * 60 * 60;
 
         /**
@@ -81,13 +58,13 @@ public:
         txNew.nTime = 1427081625;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
+        txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(9999) << std::vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
         txNew.vout[0].nValue = 0; /* SetEmpty() used to do this */
         txNew.vout[0].scriptPubKey.clear(); /* maybe put it back?? */
 
         genesis.vtx.push_back(txNew);
-        genesis.hashPrevBlock = 0;
-        genesis.hashMerkleRoot = genesis.BuildMerkleTree();
+        genesis.hashPrevBlock.SetNull();  // = 0;  // old way is simpler to read
+        genesis.hashMerkleRoot = BlockMerkleRoot(genesis); //genesis.BuildMerkleTree();
         genesis.nVersion = 1;
         genesis.nTime    = 1427086539;
 //const CBigNum bnInitialHashTarget(~uint256(0) >> 28);  // Reduced from Peercoin's 40
@@ -95,8 +72,8 @@ public:
         genesis.nNonce   = 413974755;
 
         //cout << genesis.ToString();
-        assert(genesis.hashMerkleRoot == uint256("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
-        assert(genesis.GetHash() == uint256("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a"));
+        assert(genesis.hashMerkleRoot == uint256S("0xca7e1b14fe8d66d18650db8fa0c1b2787fa48b4a342fff3b00aa1cc9b0ae85f3"));
+        assert(genesis.GetHash() == uint256S("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a"));
 
         vSeeds.push_back(CDNSSeedData("grantcoin.net", "seed1.grantcoin.net"));
         vSeeds.push_back(CDNSSeedData("grantcoin.net", "seed2.grantcoin.net"));
@@ -107,22 +84,28 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04,0x88,0xB2,0x1E};
         base58Prefixes[EXT_SECRET_KEY] = {0x04,0x88,0xAD,0xE4};
 
-        fRequireRPCPassword = true;
         fMiningRequiresPeers = true;
-        fAllowMinDifficultyBlocks = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
-        fSkipProofOfWorkCheck = false;
         fTestnetToBeDeprecatedFieldRPC = false;
 
-        // Litecoin: Mainnet v2 enforced as of block 710k
-        nEnforceV2AfterHeight = 710000;
-    }
-
-    const Checkpoints::CCheckpointData& Checkpoints() const 
-    {
-        return data;
+#if 0
+        checkpointData = (CCheckpointData) {
+            boost::assign::map_list_of
+	    (     0, uint256S("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a"))
+//	    (33000, uint256S("0x"))
+	    1434870875, 	// * UNIX timestamp of last checkpoint block
+	    106400,		// * total number of transactions between genesis and last checkpoint
+				//	 (the tx=... number in the SetBestChain debug.log lines)
+	    1000.0		// * estimated number of transactions per day after checkpoint
+	};
+#else
+        checkpointData = (CCheckpointData) {
+            boost::assign::map_list_of
+            ( 11111, uint256S("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d"))
+	};
+#endif
     }
 };
 static CMainParams mainParams;
@@ -133,19 +116,18 @@ static CMainParams mainParams;
 class CTestNetParams : public CMainParams {
 public:
     CTestNetParams() {
-        networkID = CBaseChainParams::TESTNET;
         strNetworkID = "test";
         pchMessageStart[0] = 0xe2;
         pchMessageStart[1] = 0xe7;
         pchMessageStart[2] = 0xe1;
         pchMessageStart[3] = 0xe5;
         nDefaultPort = 9984; /* P2P_PORT_TESTNET */
-        nEnforceBlockUpgradeMajority = 51;
-        nRejectBlockOutdatedMajority = 75;
-        nToCheckBlockUpgradeMajority = 100;
-        nMinerThreads = 0;
-        nTargetTimespan = 3.5 * 24 * 60 * 60; // 3.5 days
-        nTargetSpacing = 1.5 * 60; // 1.5 minutes
+        consensus.nMajorityEnforceBlockUpgrade = 51;
+        consensus.nMajorityRejectBlockOutdated = 75;
+        consensus.nMajorityWindow = 100;
+        consensus.nPowTargetTimespan = 3.5 * 24 * 60 * 60; // 3.5 days
+        consensus.nPowTargetSpacing = 1.5 * 60; // 1.5 minutes
+
         nMaxTipAge = 0x7fffffff;
 
         //! Modify the genesis block for the testnet
@@ -154,21 +136,22 @@ public:
         txNew.nTime = 1444509104;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
+        txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(9999) << std::vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
         txNew.vout[0].nValue = 0; /* SetEmpty() used to do this */
         txNew.vout[0].scriptPubKey.clear(); /* maybe put it back?? */
         genesis.vtx.assign(1, txNew); /* clobber the base class TX */
-        genesis.hashPrevBlock = 0;
-        genesis.hashMerkleRoot = genesis.BuildMerkleTree();
+        genesis.hashPrevBlock.SetNull();
+        genesis.hashMerkleRoot = BlockMerkleRoot(genesis); //genesis.BuildMerkleTree();
         genesis.nVersion = 1;
         genesis.nTime    = 1444510495;
 //const CBigNum bnInitialHashTarget(~uint256(0) >> 28);  // Reduced from Peercoin's 40
         genesis.nBits    = 0x1d0fffff;
         genesis.nNonce   = 87045764;
 
-	cout << genesis.ToString();
-        assert(genesis.hashMerkleRoot == uint256("650de4987865a27a1c248908c6a93b9d55931ee3df0e97a845c0915bb53a362f"));
-        assert(genesis.GetHash() == uint256("000000075c9bddc6a4638910415b2995febabf9dd8b634f0832da86c5bab2df5"));
+	//cout << genesis.ToString();
+        consensus.hashGenesisBlock = genesis.GetHash();
+        assert(genesis.hashMerkleRoot == uint256S("650de4987865a27a1c248908c6a93b9d55931ee3df0e97a845c0915bb53a362f"));
+        assert(consensus.hashGenesisBlock == uint256S("000000075c9bddc6a4638910415b2995febabf9dd8b634f0832da86c5bab2df5"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -180,101 +163,52 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = { 0x04,0x35,0x87,0xCF};
         base58Prefixes[EXT_SECRET_KEY] = { 0x04,0x35,0x83,0x94};
 
-        fRequireRPCPassword = true;
         fMiningRequiresPeers = true;
-        fAllowMinDifficultyBlocks = true;
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = true;
-
-        // Litecoin: Testnet v2 enforced as of block 400k
-        nEnforceV2AfterHeight = 400000;
     }
-//    const Checkpoints::CCheckpointData& Checkpoints() const 
-//    {
-//        return dataTestnet;
-//    }
 };
 
 static CTestNetParams testNetParams;
 
 static CChainParams *pCurrentParams = 0;
 
-CModifiableParams *ModifiableParams()
-{
-   assert(pCurrentParams);
-   assert(!"no unitTest options for Grantcoin yet");
-   return NULL;
-}
-
 const CChainParams &Params() {
     assert(pCurrentParams);
     return *pCurrentParams;
 }
 
-CChainParams &Params(CBaseChainParams::Network network) {
-    switch (network) {
-        case CBaseChainParams::MAIN:
+CChainParams& Params(const std::string& chain)
+{
+    if (chain == CBaseChainParams::MAIN)
             return mainParams;
-        case CBaseChainParams::TESTNET:
+    else if (chain == CBaseChainParams::TESTNET)
             return testNetParams;
-        default:
-            assert(false && "Unimplemented network");
-            return mainParams;
-    }
+    else
+        throw std::runtime_error(strprintf("%s: Unknown chain %s.", __func__, chain));
 }
 
-void SelectParams(CBaseChainParams::Network network) {
+void SelectParams(const std::string& network)
+{
     SelectBaseParams(network);
     pCurrentParams = &Params(network);
 }
 
-bool SelectParamsFromCommandLine()
-{
-    CBaseChainParams::Network network = NetworkIdFromCommandLine();
-    if (network == CBaseChainParams::MAX_NETWORK_TYPES)
-        return false;
-
-    SelectParams(network);
-    return true;
-}
-
+#include "consensus/validation.h"
+#include "chain.h"
 #include "txdb.h"
 #include "utilmoneystr.h"
+#include "arith_uint256.h"
 
 using namespace std;
 using namespace boost;
 
-uint256 hashGenesisBlock = 0;			// TODO: objectize this for multicoin support
-
-const string strMessageMagic = "Grantcoin Signed Message:\n";
-
-int nCoinbaseMaturity = COINBASE_MATURITY;
-
 // TODO: separate max clock drift from tx timestamp limits?
 const unsigned int nMaxClockDrift = 2*60*60;   // this is WAY to big..
 
-
-
-/* value, in percent of what difficulty value we'll accept for orphans */
-const int ORPHAN_WORK_THRESHOLD = 1; // FIXME WAY TOO WIDE right now
-
-// DNS seeds
-// Each pair gives a source name and a seed name.
-// The first name is used as information source for addrman.
-// The second name should resolve to a list of seed addresses.
-// FIXME use a single string and/or objectify this
-const char *strMainNetDNSSeed[][2] = {
-	{"grantcoin.net", "seed1.grantcoin.net"},
-	{"grantcoin.net", "seed2.grantcoin.net"},
-	{NULL, NULL}
-};
-
-const char *strTestNetDNSSeed[][2] = {
-	{"seed", "159.203.84.95"},
-	{NULL, NULL}
-};
+const std::string strMessageMagic = "Grantcoin Signed Message:\n";
 
 int64_t GetProofOfWorkRewardTestNet(int nHeight)
 {
@@ -409,31 +343,32 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 
 unsigned int static GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake)
 {
+    arith_uint256 powLimit = UintToArith256(Params().GetConsensus().powLimit).GetCompact(); 
     if (pindexLast == NULL)
-        return Params().ProofOfWorkLimit().GetCompact(); // genesis block
+        return powLimit.GetCompact(); // genesis block
 
     const CBlockIndex* pindexPrev = GetLastBlockIndex(pindexLast, fProofOfStake);
     if (pindexPrev->pprev == NULL)
-        return Params().ProofOfWorkLimit().GetCompact(); // first block
+        return powLimit.GetCompact(); // first block
     const CBlockIndex* pindexPrevPrev = GetLastBlockIndex(pindexPrev->pprev, fProofOfStake);
     if (pindexPrevPrev->pprev == NULL)
-        return Params().ProofOfWorkLimit().GetCompact(); // second block
+        return powLimit.GetCompact(); // second block
 
     int64_t nActualSpacing = pindexPrev->GetBlockTime() - pindexPrevPrev->GetBlockTime();
 
     // peercoin: target change every block
     // peercoin: retarget with exponential moving toward target spacing
-    uint256 bnNew;
-    bnNew.SetCompact(pindexPrev->nBits);
+    arith_uint256 newLimit;
+    newLimit.SetCompact(pindexPrev->nBits);
     int64_t nTargetSpacing = fProofOfStake? STAKE_TARGET_SPACING : min(nTargetSpacingWorkMax, (int64_t) STAKE_TARGET_SPACING * (1 + pindexLast->nHeight - pindexPrev->nHeight));
     int64_t nInterval = nTargetTimespan / nTargetSpacing;
-    bnNew *= ((nInterval - 1) * nTargetSpacing + nActualSpacing + nActualSpacing);
-    bnNew /= ((nInterval + 1) * nTargetSpacing);
+    newLimit *= ((nInterval - 1) * nTargetSpacing + nActualSpacing + nActualSpacing);
+    newLimit /= ((nInterval + 1) * nTargetSpacing);
 
-    if (bnNew > Params().ProofOfWorkLimit())
-        bnNew = Params().ProofOfWorkLimit();
+    if (newLimit > powLimit)
+	return powLimit.GetCompact();
 
-    return bnNew.GetCompact();
+    return newLimit.GetCompact();
 }
 
 #if defined(PPCOINSTAKE)
@@ -476,9 +411,4 @@ bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, cons
 			return state.DoS(10, (error("AcceptBlock(height=%d) : block time delta %" PRId64" too short", nHeight, delta)));
 	}
 	return true;	
-}
-
-
-namespace Checkpoints
-{
 }

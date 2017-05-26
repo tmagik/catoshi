@@ -26,7 +26,7 @@
 #include "script/sign.h"
 #include "script/standard.h"
 #include "txmempool.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "utilstrencodings.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
@@ -320,7 +320,6 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
         res.push_back(hash.GetHex());
     return res;
 }
-#endif
 
 UniValue createrawtransaction(const UniValue& params, bool fHelp)
 {
@@ -630,7 +629,6 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     // mergedTx will end up with all the signatures; it
     // starts as a clone of the rawtx:
     CMutableTransaction mergedTx(txVariants[0]);
-    bool fComplete = true;
 
     // Fetch previous transactions (inputs):
     CCoinsView viewDummy;
