@@ -37,7 +37,6 @@ class BlockHeader
 {
 public:
     // header
-    static const int32_t CURRENT_VERSION=2;
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
@@ -88,23 +87,10 @@ public:
     }
 };
 
-#if defined(BRAND_grantcoin)
-class BlockHeaderGRT : public BlockHeader
-{
-public:
-    static const int VERSION_STAKE_START=2; // not actually used, remove?
-    static const int CURRENT_VERSION=1;
 
-    /* FIXME: understand why bitcoin moved GetHash/GetPoWHash out
-       of the header file and into block.cpp. Performance? Readability? */
-};
-#endif
+/* below depends on BITCOIN_COMPAT magic */
 
-#if defined(BRAND_grantcoin)
-class BlockGRT : public BlockHeaderGRT
-#else
-class Block : public BlockHeader
-#endif
+class CBlock : public BlockHeader
 {
 public:
     // network and disk
@@ -115,31 +101,18 @@ public:
 #endif
 
     // memory only
-    mutable std::vector<uint256> vMerkleTree;
+    mutable bool fChecked;
 
-#if defined(BRAND_grantcoin)
-    BlockGRT()
+    CBlock()
     {
         SetNull();
     }
 
-    BlockGRT(const BlockHeaderGRT &header)
-    {
-        SetNull();
-        *((BlockHeaderGRT*)this) = header;
-    }
-#else
-    Block()
-    {
-        SetNull();
-    }
-
-    Block(const BlockHeader &header)
+    CBlock(const BlockHeader &header)
     {
         SetNull();
         *((BlockHeader*)this) = header;
     }
-#endif
 
     ADD_SERIALIZE_METHODS;
 
@@ -159,7 +132,6 @@ public:
 #if defined(BRAND_grantcoin)
 	BlockSig.clear();
 #endif
-        vMerkleTree.clear();
         fChecked = false;
     }
 

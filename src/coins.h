@@ -15,6 +15,7 @@
 #include "memusage.h"
 #include "serialize.h"
 #include "uintBIG.h"
+#include "undo.h"
 
 #include <assert.h>
 #include <stdint.h>

@@ -5,7 +5,7 @@
 
 #include "arith_uint256.h"
 
-#include "uint256.h"
+#include "uintBIG.h"
 #include "utilstrencodings.h"
 #include "crypto/common.h"
 

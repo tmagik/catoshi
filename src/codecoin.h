@@ -48,6 +48,8 @@
 #endif
 #endif
 
+extern const std::string strMessageMagic;
+
 /* main.h do we always CheckProofOfWork in CheckIndex */
 /* Litecoin does not do so for performance reasons */
 #if defined(BRAND_bluecoin) || defined(BRAND_uro) || defined(BRAND_givestake)

@@ -229,6 +229,7 @@ UniValue getdifficulty(const UniValue& params, bool fHelp)
             "Returns the difficulty as a multiple of the minimum difficulty.");
 
     Object obj;
+    LOCK(cs_main);
     obj.push_back(Pair("proof-of-work",        GetDifficulty()));
     obj.push_back(Pair("proof-of-stake",       GetDifficulty(GetLastBlockIndex(pindexBest, true))));
     obj.push_back(Pair("search-interval",      (int)nLastCoinStakeSearchInterval));
@@ -244,6 +245,7 @@ UniValue getdifficulty(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     return GetDifficulty();
+#endif
 }
 
 UniValue mempoolToJSON(bool fVerbose = false)

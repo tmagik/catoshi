@@ -19,12 +19,9 @@
 #include "crypto/scrypt.h"
 #endif
 
-/* WARNING: lots of assumptions here about the compiler and memory layout,
-   since we have this nice SerializationOp abstraction, and then proceed
-   to ignore it when generating the hash. Works fast, until it doesn't */
 uint256 BlockHeader::GetHash() const
 {
-    return Hash(BEGIN(nVersion), END(nNonce));
+    return SerializeHash(*this);
 }
 
 uint256 BlockHeader::GetPoWHash() const
@@ -53,9 +50,5 @@ std::string CBlock::ToString() const
     {
         s << "  " << vtx[i].ToString() << "\n";
     }
-    s << "  vMerkleTree: ";
-    for (unsigned int i = 0; i < vMerkleTree.size(); i++)
-        s << " " << vMerkleTree[i].ToString();
-    s << "\n";
     return s.str();
 }

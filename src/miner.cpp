@@ -7,7 +7,6 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
-.
 
 #include "miner.h"
 
@@ -285,7 +284,11 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         LogPrintf("CreateNewBlock(): total size %u txs: %u fees: %ld sigops %d\n", nBlockSize, nBlockTx, nFees, nBlockSigOps);
 
         // Compute final coinbase transaction.
-        txNew.vout[0].nValue = GetBlockValue(nHeight, nFees);
+        // FIXME: remove this extra work for GetBlockValue abstraction
+        CBlockIndex indexDummy(*pblock);
+        indexDummy.pprev = pindexPrev;
+	indexDummy.nHeight = nHeight;
+        txNew.vout[0].nValue = GetBlockValue(&indexDummy, nFees);
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
@@ -330,6 +333,8 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
 //
 // Internal miner
 //
+double dHashesPerSec = 0.0;
+int64_t nHPSTimerStart = 0;
 
 //
 // ScanHash scans nonces looking for a hash with at least some zero bits.
@@ -387,16 +392,15 @@ static bool ProcessBlockFound(const CBlock* pblock, const CChainParams& chainpar
     return true;
 }
 
-void static BitcoinMiner(const CChainParams& chainparms, CWallet *pwallet)
+void static BitcoinMiner(const CChainParams& chainparams)
 {
-    LogPrintf(BRAND_upper "Miner started\n");
+    LogPrintf("Catoshi " BRAND "Miner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread(BRAND_lower "-miner");
 
-    // Each thread has its own key and counter
-    CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
 
+    /* TODO: add option for using new keys per block */
     boost::shared_ptr<CReserveScript> coinbaseScript;
     GetMainSignals().ScriptForMining(coinbaseScript);
 
@@ -449,7 +453,11 @@ void static BitcoinMiner(const CChainParams& chainparms, CWallet *pwallet)
             uint256 hash;
             uint32_t nNonce = 0;
             while (true) {
+                unsigned int nHashesDone = 0;
                 // Check if something found
+#if defined(USE_SCRYPT)
+assert(!"SCRYPT minining needs implemented!");
+#endif
                 if (ScanHash(pblock, nNonce, &hash))
                 {
                     if (UintToArith256(hash) <= hashTarget)

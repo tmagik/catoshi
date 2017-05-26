@@ -278,11 +278,11 @@ static std::string LogTimestampStr(const std::string &str, bool *fStartedNewLine
         //strStamped = DateTimeStrFormat("%Y-%m-%d %H:%M:%S", nTimeMicros/1000000);
         if (fLogTimeMicros){
             int64_t nTimeMicros = GetLogTimeMicros();
-            strStamped = strprintf("%" PRId64 ".%06d ",
+            strStamped = strprintf("[%" PRId64 ".%06d] ",
 				nTimeMicros/1000000,
 				nTimeMicros%1000000);
         } else {
-            strStamped = strprintf("% " PRId64, GetTime())
+            strStamped = strprintf("[%" PRId64 "] ", GetTime());
         }
         strStamped += str;
     } else

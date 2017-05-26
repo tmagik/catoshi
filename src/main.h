@@ -7,6 +7,7 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 #ifndef CODECOIN_MAIN_H
 #define CODECOIN_MAIN_H
 
@@ -126,7 +127,7 @@ static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
 struct BlockHasher
 {
-    size_t operator()(const uint256& hash) const { return hash.GetLow64(); }
+    size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
 };
 
 extern CScript COINBASE_FLAGS;
@@ -136,7 +137,6 @@ typedef boost::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
 extern BlockMap mapBlockIndex;
 extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockSize;
-extern const std::string strMessageMagic;
 extern CWaitableCriticalSection csBestBlock;
 extern CConditionVariable cvBlockChange;
 extern bool fImporting;
@@ -592,5 +592,3 @@ extern bool LoadBlockIndex();
 extern bool InitBlockIndex();
 
 #endif // CODECOIN_MAIN_H
-
-#endif // BITCOIN_MAIN_H
