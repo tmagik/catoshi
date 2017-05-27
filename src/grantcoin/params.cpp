@@ -16,6 +16,8 @@
 
 #include <boost/assign/list_of.hpp>
 
+#include "arith_uint256.h"
+
 //using namespace std;
 
 /**
@@ -38,7 +40,8 @@ public:
         pchMessageStart[3] = 0xe4;
         nDefaultPort = 9982; /* P2P_PORT */
         //consensus.powLimit = ~uint256S(0) >> 28; // Reduced initial difficulty from Peercoin's 32
-        consensus.powLimit = uint256S("0000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        //consensus.powLimit = uint256S("0000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+	consensus.powLimit = ArithToUint256(~arith_uint256(0) >> 28); // TODO: implement operator= for this
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
@@ -343,7 +346,7 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 
 unsigned int static GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake)
 {
-    arith_uint256 powLimit = UintToArith256(Params().GetConsensus().powLimit).GetCompact(); 
+    arith_uint256 powLimit = UintToArith256(Params().GetConsensus().powLimit);
     if (pindexLast == NULL)
         return powLimit.GetCompact(); // genesis block
 
