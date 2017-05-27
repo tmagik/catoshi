@@ -7,6 +7,7 @@
 // Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 #ifndef CODECOIN_UNDO_H
 #define CODECOIN_UNDO_H
 
@@ -130,5 +131,19 @@ public:
         READWRITE(vtxundo);
     }
 };
+
+/* Prototypes for undo.cpp */
+/** Undo information for a CBlock */
+/* Catoshi sez: We had a perfectly good CBlockUndo:: object, why did we throw it away? */
+
+class CDiskBlockPos;
+class uint256;
+
+#include "protocol.h"
+
+bool UndoWriteToDisk(const CBlockUndo& blockundo, CDiskBlockPos& pos, const uint256& hashBlock, const CMessageHeader::MessageStartChars& messageStart);
+
+bool UndoReadFromDisk(CBlockUndo& blockundo, const CDiskBlockPos& pos, const uint256& hashBlock);
+
 
 #endif // BITCOIN_UNDO_H
