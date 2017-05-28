@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "dbwrapper.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "random.h"
 #include "test/test_bitcoin.h"
 
@@ -33,7 +33,8 @@ BOOST_AUTO_TEST_CASE(dbwrapper)
     for (int i = 0; i < 2; i++) {
         bool obfuscate = (bool)i;
         path ph = temp_directory_path() / unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, obfuscate);
+	// Breaks abstraction, but contains memenv to this file
+        CDBWrapper dbw(ph, (1 << 20), false, obfuscate, NEW_MEM_ENV);
         char key = 'k';
         uint256 in = GetRandHash();
         uint256 res;
@@ -54,8 +55,7 @@ BOOST_AUTO_TEST_CASE(dbwrapper_batch)
     for (int i = 0; i < 2; i++) {
         bool obfuscate = (bool)i;
         path ph = temp_directory_path() / unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, obfuscate);
-
+        CDBWrapper dbw(ph, (1 << 20), false, obfuscate, NEW_MEM_ENV);
         char key = 'i';
         uint256 in = GetRandHash();
         char key2 = 'j';
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(dbwrapper_iterator)
     for (int i = 0; i < 2; i++) {
         bool obfuscate = (bool)i;
         path ph = temp_directory_path() / unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, obfuscate);
+        CDBWrapper dbw(ph, (1 << 20), false, obfuscate, NEW_MEM_ENV);
 
         // The two keys are intentionally chosen for ordering
         char key = 'j';
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(existing_data_no_obfuscate)
     create_directories(ph);
 
     // Set up a non-obfuscated wrapper to write some initial data.
-    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false, false);
+    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false);
     char key = 'k';
     uint256 in = GetRandHash();
     uint256 res;
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(existing_data_no_obfuscate)
     delete dbw;
 
     // Now, set up another wrapper that wants to obfuscate the same directory
-    CDBWrapper odbw(ph, (1 << 10), false, false, true);
+    CDBWrapper odbw(ph, (1 << 10), false, true);
 
     // Check that the key/val we wrote with unobfuscated wrapper exists and 
     // is readable.
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(existing_data_reindex)
     create_directories(ph);
 
     // Set up a non-obfuscated wrapper to write some initial data.
-    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false, false);
+    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false);
     char key = 'k';
     uint256 in = GetRandHash();
     uint256 res;
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(existing_data_reindex)
     delete dbw;
 
     // Simulate a -reindex by wiping the existing data store
-    CDBWrapper odbw(ph, (1 << 10), false, true, true);
+    CDBWrapper odbw(ph, (1 << 10), true, true);
 
     // Check that the key/val we wrote with unobfuscated wrapper doesn't exist
     uint256 res2;
@@ -207,7 +207,8 @@ BOOST_AUTO_TEST_CASE(existing_data_reindex)
 BOOST_AUTO_TEST_CASE(iterator_ordering)
 {
     path ph = temp_directory_path() / unique_path();
-    CDBWrapper dbw(ph, (1 << 20), true, false, false);
+    // Breaks abstraction, but contains memenv to this file
+    CDBWrapper dbw(ph, (1 << 20), false, false, NEW_MEM_ENV);
     for (int x=0x00; x<256; ++x) {
         uint8_t key = x;
         uint32_t value = x*x;
@@ -278,7 +279,7 @@ BOOST_AUTO_TEST_CASE(iterator_string_ordering)
     char buf[10];
 
     path ph = temp_directory_path() / unique_path();
-    CDBWrapper dbw(ph, (1 << 20), true, false, false);
+    CDBWrapper dbw(ph, (1 << 20), false, false, NEW_MEM_ENV);
     for (int x=0x00; x<10; ++x) {
         for (int y = 0; y < 10; y++) {
             sprintf(buf, "%d", x);

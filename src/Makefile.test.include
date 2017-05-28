@@ -86,7 +86,7 @@ BITCOIN_TESTS =\
   test/univalue_tests.cpp \
   test/util_tests.cpp
 
-if ENABLE_WALLET
+ifeq ($(ENABLE_WALLET),1)
 BITCOIN_TESTS += \
   test/accounting_tests.cpp \
   wallet/test/wallet_tests.cpp \
@@ -98,14 +98,14 @@ test_test_bitcoin_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -I$(builddir)/te
 test_test_bitcoin_LDADD = $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)
 test_test_bitcoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-if ENABLE_WALLET
+ifeq ($(ENABLE_WALLET),1)
 test_test_bitcoin_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
 test_test_bitcoin_LDADD += $(LIBBITCOIN_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
 test_test_bitcoin_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
-if ENABLE_ZMQ
+ifeq ($(ENABLE_ZMQ),1)
 test_test_bitcoin_LDADD += $(ZMQ_LIBS)
 endif
 

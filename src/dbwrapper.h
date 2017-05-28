@@ -21,7 +21,18 @@
 #include <boost/filesystem/path.hpp>
 
 #include <leveldb/db.h>
+#include <leveldb/env.h>
 #include <leveldb/write_batch.h>
+
+#if defined(TEST_DATA_DIR) /* hack, this is */
+#include <leveldb/helpers/memenv.h>
+//typedef leveldb::Env DB_env;
+typedef void DB_env;
+#define NEW_MEM_ENV leveldb::NewMemEnv(leveldb::Env::Default())
+#else
+typedef void DB_env;
+#define NEW_MEM_ENV nullptr
+#endif
 
 class dbwrapper_error : public std::runtime_error
 {
@@ -177,8 +188,9 @@ public:
      * @param[in] fWipe       If true, remove all existing data.
      * @param[in] obfuscate   If true, store data obfuscated via simple XOR. If false, XOR
      *                        with a zero'd byte array.
+     * @param[in] penv        Pointer to (optional) DB_env type to allow things like in-memory
      */
-    CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fWipe = false, bool obfuscate = false);
+    CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fWipe = false, bool obfuscate = false, DB_env* penv = nullptr);
     ~CDBWrapper();
 
     template <typename K, typename V>
