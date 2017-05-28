@@ -20,6 +20,9 @@ USE_IPV6:=1
 # Build wallet
 ENABLE_WALLET:=1
 
+# Enable tests
+ENABLE_TESTS:=1
+
 ARCH=$(shell arch)
 
 # :=1 --> enable SSE
@@ -58,7 +61,8 @@ DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/$(OBJDIR) $(BOOST_INCLUDE_PATH) $(BDB
 LIBS = -lunivalue
 BOOST_LIBS = -lboost_system -lboost_filesystem -lboost_program_options -lboost_thread -lboost_chrono
 
-TESTDEFS = -DTEST_DATA_DIR=$(abspath test/data)
+TESTDEFS = -DTEST_DATA_DIR=$(abspath test/data) -I$(abspath $(OBJDIR)/test)
+
 
 
 LMODE = dynamic
@@ -87,9 +91,13 @@ D_LIBS = $(LIBS) \
    -l ssl \
    -l crypto \
 
-TESTLIBS += \
- -Wl,-B$(LMODE) \
-   -l boost_unit_test_framework$(BOOST_LIB_SUFFIX)
+#TESTLIBS += \
+# -Wl,-B$(LMODE) \
+#   -l boost_unit_test_framework$(BOOST_LIB_SUFFIX) \
+#   -l leveldb \
+#   -l memenv
+
+TESTLIBS += -lboost_unit_test_framework -lmemenv 
 
 ifndef USE_UPNP
 	override USE_UPNP = -
@@ -225,7 +233,6 @@ D_OBJS= \
     $(COMMON_OBJS) \
     $(OBJDIR)/addrman.o \
     $(OBJDIR)/alert.o \
-    $(OBJDIR)/bitcoind.o \
     $(OBJDIR)/chain.o \
     $(OBJDIR)/checkpoints.o \
     $(OBJDIR)/dbwrapper.o \
@@ -250,7 +257,6 @@ D_OBJS= \
     $(OBJDIR)/undo.o \
     $(OBJDIR)/bloom.o \
     $(OBJDIR)/noui.o \
-    $(OBJDIR)/dbwrapper.o \
     $(OBJDIR)/txdb.o
 
 #MINER_OBJS
@@ -328,7 +334,7 @@ CLI_OBJS= $(UTIL_OBJS) rpcclient.cpp bitcoin-cli.cpp
 
 all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d $(COIN_BRAND)-cli $(COIN_BRAND)-tx
 
-test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
+test check: $(TESTDIR) test_gen_$(COIN_BRAND) FORCE
 	./test_$(COIN_BRAND)
 
 regression: test FORCE
@@ -390,7 +396,7 @@ $(OBJDIR)/%.o: %.cpp
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-$(COIN_BRAND)d: $(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
+$(COIN_BRAND)d: $(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%) $(OBJDIR)/bitcoind.o
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(D_LIBS)
 
 $(COIN_BRAND)-tx: $(TX_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
@@ -400,9 +406,48 @@ $(COIN_BRAND)-cli: $(CLI_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(CLI_LIBS)
 
 
+ifeq ($(ENABLE_TESTS),1)
+#maybe some other time..
+#need to set $(MKDIR_P)...
+#include Makefile.test.include
+#for now, copypasta:
+
+MKDIR_P := mkdir -p
+HEXDUMP := hexdump
+SED := sed
+
+JSON_TEST_FILES = \
+  test/data/script_tests.json \
+  test/data/base58_keys_valid.json \
+  test/data/base58_encode_decode.json \
+  test/data/base58_keys_invalid.json \
+  test/data/tx_invalid.json \
+  test/data/tx_valid.json \
+  test/data/sighash.json
+
+RAW_TEST_FILES = test/data/alertTests.raw
+
+$(OBJDIR)/%.json.h: %.json
+	@mkdir -p $(@D)
+	@echo "namespace json_tests{" > $@
+	@echo "static unsigned const char $(*F)[] = {" >> $@
+	@$(HEXDUMP) -v -e '8/1 "0x%02x, "' -e '"\n"' $< | $(SED) -e 's/0x  ,//g' >> $@
+	@echo "};};" >> $@
+	@echo "Generated $@"
+
+$(OBJDIR)/%.raw.h: %.raw
+	@mkdir -p $(@D)
+	@echo "namespace alert_tests{" > $@
+	@echo "static unsigned const char $(*F)[] = {" >> $@
+	@$(HEXDUMP) -v -e '8/1 "0x%02x, "' -e '"\n"' $< | $(SED) -e 's/0x  ,//g' >> $@
+	@echo "};};" >> $@
+	@echo "Generated $@"
 
 
 TESTOBJS := $(patsubst test/%.cpp,$(OBJDIR)/test/%.o,$(wildcard test/*.cpp))
+
+.PHONY: testgen
+testgen: $(patsubst test/data/%.json,$(OBJDIR)/test/data/%.json.h,$(wildcard $(JSON_TEST_FILES)))
 
 $(OBJDIR)/test/%.o: test/%.cpp
 	$(CXX) -c $(TESTDEFS) $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
@@ -411,8 +456,16 @@ $(OBJDIR)/test/%.o: test/%.cpp
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-test_$(COIN_BRAND): $(TESTOBJS) $(filter-out $(OBJDIR)/init.o,$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
-	$(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS)
+test_gen_$(COIN_BRAND): testgen test_$(COIN_BRAND)
+
+#yes this has extra cruft for scrypt. ugh.
+#filter for init.o is ugly too
+
+test_$(COIN_BRAND): $(filter-out $(OBJDIR)/init.o,$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)) \
+		$(WALLET_OBJS) $(TESTOBJS) \
+		$(OBJDIR)/rpcclient.o $(OBJDIR)/crypto/scrypt.o $(OBJS_SSE2)
+	$(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS) $(D_LIBS) $(BOOST_LIBS)
+endif
 
 clean:
 	-rm -f $(COIN_BRAND)d $(COIN_BRAND)-tx $(COIN_BRAND)-cli test_$(COIN_BRAND)
@@ -424,3 +477,5 @@ clean:
 	-cd leveldb && $(MAKE) clean || true
 
 FORCE:
+
+

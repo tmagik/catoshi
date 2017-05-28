@@ -16,7 +16,6 @@
 #include <univalue.h>
 
 using namespace std;
-using namespace json_spirit;
 
 UniValue
 createArgs(int nRequired, const char* address1=NULL, const char* address2=NULL)

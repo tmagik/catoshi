@@ -38,6 +38,7 @@ protected:
     CDBWrapper db;
 public:
     CCoinsViewDB(size_t nCacheSize, bool fWipe = false);
+    CCoinsViewDB(size_t nCacheSize, leveldb::Env* penv);
 
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -51,6 +52,7 @@ class CBlockTreeDB : public CDBWrapper
 {
 public:
     CBlockTreeDB(size_t nCacheSize, bool fWipe = false);
+    CBlockTreeDB(size_t nCacheSize, leveldb::Env* penv);
 private:
     CBlockTreeDB(const CBlockTreeDB&);
     void operator=(const CBlockTreeDB&);

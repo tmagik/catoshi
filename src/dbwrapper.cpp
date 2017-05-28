@@ -10,6 +10,7 @@
 #include <boost/filesystem.hpp>
 
 #include <leveldb/cache.h>
+#include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
 #include <stdint.h>
 
@@ -43,7 +44,9 @@ static leveldb::Options GetOptions(size_t nCacheSize)
     return options;
 }
 
-CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fWipe, bool obfuscate)
+
+
+CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fWipe, bool obfuscate, DB_env* penv)
 {
     readoptions.verify_checksums = true;
     iteroptions.verify_checksums = true;
@@ -55,6 +58,9 @@ CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, b
         LogPrintf("Wiping LevelDB in %s\n", path.string());
         leveldb::Status result = leveldb::DestroyDB(path.string(), options);
         HandleError(result);
+    }
+    if (penv) {
+	options.env = (leveldb::Env*)penv;
     }
     TryCreateDirectory(path);
     LogPrintf("Opening LevelDB in %s\n", path.string());

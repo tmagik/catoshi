@@ -15,8 +15,7 @@
 #include "miner.h"
 #include "pubkey.h"
 #include "random.h"
-//Get rid of requirement for linking libmemenv
-//#include "txdb.h"
+#include "txdb.h"
 #include "txmempool.h"
 #include "ui_interface.h"
 #include "util.h"
@@ -24,6 +23,10 @@
 #include "wallet/db.h"
 #include "wallet/wallet.h"
 #endif
+
+/* TODO: encapsulate this */
+#include <leveldb/env.h>
+#include <leveldb/helpers/memenv.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
@@ -42,9 +45,7 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
         SetupNetworking();
         fPrintToDebugLog = false; // don't want to write to debug.log file
         fCheckBlockIndex = true;
-	// Breaks abstraction, but contains memenv to this file
-	leveldb::Env* penv = leveldb::NewMemEnv(leveldb::Env::Default());
-        SelectParams(CBaseChainParams::UNITTEST);
+        SelectParams(chainName);
         noui_connect();
 }
 
@@ -55,7 +56,7 @@ BasicTestingSetup::~BasicTestingSetup()
 
 TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(chainName)
 {
-    const CChainParams& chainparams = Params();
+        const CChainParams& chainparams = Params();
 #ifdef ENABLE_WALLET
         bitdb.MakeMock();
 #endif
@@ -63,8 +64,10 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
         pathTemp = GetTempPath() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
         boost::filesystem::create_directories(pathTemp);
         mapArgs["-datadir"] = pathTemp.string();
-        pblocktree = new CBlockTreeDB_mem(1 << 20, penv);
-        pcoinsdbview = new CCoinsViewDB_mem(1 << 23, penv);
+        // Breaks abstraction, but contains memenv to this file
+        void* penv = leveldb::NewMemEnv(leveldb::Env::Default());
+        pblocktree = new CBlockTreeDB(1 << 20, penv);
+        pcoinsdbview = new CCoinsViewDB(1 << 23, penv);
         pcoinsTip = new CCoinsViewCache(pcoinsdbview);
         InitBlockIndex(chainparams);
 #ifdef ENABLE_WALLET
