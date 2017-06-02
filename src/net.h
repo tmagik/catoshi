@@ -14,6 +14,7 @@
 #include "hash.h"
 #include "limitedmap.h"
 #include "netaddress.h"
+#include "policy/feerate.h"
 #include "protocol.h"
 #include "random.h"
 #include "streams.h"
@@ -143,6 +144,7 @@ public:
         unsigned int nReceiveFloodSize = 0;
         uint64_t nMaxOutboundTimeframe = 0;
         uint64_t nMaxOutboundLimit = 0;
+        std::vector<std::string> vSeedNodes;
     };
     CConnman(uint64_t seed0, uint64_t seed1);
     ~CConnman();
@@ -232,8 +234,6 @@ public:
     void GetBanned(banmap_t &banmap);
     void SetBanned(const banmap_t &banmap);
 
-    void AddOneShot(const std::string& strDest);
-
     bool AddNode(const std::string& node);
     bool RemoveAddedNode(const std::string& node);
     std::vector<AddedNodeInfo> GetAddedNodeInfo();
@@ -291,6 +291,7 @@ private:
     };
 
     void ThreadOpenAddedConnections();
+    void AddOneShot(const std::string& strDest);
     void ProcessOneShot();
     void ThreadOpenConnections();
     void ThreadMessageHandler();
@@ -611,7 +612,6 @@ public:
     CCriticalSection cs_filter;
     CBloomFilter* pfilter;
     std::atomic<int> nRefCount;
-    const NodeId id;
 
     const uint64_t nKeyedNetGroup;
     std::atomic_bool fPauseRecv;
@@ -682,6 +682,7 @@ public:
 private:
     CNode(const CNode&);
     void operator=(const CNode&);
+    const NodeId id;
 
 
     const uint64_t nLocalHostNonce;
