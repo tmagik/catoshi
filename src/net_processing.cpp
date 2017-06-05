@@ -754,8 +754,8 @@ void PeerLogicValidation::BlockConnected(const std::shared_ptr<const CBlock>& pb
         const CTransaction& tx = *ptx;
 
         // Which orphan pool entries must we evict?
-        for (size_t j = 0; j < tx.vin.size(); j++) {
-            auto itByPrev = mapOrphanTransactionsByPrev.find(tx.vin[j].prevout);
+        for (const auto& txin : tx.vin) {
+            auto itByPrev = mapOrphanTransactionsByPrev.find(txin.prevout);
             if (itByPrev == mapOrphanTransactionsByPrev.end()) continue;
             for (auto mi = itByPrev->second.begin(); mi != itByPrev->second.end(); ++mi) {
                 const CTransaction& orphanTx = *(*mi)->second.tx;
@@ -911,12 +911,11 @@ bool static AlreadyHave(const CInv& inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
                 recentRejects->reset();
             }
 
-            // Use pcoinsTip->HaveCoinsInCache as a quick approximation to exclude
-            // requesting or processing some txs which have already been included in a block
             return recentRejects->contains(inv.hash) ||
                    mempool.exists(inv.hash) ||
                    mapOrphanTransactions.count(inv.hash) ||
-                   pcoinsTip->HaveCoinsInCache(inv.hash);
+                   pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 0)) || // Best effort: only try output 0 and 1
+                   pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 1));
         }
     case MSG_BLOCK:
     case MSG_WITNESS_BLOCK:
@@ -1553,10 +1552,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         uint32_t nFetchFlags = GetFetchFlags(pfrom);
 
-        for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
+        for (CInv &inv : vInv)
         {
-            CInv &inv = vInv[nInv];
-
             if (interruptMsgProc)
                 return true;
 
