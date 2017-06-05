@@ -5,6 +5,7 @@
 #include "consensus/validation.h"
 #include "wallet/feebumper.h"
 #include "wallet/wallet.h"
+#include "policy/fees.h"
 #include "policy/policy.h"
 #include "policy/rbf.h"
 #include "validation.h" //for mempool access
@@ -23,14 +24,14 @@
 int64_t CalculateMaximumSignedTxSize(const CTransaction &tx, const CWallet *pWallet)
 {
     CMutableTransaction txNew(tx);
-    std::vector<std::pair<const CWalletTx *, unsigned int>> vCoins;
+    std::vector<CInputCoin> vCoins;
     // Look up the inputs.  We should have already checked that this transaction
     // IsAllFromMe(ISMINE_SPENDABLE), so every input should already be in our
     // wallet, with a valid index into the vout array.
     for (auto& input : tx.vin) {
         const auto mi = pWallet->mapWallet.find(input.prevout.hash);
         assert(mi != pWallet->mapWallet.end() && input.prevout.n < mi->second.tx->vout.size());
-        vCoins.emplace_back(&(mi->second), input.prevout.n);
+        vCoins.emplace_back(CInputCoin(&(mi->second), input.prevout.n));
     }
     if (!pWallet->DummySignTx(txNew, vCoins)) {
         // This should never happen, because IsAllFromMe(ISMINE_SPENDABLE)
@@ -40,7 +41,32 @@ int64_t CalculateMaximumSignedTxSize(const CTransaction &tx, const CWallet *pWal
     return GetVirtualTransactionSize(txNew);
 }
 
-CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, int newConfirmTarget, bool specifiedConfirmTarget, CAmount totalFee, bool newTxReplaceable)
+bool CFeeBumper::preconditionChecks(const CWallet *pWallet, const CWalletTx& wtx) {
+    if (pWallet->HasWalletSpend(wtx.GetHash())) {
+        vErrors.push_back("Transaction has descendants in the wallet");
+        currentResult = BumpFeeResult::INVALID_PARAMETER;
+        return false;
+    }
+
+    {
+        LOCK(mempool.cs);
+        auto it_mp = mempool.mapTx.find(wtx.GetHash());
+        if (it_mp != mempool.mapTx.end() && it_mp->GetCountWithDescendants() > 1) {
+            vErrors.push_back("Transaction has descendants in the mempool");
+            currentResult = BumpFeeResult::INVALID_PARAMETER;
+            return false;
+        }
+    }
+
+    if (wtx.GetDepthInMainChain() != 0) {
+        vErrors.push_back("Transaction has been mined, or is conflicted with a mined transaction");
+        currentResult = BumpFeeResult::WALLET_ERROR;
+        return false;
+    }
+    return true;
+}
+
+CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, int newConfirmTarget, bool ignoreGlobalPayTxFee, CAmount totalFee, bool newTxReplaceable)
     :
     txid(std::move(txidIn)),
     nOldFee(0),
@@ -57,25 +83,7 @@ CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, int newConf
     auto it = pWallet->mapWallet.find(txid);
     const CWalletTx& wtx = it->second;
 
-    if (pWallet->HasWalletSpend(txid)) {
-        vErrors.push_back("Transaction has descendants in the wallet");
-        currentResult = BumpFeeResult::INVALID_PARAMETER;
-        return;
-    }
-
-    {
-        LOCK(mempool.cs);
-        auto it_mp = mempool.mapTx.find(txid);
-        if (it_mp != mempool.mapTx.end() && it_mp->GetCountWithDescendants() > 1) {
-            vErrors.push_back("Transaction has descendants in the mempool");
-            currentResult = BumpFeeResult::INVALID_PARAMETER;
-            return;
-        }
-    }
-
-    if (wtx.GetDepthInMainChain() != 0) {
-        vErrors.push_back("Transaction has been mined, or is conflicted with a mined transaction");
-        currentResult = BumpFeeResult::WALLET_ERROR;
+    if (!preconditionChecks(pWallet, wtx)) {
         return;
     }
 
@@ -157,15 +165,7 @@ CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, int newConf
         nNewFee = totalFee;
         nNewFeeRate = CFeeRate(totalFee, maxNewTxSize);
     } else {
-        // if user specified a confirm target then don't consider any global payTxFee
-        if (specifiedConfirmTarget) {
-            nNewFee = CWallet::GetMinimumFee(maxNewTxSize, newConfirmTarget, mempool, CAmount(0));
-        }
-        // otherwise use the regular wallet logic to select payTxFee or default confirm target
-        else {
-            nNewFee = CWallet::GetMinimumFee(maxNewTxSize, newConfirmTarget, mempool);
-        }
-
+        nNewFee = CWallet::GetMinimumFee(maxNewTxSize, newConfirmTarget, mempool, ::feeEstimator, ignoreGlobalPayTxFee);
         nNewFeeRate = CFeeRate(nNewFee, maxNewTxSize);
 
         // New fee rate must be at least old rate + minimum incremental relay rate
@@ -213,7 +213,7 @@ CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, int newConf
 
     // If the output would become dust, discard it (converting the dust to fee)
     poutput->nValue -= nDelta;
-    if (poutput->nValue <= poutput->GetDustThreshold(::dustRelayFee)) {
+    if (poutput->nValue <= GetDustThreshold(*poutput, ::dustRelayFee)) {
         LogPrint(BCLog::RPC, "Bumping fee and discarding dust output\n");
         nNewFee += poutput->nValue;
         mtx.vout.erase(mtx.vout.begin() + nOutput);
@@ -246,6 +246,11 @@ bool CFeeBumper::commit(CWallet *pWallet)
         return false;
     }
     CWalletTx& oldWtx = pWallet->mapWallet[txid];
+
+    // make sure the transaction still has no descendants and hasn't been mined in the meantime
+    if (!preconditionChecks(pWallet, oldWtx)) {
+        return false;
+    }
 
     CWalletTx wtxBumped(pWallet, MakeTransactionRef(std::move(mtx)));
     // commit/broadcast the tx
