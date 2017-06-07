@@ -130,9 +130,4 @@ If you are testing something that can run on one machine, run with the -regtest 
 In regression test mode, blocks can be created on-demand; see qa/rpc-tests/ for tests
 that run in -regtest mode.
 
-**DEBUG_LOCKORDER**
 
-Bitcoin Core is a multithreaded application, and deadlocks or other multithreading bugs
-can be very difficult to track down. Compiling with -DDEBUG_LOCKORDER (configure
-CXXFLAGS="-DDEBUG_LOCKORDER -g") inserts run-time checks to keep track of which locks
-are held, and adds warnings to the debug.log file if inconsistencies are detected.
