@@ -1,5 +1,0 @@
-Building *Coin
-
-run dpkg-buildpackage
-
-If it breaks, file an issue.
