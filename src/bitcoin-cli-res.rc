@@ -16,14 +16,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Litecoin"
-            VALUE "FileDescription",    "Litecoin-cli (OSS RPC client for Litecoin)"
+            VALUE "CompanyName",        "Catoshicoin"
+            VALUE "FileDescription",    "codecoin-cli (JSON-RPC client for " PACKAGE_NAME ")"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "litecoin-cli"
+            VALUE "InternalName",       "codecoin-cli"
             VALUE "LegalCopyright",     COPYRIGHT_STR
-            VALUE "LegalTrademarks1",   "Distributed under the MIT/X11 software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "litecoin-cli.exe"
-            VALUE "ProductName",        "Litecoin-cli"
+            VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
+            VALUE "OriginalFilename",   "codecoin-cli.exe"
+            VALUE "ProductName",        "codecoin-cli"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

@@ -1,4 +1,4 @@
-*Coin Core 0.10.4
+*Coin Core 0.14.1
 =====================
 
 Copyright (c) 2009-2013 Bitcoin Developers
@@ -44,4 +44,9 @@ Development
 - [Release Process](release-process.md)
 - [Source Code Documentation (External Link)](https://localhost/codecoin/doxygen/)
 - [Translation Process](translation_process.md)
+- [Translation Strings Policy](translation_strings_policy.md)
 - [Unit Tests](unit-tests.md)
+- [Unauthenticated REST Interface](REST-interface.md)
+- [Shared Libraries](shared-libraries.md)
+- [BIPS](bips.md)
+- [Dnsseed Policy](dnsseed-policy.md)

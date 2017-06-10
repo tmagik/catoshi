@@ -7,8 +7,8 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef _CODECOIN_CHECKPOINT_H
-#define _CODECOIN_CHECKPOINT_H
+#ifndef CODECOIN_CHECKPOINT_H
+#define CODECOIN_CHECKPOINT_H
 
 #include "uintBIG.h"
 
@@ -24,13 +24,8 @@ struct CCheckpointData;
 namespace Checkpoints
 {
 
-//! Return conservative estimate of total number of blocks, 0 if unknown
-int GetTotalBlocksEstimate(const CCheckpointData& data);
-
 //! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
 CBlockIndex* GetLastCheckpoint(const CCheckpointData& data);
-
-double GuessVerificationProgress(const CCheckpointData& data, CBlockIndex* pindex, bool fSigchecks = true);
 
 
 
@@ -156,6 +151,6 @@ public:
 };
 #endif /* SYNC_CHECKPOINTS */
 
-}; //namespace Checkpoints
+} //namespace Checkpoints
 
 #endif /* CODECOIN_CHECKPOINT_H */

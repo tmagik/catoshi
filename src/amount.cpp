@@ -1,7 +1,13 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// see file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 #include "amount.h"
 #include "codecoin.h"
@@ -11,20 +17,30 @@
 /* TODO: move to params */
 const std::string CURRENCY_UNIT = BRAND_CODE;
 
-CFeeRate::CFeeRate(const CAmount& nFeePaid, size_t nSize)
+CFeeRate::CFeeRate(const CAmount& nFeePaid, size_t nBytes_)
 {
+    assert(nBytes_ <= uint64_t(std::numeric_limits<int64_t>::max()));
+    int64_t nSize = int64_t(nBytes_);
+
     if (nSize > 0)
-        nSatoshisPerK = nFeePaid*1000/nSize;
+        nSatoshisPerK = nFeePaid * 1000 / nSize;
     else
         nSatoshisPerK = 0;
 }
 
-CAmount CFeeRate::GetFee(size_t nSize) const
+CAmount CFeeRate::GetFee(size_t nBytes_) const
 {
-    CAmount nFee = nSatoshisPerK*nSize / 1000;
+    assert(nBytes_ <= uint64_t(std::numeric_limits<int64_t>::max()));
+    int64_t nSize = int64_t(nBytes_);
 
-    if (nFee == 0 && nSatoshisPerK > 0)
-        nFee = nSatoshisPerK;
+    CAmount nFee = nSatoshisPerK * nSize / 1000;
+
+    if (nFee == 0 && nSize != 0) {
+        if (nSatoshisPerK > 0)
+            nFee = CAmount(1);
+        if (nSatoshisPerK < 0)
+            nFee = CAmount(-1);
+    }
 
     return nFee;
 }
