@@ -28,6 +28,7 @@ Optional dependencies:
  qt          | GUI              | GUI toolkit (only needed when GUI enabled)
  protobuf    | Payments in GUI  | Data interchange format used for payment protocol (only needed when GUI enabled)
  libqrencode | QR codes in GUI  | Optional for generating QR codes (only needed when GUI enabled)
+ libzmq3     | ZMQ notification | Optional, allows generating ZMQ notifications (requires ZMQ version >= 4.x)
 
 For the versions used in the release, see [release-process.md](release-process.md) under *Fetch and build inputs*.
 
@@ -55,14 +56,6 @@ turned off by default.  See the configure options for upnp behavior desired:
 	--without-miniupnpc      No UPnP support miniupnp not required
 	--disable-upnp-default   (the default) UPnP support turned off by default at runtime
 	--enable-upnp-default    UPnP support turned on by default at runtime
-
-To build:
-
-	tar -xzvf miniupnpc-1.6.tar.gz
-	cd miniupnpc-1.6
-	make
-	sudo su
-	make install
 
 
 Berkeley DB
@@ -94,31 +87,32 @@ Hardening enables the following features:
 
 * Position Independent Executable
     Build position independent code to take advantage of Address Space Layout Randomization
-    offered by some kernels. An attacker who is able to cause execution of code at an arbitrary
-    memory location is thwarted if he doesn't know where anything useful is located.
+    offered by some kernels. Attackers who can cause execution of code at an arbitrary memory
+    location are thwarted if they don't know where anything useful is located.
     The stack and heap are randomly located by default but this allows the code section to be
     randomly located as well.
 
-    On an Amd64 processor where a library was not compiled with -fPIC, this will cause an error
+    On an AMD64 processor where a library was not compiled with -fPIC, this will cause an error
     such as: "relocation R_X86_64_32 against `......' can not be used when making a shared object;"
 
     To test that you have built PIE executable, install scanelf, part of paxutils, and use:
 
-    	scanelf -e ./codecoin
+    	scanelf -e ./bitcoin
 
     The output should contain:
+
      TYPE
     ET_DYN
 
 * Non-executable Stack
     If the stack is executable then trivial stack based buffer overflow exploits are possible if
-    vulnerable buffers are found. By default, codecoin should be built with a non-executable stack
+    vulnerable buffers are found. By default, bitcoin should be built with a non-executable stack
     but if one of the libraries it uses asks for an executable stack or someone makes a mistake
     and uses a compiler extension which requires an executable stack, it will silently build an
     executable without the non-executable stack protection.
 
     To verify that the stack is non-executable after compiling use:
-    `scanelf -e ./codecoin`
+    `scanelf -e ./bitcoin`
 
     the output should contain:
 	STK/REL/PTL
@@ -128,14 +122,12 @@ Hardening enables the following features:
 
 Disable-wallet mode
 --------------------
-When the intention is to run only a P2P node without a wallet, Catoshi may be compile
-with a wallet by issuing:
+When the intention is to run only a P2P node without a wallet, bitcoin may be compiled in
+disable-wallet mode with:
 
-    make clean
-    make ENABLE_WALLET=0
+    ./configure --disable-wallet
 
-In this case there is no dependency on Berkeley DB 5.3.
+In this case there is no dependency on Berkeley DB 4.8.
 
 Mining is also possible in disable-wallet mode, but only using the `getblocktemplate` RPC
 call not `getwork`.
-

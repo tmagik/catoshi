@@ -1,11 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2015 The Bitcoin developers
+// Copyright (c) 2009-2016 The Bitcoin developers
 // Copyright (c) 2017 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef _CODECOIN_COMPAT_H
-#define _CODECOIN_COMPAT_H 1
+#ifndef CODECOIN_COMPAT_H
+#define CODECOIN_COMPAT_H 1
 
 #ifdef WIN32
 #ifdef _WIN32_WINNT
@@ -36,6 +36,7 @@
 #else // Linux
 #include <sys/fcntl.h>
 #include <sys/mman.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <net/if.h>
@@ -80,16 +81,6 @@ typedef u_int SOCKET;
 #define MSG_NOSIGNAL 0
 #endif
 
-#ifndef WIN32
-// PRIO_MAX is not defined on Solaris
-#ifndef PRIO_MAX
-#define PRIO_MAX 20
-#endif
-#define THREAD_PRIORITY_LOWEST          PRIO_MAX
-#define THREAD_PRIORITY_BELOW_NORMAL    2
-#define THREAD_PRIORITY_NORMAL          0
-#define THREAD_PRIORITY_ABOVE_NORMAL    (-2)
-#endif
 
 bool static inline IsSelectableSocket(SOCKET s) {
 #ifdef WIN32

@@ -130,4 +130,10 @@ If you are testing something that can run on one machine, run with the -regtest 
 In regression test mode, blocks can be created on-demand; see qa/rpc-tests/ for tests
 that run in -regtest mode.
 
+Translations are periodically pulled from Transifex and merged into the git repository. See the
+[translation process](doc/translation_process.md) for details on how this works.
 
+**Important**: We do not accept translation changes as GitHub pull requests because the next
+pull from Transifex would automatically overwrite them again.
+
+Translators should also subscribe to the [mailing list](https://groups.google.com/forum/#!forum/bitcoin-translators).
