@@ -1,9 +1,9 @@
-// Copyright (c) 2011-2015 The Bitcoin Core developers
+// Copyright (c) 2011-2016 The Bitcoin Core developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
@@ -33,6 +33,7 @@ public:
 
     enum OptionID {
         StartAtStartup,         // bool
+        HideTrayIcon,           // bool
         MinimizeToTray,         // bool
         MapPortUPnP,            // bool
         MinimizeOnClose,        // bool
@@ -63,6 +64,7 @@ public:
     void setDisplayUnit(const QVariant &value);
 
     /* Explicit getters */
+    bool getHideTrayIcon() { return fHideTrayIcon; }
     bool getMinimizeToTray() { return fMinimizeToTray; }
     bool getMinimizeOnClose() { return fMinimizeOnClose; }
     int getDisplayUnit() { return nDisplayUnit; }
@@ -77,21 +79,25 @@ public:
 
 private:
     /* Qt-only settings */
+    bool fHideTrayIcon;
     bool fMinimizeToTray;
     bool fMinimizeOnClose;
     QString language;
     int nDisplayUnit;
     QString strThirdPartyTxUrls;
     bool fCoinControlFeatures;
-    /* settings that were overriden by command-line */
+    /* settings that were overridden by command-line */
     QString strOverriddenByCommandLine;
 
-    /// Add option to list of GUI options overridden through command line/config file
+    // Add option to list of GUI options overridden through command line/config file
     void addOverriddenOption(const std::string &option);
 
+    // Check settings version and upgrade default values if required
+    void checkAndMigrate();
 Q_SIGNALS:
     void displayUnitChanged(int unit);
     void coinControlFeaturesChanged(bool);
+    void hideTrayIconChanged(bool);
 };
 
 #endif // BITCOIN_QT_OPTIONSMODEL_H

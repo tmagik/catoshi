@@ -1,4 +1,4 @@
-Contributing to Bitcoin Core
+Contributing to Catoshi Core
 ============================
 
 Cats are arbitrary and capricious creatures.

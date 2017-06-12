@@ -176,7 +176,6 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
         return false;
     }
 
-    JSONRequest jreq;
     try {
         // Parse request
         UniValue valRequest;

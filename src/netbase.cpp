@@ -1279,7 +1279,6 @@ CSubNet::CSubNet(const std::string &strSubnet, bool fAllowLookup)
             {
                 if (LookupHost(strNetmask.c_str(), vIP, 1, false)) // Never allow lookup for netmask
                 {
-                    // Remember: GetByte returns bytes in reversed order
                     // Copy only the *last* four bytes in case of IPv4, the rest of the mask should stay 1's as
                     // we don't want pchIPv4 to be part of the mask.
                     for(int x=astartofs; x<16; ++x)
