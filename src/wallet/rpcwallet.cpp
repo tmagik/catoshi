@@ -9,7 +9,6 @@
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "init.h"
-#include "wallet/coincontrol.h"
 #include "validation.h"
 #include "net.h"
 #include "policy/feerate.h"
@@ -32,7 +31,8 @@
 
 CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest& request)
 {
-    return pwalletMain;
+    // TODO: Some way to access secondary wallets
+    return vpwallets.empty() ? nullptr : vpwallets[0];
 }
 
 std::string HelpRequiringPassphrase(CWallet * const pwallet)
