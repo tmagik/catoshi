@@ -9,7 +9,6 @@
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "init.h"
-#include "wallet/coincontrol.h"
 #include "validation.h"
 #include "net.h"
 #include "policy/feerate.h"
@@ -28,13 +27,12 @@
 
 #include <stdint.h>
 
-#include <boost/assign/list_of.hpp>
-
 #include <univalue.h>
 
 CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest& request)
 {
-    return pwalletMain;
+    // TODO: Some way to access secondary wallets
+    return vpwallets.empty() ? nullptr : vpwallets[0];
 }
 
 std::string HelpRequiringPassphrase(CWallet * const pwallet)
@@ -2255,9 +2253,9 @@ UniValue lockunspent(const JSONRPCRequest& request)
     LOCK2(cs_main, pwallet->cs_wallet);
 
     if (request.params.size() == 1)
-        RPCTypeCheck(request.params, boost::assign::list_of(UniValue::VBOOL));
+        RPCTypeCheck(request.params, {UniValue::VBOOL});
     else
-        RPCTypeCheck(request.params, boost::assign::list_of(UniValue::VBOOL)(UniValue::VARR));
+        RPCTypeCheck(request.params, {UniValue::VBOOL, UniValue::VARR});
 
     bool fUnlock = request.params[0].get_bool();
 
@@ -2678,7 +2676,7 @@ UniValue fundrawtransaction(const JSONRPCRequest& request)
                             + HelpExampleCli("sendrawtransaction", "\"signedtransactionhex\"")
                             );
 
-    RPCTypeCheck(request.params, boost::assign::list_of(UniValue::VSTR));
+    RPCTypeCheck(request.params, {UniValue::VSTR});
 
     CCoinControl coinControl;
     coinControl.destChange = CNoDestination();
@@ -2697,7 +2695,7 @@ UniValue fundrawtransaction(const JSONRPCRequest& request)
         coinControl.fAllowWatchOnly = request.params[1].get_bool();
       }
       else {
-        RPCTypeCheck(request.params, boost::assign::list_of(UniValue::VSTR)(UniValue::VOBJ));
+        RPCTypeCheck(request.params, {UniValue::VSTR, UniValue::VOBJ});
 
         UniValue options = request.params[1];
 
@@ -2837,7 +2835,7 @@ UniValue bumpfee(const JSONRPCRequest& request)
             HelpExampleCli("bumpfee", "<txid>"));
     }
 
-    RPCTypeCheck(request.params, boost::assign::list_of(UniValue::VSTR)(UniValue::VOBJ));
+    RPCTypeCheck(request.params, {UniValue::VSTR, UniValue::VOBJ});
     uint256 hash;
     hash.SetHex(request.params[0].get_str());
 
