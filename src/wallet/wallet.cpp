@@ -2414,7 +2414,7 @@ bool CWallet::SignTransaction(CMutableTransaction &tx)
     return true;
 }
 
-bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, bool overrideEstimatedFeeRate, const CFeeRate& specificFeeRate, int& nChangePosInOut, std::string& strFailReason, bool includeWatching, bool lockUnspents, const std::set<int>& setSubtractFeeFromOutputs, bool keepReserveKey, const CTxDestination& destChange)
+bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, int& nChangePosInOut, std::string& strFailReason, bool lockUnspents, const std::set<int>& setSubtractFeeFromOutputs, CCoinControl coinControl, bool keepReserveKey)
 {
     std::vector<CRecipient> vecSend;
 
@@ -2426,12 +2426,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, bool ov
         vecSend.push_back(recipient);
     }
 
-    CCoinControl coinControl;
-    coinControl.destChange = destChange;
     coinControl.fAllowOtherInputs = true;
-    coinControl.fAllowWatchOnly = includeWatching;
-    coinControl.fOverrideFeeRate = overrideEstimatedFeeRate;
-    coinControl.nFeeRate = specificFeeRate;
 
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
         coinControl.Select(txin.prevout);
@@ -2690,9 +2685,10 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                 // and in the spirit of "smallest possible change from prior
                 // behavior."
                 bool rbf = coinControl ? coinControl->signalRbf : fWalletRbf;
+                const uint32_t nSequence = rbf ? MAX_BIP125_RBF_SEQUENCE : (std::numeric_limits<unsigned int>::max() - 1);
                 for (const auto& coin : setCoins)
                     txNew.vin.push_back(CTxIn(coin.outpoint,CScript(),
-                                              std::numeric_limits<unsigned int>::max() - (rbf ? 2 : 1)));
+                                              nSequence));
 
                 // Fill in dummy signatures for fee calculation.
                 if (!DummySignTx(txNew, setCoins)) {
@@ -3192,10 +3188,10 @@ void CWallet::ReturnKey(int64_t nIndex)
 
 bool CWallet::GetKeyFromPool(CPubKey& result, bool internal)
 {
-    int64_t nIndex = 0;
     CKeyPool keypool;
     {
         LOCK(cs_wallet);
+        int64_t nIndex = 0;
         ReserveKeyFromKeyPool(nIndex, keypool, internal);
         if (nIndex == -1)
         {
