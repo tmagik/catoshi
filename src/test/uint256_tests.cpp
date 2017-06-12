@@ -1,6 +1,12 @@
-// Copyright (c) 2011-2015 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2011-2016 The Bitcoin Core developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Nu, Bit, Lite, PP, Peerunity, Solar, URO, Grant ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 #include "arith_uint256.h"
 #include "uintBIG.h"
 #include "version.h"
@@ -184,25 +190,25 @@ BOOST_AUTO_TEST_CASE( methods ) // GetHex SetHex begin() end() size() GetLow64 G
     BOOST_CHECK(OneL.begin() + 32 == OneL.end());
     BOOST_CHECK(MaxL.begin() + 32 == MaxL.end());
     BOOST_CHECK(TmpL.begin() + 32 == TmpL.end());
-    BOOST_CHECK(R1L.GetSerializeSize(0,PROTOCOL_VERSION) == 32);
-    BOOST_CHECK(ZeroL.GetSerializeSize(0,PROTOCOL_VERSION) == 32);
+    BOOST_CHECK(GetSerializeSize(R1L, 0, PROTOCOL_VERSION) == 32);
+    BOOST_CHECK(GetSerializeSize(ZeroL, 0, PROTOCOL_VERSION) == 32);
 
-    std::stringstream ss;
-    R1L.Serialize(ss,0,PROTOCOL_VERSION);
+    CDataStream ss(0, PROTOCOL_VERSION);
+    ss << R1L;
     BOOST_CHECK(ss.str() == std::string(R1Array,R1Array+32));
-    TmpL.Unserialize(ss,0,PROTOCOL_VERSION);
+    ss >> TmpL;
     BOOST_CHECK(R1L == TmpL);
-    ss.str("");
-    ZeroL.Serialize(ss,0,PROTOCOL_VERSION);
+    ss.clear();
+    ss << ZeroL;
     BOOST_CHECK(ss.str() == std::string(ZeroArray,ZeroArray+32));
-    TmpL.Unserialize(ss,0,PROTOCOL_VERSION);
+    ss >> TmpL;
     BOOST_CHECK(ZeroL == TmpL);
-    ss.str("");
-    MaxL.Serialize(ss,0,PROTOCOL_VERSION);
+    ss.clear();
+    ss << MaxL;
     BOOST_CHECK(ss.str() == std::string(MaxArray,MaxArray+32));
-    TmpL.Unserialize(ss,0,PROTOCOL_VERSION);
+    ss >> TmpL;
     BOOST_CHECK(MaxL == TmpL);
-    ss.str("");
+    ss.clear();
 
     BOOST_CHECK(R1S.GetHex() == R1S.ToString());
     BOOST_CHECK(R2S.GetHex() == R2S.ToString());
@@ -230,24 +236,24 @@ BOOST_AUTO_TEST_CASE( methods ) // GetHex SetHex begin() end() size() GetLow64 G
     BOOST_CHECK(OneS.begin() + 20 == OneS.end());
     BOOST_CHECK(MaxS.begin() + 20 == MaxS.end());
     BOOST_CHECK(TmpS.begin() + 20 == TmpS.end());
-    BOOST_CHECK(R1S.GetSerializeSize(0,PROTOCOL_VERSION) == 20);
-    BOOST_CHECK(ZeroS.GetSerializeSize(0,PROTOCOL_VERSION) == 20);
+    BOOST_CHECK(GetSerializeSize(R1S, 0, PROTOCOL_VERSION) == 20);
+    BOOST_CHECK(GetSerializeSize(ZeroS, 0, PROTOCOL_VERSION) == 20);
 
-    R1S.Serialize(ss,0,PROTOCOL_VERSION);
+    ss << R1S;
     BOOST_CHECK(ss.str() == std::string(R1Array,R1Array+20));
-    TmpS.Unserialize(ss,0,PROTOCOL_VERSION);
+    ss >> TmpS;
     BOOST_CHECK(R1S == TmpS);
-    ss.str("");
-    ZeroS.Serialize(ss,0,PROTOCOL_VERSION);
+    ss.clear();
+    ss << ZeroS;
     BOOST_CHECK(ss.str() == std::string(ZeroArray,ZeroArray+20));
-    TmpS.Unserialize(ss,0,PROTOCOL_VERSION);
+    ss >> TmpS;
     BOOST_CHECK(ZeroS == TmpS);
-    ss.str("");
-    MaxS.Serialize(ss,0,PROTOCOL_VERSION);
+    ss.clear();
+    ss << MaxS;
     BOOST_CHECK(ss.str() == std::string(MaxArray,MaxArray+20));
-    TmpS.Unserialize(ss,0,PROTOCOL_VERSION);
+    ss >> TmpS;
     BOOST_CHECK(MaxS == TmpS);
-    ss.str("");
+    ss.clear();
 }
 
 BOOST_AUTO_TEST_CASE( conversion )

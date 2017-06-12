@@ -1,14 +1,14 @@
-// Copyright (c) 2011-2015 The Bitcoin Core developers
+// Copyright (c) 2011-2016 The Bitcoin Core developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef _CODECOIN_QT_OPTIONSDIALOG_H
-#define _CODECOIN_QT_OPTIONSDIALOG_H
+#ifndef CODECOIN_QT_OPTIONSDIALOG_H
+#define CODECOIN_QT_OPTIONSDIALOG_H
 
 #include <QDialog>
 #include <QValidator>
@@ -54,6 +54,8 @@ private Q_SLOTS:
     void on_resetButton_clicked();
     void on_okButton_clicked();
     void on_cancelButton_clicked();
+    
+    void on_hideTrayIcon_stateChanged(int fState);
 
     void showRestartWarning(bool fPersistent = false);
     void clearStatusLabel();

@@ -48,6 +48,10 @@
 #ifndef CBlockHeader
 #define CBlockHeader BlockHeader
 #endif
+
+/* This used to be in configure's bitcoin_config.h */
+#define HAVE_DECL_DAEMON 1	/* linux/osx support for now */
+
 #endif
 
 extern const std::string strMessageMagic;

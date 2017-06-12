@@ -7,8 +7,8 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_QT_SIGNVERIFYMESSAGEDIALOG_H
-#define BITCOIN_QT_SIGNVERIFYMESSAGEDIALOG_H
+#ifndef CODECOIN_QT_SIGNVERIFYMESSAGEDIALOG_H
+#define CODECOIN_QT_SIGNVERIFYMESSAGEDIALOG_H
 
 #include <QDialog>
 

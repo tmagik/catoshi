@@ -22,9 +22,9 @@ BEGIN
             VALUE "CompanyName",        "Catoshi"
             VALUE "FileDescription",    "Catoshi Core (OSS GUI client for *coin)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "bitcoin-qt"
+            VALUE "InternalName",       "catoshi-qt"
             VALUE "LegalCopyright",     COPYRIGHT_STR
-            VALUE "LegalTrademarks1",   "Distributed under the MIT/X11 software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
+            VALUE "LegalTrademarks1",   "Distributed under the Affero GNU general public license version three, see the accompanying file COPYING or http://www.gnu.org/licenses/agpl-3.0.html."
             VALUE "OriginalFilename",   "bitcoin-qt.exe"
             VALUE "ProductName",        "Catoshi Core"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
