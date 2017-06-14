@@ -55,7 +55,6 @@
 #endif
 
 #include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/bind.hpp>
@@ -146,9 +145,9 @@ class CCoinsViewErrorCatcher : public CCoinsViewBacked
 {
 public:
     CCoinsViewErrorCatcher(CCoinsView* view) : CCoinsViewBacked(view) {}
-    bool GetCoins(const uint256 &txid, CCoins &coins) const {
+    bool GetCoin(const COutPoint &outpoint, Coin &coin) const override {
         try {
-            return CCoinsViewBacked::GetCoins(txid, coins);
+            return CCoinsViewBacked::GetCoin(outpoint, coin);
         } catch(const std::runtime_error& e) {
             uiInterface.ThreadSafeMessageBox(_("Error reading from database, shutting down."), "", CClientUIInterface::MSG_ERROR);
             LogPrintf("Error reading from database: %s\n", e.what());
@@ -162,7 +161,6 @@ public:
     // Writes do not need similar protection, as failure to write is handled by the caller.
 };
 
-static CCoinsViewDB *pcoinsdbview = NULL;
 static CCoinsViewErrorCatcher *pcoinscatcher = NULL;
 static std::unique_ptr<ECCVerifyHandle> globalVerifyHandle;
 
@@ -198,8 +196,9 @@ void Shutdown()
     StopRPC();
     StopHTTPServer();
 #ifdef ENABLE_WALLET
-    if (pwalletMain)
-        pwalletMain->Flush(false);
+    for (CWalletRef pwallet : vpwallets) {
+        pwallet->Flush(false);
+    }
 #endif
     MapPort(false);
     UnregisterValidationInterface(peerLogic.get());
@@ -239,8 +238,9 @@ void Shutdown()
         pblocktree = NULL;
     }
 #ifdef ENABLE_WALLET
-    if (pwalletMain)
-        pwalletMain->Flush(true);
+    for (CWalletRef pwallet : vpwallets) {
+        pwallet->Flush(true);
+    }
 #endif
 
 #if ENABLE_ZMQ
@@ -260,8 +260,10 @@ void Shutdown()
 #endif
     UnregisterAllValidationInterfaces();
 #ifdef ENABLE_WALLET
-    delete pwalletMain;
-    pwalletMain = NULL;
+    for (CWalletRef pwallet : vpwallets) {
+        delete pwallet;
+    }
+    vpwallets.clear();
 #endif
     globalVerifyHandle.reset();
     ECC_Stop();
@@ -449,7 +451,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-limitancestorsize=<n>", strprintf("Do not accept transactions whose size with all in-mempool ancestors exceeds <n> kilobytes (default: %u)", DEFAULT_ANCESTOR_SIZE_LIMIT));
         strUsage += HelpMessageOpt("-limitdescendantcount=<n>", strprintf("Do not accept transactions if any ancestor would have <n> or more in-mempool descendants (default: %u)", DEFAULT_DESCENDANT_LIMIT));
         strUsage += HelpMessageOpt("-limitdescendantsize=<n>", strprintf("Do not accept transactions if any ancestor would have more than <n> kilobytes of in-mempool descendants (default: %u).", DEFAULT_DESCENDANT_SIZE_LIMIT));
-        strUsage += HelpMessageOpt("-bip9params=deployment:start:end", "Use given start/end times for specified BIP9 deployment (regtest-only)");
+        strUsage += HelpMessageOpt("-vbparams=deployment:start:end", "Use given start/end times for specified version bits deployment (regtest-only)");
     }
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
         _("If <category> is not supplied or if <category> = 1, output all debugging information.") + " " + _("<category> can be:") + " " + ListLogCategories() + ".");
@@ -611,7 +613,7 @@ void CleanupBlockRevFiles()
     // keeping a separate counter.  Once we hit a gap (or if 0 doesn't exist)
     // start removing block files.
     int nContigCounter = 0;
-    BOOST_FOREACH(const PAIRTYPE(std::string, fs::path)& item, mapBlockFiles) {
+    for (const std::pair<std::string, fs::path>& item : mapBlockFiles) {
         if (atoi(item.first) == nContigCounter) {
             nContigCounter++;
             continue;
@@ -664,7 +666,7 @@ void ThreadImport(std::vector<fs::path> vImportFiles)
     }
 
     // -loadblock=
-    BOOST_FOREACH(const fs::path& path, vImportFiles) {
+    for (const fs::path& path : vImportFiles) {
         FILE *file = fsbridge::fopen(path, "rb");
         if (file) {
             LogPrintf("Importing blocks file %s...\n", path.string());
@@ -1104,16 +1106,16 @@ bool AppInitParameterInteraction()
         fEnableReplacement = (std::find(vstrReplacementModes.begin(), vstrReplacementModes.end(), "fee") != vstrReplacementModes.end());
     }
 
-    if (gArgs.IsArgSet("-bip9params")) {
-        // Allow overriding BIP9 parameters for testing
+    if (gArgs.IsArgSet("-vbparams")) {
+        // Allow overriding version bits parameters for testing
         if (!chainparams.MineBlocksOnDemand()) {
-            return InitError("BIP9 parameters may only be overridden on regtest.");
+            return InitError("Version bits parameters may only be overridden on regtest.");
         }
-        for (const std::string& strDeployment : gArgs.GetArgs("-bip9params")) {
+        for (const std::string& strDeployment : gArgs.GetArgs("-vbparams")) {
             std::vector<std::string> vDeploymentParams;
             boost::split(vDeploymentParams, strDeployment, boost::is_any_of(":"));
             if (vDeploymentParams.size() != 3) {
-                return InitError("BIP9 parameters malformed, expecting deployment:start:end");
+                return InitError("Version bits parameters malformed, expecting deployment:start:end");
             }
             int64_t nStartTime, nTimeout;
             if (!ParseInt64(vDeploymentParams[1], &nStartTime)) {
@@ -1126,9 +1128,9 @@ bool AppInitParameterInteraction()
             for (int j=0; j<(int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; ++j)
             {
                 if (vDeploymentParams[0].compare(VersionBitsDeploymentInfo[j].name) == 0) {
-                    UpdateBIP9Parameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
+                    UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
                     found = true;
-                    LogPrintf("Setting BIP9 activation parameters for %s to start=%ld, timeout=%ld\n", vDeploymentParams[0], nStartTime, nTimeout);
+                    LogPrintf("Setting version bits activation parameters for %s to start=%ld, timeout=%ld\n", vDeploymentParams[0], nStartTime, nTimeout);
                     break;
                 }
             }
@@ -1168,6 +1170,7 @@ bool AppInitSanityChecks()
     // ********************************************************* Step 4: sanity checks
 
     // Initialize elliptic curve code
+    RandomInit();
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
 
@@ -1258,7 +1261,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<std::string> uacomments;
     if (gArgs.IsArgSet("-uacomment")) {
-        BOOST_FOREACH(std::string cmt, gArgs.GetArgs("-uacomment"))
+        for (std::string cmt : gArgs.GetArgs("-uacomment"))
         {
             if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
                 return InitError(strprintf(_("User Agent comment (%s) contains unsafe characters."), cmt));
@@ -1273,7 +1276,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (gArgs.IsArgSet("-onlynet")) {
         std::set<enum Network> nets;
-        BOOST_FOREACH(const std::string& snet, gArgs.GetArgs("-onlynet")) {
+        for (const std::string& snet : gArgs.GetArgs("-onlynet")) {
             enum Network net = ParseNetwork(snet);
             if (net == NET_UNROUTABLE)
                 return InitError(strprintf(_("Unknown network specified in -onlynet: '%s'"), snet));
@@ -1287,7 +1290,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     if (gArgs.IsArgSet("-whitelist")) {
-        BOOST_FOREACH(const std::string& net, gArgs.GetArgs("-whitelist")) {
+        for (const std::string& net : gArgs.GetArgs("-whitelist")) {
             CSubNet subnet;
             LookupSubNet(net.c_str(), subnet);
             if (!subnet.IsValid())
@@ -1349,7 +1352,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (fListen) {
         bool fBound = false;
         if (gArgs.IsArgSet("-bind")) {
-            BOOST_FOREACH(const std::string& strBind, gArgs.GetArgs("-bind")) {
+            for (const std::string& strBind : gArgs.GetArgs("-bind")) {
                 CService addrBind;
                 if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
                     return InitError(ResolveErrMsg("bind", strBind));
@@ -1357,7 +1360,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
             }
         }
         if (gArgs.IsArgSet("-whitebind")) {
-            BOOST_FOREACH(const std::string& strBind, gArgs.GetArgs("-whitebind")) {
+            for (const std::string& strBind : gArgs.GetArgs("-whitebind")) {
                 CService addrBind;
                 if (!Lookup(strBind.c_str(), addrBind, 0, false))
                     return InitError(ResolveErrMsg("whitebind", strBind));
@@ -1377,18 +1380,13 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     if (gArgs.IsArgSet("-externalip")) {
-        BOOST_FOREACH(const std::string& strAddr, gArgs.GetArgs("-externalip")) {
+        for (const std::string& strAddr : gArgs.GetArgs("-externalip")) {
             CService addrLocal;
             if (Lookup(strAddr.c_str(), addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
                 AddLocal(addrLocal, LOCAL_MANUAL);
             else
                 return InitError(ResolveErrMsg("externalip", strAddr));
         }
-    }
-
-    if (gArgs.IsArgSet("-seednode")) {
-        BOOST_FOREACH(const std::string& strDest, gArgs.GetArgs("-seednode"))
-            connman.AddOneShot(strDest);
     }
 
 #if ENABLE_ZMQ
@@ -1453,6 +1451,12 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                     //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
                     if (fPruneMode)
                         CleanupBlockRevFiles();
+                } else {
+                    // If necessary, upgrade from older database format.
+                    if (!pcoinsdbview->Upgrade()) {
+                        strLoadError = _("Error upgrading chainstate database");
+                        break;
+                    }
                 }
 
                 if (!LoadBlockIndex(chainparams)) {
@@ -1613,7 +1617,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::vector<fs::path> vImportFiles;
     if (gArgs.IsArgSet("-loadblock"))
     {
-        BOOST_FOREACH(const std::string& strFile, gArgs.GetArgs("-loadblock"))
+        for (const std::string& strFile : gArgs.GetArgs("-loadblock"))
             vImportFiles.push_back(strFile);
     }
 
@@ -1657,6 +1661,10 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     connOptions.nMaxOutboundTimeframe = nMaxOutboundTimeframe;
     connOptions.nMaxOutboundLimit = nMaxOutboundLimit;
 
+    if (gArgs.IsArgSet("-seednode")) {
+        connOptions.vSeedNodes = gArgs.GetArgs("-seednode");
+    }
+
     if (!connman.Start(scheduler, strNodeError, connOptions))
         return InitError(strNodeError);
 
@@ -1666,8 +1674,9 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     uiInterface.InitMessage(_("Done loading"));
 
 #ifdef ENABLE_WALLET
-    if (pwalletMain)
-        pwalletMain->postInitProcess(scheduler);
+    for (CWalletRef pwallet : vpwallets) {
+        pwallet->postInitProcess(scheduler);
+    }
 #endif
 
     return !fRequestShutdown;
