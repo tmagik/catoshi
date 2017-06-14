@@ -111,7 +111,7 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason, const bool witnes
         return false;
     }
 
-    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+    for (const CTxIn& txin : tx.vin)
     {
         // Biggest 'standard' txin is a 15-of-15 P2SH multisig with compressed
         // keys (remember the 520 byte limit on redeemScript size). That works
@@ -132,7 +132,7 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason, const bool witnes
 
     unsigned int nDataOut = 0;
     txnouttype whichType;
-    BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+    for (const CTxOut& txout : tx.vout) {
         if (!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled)) {
             reason = "scriptpubkey";
             return false;
@@ -165,7 +165,7 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
 
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
-        const CTxOut& prev = mapInputs.GetOutputFor(tx.vin[i]);
+        const CTxOut& prev = mapInputs.AccessCoin(tx.vin[i].prevout).out;
 
         std::vector<std::vector<unsigned char> > vSolutions;
         txnouttype whichType;
@@ -204,7 +204,7 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
         if (tx.vin[i].scriptWitness.IsNull())
             continue;
 
-        const CTxOut &prev = mapInputs.GetOutputFor(tx.vin[i]);
+        const CTxOut &prev = mapInputs.AccessCoin(tx.vin[i].prevout).out;
 
         // get the scriptPubKey corresponding to this input:
         CScript prevScript = prev.scriptPubKey;
