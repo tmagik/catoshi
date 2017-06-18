@@ -112,6 +112,7 @@ BASE_SCRIPTS= [
     'rpcnamedargs.py',
     'listsinceblock.py',
     'p2p-leaktests.py',
+    'wallet-encryption.py',
 ]
 
 EXTENDED_SCRIPTS = [
