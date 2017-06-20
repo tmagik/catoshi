@@ -30,6 +30,9 @@ static const int MAX_PUBKEYS_PER_MULTISIG = 20;
 // Maximum script length in bytes
 static const int MAX_SCRIPT_SIZE = 10000;
 
+// Maximum number of values on script interpreter stack
+static const int MAX_STACK_SIZE = 1000;
+
 // Threshold for nLockTime: below this value it is interpreted as block number,
 // otherwise as UNIX timestamp.
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
@@ -186,6 +189,9 @@ enum opcodetype
 
     OP_INVALIDOPCODE = 0xff,
 };
+
+// Maximum value that an opcode can be
+static const unsigned int MAX_OPCODE = OP_NOP10;
 
 const char* GetOpName(opcodetype opcode);
 
@@ -448,16 +454,16 @@ public:
         else if (b.size() <= 0xffff)
         {
             insert(end(), OP_PUSHDATA2);
-            uint8_t data[2];
-            WriteLE16(data, b.size());
-            insert(end(), data, data + sizeof(data));
+            uint8_t _data[2];
+            WriteLE16(_data, b.size());
+            insert(end(), _data, _data + sizeof(_data));
         }
         else
         {
             insert(end(), OP_PUSHDATA4);
-            uint8_t data[4];
-            WriteLE32(data, b.size());
-            insert(end(), data, data + sizeof(data));
+            uint8_t _data[4];
+            WriteLE32(_data, b.size());
+            insert(end(), _data, _data + sizeof(_data));
         }
         insert(end(), b.begin(), b.end());
         return *this;
@@ -627,6 +633,9 @@ public:
     bool IsPushOnly(const_iterator pc) const;
     bool IsPushOnly() const;
 
+    /** Check if the script contains valid OP_CODES */
+    bool HasValidOps() const;
+
     /**
      * Returns whether the script is guaranteed to fail at execution,
      * regardless of the initial stack. This allows outputs to be pruned
@@ -639,8 +648,9 @@ public:
 
     void clear()
     {
-        // The default std::vector::clear() does not release memory.
-        CScriptBase().swap(*this);
+        // The default prevector::clear() does not release memory
+        CScriptBase::clear();
+        shrink_to_fit();
     }
 };
 

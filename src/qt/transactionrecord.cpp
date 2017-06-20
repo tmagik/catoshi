@@ -18,14 +18,8 @@
  */
 bool TransactionRecord::showTransaction(const CWalletTx &wtx)
 {
-    if (wtx.IsCoinBase())
-    {
-        // Ensures we show generated coins / mined transactions at depth 1
-        if (!wtx.IsInMainChain())
-        {
-            return false;
-        }
-    }
+    // There are currently no cases where we hide transactions, but
+    // we may want to use this in the future for things like RBF.
     return true;
 }
 
@@ -47,14 +41,15 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         //
         // Credit
         //
-        BOOST_FOREACH(const CTxOut& txout, wtx.tx->vout)
+        for(unsigned int i = 0; i < wtx.tx->vout.size(); i++)
         {
+            const CTxOut& txout = wtx.tx->vout[i];
             isminetype mine = wallet->IsMine(txout);
             if(mine)
             {
                 TransactionRecord sub(hash, nTime);
                 CTxDestination address;
-                sub.idx = parts.size(); // sequence number
+                sub.idx = i; // vout index
                 sub.credit = txout.nValue;
                 sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
                 if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address))
@@ -83,7 +78,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
     {
         bool involvesWatchAddress = false;
         isminetype fAllFromMe = ISMINE_SPENDABLE;
-        BOOST_FOREACH(const CTxIn& txin, wtx.tx->vin)
+        for (const CTxIn& txin : wtx.tx->vin)
         {
             isminetype mine = wallet->IsMine(txin);
             if(mine & ISMINE_WATCH_ONLY) involvesWatchAddress = true;
@@ -91,7 +86,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         }
 
         isminetype fAllToMe = ISMINE_SPENDABLE;
-        BOOST_FOREACH(const CTxOut& txout, wtx.tx->vout)
+        for (const CTxOut& txout : wtx.tx->vout)
         {
             isminetype mine = wallet->IsMine(txout);
             if(mine & ISMINE_WATCH_ONLY) involvesWatchAddress = true;
@@ -118,7 +113,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             {
                 const CTxOut& txout = wtx.tx->vout[nOut];
                 TransactionRecord sub(hash, nTime);
-                sub.idx = parts.size();
+                sub.idx = nOut;
                 sub.involvesWatchAddress = involvesWatchAddress;
 
                 if(wallet->IsMine(txout))
@@ -251,13 +246,13 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
             status.status = TransactionStatus::Confirmed;
         }
     }
-
+    status.needsUpdate = false;
 }
 
 bool TransactionRecord::statusUpdateNeeded()
 {
     AssertLockHeld(cs_main);
-    return status.cur_num_blocks != chainActive.Height();
+    return status.cur_num_blocks != chainActive.Height() || status.needsUpdate;
 }
 
 QString TransactionRecord::getTxID() const
