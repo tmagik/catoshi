@@ -86,14 +86,14 @@ void AddCoins(CCoinsViewCache& cache, const CTransaction &tx, int nHeight) {
     const uint256& txid = tx.GetHash();
     for (size_t i = 0; i < tx.vout.size(); ++i) {
         // Pass fCoinbase as the possible_overwrite flag to AddCoin, in order to correctly
-        // deal with the pre-BIP30 occurrances of duplicate coinbase transactions.
+        // deal with the pre-BIP30 occurrences of duplicate coinbase transactions.
         cache.AddCoin(COutPoint(txid, i), Coin(tx.vout[i], nHeight, fCoinbase), fCoinbase);
     }
 }
 
-void CCoinsViewCache::SpendCoin(const COutPoint &outpoint, Coin* moveout) {
+bool CCoinsViewCache::SpendCoin(const COutPoint &outpoint, Coin* moveout) {
     CCoinsMap::iterator it = FetchCoin(outpoint);
-    if (it == cacheCoins.end()) return;
+    if (it == cacheCoins.end()) return false;
     cachedCoinsUsage -= it->second.coin.DynamicMemoryUsage();
     if (moveout) {
         *moveout = std::move(it->second.coin);
@@ -104,6 +104,7 @@ void CCoinsViewCache::SpendCoin(const COutPoint &outpoint, Coin* moveout) {
         it->second.flags |= CCoinsCacheEntry::DIRTY;
         it->second.coin.Clear();
     }
+    return true;
 }
 
 static const Coin coinEmpty;
