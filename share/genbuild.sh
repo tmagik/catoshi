@@ -38,6 +38,5 @@ if [ "$INFO" != "$NEWINFO" ]; then
     cat > "$FILE" <<EOF
 $NEWINFO
 #define BUILD_DATE "$TIME"
-#define PACKAGE_NAME "Catoshi Core"
 EOF
 fi
