@@ -21,16 +21,16 @@
  *  last output of the affected transaction, its metadata as well
  *  (coinbase or not, height, transaction version)
  */
-class CTxInUndo
+class TxInUndo
 {
 public:
-    CTxOut txout;         // the txout data before being spent
+    TxOut txout;         // the txout data before being spent
     bool fCoinBase;       // if the outpoint was the last unspent: whether it belonged to a coinbase
     unsigned int nHeight; // if the outpoint was the last unspent: its height
     int nVersion;         // if the outpoint was the last unspent: its version
 
-    CTxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0) {}
-    CTxInUndo(const CTxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn) { }
+    TxInUndo() : txout(), fCoinBase(false), nHeight(0), nVersion(0) {}
+    TxInUndo(const TxOut &txoutIn, bool fCoinBaseIn = false, unsigned int nHeightIn = 0, int nVersionIn = 0) : txout(txoutIn), fCoinBase(fCoinBaseIn), nHeight(nHeightIn), nVersion(nVersionIn) { }
 
     template<typename Stream>
     void Serialize(Stream &s) const {

@@ -55,6 +55,7 @@ SUBDIRS = \
 	$(OBJDIR)/consensus \
 	$(OBJDIR)/policy \
 	$(OBJDIR)/support \
+	$(OBJDIR)/rpc \
 	$(OBJDIR)/$(COIN_BRAND)
 
 DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/$(OBJDIR) $(BOOST_INCLUDE_PATH) $(BDB_INCLUDE_PATH) $(SECP256K1_INCLUDE_PATH))
@@ -172,15 +173,15 @@ STAKE_OBJS = \
     $(OBJDIR)/kernelrecord.o
 
 UTIL_OBJS= \
-    $(OBJDIR)/support/pagelocker.o \
     $(OBJDIR)/chainbaseparams.o \
     $(OBJDIR)/clientversion.o \
     $(OBJDIR)/compat/glibc_sanity.o \
     $(OBJDIR)/compat/glibcxx_sanity.o \
     $(OBJDIR)/compat/strnlen.o \
     $(OBJDIR)/random.o \
-    $(OBJDIR)/rpcprotocol.o \
+    $(OBJDIR)/rpc/protocol.o \
     $(OBJDIR)/support/cleanse.o \
+    $(OBJDIR)/support/lockedpool.o \
     $(OBJDIR)/sync.o \
     $(OBJDIR)/uint256.o \
     $(OBJDIR)/util.o \
@@ -189,6 +190,7 @@ UTIL_OBJS= \
     $(OBJDIR)/utiltime.o 
 
 CRYPTO_OBJS = \
+    $(OBJDIR)/crypto/aes.o \
     $(OBJDIR)/crypto/hmac_sha256.o \
     $(OBJDIR)/crypto/hmac_sha512.o \
     $(OBJDIR)/crypto/ripemd160.o \
@@ -209,6 +211,7 @@ COMMON_OBJS = \
     $(OBJDIR)/hash.o \
     $(OBJDIR)/key.o \
     $(OBJDIR)/keystore.o \
+    $(OBJDIR)/netaddress.o \
     $(OBJDIR)/netbase.o \
     $(OBJDIR)/primitives/block.o \
     $(OBJDIR)/primitives/transaction.o \
@@ -224,44 +227,49 @@ COMMON_OBJS = \
 
 #put the longest compiling things first for parallel make
 D_OBJS= \
-    $(OBJDIR)/main.o \
+    $(OBJDIR)/validation.o \
     $(OBJDIR)/init.o \
-    $(OBJDIR)/rpcserver.o \
-    $(OBJDIR)/net.o \
+    $(OBJDIR)/rpc/server.o \
     $(UTIL_OBJS) \
     $(CRYPTO_OBJS) \
     $(COMMON_OBJS) \
     $(OBJDIR)/addrman.o \
-    $(OBJDIR)/alert.o \
+    $(OBJDIR)/addrdb.o \
+    $(OBJDIR)/blockencodings.o \
     $(OBJDIR)/chain.o \
     $(OBJDIR)/checkpoints.o \
     $(OBJDIR)/dbwrapper.o \
     $(OBJDIR)/httprpc.o \
     $(OBJDIR)/httpserver.o \
     $(OBJDIR)/merkleblock.o \
+    $(OBJDIR)/net.o \
+    $(OBJDIR)/net_processing.o \
+    $(OBJDIR)/noui.o \
     $(OBJDIR)/policy/fees.o \
     $(OBJDIR)/policy/policy.o \
     $(OBJDIR)/pow.o \
     $(OBJDIR)/rest.o \
-    $(OBJDIR)/rpcblockchain.o \
-    $(OBJDIR)/rpcmisc.o \
-    $(OBJDIR)/rpcnet.o \
-    $(OBJDIR)/rpcrawtransaction.o \
+    $(OBJDIR)/rpc/blockchain.o \
+    $(OBJDIR)/rpc/misc.o \
+    $(OBJDIR)/rpc/net.o \
+    $(OBJDIR)/rpc/rawtransaction.o \
     $(OBJDIR)/script/bitcoinconsensus.o \
     $(OBJDIR)/script/sigcache.o \
     $(OBJDIR)/timedata.o \
     $(OBJDIR)/torcontrol.o \
+    $(OBJDIR)/txdb.o \
     $(OBJDIR)/txmempool.o \
+    $(OBJDIR)/threadinterrupt.o \
+    $(OBJDIR)/ui_interface.o \
     $(OBJDIR)/validationinterface.o \
     $(OBJDIR)/versionbits.o \
     $(OBJDIR)/undo.o \
-    $(OBJDIR)/bloom.o \
-    $(OBJDIR)/noui.o \
-    $(OBJDIR)/txdb.o
+    $(OBJDIR)/warnings.o \
+    $(OBJDIR)/bloom.o 
 
 #MINER_OBJS
 D_OBJS += \
-    $(OBJDIR)/rpcmining.o \
+    $(OBJDIR)/rpc/mining.o \
     $(OBJDIR)/miner.o
 
 WALLET_OBJS = \
@@ -269,7 +277,7 @@ WALLET_OBJS = \
     $(OBJDIR)/wallet/db.o \
     $(OBJDIR)/wallet/wallet.o \
     $(OBJDIR)/wallet/walletdb.o \
-    $(OBJDIR)/wallet/wallet_ismine.o \
+    $(OBJDIR)/script/ismine.o \
     $(OBJDIR)/wallet/rpcdump.o \
     $(OBJDIR)/wallet/rpcwallet.o \
     $(OBJDIR)/policy/rbf.o
@@ -330,7 +338,8 @@ COMMON_OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
 endif
 
 TX_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) bitcoin-tx.cpp
-CLI_OBJS= $(UTIL_OBJS) rpcclient.cpp bitcoin-cli.cpp
+# should just use crypto_objs but only CSHA512 is used
+CLI_OBJS= $(UTIL_OBJS) crypto/sha512.cpp rpc/client.cpp bitcoin-cli.cpp
 
 all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d $(COIN_BRAND)-cli $(COIN_BRAND)-tx
 

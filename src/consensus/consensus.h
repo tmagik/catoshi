@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_CONSENSUS_CONSENSUS_H
-#define BITCOIN_CONSENSUS_CONSENSUS_H
+#ifndef CODECOIN_CONSENSUS_CONSENSUS_H
+#define CODECOIN_CONSENSUS_CONSENSUS_H
 
 /* BITCOIN_COMPAT placeholder include */
 #include "codecoin.h"

@@ -65,7 +65,7 @@ public:
  * transaction's output that it claims and a signature that matches the
  * output's public key.
  */
-class CTxIn
+class TxIn
 {
 public:
     COutPoint prevout;
@@ -204,13 +204,13 @@ public:
         return (nValue < GetDustThreshold(minRelayTxFee));
     }
 
-    friend bool operator==(const CTxOut& a, const CTxOut& b)
+    friend bool operator==(const TxOut& a, const TxOut& b)
     {
         return (a.nValue       == b.nValue &&
                 a.scriptPubKey == b.scriptPubKey);
     }
 
-    friend bool operator!=(const CTxOut& a, const CTxOut& b)
+    friend bool operator!=(const TxOut& a, const TxOut& b)
     {
         return !(a == b);
     }
@@ -292,7 +292,7 @@ inline void SerializeTransaction(const TxType& tx, Stream& s) {
     }
     if (flags) {
         /* Use extended format in case witnesses are to be serialized. */
-        std::vector<CTxIn> vinDummy;
+        std::vector<TxIn> vinDummy;
         s << vinDummy;
         s << flags;
     }
@@ -343,8 +343,8 @@ public:
     Transaction();
 
     /** Convert a CMutableTransaction into a CTransaction. */
-    CTransaction(const CMutableTransaction &tx);
-    CTransaction(CMutableTransaction &&tx);
+    Transaction(const MutableTransaction &tx);
+    Transaction(MutableTransaction &&tx);
 
     template <typename Stream>
     inline void Serialize(Stream& s) const {
@@ -354,7 +354,7 @@ public:
     /** This deserializing constructor is provided instead of an Unserialize method.
      *  Unserialize is not possible, since it would require overwriting const fields. */
     template <typename Stream>
-    CTransaction(deserialize_type, Stream& s) : CTransaction(CMutableTransaction(deserialize, s)) {}
+    Transaction(deserialize_type, Stream& s) : Transaction(CMutableTransaction(deserialize, s)) {}
 
     bool IsNull() const {
         return vin.empty() && vout.empty();
@@ -413,7 +413,7 @@ public:
     }
 };
 
-#if defined BRAND_grantcoin /* FIXME update this later */
+#if defined(BRAND_grantcoin) /* FIXME update this later */
 class MutableTransactionGRT;
 
 class TransactionGRT : public Transaction
@@ -471,12 +471,13 @@ public:
 
 
 };
-#endif BRAND_grantcoin
+#endif /* BRAND_grantcoin */
 
 /** A mutable version of CTransaction. */
 /* let codecoin.h/BITCOIN_COMPAT defines instantiate the right class name */
 class MutableTransaction
 {
+public:
     int32_t nVersion;
 #if 0 && defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
     uint32_t nTime;
@@ -500,16 +501,16 @@ class MutableTransaction
     }
 
     template <typename Stream>
-    CMutableTransaction(deserialize_type, Stream& s) {
+    MutableTransaction(deserialize_type, Stream& s) {
         Unserialize(s);
     }
 
-    /** Compute the hash of this CMutableTransaction. This is computed on the
-     * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
+    /** Compute the hash of this MutableTransaction. This is computed on the
+     * fly, as opposed to GetHash() in Transaction, which uses a cached result.
      */
     uint256 GetHash() const;
 
-    friend bool operator==(const CMutableTransaction& a, const CMutableTransaction& b)
+    friend bool operator==(const MutableTransaction& a, const CMutableTransaction& b)
     {
         return a.GetHash() == b.GetHash();
     }
@@ -525,6 +526,7 @@ class MutableTransaction
     }
 };
 
+#if defined(BRAND_grantcoin) // FIXME later
 class MutableTransactionGRT: public MutableTransaction
 {
 public:
@@ -545,6 +547,7 @@ public:
 
 	uint256 GetHash() const;
 };
+#endif
 
 typedef std::shared_ptr<const CTransaction> CTransactionRef;
 static inline CTransactionRef MakeTransactionRef() { return std::make_shared<const CTransaction>(); }

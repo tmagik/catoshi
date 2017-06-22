@@ -1,7 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2016 The Bitcoin developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "validation.h"
 
@@ -46,6 +51,10 @@
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
 
+#if defined(USE_SCRYPT)
+#include "crypto/scrypt.h"
+#endif
+
 #if defined(NDEBUG)
 # error "Bitcoin cannot be compiled without assertions."
 #endif
@@ -87,8 +96,6 @@ static void CheckBlockIndex(const Consensus::Params& consensusParams);
 
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
-
-const std::string strMessageMagic = "Bitcoin Signed Message:\n";
 
 // Internal stuff
 namespace {
@@ -508,6 +515,10 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-negative");
         if (txout.nValue > MAX_MONEY)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-toolarge");
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+        if ((!txout.IsEmpty()) && txout.nValue < CENT) // Cent || CTransaction::nMinTxFee
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-toosmall"));
+#endif
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge");
@@ -1392,12 +1403,46 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
                         strprintf("tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight));
             }
 
+#if defined(PPCOINSTAKE)
+#if defined(BRAND_grantcoin)
+	#warning "can't check previous tx timestamps without CCoins ppcoinstake structures"
+#endif
+			// peercoin: check transaction timestamp
+			if (coins.nTime > nTime)
+				return state.DoS(100, error("CheckInputs() : tx %s timestamp %d earlier than input tx timestamp %d",
+				GetHash().ToString().c_str(), nTime, coins.nTime));
+#endif
+
             // Check for negative or overflow input values
             nValueIn += coins->vout[prevout.n].nValue;
             if (!MoneyRange(coins->vout[prevout.n].nValue) || !MoneyRange(nValueIn))
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
         }
+#if defined(PPCOINSTAKE)
+		if (IsCoinStake())
+		{
+			// ppcoin: coin stake tx earns reward instead of paying fee
+			uint64_t nCoinAge;
+			if (!GetCoinAge(state, inputs, nCoinAge))
+				return error("CheckInputs() : %s unable to get coin age for coinstake", GetHash().ToString().c_str());
+			int64_t nStakeReward = GetValueOut() - nValueIn;
+			CBlockIndex indexDummy;
+			indexDummy.nHeight = nSpendHeight; /* hack */
+			indexDummy.SetProofOfStake();  /* hack2 */
+#if defined(BRAND_cleanwatercoin)
+			#warning "check this further"
+			int64_t nStakeLimit = indexDummy.GetSeigniorage(0, nCoinAge);
+#else
+			int64_t nStakeLimit = indexDummy.GetSeigniorage(0, nCoinAge) - GetMinFee() + CTransaction::nMinTxFee;
+#endif
+			if (nStakeReward > nStakeLimit)
+				return state.DoS(100, error("CheckInputs() : %s stake reward %" PRId64 " exceeds limit %" PRId64 ,
+					GetHash().ToString().c_str(), nStakeReward, indexDummy.GetSeigniorage(0,nCoinAge) ));
+		}
+		else
+		{
+#endif
 
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,
@@ -1407,7 +1452,13 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
         CAmount nTxFee = nValueIn - tx.GetValueOut();
         if (nTxFee < 0)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-negative");
-        nFees += nTxFee;
+#if defined(PPCOINSTAKE) || defined (BRAND_grantcoin)
+        if (nTxFee < tx.GetMinFee()) // CODECOIN
+            return state.DoS(100, error("CheckInputs() : %s nTxFee not paying required fee=%s, paid=%s",
+	tx.GetHash().ToString(), FormatMoney(tx.GetMinFee()), FormatMoney(nTxFee)),
+                             REJECT_INVALID, "bad-txns-fee-too-low");
+#endif
+        nFees += nTxFee; // TODO: check this with ppcoin logic. May not be correct for PPCOINSTAKE
         if (!MoneyRange(nFees))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-outofrange");
     return true;
@@ -1475,59 +1526,7 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
 
 namespace {
 
-bool UndoWriteToDisk(const CBlockUndo& blockundo, CDiskBlockPos& pos, const uint256& hashBlock, const CMessageHeader::MessageStartChars& messageStart)
-{
-    // Open history file to append
-    CAutoFile fileout(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
-    if (fileout.IsNull())
-        return error("%s: OpenUndoFile failed", __func__);
-
-    // Write index header
-    unsigned int nSize = GetSerializeSize(fileout, blockundo);
-    fileout << FLATDATA(messageStart) << nSize;
-
-    // Write undo data
-    long fileOutPos = ftell(fileout.Get());
-    if (fileOutPos < 0)
-        return error("%s: ftell failed", __func__);
-    pos.nPos = (unsigned int)fileOutPos;
-    fileout << blockundo;
-
-    // calculate & write checksum
-    CHashWriter hasher(SER_GETHASH, PROTOCOL_VERSION);
-    hasher << hashBlock;
-    hasher << blockundo;
-    fileout << hasher.GetHash();
-
-    return true;
-}
-
-bool UndoReadFromDisk(CBlockUndo& blockundo, const CDiskBlockPos& pos, const uint256& hashBlock)
-{
-    // Open history file to read
-    CAutoFile filein(OpenUndoFile(pos, true), SER_DISK, CLIENT_VERSION);
-    if (filein.IsNull())
-        return error("%s: OpenUndoFile failed", __func__);
-
-    // Read block
-    uint256 hashChecksum;
-    try {
-        filein >> blockundo;
-        filein >> hashChecksum;
-    }
-    catch (const std::exception& e) {
-        return error("%s: Deserialize or I/O error - %s", __func__, e.what());
-    }
-
-    // Verify checksum
-    CHashWriter hasher(SER_GETHASH, PROTOCOL_VERSION);
-    hasher << hashBlock;
-    hasher << blockundo;
-    if (hashChecksum != hasher.GetHash())
-        return error("%s: Checksum mismatch", __func__);
-
-    return true;
-}
+/* Catoshi: Undo{Read|Write)FromDisk moved to undo.cpp */
 
 /** Abort with a message */
 bool AbortNode(const std::string& strMessage, const std::string& userMessage="")
@@ -1799,10 +1798,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Now that the whole chain is irreversibly beyond that time it is applied to all blocks except the
     // two in the chain that violate it. This prevents exploiting the issue against nodes during their
     // initial block download.
+#if defined(BRAND_bitcoin)
     bool fEnforceBIP30 = (!pindex->phashBlock) || // Enforce on CreateNewBlock invocations which don't have a hash.
                           !((pindex->nHeight==91842 && pindex->GetBlockHash() == uint256S("0x00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec")) ||
                            (pindex->nHeight==91880 && pindex->GetBlockHash() == uint256S("0x00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721")));
 
+#else
+    bool fEnforceBIP30 = true;
+#endif
     // Once BIP34 activated it was not possible to create new duplicate coinbases and thus other than starting
     // with the 2 existing duplicate coinbase pairs, not possible to create overwriting txs.  But by the
     // time BIP34 activated, in each of the existing pairs the duplicate coinbase had overwritten the first
@@ -1823,7 +1826,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     // BIP16 didn't become active until Apr 1 2012
+#if defined(BRAND_bitcoin)
     int64_t nBIP16SwitchTime = 1333238400;
+#elif defined(BRAND_litecoin)
+	// BIP16 didn't become active until Oct 1 2012	 FIXME: 0xdeadc0de
+    int64_t nBIP16SwitchTime = 1349049600;
+#else
+#warning "stick in chainparams???"
+#endif
     bool fStrictPayToScriptHash = (pindex->GetBlockTime() >= nBIP16SwitchTime);
 
     unsigned int flags = fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE;
@@ -1860,6 +1870,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     std::vector<int> prevheights;
     CAmount nFees = 0;
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+	int64_t nValueIn = 0;
+	int64_t nValueOut = 0;
+#endif
     int nInputs = 0;
     int64_t nSigOpsCost = 0;
     CDiskTxPos pos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
@@ -1874,7 +1888,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         nInputs += tx.vin.size();
 
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+	if (tx.IsCoinBase())
+	{
+		nValueOut += tx.GetValueOut();
+	} else
+#else
         if (!tx.IsCoinBase())
+#endif
         {
             if (!view.HaveInputs(tx))
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
@@ -1906,7 +1927,20 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         txdata.emplace_back(tx);
         if (!tx.IsCoinBase())
         {
+#if defined(PPCOINSTAKE) //FIXME: does GRT need this??
+			int64_t nTxValueIn = view.GetValueIn(tx);
+			int64_t nTxValueOut = view.GetValueOut(tx);
+			nValueIn += nTxValueIn;
+			nValueOut += nTxValueOut;
+			if (!tx.IsCoinStake())
+				nFees += nTxValueIn - nTxValueOut;
+#if defined(PPCOINSTAKE_DEBUG)
+			int txtime = tx.nTime;
+			assert(txtime);
+#endif
+#else
             nFees += view.GetValueIn(tx)-tx.GetValueOut();
+#endif
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
@@ -1928,12 +1962,16 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs-1), nTimeConnect * 0.000001);
 
+#if defined(PPCOINSTAKE)
+	// relocated to Checkblock (need isProofOfWork)
+#else
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
     if (block.vtx[0]->GetValueOut() > blockReward)
         return state.DoS(100,
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
                                block.vtx[0]->GetValueOut(), blockReward),
                                REJECT_INVALID, "bad-cb-amount");
+#endif
 
     if (!control.Wait())
         return state.DoS(100, false);
@@ -1942,6 +1980,18 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     if (fJustCheck)
         return true;
+
+#if defined(FEATURE_MONEYSUPPLY)
+    pindex->nMoneySupply = (pindex->pprev? pindex->pprev->nMoneySupply : 0) + nValueOut - nValueIn;
+#endif
+#if defined(PPCOINSTAKE)
+    pindex->nMint = nValueOut - nValueIn + nFees;
+
+    // ppcoin: fees are not collected by miners as in bitcoin
+    // ppcoin: fees are destroyed to compensate the entire network
+    if (fDebug && GetBoolArg("-printcreation"))
+        printf("ConnectBlock() : destroy=%s nFees=%" PRId64"\n", FormatMoney(nFees).c_str(), nFees);
+#endif
 
     // Write undo information to disk
     if (pindex->GetUndoPos().IsNull() || !pindex->IsValid(BLOCK_VALID_SCRIPTS))
@@ -2169,6 +2219,96 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
 
 }
 
+#if defined(PPCOINSTAKE)
+// ppcoin: total coin age spent in transaction, in the unit of coin-days.
+// Only those coins meeting minimum age requirement counts. As those
+// transactions not in main chain are not currently indexed so we
+// might not find out about their coin age. Older transactions are 
+// guaranteed to be in main chain by sync-checkpoint. This rule is
+// introduced to help nodes establish a consistent view of the coin
+// age (trust score) of competing branches.
+bool CTransaction::GetCoinAge(CValidationState &state, CCoinsViewCache &view, uint64_t& nCoinAge) const
+{
+    CBigNum bnCentSecond = 0;  // coin age in the unit of cent-seconds
+    nCoinAge = 0;
+
+    if (IsCoinBase())
+        return true;
+
+    BOOST_FOREACH(const CTxIn& txin, vin)
+    {
+        // First try finding the previous transaction in database
+        const COutPoint &prevout = txin.prevout;
+        CCoins coins;
+
+        if (!view.GetCoins(prevout.hash, coins))
+            continue;  // previous transaction not in main chain
+        if (nTime < coins.nTime)
+            return false;  // Transaction timestamp violation
+
+        // Transaction index is required to get to block header
+        if (!fTxIndex)
+            return false;  // Transaction index not available
+
+        CDiskTxPos postx;
+        CTransaction txPrev;
+        if (pblocktree->ReadTxIndex(prevout.hash, postx))
+        {
+            CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
+            CBlockHeader header;
+            try {
+                file >> header;
+                fseek(file, postx.nTxOffset, SEEK_CUR);
+                file >> txPrev;
+            } catch (std::exception &e) {
+                return error("%s() : deserialize or I/O error in GetCoinAge()", __PRETTY_FUNCTION__);
+            }
+            if (txPrev.GetHash() != prevout.hash)
+                return error("%s() : txid mismatch in GetCoinAge()", __PRETTY_FUNCTION__);
+
+            if (header.GetBlockTime() + nStakeMinAge > nTime)
+                continue; // only count coins meeting min age requirement
+
+            int64_t nValueIn = txPrev.vout[txin.prevout.n].nValue;
+            bnCentSecond += CBigNum(nValueIn) * (nTime-txPrev.nTime) / CENT;
+
+            if (fDebug && GetBoolArg("-printcoinage"))
+                printf("coin age nValueIn=%-12" PRId64" nTimeDiff=%d bnCentSecond=%s\n", nValueIn, nTime - txPrev.nTime, bnCentSecond.ToString().c_str());
+        }
+        else
+            return error("%s() : tx missing in tx index in GetCoinAge()", __PRETTY_FUNCTION__);
+    }
+
+    CBigNum bnCoinDay = bnCentSecond * CENT / COIN / (24 * 60 * 60);
+    if (fDebug && GetBoolArg("-printcoinage"))
+        printf("coin age bnCoinDay=%s\n", bnCoinDay.ToString().c_str());
+    nCoinAge = bnCoinDay.getuint64();
+    return true;
+}
+
+// ppcoin: total coin age spent in block, in the unit of coin-days.
+bool CBlock::GetCoinAge(uint64_t& nCoinAge) const
+{
+    nCoinAge = 0;
+
+    CCoinsViewCache view(*pcoinsTip, true);
+    BOOST_FOREACH(const CTransaction& tx, vtx)
+    {
+        uint64_t nTxCoinAge;
+        CValidationState state;
+        if (tx.GetCoinAge(state, view, nTxCoinAge))
+            nCoinAge += nTxCoinAge;
+        else
+            return false;
+    }
+
+    if (nCoinAge == 0) // block coin age minimum 1 coin-day
+        nCoinAge = 1;
+    if (fDebug && GetBoolArg("-printcoinage"))
+        printf("block coin age total nCoinDays=%" PRId64"\n", nCoinAge);
+    return true;
+}
+#endif /* PPCOINSTAKE */
 /** Disconnect chainActive's tip. You probably want to call mempool.removeForReorg and manually re-limit mempool size after this, with cs_main held. */
 bool static DisconnectTip(CValidationState& state, const CChainParams& chainparams, bool fBare = false)
 {
@@ -2738,7 +2878,9 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     return true;
 }
 
-bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false)
+/* Catoshi: coin.cpp needs this, so put prototype in validation.h */
+/* bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false ); */
+bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown)
 {
     LOCK(cs_LastBlockFile);
 
@@ -2832,6 +2974,17 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const 
     if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
         return state.DoS(50, false, REJECT_INVALID, "high-hash", false, "proof of work failed");
 
+    // Check timestamp
+#if defined(FEATURE_CFG_MAXFUTURE)
+    if (block.GetBlockTime() > GetAdjustedTime() + nMaxFutureTime)
+        return state.DoS(25, error("CheckBlockHeader() : block timestamp is %" PRId64 "s in the future",
+                      block.GetBlockTime() - GetAdjustedTime()),
+                             REJECT_INVALID, "time-too-new");
+#else
+    if (block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
+        return state.Invalid(error("CheckBlockHeader() : block timestamp too far in the future"),
+                             REJECT_INVALID, "time-too-new");
+#endif
     return true;
 }
 
@@ -2984,6 +3137,17 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     // Check timestamp against prev
     if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast())
         return state.Invalid(false, REJECT_INVALID, "time-too-old", "block's timestamp is too early");
+
+    // Check timestamp against prev
+    if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast())
+        return state.Invalid(error("%s : block's timestamp is too early", __func__),
+                             REJECT_INVALID, "time-too-old");
+
+	// some coins may have tighter tolerances
+	// TODO: convert back to object, and actually use *this, 
+	// cause derived classes that know what kind of coin we are are cool
+	if (!AcceptBlockTimestamp(state, pindexPrev, &block))
+			return false;
 
     // Check timestamp
     if (block.GetBlockTime() > nAdjustedTime + 2 * 60 * 60)

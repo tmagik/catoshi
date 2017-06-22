@@ -42,6 +42,9 @@
 
 #if defined(BITCOIN_COMPAT)
 /* define these for compat with existing code */
+
+#define PACKAGE_NAME "Catoshi/" BRAND_upper
+
 #ifndef CBlock
 #define CBlock Block
 #endif

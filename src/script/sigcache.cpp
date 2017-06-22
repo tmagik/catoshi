@@ -116,6 +116,5 @@ bool CachingTransactionSignatureChecker::VerifySignature(const std::vector<unsig
         return false;
     if (store)
         signatureCache.Set(entry);
-    }
     return true;
 }

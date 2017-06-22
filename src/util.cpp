@@ -858,7 +858,3 @@ int GetNumCores()
     return boost::thread::hardware_concurrency();
 #endif
 }
-
-std::string CopyrightHolders(const std::string& strPrefix)
-{
-    std::string strCopyrightHolders = strPrefix + strprintf(_(COPYRIGHT_HOLDERS), _(COPYRIGHT_HOLDERS_SUBSTITUTION));
