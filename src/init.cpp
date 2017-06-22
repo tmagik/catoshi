@@ -55,7 +55,6 @@
 #endif
 
 #include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/bind.hpp>
@@ -162,7 +161,6 @@ public:
     // Writes do not need similar protection, as failure to write is handled by the caller.
 };
 
-static CCoinsViewDB *pcoinsdbview = NULL;
 static CCoinsViewErrorCatcher *pcoinscatcher = NULL;
 static std::unique_ptr<ECCVerifyHandle> globalVerifyHandle;
 
@@ -198,8 +196,9 @@ void Shutdown()
     StopRPC();
     StopHTTPServer();
 #ifdef ENABLE_WALLET
-    if (pwalletMain)
-        pwalletMain->Flush(false);
+    for (CWalletRef pwallet : vpwallets) {
+        pwallet->Flush(false);
+    }
 #endif
     MapPort(false);
     UnregisterValidationInterface(peerLogic.get());
@@ -239,8 +238,9 @@ void Shutdown()
         pblocktree = NULL;
     }
 #ifdef ENABLE_WALLET
-    if (pwalletMain)
-        pwalletMain->Flush(true);
+    for (CWalletRef pwallet : vpwallets) {
+        pwallet->Flush(true);
+    }
 #endif
 
 #if ENABLE_ZMQ
@@ -260,8 +260,10 @@ void Shutdown()
 #endif
     UnregisterAllValidationInterfaces();
 #ifdef ENABLE_WALLET
-    delete pwalletMain;
-    pwalletMain = NULL;
+    for (CWalletRef pwallet : vpwallets) {
+        delete pwallet;
+    }
+    vpwallets.clear();
 #endif
     globalVerifyHandle.reset();
     ECC_Stop();
@@ -611,7 +613,7 @@ void CleanupBlockRevFiles()
     // keeping a separate counter.  Once we hit a gap (or if 0 doesn't exist)
     // start removing block files.
     int nContigCounter = 0;
-    BOOST_FOREACH(const PAIRTYPE(std::string, fs::path)& item, mapBlockFiles) {
+    for (const std::pair<std::string, fs::path>& item : mapBlockFiles) {
         if (atoi(item.first) == nContigCounter) {
             nContigCounter++;
             continue;
@@ -664,7 +666,7 @@ void ThreadImport(std::vector<fs::path> vImportFiles)
     }
 
     // -loadblock=
-    BOOST_FOREACH(const fs::path& path, vImportFiles) {
+    for (const fs::path& path : vImportFiles) {
         FILE *file = fsbridge::fopen(path, "rb");
         if (file) {
             LogPrintf("Importing blocks file %s...\n", path.string());
@@ -842,8 +844,6 @@ bool AppInitBasicSetup()
     // Turn off Microsoft heap dump noise
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_WARN, CreateFileA("NUL", GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0));
-#endif
-#if _MSC_VER >= 1400
     // Disable confusing "helpful" text message on abort, Ctrl-C
     _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
@@ -1168,6 +1168,7 @@ bool AppInitSanityChecks()
     // ********************************************************* Step 4: sanity checks
 
     // Initialize elliptic curve code
+    RandomInit();
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
 
@@ -1258,7 +1259,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<std::string> uacomments;
     if (gArgs.IsArgSet("-uacomment")) {
-        BOOST_FOREACH(std::string cmt, gArgs.GetArgs("-uacomment"))
+        for (std::string cmt : gArgs.GetArgs("-uacomment"))
         {
             if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
                 return InitError(strprintf(_("User Agent comment (%s) contains unsafe characters."), cmt));
@@ -1273,7 +1274,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (gArgs.IsArgSet("-onlynet")) {
         std::set<enum Network> nets;
-        BOOST_FOREACH(const std::string& snet, gArgs.GetArgs("-onlynet")) {
+        for (const std::string& snet : gArgs.GetArgs("-onlynet")) {
             enum Network net = ParseNetwork(snet);
             if (net == NET_UNROUTABLE)
                 return InitError(strprintf(_("Unknown network specified in -onlynet: '%s'"), snet));
@@ -1287,7 +1288,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     if (gArgs.IsArgSet("-whitelist")) {
-        BOOST_FOREACH(const std::string& net, gArgs.GetArgs("-whitelist")) {
+        for (const std::string& net : gArgs.GetArgs("-whitelist")) {
             CSubNet subnet;
             LookupSubNet(net.c_str(), subnet);
             if (!subnet.IsValid())
@@ -1349,7 +1350,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (fListen) {
         bool fBound = false;
         if (gArgs.IsArgSet("-bind")) {
-            BOOST_FOREACH(const std::string& strBind, gArgs.GetArgs("-bind")) {
+            for (const std::string& strBind : gArgs.GetArgs("-bind")) {
                 CService addrBind;
                 if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
                     return InitError(ResolveErrMsg("bind", strBind));
@@ -1357,7 +1358,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
             }
         }
         if (gArgs.IsArgSet("-whitebind")) {
-            BOOST_FOREACH(const std::string& strBind, gArgs.GetArgs("-whitebind")) {
+            for (const std::string& strBind : gArgs.GetArgs("-whitebind")) {
                 CService addrBind;
                 if (!Lookup(strBind.c_str(), addrBind, 0, false))
                     return InitError(ResolveErrMsg("whitebind", strBind));
@@ -1377,7 +1378,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     if (gArgs.IsArgSet("-externalip")) {
-        BOOST_FOREACH(const std::string& strAddr, gArgs.GetArgs("-externalip")) {
+        for (const std::string& strAddr : gArgs.GetArgs("-externalip")) {
             CService addrLocal;
             if (Lookup(strAddr.c_str(), addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
                 AddLocal(addrLocal, LOCAL_MANUAL);
@@ -1404,8 +1405,6 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     fReindex = GetBoolArg("-reindex", false);
     bool fReindexChainState = GetBoolArg("-reindex-chainstate", false);
-
-    fs::create_directories(GetDataDir() / "blocks");
 
     // cache size calculations
     int64_t nTotalCache = (GetArg("-dbcache", nDefaultDbCache) << 20);
@@ -1616,7 +1615,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::vector<fs::path> vImportFiles;
     if (gArgs.IsArgSet("-loadblock"))
     {
-        BOOST_FOREACH(const std::string& strFile, gArgs.GetArgs("-loadblock"))
+        for (const std::string& strFile : gArgs.GetArgs("-loadblock"))
             vImportFiles.push_back(strFile);
     }
 
@@ -1673,8 +1672,9 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     uiInterface.InitMessage(_("Done loading"));
 
 #ifdef ENABLE_WALLET
-    if (pwalletMain)
-        pwalletMain->postInitProcess(scheduler);
+    for (CWalletRef pwallet : vpwallets) {
+        pwallet->postInitProcess(scheduler);
+    }
 #endif
 
     return !fRequestShutdown;
