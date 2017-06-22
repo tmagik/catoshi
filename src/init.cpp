@@ -792,7 +792,7 @@ void InitLogging()
 
     LogPrintf("\n\n\n\n");
     LogPrintf("==========> Startup time: %s <==========\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()));
-    LogPrintf("Catoshi " BRAND " version %s (%s)\n", FormatFullVersion());
+    LogPrintf("Catoshi " BRAND " version %s\n", FormatFullVersion());
 }
 
 namespace { // Variables internal to initialization process only
