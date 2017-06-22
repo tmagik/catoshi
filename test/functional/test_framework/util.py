@@ -181,21 +181,40 @@ def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
-    rpc_u, rpc_p = rpc_auth_pair(n)
     with open(os.path.join(datadir, "bitcoin.conf"), 'w', encoding='utf8') as f:
         f.write("regtest=1\n")
-        f.write("rpcuser=" + rpc_u + "\n")
-        f.write("rpcpassword=" + rpc_p + "\n")
         f.write("port="+str(p2p_port(n))+"\n")
         f.write("rpcport="+str(rpc_port(n))+"\n")
         f.write("listenonion=0\n")
     return datadir
 
-def rpc_auth_pair(n):
-    return 'rpcuser💻' + str(n), 'rpcpass🔑' + str(n)
+def get_datadir_path(dirname, n):
+    return os.path.join(dirname, "node"+str(n))
 
-def rpc_url(i, rpchost=None):
-    rpc_u, rpc_p = rpc_auth_pair(i)
+def get_auth_cookie(datadir, n):
+    user = None
+    password = None
+    if os.path.isfile(os.path.join(datadir, "bitcoin.conf")):
+        with open(os.path.join(datadir, "bitcoin.conf"), 'r') as f:
+            for line in f:
+                if line.startswith("rpcuser="):
+                    assert user is None # Ensure that there is only one rpcuser line
+                    user = line.split("=")[1].strip("\n")
+                if line.startswith("rpcpassword="):
+                    assert password is None # Ensure that there is only one rpcpassword line
+                    password = line.split("=")[1].strip("\n")
+    if os.path.isfile(os.path.join(datadir, "regtest", ".cookie")):
+        with open(os.path.join(datadir, "regtest", ".cookie"), 'r') as f:
+            userpass = f.read()
+            split_userpass = userpass.split(':')
+            user = split_userpass[0]
+            password = split_userpass[1]
+    if user is None or password is None:
+        raise ValueError("No RPC credentials")
+    return user, password
+
+def rpc_url(datadir, i, rpchost=None):
+    rpc_u, rpc_p = get_auth_cookie(datadir, i)
     host = '127.0.0.1'
     port = rpc_port(i)
     if rpchost:
@@ -206,7 +225,7 @@ def rpc_url(i, rpchost=None):
             host = rpchost
     return "http://%s:%s@%s:%d" % (rpc_u, rpc_p, host, int(port))
 
-def wait_for_bitcoind_start(process, url, i):
+def wait_for_bitcoind_start(process, datadir, i, rpchost=None):
     '''
     Wait for bitcoind to start. This means that RPC is accessible and fully initialized.
     Raise an exception if bitcoind exits during initialization.
@@ -215,7 +234,8 @@ def wait_for_bitcoind_start(process, url, i):
         if process.poll() is not None:
             raise Exception('bitcoind exited with status %i during initialization' % process.returncode)
         try:
-            rpc = get_rpc_proxy(url, i)
+            # Check if .cookie file to be created
+            rpc = get_rpc_proxy(rpc_url(datadir, i, rpchost), i)
             blocks = rpc.getblockcount()
             break # break out of loop on success
         except IOError as e:
@@ -224,13 +244,17 @@ def wait_for_bitcoind_start(process, url, i):
         except JSONRPCException as e: # Initialization phase
             if e.error['code'] != -28: # RPC in warmup?
                 raise # unknown JSON RPC exception
+        except ValueError as e: # cookie file not found and no rpcuser or rpcassword. bitcoind still starting
+            if "No RPC credentials" not in str(e):
+                raise
         time.sleep(0.25)
 
 
-def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=None, stderr=None):
-    """
-    Start a bitcoind and return RPC connection to it
-    """
+def _start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=None, stderr=None):
+    """Start a bitcoind and return RPC connection to it
+
+    This function should only be called from within test_framework, not by individual test scripts."""
+
     datadir = os.path.join(dirname, "node"+str(i))
     if binary is None:
         binary = os.getenv("BITCOIND", "bitcoind")
@@ -238,10 +262,9 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if extra_args is not None: args.extend(extra_args)
     bitcoind_processes[i] = subprocess.Popen(args, stderr=stderr)
     logger.debug("initialize_chain: bitcoind started, waiting for RPC to come up")
-    url = rpc_url(i, rpchost)
-    wait_for_bitcoind_start(bitcoind_processes[i], url, i)
+    wait_for_bitcoind_start(bitcoind_processes[i], datadir, i, rpchost)
     logger.debug("initialize_chain: RPC successfully started")
-    proxy = get_rpc_proxy(url, i, timeout=timewait)
+    proxy = get_rpc_proxy(rpc_url(datadir, i, rpchost), i, timeout=timewait)
 
     if COVERAGE_DIR:
         coverage.write_all_rpc_commands(COVERAGE_DIR, proxy)
@@ -251,8 +274,8 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
 def assert_start_raises_init_error(i, dirname, extra_args=None, expected_msg=None):
     with tempfile.SpooledTemporaryFile(max_size=2**16) as log_stderr:
         try:
-            node = start_node(i, dirname, extra_args, stderr=log_stderr)
-            stop_node(node, i)
+            node = _start_node(i, dirname, extra_args, stderr=log_stderr)
+            _stop_node(node, i)
         except Exception as e:
             assert 'bitcoind exited' in str(e) #node must have shutdown
             if expected_msg is not None:
@@ -267,10 +290,11 @@ def assert_start_raises_init_error(i, dirname, extra_args=None, expected_msg=Non
                 assert_msg = "bitcoind should have exited with expected error " + expected_msg
             raise AssertionError(assert_msg)
 
-def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, timewait=None, binary=None):
-    """
-    Start multiple bitcoinds, return RPC connections to them
-    """
+def _start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, timewait=None, binary=None):
+    """Start multiple bitcoinds, return RPC connections to them
+    
+    This function should only be called from within test_framework, not by individual test scripts."""
+
     if extra_args is None: extra_args = [ None for _ in range(num_nodes) ]
     if binary is None: binary = [ None for _ in range(num_nodes) ]
     assert_equal(len(extra_args), num_nodes)
@@ -278,16 +302,20 @@ def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, timewait=None
     rpcs = []
     try:
         for i in range(num_nodes):
-            rpcs.append(start_node(i, dirname, extra_args[i], rpchost, timewait=timewait, binary=binary[i]))
+            rpcs.append(_start_node(i, dirname, extra_args[i], rpchost, timewait=timewait, binary=binary[i]))
     except: # If one node failed to start, stop the others
-        stop_nodes(rpcs)
+        _stop_nodes(rpcs)
         raise
     return rpcs
 
 def log_filename(dirname, n_node, logname):
     return os.path.join(dirname, "node"+str(n_node), "regtest", logname)
 
-def stop_node(node, i):
+def _stop_node(node, i):
+    """Stop a bitcoind test node
+
+    This function should only be called from within test_framework, not by individual test scripts."""
+
     logger.debug("Stopping node %d" % i)
     try:
         node.stop()
@@ -297,9 +325,13 @@ def stop_node(node, i):
     assert_equal(return_code, 0)
     del bitcoind_processes[i]
 
-def stop_nodes(nodes):
+def _stop_nodes(nodes):
+    """Stop multiple bitcoind test nodes
+
+    This function should only be called from within test_framework, not by individual test scripts."""
+
     for i, node in enumerate(nodes):
-        stop_node(node, i)
+        _stop_node(node, i)
     assert not bitcoind_processes.values() # All connections must be gone now
 
 def set_node_times(nodes, t):
