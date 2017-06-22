@@ -4,25 +4,11 @@
 #ifndef CODECOIN_bitcoin_H
 #define CODECOIN_bitcoin_H
 
-/* ========= Things defined in bitcoin@0.12/consensus/consensus.h  ========= */
+/* ========= Things defined in bitcoin@0.14/consensus/consensus.h  ========= */
 
-/** The maximum allowed size for a serialized block, in bytes (network rule) */
-static const unsigned int MAX_BLOCK_SIZE = 1000000;
-/** The maximum allowed number of signature check operations in a block (network rule) */
-static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
-/** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
-static const int COINBASE_MATURITY = 100;
+#include "bitcoin/consensus.h"
 
-/** Flags for nSequence and nLockTime locks */
-enum {
-    /* Interpret sequence numbers as relative lock-time constraints. */
-    LOCKTIME_VERIFY_SEQUENCE = (1 << 0),
-
-    /* Use GetMedianTimePast() instead of nTime for end point timestamp. */
-    LOCKTIME_MEDIAN_TIME_PAST = (1 << 1),
-};
-
-/* ========= End defines from bitcoin@0.12/consensus/consensus.h  ========= */
+/* ========= End defines from bitcoin@0.14/consensus/consensus.h  ========= */
 
 static const int RPC_PORT = 8332;
 static const int RPC_PORT_TESTNET = 18332;

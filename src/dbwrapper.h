@@ -80,8 +80,7 @@ public:
     template <typename K, typename V>
     void Write(const K& key, const V& value)
     {
-        CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        ssKey.reserve(ssKey.GetSerializeSize(key));
+        ssKey.reserve(DBWRAPPER_PREALLOC_KEY_SIZE);
         ssKey << key;
         leveldb::Slice slKey(ssKey.data(), ssKey.size());
 
@@ -156,7 +155,7 @@ public:
         leveldb::Slice slValue = piter->value();
         try {
             CDataStream ssValue(slValue.data(), slValue.data() + slValue.size(), SER_DISK, CLIENT_VERSION);
-            ssValue.Xor(*obfuscate_key);
+            ssValue.Xor(dbwrapper_private::GetObfuscateKey(parent));
             ssValue >> value;
         } catch (const std::exception&) {
             return false;
@@ -212,7 +211,7 @@ public:
      *                        with a zero'd byte array.
      * @param[in] penv        Pointer to (optional) DB_env type to allow things like in-memory
      */
-    CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false, bool obfuscate = false);
+    CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fWipe = false, bool obfuscate = false, DB_env * penv = nullptr);
     ~CDBWrapper();
 
     template <typename K, typename V>

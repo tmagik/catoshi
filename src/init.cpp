@@ -515,7 +515,7 @@ std::string LicenseInfo()
     const std::string URL_SOURCE_CODE = "<https://bitbucket.org/Catoshi/Catoshi>";
     const std::string URL_WEBSITE = "<https://bitbucket.org/Catoshi>";
 
-    return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2009, COPYRIGHT_YEAR) + " ") + "\n" +
+    return strprintf(_("Copyright (C) AGPLv3 %i-%i"), 2009, COPYRIGHT_YEAR) + " The Catoshi Developers\n" +
            "\n" +
            strprintf(_("Please contribute if you find %s useful. "
                        "Visit %s for further information about the software."),
@@ -524,13 +524,9 @@ std::string LicenseInfo()
            strprintf(_("The source code is available from %s."),
                URL_SOURCE_CODE) +
            "\n" +
-           FormatParagraph(_("Distributed under the Affero GNU General public license version 3, see the accompanying file COPYING or http://www.gnu.org/licenses/agpl-3.0.html")) + "\n" +
            "\n" +
            _("This is experimental software.") + "\n" +
-           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING", "<https://opensource.org/licenses/MIT>") + "\n" +
-           "\n" +
-           strprintf(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit %s and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard."), "<https://www.openssl.org>") +
-           "\n";
+           strprintf(_("Distributed under the Affero GNU General public license version 3, see the accompanying file %s or %s\n"), "COPYING", "<http://www.gnu.org/licenses/agpl-3.0.html>");
 }
 
 static void BlockNotifyCallback(bool initialSync, const CBlockIndex *pBlockIndex)
@@ -796,7 +792,7 @@ void InitLogging()
 
     LogPrintf("\n\n\n\n");
     LogPrintf("==========> Startup time: %s <==========\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()));
-    LogPrintf("Catoshi " BRAND " version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
+    LogPrintf("Catoshi " BRAND " version %s (%s)\n", FormatFullVersion());
 }
 
 namespace { // Variables internal to initialization process only
@@ -1448,8 +1444,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 delete pcoinscatcher;
                 delete pblocktree;
 
-                pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
-                pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex || fReindexChainState);
+                pblocktree = new CBlockTreeDB(nBlockTreeDBCache, fReindex);
+                pcoinsdbview = new CCoinsViewDB(nCoinDBCache, fReindex || fReindexChainState);
                 pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
                 pcoinsTip = new CCoinsViewCache(pcoinscatcher);
 

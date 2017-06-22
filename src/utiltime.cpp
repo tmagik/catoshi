@@ -76,7 +76,7 @@ void MilliSleep(int64_t n)
 #else
 //should never get here
 #error missing boost sleep implementation
-#endif
+#endif */
 }
 
 std::string DateTimeStrFormat(const char* pszFormat, int64_t nTime)

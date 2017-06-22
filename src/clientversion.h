@@ -29,8 +29,7 @@
  * Todo: update this when changing our copyright comments in the source
  */
 #define COPYRIGHT_YEAR 2017
-
-#endif //HAVE_CONFIG_H
+#define COPYRIGHT_HOLDERS "The Catoshi Developers"
 
 /**
  * Converts the parameter X to a string after macro replacement on X has been performed.
@@ -40,7 +39,7 @@
 #define DO_STRINGIZE(X) #X
 
 //! Copyright string used in Windows .rc files
-#define COPYRIGHT_STR "Copyright(c) AGPLv3 2009-" STRINGIZE(COPYRIGHT_YEAR) " The Catoshi Developers"
+#define COPYRIGHT_STR "Copyright(c) AGPLv3 2009-" STRINGIZE(COPYRIGHT_YEAR) " " COPYRIGHT_HOLDERS
 
 /**
  * bitcoind-res.rc includes this file, but it cannot cope with real c++ code.
@@ -61,7 +60,6 @@ static const int CLIENT_VERSION =
 
 extern const std::string CLIENT_NAME;
 extern const std::string CLIENT_BUILD;
-extern const std::string CLIENT_DATE;
 
 
 std::string FormatFullVersion();

@@ -537,7 +537,6 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
             bitmap[i / 8] |= ((uint8_t)hit) << (i % 8);
         }
     }
-    boost::to_block_range(hits, std::back_inserter(bitmap));
 
     switch (rf) {
     case RF_BINARY: {

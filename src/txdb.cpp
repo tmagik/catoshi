@@ -10,10 +10,8 @@
 #include "txdb.h"
 
 #include "codecoin.h"
-#include "chain.h"
 #include "chainparams.h"
 #include "hash.h"
-#include "main.h"
 #include "pow.h"
 #include "uintBIG.h"
 

@@ -15,8 +15,10 @@
 
 #include "compat/byteswap.h"
 
-#if defined(HAVE_ENDIAN_H)
+//#if defined(HAVE_ENDIAN_H)
 #include <endian.h>
+//#elif defined(HAVE_SYS_ENDIAN_H)
 //#include <sys/endian.h>
+//#endif
 
 #endif // CODECOIN_COMPAT_ENDIAN_H
