@@ -205,7 +205,6 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
                                                             vchCryptedSecret,
                                                             mapKeyMetadata[vchPubKey.GetID()]);
     }
-    return false;
 }
 
 bool CWallet::LoadKeyMetadata(const CTxDestination& keyID, const CKeyMetadata &meta)
@@ -2634,28 +2633,6 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
 
                     CTxOut newTxOut(nChange, scriptChange);
 
-                    // We do not move dust-change to fees, because the sender would end up paying more than requested.
-                    // This would be against the purpose of the all-inclusive feature.
-                    // So instead we raise the change and deduct from the recipient.
-                    if (nSubtractFeeFromAmount > 0 && IsDust(newTxOut, ::dustRelayFee))
-                    {
-                        CAmount nDust = GetDustThreshold(newTxOut, ::dustRelayFee) - newTxOut.nValue;
-                        newTxOut.nValue += nDust; // raise change until no more dust
-                        for (unsigned int i = 0; i < vecSend.size(); i++) // subtract from first recipient
-                        {
-                            if (vecSend[i].fSubtractFeeFromAmount)
-                            {
-                                txNew.vout[i].nValue -= nDust;
-                                if (IsDust(txNew.vout[i], ::dustRelayFee))
-                                {
-                                    strFailReason = _("The transaction amount is too small to send after the fee has been deducted");
-                                    return false;
-                                }
-                                break;
-                            }
-                        }
-                    }
-
                     // Never create dust outputs; if we would, just
                     // add the dust to the fee.
                     if (IsDust(newTxOut, ::dustRelayFee))
@@ -2708,8 +2685,6 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                 }
 
                 nBytes = GetVirtualTransactionSize(txNew);
-
-                CTransaction txNewConst(txNew);
 
                 // Remove scriptSigs to eliminate the fee calculation dummy signatures
                 for (auto& vin : txNew.vin) {
@@ -3866,11 +3841,11 @@ CWallet* CWallet::CreateWalletFromFile(const std::string walletFile)
     else if (IsArgSet("-usehd")) {
         bool useHD = GetBoolArg("-usehd", DEFAULT_USE_HD_WALLET);
         if (walletInstance->IsHDEnabled() && !useHD) {
-            InitError(strprintf(_("Error loading %s: You can't disable HD on a already existing HD wallet"), walletFile));
+            InitError(strprintf(_("Error loading %s: You can't disable HD on an already existing HD wallet"), walletFile));
             return NULL;
         }
         if (!walletInstance->IsHDEnabled() && useHD) {
-            InitError(strprintf(_("Error loading %s: You can't enable HD on a already existing non-HD wallet"), walletFile));
+            InitError(strprintf(_("Error loading %s: You can't enable HD on an already existing non-HD wallet"), walletFile));
             return NULL;
         }
     }
@@ -3890,7 +3865,7 @@ CWallet* CWallet::CreateWalletFromFile(const std::string walletFile)
     if (chainActive.Tip() && chainActive.Tip() != pindexRescan)
     {
         //We can't rescan beyond non-pruned blocks, stop and throw an error
-        //this might happen if a user uses a old wallet within a pruned node
+        //this might happen if a user uses an old wallet within a pruned node
         // or if he ran -disablewallet for a longer time, then decided to re-enable
         if (fPruneMode)
         {
