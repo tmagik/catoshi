@@ -18,13 +18,16 @@ Tests correspond to code in rpc/blockchain.cpp.
 """
 
 from decimal import Decimal
+import subprocess
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
+    assert_raises,
     assert_raises_jsonrpc,
     assert_is_hex_string,
     assert_is_hash_string,
+    bitcoind_processes,
 )
 
 
@@ -34,6 +37,7 @@ class BlockchainTest(BitcoinTestFramework):
         super().__init__()
         self.setup_clean_chain = False
         self.num_nodes = 1
+        self.extra_args = [['-stopatheight=207']]
 
     def run_test(self):
         self._test_getchaintxstats()
@@ -41,7 +45,8 @@ class BlockchainTest(BitcoinTestFramework):
         self._test_getblockheader()
         self._test_getdifficulty()
         self._test_getnetworkhashps()
-        self.nodes[0].verifychain(4, 0)
+        self._test_stopatheight()
+        assert self.nodes[0].verifychain(4, 0)
 
     def _test_getchaintxstats(self):
         chaintxstats = self.nodes[0].getchaintxstats(1)
@@ -59,6 +64,7 @@ class BlockchainTest(BitcoinTestFramework):
         assert_equal(res['transactions'], 200)
         assert_equal(res['height'], 200)
         assert_equal(res['txouts'], 200)
+        assert_equal(res['bogosize'], 17000),
         assert_equal(res['bestblock'], node.getblockhash(200))
         size = res['disk_size']
         assert size > 6400
@@ -75,6 +81,7 @@ class BlockchainTest(BitcoinTestFramework):
         assert_equal(res2['total_amount'], Decimal('0'))
         assert_equal(res2['height'], 0)
         assert_equal(res2['txouts'], 0)
+        assert_equal(res2['bogosize'], 0),
         assert_equal(res2['bestblock'], node.getblockhash(0))
         assert_equal(len(res2['hash_serialized_2']), 64)
 
@@ -86,6 +93,7 @@ class BlockchainTest(BitcoinTestFramework):
         assert_equal(res['transactions'], res3['transactions'])
         assert_equal(res['height'], res3['height'])
         assert_equal(res['txouts'], res3['txouts'])
+        assert_equal(res['bogosize'], res3['bogosize'])
         assert_equal(res['bestblock'], res3['bestblock'])
         assert_equal(res['hash_serialized_2'], res3['hash_serialized_2'])
 
@@ -125,6 +133,19 @@ class BlockchainTest(BitcoinTestFramework):
         hashes_per_second = self.nodes[0].getnetworkhashps()
         # This should be 2 hashes every 10 minutes or 1/300
         assert abs(hashes_per_second * 300 - 1) < 0.0001
+
+    def _test_stopatheight(self):
+        assert_equal(self.nodes[0].getblockcount(), 200)
+        self.nodes[0].generate(6)
+        assert_equal(self.nodes[0].getblockcount(), 206)
+        self.log.debug('Node should not stop at this height')
+        assert_raises(subprocess.TimeoutExpired, lambda: bitcoind_processes[0].wait(timeout=3))
+        self.nodes[0].generate(1)
+        self.log.debug('Node should stop at this height...')
+        bitcoind_processes[0].wait(timeout=3)
+        self.nodes[0] = self.start_node(0, self.options.tmpdir)
+        assert_equal(self.nodes[0].getblockcount(), 207)
+
 
 if __name__ == '__main__':
     BlockchainTest().main()

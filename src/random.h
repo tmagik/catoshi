@@ -110,8 +110,14 @@ public:
         }
     }
 
+    /** Generate random bytes. */
+    std::vector<unsigned char> randbytes(size_t len);
+
     /** Generate a random 32-bit integer. */
     uint32_t rand32() { return randbits(32); }
+
+    /** generate a random uint256. */
+    uint256 rand256();
 
     /** Generate a random boolean. */
     bool randbool() { return randbits(1); }
@@ -133,5 +139,8 @@ void GetOSRand(unsigned char *ent32);
  * of bytes.
  */
 bool Random_SanityCheck();
+
+/** Initialize the RNG. */
+void RandomInit();
 
 #endif // BITCOIN_RANDOM_H

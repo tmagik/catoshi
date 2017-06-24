@@ -26,7 +26,6 @@
 
 #include <univalue.h>
 
-#include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 
 std::string static EncodeDumpTime(int64_t nTime) {
@@ -48,7 +47,7 @@ int64_t static DecodeDumpTime(const std::string &str) {
 
 std::string static EncodeDumpString(const std::string &str) {
     std::stringstream ret;
-    BOOST_FOREACH(unsigned char c, str) {
+    for (unsigned char c : str) {
         if (c <= 32 || c >= 128 || c == '%') {
             ret << '%' << HexStr(&c, &c + 1);
         } else {
@@ -599,7 +598,11 @@ UniValue dumpwallet(const JSONRPCRequest& request)
             "dumpwallet \"filename\"\n"
             "\nDumps all wallet keys in a human-readable format.\n"
             "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename\n"
+            "1. \"filename\"    (string, required) The filename with path (either absolute or relative to bitcoind)\n"
+            "\nResult:\n"
+            "{                           (json object)\n"
+            "  \"filename\" : {        (string) The filename with full absolute path\n"
+            "}\n"
             "\nExamples:\n"
             + HelpExampleCli("dumpwallet", "\"test\"")
             + HelpExampleRpc("dumpwallet", "\"test\"")
@@ -610,7 +613,9 @@ UniValue dumpwallet(const JSONRPCRequest& request)
     EnsureWalletIsUnlocked(pwallet);
 
     std::ofstream file;
-    file.open(request.params[0].get_str().c_str());
+    boost::filesystem::path filepath = request.params[0].get_str();
+    filepath = boost::filesystem::absolute(filepath);
+    file.open(filepath.string().c_str());
     if (!file.is_open())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot open wallet dump file");
 
@@ -675,7 +680,11 @@ UniValue dumpwallet(const JSONRPCRequest& request)
     file << "\n";
     file << "# End of dump\n";
     file.close();
-    return NullUniValue;
+
+    UniValue reply(UniValue::VOBJ);
+    reply.push_back(Pair("filename", filepath.string()));
+
+    return reply;
 }
 
 
@@ -1036,7 +1045,7 @@ UniValue importmulti(const JSONRPCRequest& mainRequest)
             "      \"redeemscript\": \"<script>\"                            , (string, optional) Allowed only if the scriptPubKey is a P2SH address or a P2SH scriptPubKey\n"
             "      \"pubkeys\": [\"<pubKey>\", ... ]                         , (array, optional) Array of strings giving pubkeys that must occur in the output or redeemscript\n"
             "      \"keys\": [\"<key>\", ... ]                               , (array, optional) Array of strings giving private keys whose corresponding public keys must occur in the output or redeemscript\n"
-            "      \"internal\": <true>                                    , (boolean, optional, default: false) Stating whether matching outputs should be be treated as not incoming payments\n"
+            "      \"internal\": <true>                                    , (boolean, optional, default: false) Stating whether matching outputs should be treated as not incoming payments\n"
             "      \"watchonly\": <true>                                   , (boolean, optional, default: false) Stating whether matching outputs should be considered watched even when they're not spendable, only allowed if keys are empty\n"
             "      \"label\": <label>                                      , (string, optional, default: '') Label to assign to the address (aka account name, for now), only allowed with internal=false\n"
             "    }\n"
@@ -1056,7 +1065,7 @@ UniValue importmulti(const JSONRPCRequest& mainRequest)
 
     // clang-format on
 
-    RPCTypeCheck(mainRequest.params, boost::assign::list_of(UniValue::VARR)(UniValue::VOBJ));
+    RPCTypeCheck(mainRequest.params, {UniValue::VARR, UniValue::VOBJ});
 
     const UniValue& requests = mainRequest.params[0];
 
@@ -1092,7 +1101,7 @@ UniValue importmulti(const JSONRPCRequest& mainRequest)
 
     UniValue response(UniValue::VARR);
 
-    BOOST_FOREACH (const UniValue& data, requests.getValues()) {
+    for (const UniValue& data : requests.getValues()) {
         const int64_t timestamp = std::max(GetImportTimestamp(data, now), minimumTimestamp);
         const UniValue result = ProcessImport(pwallet, data, timestamp);
         response.push_back(result);
