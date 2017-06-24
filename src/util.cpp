@@ -516,7 +516,7 @@ boost::filesystem::path GetDefaultDataDir()
     return pathRet / "Library/Application Support/catoshi" / BRAND_lower;
 #else
     // Unix
-    return pathRet / ".bitcoin";
+    return pathRet / ".catoshi" / BRAND_lower;
 #endif
 #endif
 }
