@@ -29,3 +29,24 @@ Ethical Treatment of Currencies
 -------------------------------
 
 Consider the ethics and morals involved when creating a new currency. I am not here to tell you what those should be, only that it is probably a good idea to have some, and think and act carefully about how you treat your new pet currency. Mistreated pets may decide to eat you, or if there is a consensus among the people using it, they may decide you are no longer fit to own it, and re-home your precious to a new home.
+
+Copyright Policy
+----------------
+
+7 Elements LLC and Troy Benjegerdes are the copyright (bag)-hodlers for Catoshi, and
+have to empty the catbox. Therefore you may either contribute changes two ways:
+
+	1) under AGPLv3, with a signed copyright assignment
+	2) under the CopyCatCoin MIT/BSD/public domain license
+
+If you choose option 1, you must execute and sign a paper copy of the (TBD) copyright
+assignment form giving 7 Elements the rights to blatently relicense your AGPLv3
+contribution in whatever way we see best fit to keep feeding Catoshi (the cat and
+the project), and submit a hash of a scan of said document in a transaction on the
+blockchain of your choice supported by Catoshi. If Catoshi, in her arbitrary and
+capricious ways, feels you are worthy of cleaning her catbox, she may direct 7
+Elements to send some coin to said address.
+
+If you choose option 2, then any other CopyCatCoin can also use your code and we
+will promptly do as the license permits and re-license it as AGPLv3.
+

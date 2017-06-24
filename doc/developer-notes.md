@@ -11,7 +11,9 @@ to clean up the patch automatically before submitting a pull request.
 - Basic rules specified in [src/.clang-format](/src/.clang-format).
   - Braces on new lines for namespaces, classes, functions, methods.
   - Braces on the same line for everything else.
-  - 4 space indentation (no tabs) for every block except namespaces.
+  - /* 4 space indentation (no tabs) for every block except namespaces. */
+  - TODO: write mercurial plugin to covert tabs to spaces when pulling/pushing to git
+  - Use tabs. Set editor to the width you want. Or use git with above.
   - No indentation for `public`/`protected`/`private` or for `namespace`.
   - No extra spaces inside parenthesis; don't do ( this )
   - No space after function names; one space after `if`, `for` and `while`.
