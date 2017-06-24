@@ -240,7 +240,6 @@ public:
         fRequireStandard = false;
         fMineBlocksOnDemand = false;
 
-
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
             ( 546, uint256S("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")),
