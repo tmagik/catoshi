@@ -32,14 +32,13 @@
 
 class CBlockIndex;
 class CBlockTreeDB;
-class CBloomFilter;
 class CChainParams;
+class CCoinsViewDB;
 class CInv;
 class CConnman;
 class CScriptCheck;
 class CBlockPolicyEstimator;
 class CTxMemPool;
-class CValidationInterface;
 class CValidationState;
 struct ChainTxData;
 
@@ -440,6 +439,9 @@ bool ResetBlockFailureFlags(CBlockIndex *pindex);
 /** The currently-connected chain of blocks (protected by cs_main). */
 extern CChain chainActive;
 
+/** Global variable that points to the coins database (protected by cs_main) */
+extern CCoinsViewDB *pcoinsdbview;
+
 /** Global variable that points to the active CCoinsView (protected by cs_main) */
 extern CCoinsViewCache *pcoinsTip;
 
@@ -467,10 +469,6 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
 static const unsigned int REJECT_INTERNAL = 0x100;
 /** Too high fee. Can not be triggered by P2P transactions */
 static const unsigned int REJECT_HIGHFEE = 0x100;
-/** Transaction is already known (either in mempool or blockchain) */
-static const unsigned int REJECT_ALREADY_KNOWN = 0x101;
-/** Transaction conflicts with a transaction already known */
-static const unsigned int REJECT_CONFLICT = 0x102;
 
 /** Get block file info entry for one block file */
 CBlockFileInfo* GetBlockFileInfo(size_t n);
