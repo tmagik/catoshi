@@ -121,8 +121,8 @@ CChainParams& Params(const std::string& chain);
 void SelectParams(const std::string& chain);
 
 /**
- * Allows modifying the Version Bits regtest parameters.
+ * Allows modifying the BIP9 regtest parameters.
  */
-void UpdateRegtestVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
+void UpdateRegtestBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
 
 #endif // CODECOIN_CHAINPARAMS_H

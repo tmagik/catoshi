@@ -4,7 +4,6 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-
 #include "chainparams.h"
 #include "consensus/merkle.h"
 
@@ -16,7 +15,7 @@
 
 #include <boost/assign/list_of.hpp>
 
-#include "chainparamsseeds.h"
+#include "litecoin/seeds.h"
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
@@ -368,16 +367,17 @@ void SelectParams(const std::string& network)
     pCurrentParams = &Params(network);
 }
 
-void UpdateRegtestVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
+void UpdateRegtestBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
 {
     regTestParams.UpdateVersionBitsParameters(d, nStartTime, nTimeout);
 }
 
-#include "txdb.h"
+//#include "txdb.h"
 
-const string strMessageMagic = "Litecoin Signed Message:\n";
+const std::string strMessageMagic = "Litecoin Signed Message:\n";
 
-CAmount Litecoin_PoWReward(int nHeight, const CAmount& nFees)
+#if 0 /* FIXME later */
+CAmount Bitcoin_PoWReward(int nHeight, const CAmount& nFees)
 {
     CAmount nSubsidy = 50 * COIN;
     int halvings = nHeight / Params().SubsidyHalvingInterval();
@@ -398,8 +398,12 @@ int64_t CBlockIndex::GetSeigniorage(int64_t nFees, int64_t CoinAge) const
 	return Litecoin_PoWReward(nHeight, nFees);
 }
 
+#endif
+
+#include "validation.h"
+
 //Checks for 'hardcoded' block timestamps
-bool AcceptBlockTimestamp(CValidationState &state, CBlockIndex* pindexPrev, const CBlockHeader *pblock)
+bool AcceptBlockTimestamp(CValidationState &state, const CBlockIndex* pindexPrev, const CBlockHeader *pblock)
 {
 	return true;	
 }
