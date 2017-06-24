@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2016 The Bitcoin Core developers
+// Copyright (c) 2012-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,7 +12,6 @@
 #include <leveldb/cache.h>
 #include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
-#include <memenv.h>
 #include <stdint.h>
 
 static leveldb::Options GetOptions(size_t nCacheSize)
@@ -31,27 +30,26 @@ static leveldb::Options GetOptions(size_t nCacheSize)
     return options;
 }
 
-CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory, bool fWipe, bool obfuscate)
+
+
+CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fWipe, bool obfuscate, DB_env* penv)
 {
-    penv = NULL;
     readoptions.verify_checksums = true;
     iteroptions.verify_checksums = true;
     iteroptions.fill_cache = false;
     syncoptions.sync = true;
     options = GetOptions(nCacheSize);
     options.create_if_missing = true;
-    if (fMemory) {
-        penv = leveldb::NewMemEnv(leveldb::Env::Default());
-        options.env = penv;
-    } else {
-        if (fWipe) {
-            LogPrintf("Wiping LevelDB in %s\n", path.string());
-            leveldb::Status result = leveldb::DestroyDB(path.string(), options);
-            dbwrapper_private::HandleError(result);
-        }
-        TryCreateDirectory(path);
-        LogPrintf("Opening LevelDB in %s\n", path.string());
+    if (fWipe) {
+        LogPrintf("Wiping LevelDB in %s\n", path.string());
+        leveldb::Status result = leveldb::DestroyDB(path.string(), options);
+        dbwrapper_private::HandleError(result);
     }
+    if (penv) {
+	options.env = (leveldb::Env*)penv;
+    }
+    TryCreateDirectory(path);
+    LogPrintf("Opening LevelDB in %s\n", path.string());
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
     dbwrapper_private::HandleError(status);
     LogPrintf("Opened LevelDB successfully\n");
@@ -84,7 +82,6 @@ CDBWrapper::~CDBWrapper()
     options.filter_policy = NULL;
     delete options.block_cache;
     options.block_cache = NULL;
-    delete penv;
     options.env = NULL;
 }
 

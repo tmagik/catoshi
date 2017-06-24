@@ -1,12 +1,19 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// see file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
 #endif
 
+#include "codecoin.h"
 #include "util.h"
 
 #include "chainparamsbase.h"
@@ -35,6 +42,7 @@
 
 #endif // __linux__
 
+#include <inttypes.h>
 #include <algorithm>
 #include <fcntl.h>
 #include <sys/resource.h>
@@ -103,8 +111,8 @@ namespace boost {
 
 using namespace std;
 
-const char * const BITCOIN_CONF_FILENAME = "litecoin.conf";
-const char * const BITCOIN_PID_FILENAME = "litecoin.pid";
+const char * const BITCOIN_CONF_FILENAME = BRAND_lower ".conf";
+const char * const BITCOIN_PID_FILENAME = BRAND_lower ".pid";
 
 CCriticalSection cs_args;
 map<string, string> mapArgs;
@@ -276,11 +284,18 @@ static std::string LogTimestampStr(const std::string &str, std::atomic_bool *fSt
         return str;
 
     if (*fStartedNewLine) {
-        int64_t nTimeMicros = GetLogTimeMicros();
-        strStamped = DateTimeStrFormat("%Y-%m-%d %H:%M:%S", nTimeMicros/1000000);
-        if (fLogTimeMicros)
-            strStamped += strprintf(".%06d", nTimeMicros%1000000);
-        strStamped += ' ' + str;
+        /* the level of abstraction in the original is painful
+           to anyone who's done performance critical kernel code */
+        //strStamped = DateTimeStrFormat("%Y-%m-%d %H:%M:%S", nTimeMicros/1000000);
+        if (fLogTimeMicros){
+            int64_t nTimeMicros = GetLogTimeMicros();
+            strStamped = strprintf("[%" PRId64 ".%06d] ",
+				nTimeMicros/1000000,
+				nTimeMicros%1000000);
+        } else {
+            strStamped = strprintf("[%" PRId64 "] ", GetTime());
+        }
+        strStamped += str;
     } else
         strStamped = str;
 
@@ -462,7 +477,7 @@ static std::string FormatException(const std::exception* pex, const char* pszThr
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(NULL, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = "litecoin";
+    const char* pszModule = "Catoshi/" BRAND_lower;
 #endif
     if (pex)
         return strprintf(
@@ -488,7 +503,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Unix: ~/.bitcoin
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Litecoin";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "catoshi" / BRAND_lower;
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -498,10 +513,10 @@ boost::filesystem::path GetDefaultDataDir()
         pathRet = fs::path(pszHome);
 #ifdef MAC_OSX
     // Mac
-    return pathRet / "Library/Application Support/Litecoin";
+    return pathRet / "Library/Application Support/catoshi" / BRAND_lower;
 #else
     // Unix
-    return pathRet / ".litecoin";
+    return pathRet / ".bitcoin";
 #endif
 #endif
 }
@@ -842,17 +857,4 @@ int GetNumCores()
 #else // Must fall back to hardware_concurrency, which unfortunately counts virtual cores
     return boost::thread::hardware_concurrency();
 #endif
-}
-
-std::string CopyrightHolders(const std::string& strPrefix)
-{
-    std::string strCopyrightHolders = strPrefix + strprintf(_(COPYRIGHT_HOLDERS), _(COPYRIGHT_HOLDERS_SUBSTITUTION));
-
-    // Check for untranslated substitution to make sure Bitcoin Core copyright is not removed by accident
-    if (strprintf(COPYRIGHT_HOLDERS, COPYRIGHT_HOLDERS_SUBSTITUTION).find("Bitcoin Core") == std::string::npos) {
-        std::string strYear = strPrefix;
-        strYear.replace(strYear.find("2011"), sizeof("2011")-1, "2009");
-        strCopyrightHolders += "\n" + strYear + "The Bitcoin Core developers";
-    }
-    return strCopyrightHolders;
 }

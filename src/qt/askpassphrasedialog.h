@@ -6,6 +6,7 @@
 #define BITCOIN_QT_ASKPASSPHRASEDIALOG_H
 
 #include <QDialog>
+#include "virtualkeyboard.h"
 
 class WalletModel;
 
@@ -39,6 +40,7 @@ private:
     Mode mode;
     WalletModel *model;
     bool fCapsLock;
+    VirtualKeyboard *keyboard;
 
 private Q_SLOTS:
     void textChanged();

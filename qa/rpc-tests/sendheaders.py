@@ -305,6 +305,7 @@ class SendHeadersTest(BitcoinTestFramework):
                 # this time announce own block via headers
                 height = self.nodes[0].getblockcount()
                 last_time = self.nodes[0].getblock(self.nodes[0].getbestblockhash())['time']
+        test_node.clear_last_announcement() # Clear out empty headers response
                 block_time = last_time + 1
                 new_block = create_block(tip, create_coinbase(height+1), block_time)
                 new_block.solve()

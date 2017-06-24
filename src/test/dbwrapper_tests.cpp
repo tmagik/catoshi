@@ -1,9 +1,15 @@
-// Copyright (c) 2012-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2012-2013 The Bitcoin Core developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Nu, Bit, Lite, PP, Peerunity, Solar, URO, Grant ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 #include "dbwrapper.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "random.h"
 #include "test/test_bitcoin.h"
 
@@ -29,7 +35,8 @@ BOOST_AUTO_TEST_CASE(dbwrapper)
     for (int i = 0; i < 2; i++) {
         bool obfuscate = (bool)i;
         boost::filesystem::path ph = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, obfuscate);
+	// Breaks abstraction, but contains memenv to this file
+        CDBWrapper dbw(ph, (1 << 20), false, obfuscate, NEW_MEM_ENV);
         char key = 'k';
         uint256 in = GetRandHash();
         uint256 res;
@@ -50,8 +57,7 @@ BOOST_AUTO_TEST_CASE(dbwrapper_batch)
     for (int i = 0; i < 2; i++) {
         bool obfuscate = (bool)i;
         boost::filesystem::path ph = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, obfuscate);
-
+        CDBWrapper dbw(ph, (1 << 20), false, obfuscate, NEW_MEM_ENV);
         char key = 'i';
         uint256 in = GetRandHash();
         char key2 = 'j';
@@ -86,8 +92,8 @@ BOOST_AUTO_TEST_CASE(dbwrapper_iterator)
     // Perform tests both obfuscated and non-obfuscated.
     for (int i = 0; i < 2; i++) {
         bool obfuscate = (bool)i;
-        boost::filesystem::path ph = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, obfuscate);
+	boost::filesystem::path ph = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
+        CDBWrapper dbw(ph, (1 << 20), false, obfuscate, NEW_MEM_ENV);
 
         // The two keys are intentionally chosen for ordering
         char key = 'j';
@@ -97,7 +103,7 @@ BOOST_AUTO_TEST_CASE(dbwrapper_iterator)
         uint256 in2 = GetRandHash();
         BOOST_CHECK(dbw.Write(key2, in2));
 
-        std::unique_ptr<CDBIterator> it(const_cast<CDBWrapper*>(&dbw)->NewIterator());
+        boost::scoped_ptr<CDBIterator> it(const_cast<CDBWrapper*>(&dbw)->NewIterator());
 
         // Be sure to seek past the obfuscation key (if it exists)
         it->Seek(key);
@@ -125,12 +131,12 @@ BOOST_AUTO_TEST_CASE(dbwrapper_iterator)
 // Test that we do not obfuscation if there is existing data.
 BOOST_AUTO_TEST_CASE(existing_data_no_obfuscate)
 {
-    // We're going to share this boost::filesystem::path between two wrappers
+    // We're going to share this path between two wrappers
     boost::filesystem::path ph = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     create_directories(ph);
 
     // Set up a non-obfuscated wrapper to write some initial data.
-    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false, false);
+    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false);
     char key = 'k';
     uint256 in = GetRandHash();
     uint256 res;
@@ -143,7 +149,7 @@ BOOST_AUTO_TEST_CASE(existing_data_no_obfuscate)
     delete dbw;
 
     // Now, set up another wrapper that wants to obfuscate the same directory
-    CDBWrapper odbw(ph, (1 << 10), false, false, true);
+    CDBWrapper odbw(ph, (1 << 10), false, true);
 
     // Check that the key/val we wrote with unobfuscated wrapper exists and 
     // is readable.
@@ -152,7 +158,7 @@ BOOST_AUTO_TEST_CASE(existing_data_no_obfuscate)
     BOOST_CHECK_EQUAL(res2.ToString(), in.ToString());
 
     BOOST_CHECK(!odbw.IsEmpty()); // There should be existing data
-    BOOST_CHECK(is_null_key(dbwrapper_private::GetObfuscateKey(odbw))); // The key should be an empty string
+    BOOST_CHECK(is_null_key(odbw.GetObfuscateKey())); // The key should be an empty string
 
     uint256 in2 = GetRandHash();
     uint256 res3;
@@ -171,7 +177,7 @@ BOOST_AUTO_TEST_CASE(existing_data_reindex)
     create_directories(ph);
 
     // Set up a non-obfuscated wrapper to write some initial data.
-    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false, false);
+    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false);
     char key = 'k';
     uint256 in = GetRandHash();
     uint256 res;
@@ -203,7 +209,8 @@ BOOST_AUTO_TEST_CASE(existing_data_reindex)
 BOOST_AUTO_TEST_CASE(iterator_ordering)
 {
     boost::filesystem::path ph = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    CDBWrapper dbw(ph, (1 << 20), true, false, false);
+    // Breaks abstraction, but contains memenv to this file
+    CDBWrapper dbw(ph, (1 << 20), false, false, NEW_MEM_ENV);
     for (int x=0x00; x<256; ++x) {
         uint8_t key = x;
         uint32_t value = x*x;

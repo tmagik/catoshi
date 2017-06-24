@@ -3,7 +3,6 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "transactionfilterproxy.h"
-
 #include "transactiontablemodel.h"
 #include "transactionrecord.h"
 
