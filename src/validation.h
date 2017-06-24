@@ -1,14 +1,20 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2016 The Bitcoin developers
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_VALIDATION_H
-#define BITCOIN_VALIDATION_H
+#ifndef CODECOIN_VALIDATION_H
+#define CODECOIN_VALIDATOIN_H
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
 #endif
+#include "codecoin.h"
 
 #include "amount.h"
 #include "chain.h"
@@ -576,4 +582,31 @@ void DumpMempool();
 /** Load the mempool from disk. */
 bool LoadMempool();
 
-#endif // BITCOIN_VALIDATION_H
+/** things in main.cpp that coin.cpp need **/
+bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false );
+
+
+/** *coin.cpp functions **/ 
+// FIXME DOXYGEN THIS
+inline static int64_t GetProofOfWorkReward(CBlockIndex * block, int64_t nFees){
+	return block->GetSeigniorage(nFees, 0);
+};
+inline static int64_t GetBlockValue(const CBlockIndex * block, int64_t nFees){
+	return block->GetSeigniorage(nFees, 0);
+}; 
+inline static int64_t GetProofOfStakeReward(int64_t nCoinAge, const CBlockIndex* block){
+	assert(nCoinAge > 0);
+	return block->GetSeigniorage(0, nCoinAge);
+};
+extern int64_t GetPoW_seigniorage(CBlockIndex *block, int64_t nFees);
+bool AcceptBlockTimestamp(CValidationState &state, const CBlockIndex* pindexPrev, const CBlockHeader *pblock);
+/* takes the last block, and the current block header, returns nbits of trust */
+#if defined(PPCOINSTAKE)
+extern unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlock *pblock);
+#else
+extern unsigned int GetNextTrustRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock);
+#endif
+extern bool LoadBlockIndex(); 
+extern bool InitBlockIndex();
+
+#endif // CODECOIN_MAIN_H

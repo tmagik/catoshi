@@ -113,5 +113,6 @@ BOOST_AUTO_TEST_CASE(manythreads)
     }
     BOOST_CHECK_EQUAL(counterSum, 200);
 }
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()

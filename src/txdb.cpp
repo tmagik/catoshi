@@ -1,14 +1,19 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #include "txdb.h"
 
+#include "codecoin.h"
 #include "chainparams.h"
 #include "hash.h"
 #include "pow.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <stdint.h>
 
@@ -25,7 +30,7 @@ static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
 
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe, true) 
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fWipe, true) 
 {
 }
 
@@ -67,8 +72,20 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
     return db.WriteBatch(batch);
 }
 
-CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fMemory, fWipe) {
+CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fWipe) : CDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fWipe) {
 }
+
+#if defined(PPCOINSTAKE)
+bool CBlockTreeDB::ReadBestInvalidWork(CBigNum& bnBestInvalidWork)
+{
+    return Read('I', bnBestInvalidWork);
+}
+
+bool CBlockTreeDB::WriteBestInvalidWork(const CBigNum& bnBestInvalidWork)
+{
+    return Write('I', bnBestInvalidWork);
+}
+#endif
 
 bool CBlockTreeDB::ReadBlockFileInfo(int nFile, CBlockFileInfo &info) {
     return Read(std::make_pair(DB_BLOCK_FILES, nFile), info);
@@ -196,6 +213,22 @@ bool CBlockTreeDB::LoadBlockIndexGuts(boost::function<CBlockIndex*(const uint256
                 pindexNew->nNonce         = diskindex.nNonce;
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
+#if defined(FEATURE_MONEYSUPPLY)
+				pindexNew->nMoneySupply   = diskindex.nMoneySupply;
+#endif
+#if defined(PPCOINSTAKE)
+				pindexNew->nMint		  = diskindex.nMint;
+				pindexNew->nFlags		  = diskindex.nFlags;
+				pindexNew->nStakeModifier = diskindex.nStakeModifier;
+				pindexNew->prevoutStake   = diskindex.prevoutStake;
+				pindexNew->nStakeTime	  = diskindex.nStakeTime;
+				pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
+				// ppcoin: build setStakeSeen
+				if (pindexNew->IsProofOfStake()){
+					//printf("blk %d StakeTime %d\n", pindexNew->nHeight, pindexNew->nStakeTime);
+					setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
+				}
+#endif
 
                 // Litecoin: Disable PoW Sanity check while loading block index from disk.
                 // We use the sha256 hash for the block index for performance reasons, which is recorded for later use.
