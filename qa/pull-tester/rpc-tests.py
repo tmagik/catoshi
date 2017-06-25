@@ -76,7 +76,7 @@ for arg in sys.argv[1:]:
 
 #Set env vars
 if "BITCOIND" not in os.environ:
-    os.environ["BITCOIND"] = BUILDDIR + '/src/litecoind' + EXEEXT
+    os.environ["BITCOIND"] = BUILDDIR + '/src/bitcoind' + EXEEXT
 
 if EXEEXT == ".exe" and "-win" not in opts:
     # https://github.com/bitcoin/bitcoin/commit/d52802551752140cf41f0d9a225a43e84404d3e9
@@ -155,7 +155,7 @@ testScripts = [
     'rpcnamedargs.py',
     'listsinceblock.py',
     'p2p-leaktests.py',
-    'test_script_address2.py'
+    'bip91.py',
 ]
 if ENABLE_ZMQ:
     testScripts.append('zmq_test.py')

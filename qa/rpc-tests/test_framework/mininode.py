@@ -537,7 +537,6 @@ class CBlockHeader(object):
             self.nNonce = header.nNonce
             self.sha256 = header.sha256
             self.hash = header.hash
-            self.scrypt256 = header.scrypt256
             self.calc_sha256()
 
     def set_null(self):
@@ -549,7 +548,6 @@ class CBlockHeader(object):
         self.nNonce = 0
         self.sha256 = None
         self.hash = None
-        self.scrypt256 = None
 
     def deserialize(self, f):
         self.nVersion = struct.unpack("<i", f.read(4))[0]
@@ -560,7 +558,6 @@ class CBlockHeader(object):
         self.nNonce = struct.unpack("<I", f.read(4))[0]
         self.sha256 = None
         self.hash = None
-        self.scrypt256 = None
 
     def serialize(self):
         r = b""
@@ -583,11 +580,9 @@ class CBlockHeader(object):
             r += struct.pack("<I", self.nNonce)
             self.sha256 = uint256_from_str(hash256(r))
             self.hash = encode(hash256(r)[::-1], 'hex_codec').decode('ascii')
-            self.scrypt256 = uint256_from_str(litecoin_scrypt.getPoWHash(r))
 
     def rehash(self):
         self.sha256 = None
-        self.scrypt256 = None
         self.calc_sha256()
         return self.sha256
 
@@ -646,7 +641,7 @@ class CBlock(CBlockHeader):
     def is_valid(self):
         self.calc_sha256()
         target = uint256_from_compact(self.nBits)
-        if self.scrypt256 > target:
+        if self.sha256 > target:
             return False
         for tx in self.vtx:
             if not tx.is_valid():
@@ -658,7 +653,7 @@ class CBlock(CBlockHeader):
     def solve(self):
         self.rehash()
         target = uint256_from_compact(self.nBits)
-        while self.scrypt256 > target:
+        while self.sha256 > target:
             self.nNonce += 1
             self.rehash()
 
@@ -1616,8 +1611,8 @@ class NodeConn(asyncore.dispatcher):
         b"blocktxn": msg_blocktxn
     }
     MAGIC_BYTES = {
-        "mainnet": b"\xfb\xc0\xb6\xdb",   # mainnet
-        "testnet3": b"\xfc\xc1\xb7\xdc",  # testnet3
+        "mainnet": b"\xf9\xbe\xb4\xd9",   # mainnet
+        "testnet5": b"\x6e\x65\x74\x00",  # testnet5
         "regtest": b"\xfa\xbf\xb5\xda",   # regtest
     }
 
@@ -1648,7 +1643,7 @@ class NodeConn(asyncore.dispatcher):
             vt.addrFrom.port = 0
             self.send_message(vt, True)
 
-        print('MiniNode: Connecting to Litecoin Node IP # ' + dstaddr + ':' \
+        print('MiniNode: Connecting to Bitcoin Node IP # ' + dstaddr + ':' \
             + str(dstport))
 
         try:
