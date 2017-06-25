@@ -681,17 +681,29 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
     result.push_back(Pair("mutable", aMutable));
     result.push_back(Pair("noncerange", "00000000ffffffff"));
+#if defined(BRAND_bitcoin)
+    int64_t nSigOpLimit = MaxBlockSigOpsCost(pindexPrev->nHeight+1, fPreSegWit?false:true);
+#else
     int64_t nSigOpLimit = MAX_BLOCK_SIGOPS_COST;
+#endif
     if (fPreSegWit) {
         assert(nSigOpLimit % WITNESS_SCALE_FACTOR == 0);
         nSigOpLimit /= WITNESS_SCALE_FACTOR;
     }
     result.push_back(Pair("sigoplimit", nSigOpLimit));
     if (fPreSegWit) {
+#if defined(BRAND_bitcoin) /* gah, ugly */
+        result.push_back(Pair("sizelimit", (int64_t)MAX_LEGACY_BLOCK_SIZE));
+#else
         result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_BASE_SIZE));
+#endif
     } else {
         result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SERIALIZED_SIZE));
+#if defined(BRAND_bitcoin)
+        result.push_back(Pair("weightlimit", (int64_t)MaxBlockWeight(0, false)));
+#else
         result.push_back(Pair("weightlimit", (int64_t)MAX_BLOCK_WEIGHT));
+#endif
     }
     result.push_back(Pair("curtime", pblock->GetBlockTime()));
     result.push_back(Pair("bits", strprintf("%08x", pblock->nBits)));

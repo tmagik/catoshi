@@ -8,10 +8,10 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-
 #ifndef CODECOIN_POLICY_POLICY_H
 #define CODECOIN_POLICY_POLICY_H
 
+#include "codecoin.h"
 #include "consensus/consensus.h"
 #include "script/interpreter.h"
 #include "script/standard.h"
@@ -38,9 +38,13 @@ static const unsigned int MAX_STANDARD_TX_WEIGHT = 400000;
 /** Maximum number of signature check operations in an IsStandard() P2SH script */
 static const unsigned int MAX_P2SH_SIGOPS = 15;
 /** The maximum number of sigops we're willing to relay/mine in a single tx */
-static const unsigned int MAX_STANDARD_TX_SIGOPS_COST = MAX_BLOCK_SIGOPS_COST/5;
+static const unsigned int MAX_STANDARD_TX_SIGOPS_COST = 16000;
 /** Default for -maxmempool, maximum megabytes of mempool memory usage */
+#if defined(BRAND_bitcoin)
+static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 300;
+#else
 static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 5;
+#endif
 /** Default for -incrementalrelayfee, which sets the minimum feerate increase for mempool limiting or BIP 125 replacement **/
 static const unsigned int DEFAULT_INCREMENTAL_RELAY_FEE = 1000;
 /** Default for -bytespersigop */
@@ -56,7 +60,11 @@ static const unsigned int MAX_STANDARD_P2WSH_SCRIPT_SIZE = 3600;
  * standard and should be done with care and ideally rarely. It makes sense to
  * only increase the dust limit after prior releases were already not creating
  * outputs below the new threshold */
+#if defined(BRAND_bitcoin)
+static const unsigned int DUST_RELAY_TX_FEE = 1000;
+#else
 static const unsigned int DUST_RELAY_TX_FEE = 100000;
+#endif
 /**
  * Standard script verification flags that standard transactions will comply
  * with. However scripts violating these flags may still be present in valid

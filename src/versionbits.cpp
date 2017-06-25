@@ -18,7 +18,13 @@ const struct BIP9DeploymentInfo VersionBitsDeploymentInfo[Consensus::MAX_VERSION
     {
         /*.name =*/ "segwit",
         /*.gbt_force =*/ true,
+    },
+#if defined(BRAND_bitcoin)
+    {
+        /*.name =*/ "segwit2x",
+        /*.gbt_force =*/ true,
     }
+#endif
 };
 
 ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex* pindexPrev, const Consensus::Params& params, ThresholdConditionCache& cache) const
@@ -154,11 +160,23 @@ private:
 protected:
     int64_t BeginTime(const Consensus::Params& params) const { return params.vDeployments[id].nStartTime; }
     int64_t EndTime(const Consensus::Params& params) const { return params.vDeployments[id].nTimeout; }
+/* Catoshi: TODO: derived classes and objects */
 #if defined(BRAND_litecoin)
     bool LockInOnTimeout(const Consensus::Params& params) const { return params.vDeployments[id].fLockInOnTimeout; }
-#endif
     int Period(const Consensus::Params& params) const { return params.nMinerConfirmationWindow; }
     int Threshold(const Consensus::Params& params) const { return params.nRuleChangeActivationThreshold; }
+#else /* Bitcoin/BTC1 */
+    int Period(const Consensus::Params& params) const {
+        if (params.vDeployments[id].nOverrideMinerConfirmationWindow > 0)
+            return params.vDeployments[id].nOverrideMinerConfirmationWindow;
+        return params.nMinerConfirmationWindow;
+    }
+    int Threshold(const Consensus::Params& params) const {
+        if (params.vDeployments[id].nOverrideRuleChangeActivationThreshold > 0)
+            return params.vDeployments[id].nOverrideRuleChangeActivationThreshold;
+        return params.nRuleChangeActivationThreshold;
+    }
+#endif
 
     bool Condition(const CBlockIndex* pindex, const Consensus::Params& params) const
     {

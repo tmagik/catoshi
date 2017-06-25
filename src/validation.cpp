@@ -504,7 +504,11 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
     if (tx.vout.empty())
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-vout-empty");
     // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability)
+#if defined(BRAND_bitcoin)
+    if (::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) > MAX_TX_BASE_SIZE)
+#else
     if (::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) > MAX_BLOCK_BASE_SIZE)
+#endif
         return state.DoS(100, false, REJECT_INVALID, "bad-txns-oversize");
 
     // Check for negative or overflow output values
@@ -1864,6 +1868,19 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         flags |= SCRIPT_VERIFY_NULLDUMMY;
     }
 
+#if defined(BRAND_bitcoin)
+    // SEGWIT2X signalling.
+    if (VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT2X, versionbitscache) == THRESHOLD_ACTIVE &&
+        VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT,    versionbitscache) == THRESHOLD_STARTED)
+    {
+        bool fVersionBits = (pindex->nVersion & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS;
+        bool fSegbit = (pindex->nVersion & VersionBitsMask(chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT)) != 0;
+        if (!(fVersionBits && fSegbit)) {
+            return state.DoS(0, error("ConnectBlock(): relayed block must signal for segwit, please upgrade"), REJECT_INVALID, "bad-no-segwit");
+        }
+    }
+#endif
+
     int64_t nTime2 = GetTimeMicros(); nTimeForks += nTime2 - nTime1;
     LogPrint("bench", "    - Fork checks: %.2fms [%.2fs]\n", 0.001 * (nTime2 - nTime1), nTimeForks * 0.000001);
 
@@ -1923,7 +1940,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // * p2sh (when P2SH enabled in flags and excludes coinbase)
         // * witness (when witness enabled in flags and excludes coinbase)
         nSigOpsCost += GetTransactionSigOpCost(tx, view, flags);
+#if defined(BRAND_bitcoin)
+        if (nSigOpsCost > MaxBlockSigOpsCost(pindex->nHeight, (flags & SCRIPT_VERIFY_WITNESS) ? true : false))
+#else
         if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
+#endif
             return state.DoS(100, error("ConnectBlock(): too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");
 
@@ -3024,7 +3045,11 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
     // checks that use witness data may be performed here.
 
     // Size limits
+#if defined(BRAND_bitcoin)
+    if (block.vtx.empty() || block.vtx.size() > MAX_BLOCK_VTX || ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) > MAX_BLOCK_SERIALIZED_SIZE)
+#else
     if (block.vtx.empty() || block.vtx.size() > MAX_BLOCK_BASE_SIZE || ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) > MAX_BLOCK_BASE_SIZE)
+#endif
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-length", false, "size limits failed");
 
     // First transaction must be coinbase, the rest must not be
@@ -3045,7 +3070,11 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
     {
         nSigOps += GetLegacySigOpCount(*tx);
     }
+#if defined(BRAND_bitcoin)
+    if (nSigOps * WITNESS_SCALE_FACTOR > MaxBlockSigOpsCost())
+#else
     if (nSigOps * WITNESS_SCALE_FACTOR > MAX_BLOCK_SIGOPS_COST)
+#endif
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-sigops", false, "out-of-bounds SigOpCount");
 
     if (fCheckPOW && fCheckMerkleRoot)
@@ -3210,7 +3239,9 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
     //   {0xaa, 0x21, 0xa9, 0xed}, and the following 32 bytes are SHA256^2(witness root, witness nonce). In case there are
     //   multiple, the last one is used.
     bool fHaveWitness = false;
-    if (VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE) {
+    bool fSegwitSeasoned = false;
+    bool fSegWitActive = (VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
+    if (fSegWitActive) {
         int commitpos = GetWitnessCommitmentIndex(block);
         if (commitpos != -1) {
             bool malleated = false;
@@ -3227,7 +3258,17 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
             }
             fHaveWitness = true;
         }
+
+#if defined(BRAND_bitcoin)
+        const CBlockIndex* pindexForkBuffer = pindexPrev->GetAncestor(nHeight - BIP102_FORK_BUFFER);
+        fSegwitSeasoned = (VersionBitsState(pindexForkBuffer, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
     }
+
+    if (::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) > MaxBlockBaseSize(nHeight, fSegwitSeasoned))
+        return state.DoS(100, false, REJECT_INVALID, "bad-blk-length", false, "size limits failed");
+#else
+    }
+#endif
 
     // No witness data is allowed in blocks that don't commit to witness data, as this would otherwise leave room for spam
     if (!fHaveWitness) {
@@ -3238,13 +3279,27 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
         }
     }
 
+#if defined(BRAND_bitcoin)
+    unsigned int nSigOps = 0;
+    for (const auto& tx : block.vtx)
+    {
+        nSigOps += GetLegacySigOpCount(*tx);
+    }
+    if (nSigOps * WITNESS_SCALE_FACTOR > MaxBlockSigOpsCost(nHeight, fSegwitSeasoned))
+        return state.DoS(100, false, REJECT_INVALID, "bad-blk-sigops", false, "out-of-bounds SigOpCount");
+#endif
+
     // After the coinbase witness nonce and commitment are verified,
     // we can check if the block weight passes (before we've checked the
     // coinbase witness, it would be possible for the weight to be too
     // large by filling up the coinbase witness, which doesn't change
     // the block hash, so we couldn't mark the block as permanently
     // failed).
+#if defined(BRAND_bitcoin)
+    if (GetBlockWeight(block) > MaxBlockWeight(nHeight, fSegwitSeasoned)) {
+#else
     if (GetBlockWeight(block) > MAX_BLOCK_WEIGHT) {
+#endif
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-weight", false, strprintf("%s : weight limit failed", __func__));
     }
 

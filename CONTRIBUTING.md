@@ -18,7 +18,7 @@ Come up with an idea, business case, or marketing plan, and instead of taking or
 
 If you want other Catoshis to join you in a consensus-based project, show us running code, and keep it simple.
 
-This challenging, at best, to do when developers have a profit-seeking motive to promote a maximalist one chain to rule them all vision because they believe their hoard of shiny coins is somehow of value to everyone who does not have them.
+This is challenging, at best, to do when developers have a profit-seeking motive to promote a maximalist one chain to rule them all vision because they believe their hoard of shiny coins is somehow of value to everyone who does not have them.
 
 Release Policy
 --------------

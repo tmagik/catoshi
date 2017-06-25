@@ -7,6 +7,7 @@
 #define BITCOIN_CONSENSUS_PARAMS_H
 
 #include "uintBIG.h"
+#include "codecoin.h"
 #include <map>
 #include <string>
 
@@ -17,6 +18,9 @@ enum DeploymentPos
     DEPLOYMENT_TESTDUMMY,
     DEPLOYMENT_CSV, // Deployment of BIP68, BIP112, and BIP113.
     DEPLOYMENT_SEGWIT, // Deployment of BIP141, BIP143, and BIP147.
+#if defined(BRAND_bitcoin)
+    DEPLOYMENT_SEGWIT2X, // Deployment of SEGWIT2X
+#endif
     // NOTE: Also add new deployments to VersionBitsDeploymentInfo in versionbits.cpp
     MAX_VERSION_BITS_DEPLOYMENTS
 };
@@ -31,8 +35,15 @@ struct BIP9Deployment {
     int64_t nStartTime;
     /** Timeout/expiry MedianTime for the deployment attempt. */
     int64_t nTimeout;
+#if defined(BRAND_litecoin)
     /** If true STARTED->FAILED will become STARTED->LOCKED_IN */
     bool fLockInOnTimeout = false;
+#elif defined(BRAND_bitcoin)
+    /** Overriding the default threshold if not zero. */
+    uint32_t nOverrideRuleChangeActivationThreshold = 0;
+    /** Overriding the default confirmation window if not zero . */
+    uint32_t nOverrideMinerConfirmationWindow = 0;
+#endif
 };
 
 /**
