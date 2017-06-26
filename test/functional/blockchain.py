@@ -10,21 +10,24 @@ Test the following RPCs:
     - getbestblockhash
     - getblockhash
     - getblockheader
+    - getchaintxstats
+    - getnetworkhashps
     - verifychain
 
 Tests correspond to code in rpc/blockchain.cpp.
 """
 
 from decimal import Decimal
+import subprocess
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
+    assert_raises,
     assert_raises_jsonrpc,
     assert_is_hex_string,
     assert_is_hash_string,
-    start_nodes,
-    connect_nodes_bi,
+    bitcoind_processes,
 )
 
 
@@ -33,19 +36,25 @@ class BlockchainTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.setup_clean_chain = False
-        self.num_nodes = 2
-
-    def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
-        connect_nodes_bi(self.nodes, 0, 1)
-        self.is_network_split = False
-        self.sync_all()
+        self.num_nodes = 1
+        self.extra_args = [['-stopatheight=207']]
 
     def run_test(self):
+        self._test_getchaintxstats()
         self._test_gettxoutsetinfo()
         self._test_getblockheader()
         self._test_getdifficulty()
-        self.nodes[0].verifychain(4, 0)
+        self._test_getnetworkhashps()
+        self._test_stopatheight()
+        assert self.nodes[0].verifychain(4, 0)
+
+    def _test_getchaintxstats(self):
+        chaintxstats = self.nodes[0].getchaintxstats(1)
+        # 200 txs plus genesis tx
+        assert_equal(chaintxstats['txcount'], 201)
+        # tx rate should be 1 per 10 minutes, or 1/600
+        # we have to round because of binary math
+        assert_equal(round(chaintxstats['txrate'] * 600, 10), Decimal(1))
 
     def _test_gettxoutsetinfo(self):
         node = self.nodes[0]
@@ -55,9 +64,38 @@ class BlockchainTest(BitcoinTestFramework):
         assert_equal(res['transactions'], 200)
         assert_equal(res['height'], 200)
         assert_equal(res['txouts'], 200)
-        assert_equal(res['bytes_serialized'], 13924),
+        assert_equal(res['bogosize'], 17000),
+        assert_equal(res['bestblock'], node.getblockhash(200))
+        size = res['disk_size']
+        assert size > 6400
+        assert size < 64000
         assert_equal(len(res['bestblock']), 64)
-        assert_equal(len(res['hash_serialized']), 64)
+        assert_equal(len(res['hash_serialized_2']), 64)
+
+        self.log.info("Test that gettxoutsetinfo() works for blockchain with just the genesis block")
+        b1hash = node.getblockhash(1)
+        node.invalidateblock(b1hash)
+
+        res2 = node.gettxoutsetinfo()
+        assert_equal(res2['transactions'], 0)
+        assert_equal(res2['total_amount'], Decimal('0'))
+        assert_equal(res2['height'], 0)
+        assert_equal(res2['txouts'], 0)
+        assert_equal(res2['bogosize'], 0),
+        assert_equal(res2['bestblock'], node.getblockhash(0))
+        assert_equal(len(res2['hash_serialized_2']), 64)
+
+        self.log.info("Test that gettxoutsetinfo() returns the same result after invalidate/reconsider block")
+        node.reconsiderblock(b1hash)
+
+        res3 = node.gettxoutsetinfo()
+        assert_equal(res['total_amount'], res3['total_amount'])
+        assert_equal(res['transactions'], res3['transactions'])
+        assert_equal(res['height'], res3['height'])
+        assert_equal(res['txouts'], res3['txouts'])
+        assert_equal(res['bogosize'], res3['bogosize'])
+        assert_equal(res['bestblock'], res3['bestblock'])
+        assert_equal(res['hash_serialized_2'], res3['hash_serialized_2'])
 
     def _test_getblockheader(self):
         node = self.nodes[0]
@@ -90,6 +128,24 @@ class BlockchainTest(BitcoinTestFramework):
         # 1 hash in 2 should be valid, so difficulty should be 1/2**31
         # binary => decimal => binary math is why we do this check
         assert abs(difficulty * 2**31 - 1) < 0.0001
+
+    def _test_getnetworkhashps(self):
+        hashes_per_second = self.nodes[0].getnetworkhashps()
+        # This should be 2 hashes every 10 minutes or 1/300
+        assert abs(hashes_per_second * 300 - 1) < 0.0001
+
+    def _test_stopatheight(self):
+        assert_equal(self.nodes[0].getblockcount(), 200)
+        self.nodes[0].generate(6)
+        assert_equal(self.nodes[0].getblockcount(), 206)
+        self.log.debug('Node should not stop at this height')
+        assert_raises(subprocess.TimeoutExpired, lambda: bitcoind_processes[0].wait(timeout=3))
+        self.nodes[0].generate(1)
+        self.log.debug('Node should stop at this height...')
+        bitcoind_processes[0].wait(timeout=3)
+        self.nodes[0] = self.start_node(0, self.options.tmpdir)
+        assert_equal(self.nodes[0].getblockcount(), 207)
+
 
 if __name__ == '__main__':
     BlockchainTest().main()

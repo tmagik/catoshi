@@ -7,6 +7,7 @@
 #define BITCOIN_WALLET_WALLET_H
 
 #include "amount.h"
+#include "policy/feerate.h"
 #include "streams.h"
 #include "tinyformat.h"
 #include "ui_interface.h"
@@ -28,7 +29,8 @@
 #include <utility>
 #include <vector>
 
-extern CWallet* pwalletMain;
+typedef CWallet* CWalletRef;
+extern std::vector<CWalletRef> vpwallets;
 
 /**
  * Settings
@@ -66,6 +68,8 @@ static const bool DEFAULT_USE_HD_WALLET = true;
 
 extern const char * DEFAULT_WALLET_DAT;
 
+static const int64_t TIMESTAMP_MIN = 0;
+
 class CBlockIndex;
 class CCoinControl;
 class COutput;
@@ -75,6 +79,7 @@ class CScheduler;
 class CTxMemPool;
 class CBlockPolicyEstimator;
 class CWalletTx;
+struct FeeCalculation;
 
 /** (client) version numbers for particular wallet features */
 enum WalletFeature
@@ -135,10 +140,7 @@ public:
     std::string name;
     std::string purpose;
 
-    CAddressBookData()
-    {
-        purpose = "unknown";
-    }
+    CAddressBookData() : purpose("unknown") {}
 
     typedef std::map<std::string, std::string> StringMap;
     StringMap destdata;
@@ -784,6 +786,7 @@ public:
         nMasterKeyMaxID = 0;
         pwalletdbEncryption = NULL;
         nOrderPosNext = 0;
+        nAccountingEntryNumber = 0;
         nNextResend = 0;
         nLastResend = 0;
         nTimeFirstKey = 0;
@@ -801,6 +804,7 @@ public:
     TxItems wtxOrdered;
 
     int64_t nOrderPosNext;
+    uint64_t nAccountingEntryNumber;
     std::map<uint256, int> mapRequestCount;
 
     std::map<CTxDestination, CAddressBookData> mapAddressBook;
@@ -817,7 +821,17 @@ public:
     /**
      * populate vCoins with vector of available COutputs.
      */
-    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlySafe=true, const CCoinControl *coinControl = NULL, bool fIncludeZeroValue=false) const;
+    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlySafe=true, const CCoinControl *coinControl = NULL, const CAmount& nMinimumAmount = 1, const CAmount& nMaximumAmount = MAX_MONEY, const CAmount& nMinimumSumAmount = MAX_MONEY, const uint64_t& nMaximumCount = 0, const int& nMinDepth = 0, const int& nMaxDepth = 9999999) const;
+
+    /**
+     * Return list of available coins and locked coins grouped by non-change output address.
+     */
+    std::map<CTxDestination, std::vector<COutput>> ListCoins() const;
+
+    /**
+     * Find non-change parent output.
+     */
+    const CTxOut& FindNonChangeParentOutput(const CTransaction& tx, int output) const;
 
     /**
      * Shuffle and select coins until nTargetValue is reached while avoiding
@@ -833,7 +847,7 @@ public:
     void LockCoin(const COutPoint& output);
     void UnlockCoin(const COutPoint& output);
     void UnlockAllCoins();
-    void ListLockedCoins(std::vector<COutPoint>& vOutpts);
+    void ListLockedCoins(std::vector<COutPoint>& vOutpts) const;
 
     /*
      * Rescan abort properties
@@ -872,6 +886,8 @@ public:
     bool LoadDestData(const CTxDestination &dest, const std::string &key, const std::string &value);
     //! Look up a destination data tuple in the store, return true if found false otherwise
     bool GetDestData(const CTxDestination &dest, const std::string &key, std::string *value) const;
+    //! Get all destination values matching a prefix.
+    std::vector<std::string> GetDestValues(const std::string& prefix) const;
 
     //! Adds a watch-only address to the store, and saves it to disk.
     bool AddWatchOnly(const CScript& dest, int64_t nCreateTime);
@@ -905,6 +921,7 @@ public:
     void BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex *pindex, const std::vector<CTransactionRef>& vtxConflicted) override;
     void BlockDisconnected(const std::shared_ptr<const CBlock>& pblock) override;
     bool AddToWalletIfInvolvingMe(const CTransactionRef& tx, const CBlockIndex* pIndex, int posInBlock, bool fUpdate);
+    int64_t RescanFromTime(int64_t startTime, bool update);
     CBlockIndex* ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
     void ReacceptWalletTransactions();
     void ResendWalletTransactions(int64_t nBestBlockTime, CConnman* connman) override;
@@ -916,12 +933,13 @@ public:
     CAmount GetUnconfirmedWatchOnlyBalance() const;
     CAmount GetImmatureWatchOnlyBalance() const;
     CAmount GetLegacyBalance(const isminefilter& filter, int minDepth, const std::string* account) const;
+    CAmount GetAvailableBalance(const CCoinControl* coinControl = nullptr) const;
 
     /**
      * Insert additional inputs into the transaction by
      * calling CreateTransaction();
      */
-    bool FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, bool overrideEstimatedFeeRate, const CFeeRate& specificFeeRate, int& nChangePosInOut, std::string& strFailReason, bool includeWatching, bool lockUnspents, const std::set<int>& setSubtractFeeFromOutputs, bool keepReserveKey = true, const CTxDestination& destChange = CNoDestination());
+    bool FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, int& nChangePosInOut, std::string& strFailReason, bool lockUnspents, const std::set<int>& setSubtractFeeFromOutputs, CCoinControl, bool keepReserveKey = true);
     bool SignTransaction(CMutableTransaction& tx);
 
     /**
@@ -945,7 +963,7 @@ public:
      * Estimate the minimum fee considering user set parameters
      * and the required fee
      */
-    static CAmount GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool, const CBlockPolicyEstimator& estimator, bool ignoreUserSetFee = false);
+    static CAmount GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool, const CBlockPolicyEstimator& estimator, FeeCalculation *feeCalc = nullptr, bool ignoreGlobalPayTxFee = false);
     /**
      * Return the minimum required fee taking into account the
      * floating relay fee and user set minimum transaction fee
@@ -1065,6 +1083,9 @@ public:
     /** Set whether this wallet broadcasts transactions. */
     void SetBroadcastTransactions(bool broadcast) { fBroadcastTransactions = broadcast; }
 
+    /** Return whether transaction can be abandoned */
+    bool TransactionCanBeAbandoned(const uint256& hashTx) const;
+
     /* Mark a transaction (and it in-wallet descendants) as abandoned so its inputs may be respent. */
     bool AbandonTransaction(const uint256& hashTx);
 
@@ -1100,9 +1121,10 @@ public:
     CPubKey GenerateNewHDMasterKey();
     
     /* Set the current HD master key (will reset the chain child index counters)
-       If possibleOldChain is provided, the parameters from the old chain (version)
-       will be preserved. */
-    bool SetHDMasterKey(const CPubKey& key, CHDChain *possibleOldChain = nullptr);
+       Sets the master key's version based on the current wallet version (so the
+       caller must ensure the current wallet version is correct before calling
+       this function). */
+    bool SetHDMasterKey(const CPubKey& key);
 };
 
 /** A key allocated from the key pool. */
