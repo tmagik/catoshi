@@ -113,6 +113,7 @@ BASE_SCRIPTS= [
     'listsinceblock.py',
     'p2p-leaktests.py',
     'wallet-encryption.py',
+    'uptime.py',
 ]
 
 EXTENDED_SCRIPTS = [
@@ -138,6 +139,7 @@ EXTENDED_SCRIPTS = [
     'bip65-cltv-p2p.py',
     'bipdersig-p2p.py',
     'bipdersig.py',
+    'example_test.py',
     'getblocktemplate_proposals.py',
     'txn_doublespend.py',
     'txn_clone.py --mineblock',
