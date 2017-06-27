@@ -120,7 +120,7 @@ namespace {
     MapRelay mapRelay;
     /** Expiration-time ordered list of (expire time, relay map entry) pairs, protected by cs_main). */
     std::deque<std::pair<int64_t, MapRelay::iterator>> vRelayExpiration;
-} // anon namespace
+} // namespace
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -342,7 +342,9 @@ bool MarkBlockAsInFlight(NodeId nodeid, const uint256& hash, const CBlockIndex* 
     // Short-circuit most stuff in case its from the same node
     std::map<uint256, std::pair<NodeId, std::list<QueuedBlock>::iterator> >::iterator itInFlight = mapBlocksInFlight.find(hash);
     if (itInFlight != mapBlocksInFlight.end() && itInFlight->second.first == nodeid) {
-        *pit = &itInFlight->second.second;
+        if (pit) {
+            *pit = &itInFlight->second.second;
+        }
         return false;
     }
 
@@ -557,7 +559,7 @@ void FindNextBlocksToDownload(NodeId nodeid, unsigned int count, std::vector<con
     }
 }
 
-} // anon namespace
+} // namespace
 
 bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats) {
     LOCK(cs_main);
