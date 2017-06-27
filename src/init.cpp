@@ -88,14 +88,6 @@ static CZMQNotificationInterface* pzmqNotificationInterface = NULL;
 #define MIN_CORE_FILEDESCRIPTORS 150
 #endif
 
-/** Used to pass flags to the Bind() function */
-enum BindFlags {
-    BF_NONE         = 0,
-    BF_EXPLICIT     = (1U << 0),
-    BF_REPORT_ERROR = (1U << 1),
-    BF_WHITELIST    = (1U << 2),
-};
-
 static const char* FEE_ESTIMATES_FILENAME="fee_estimates.dat";
 
 //////////////////////////////////////////////////////////////////////////////
@@ -296,17 +288,6 @@ static void registerSignalHandler(int signal, void(*handler)(int))
 }
 #endif
 
-bool static Bind(CConnman& connman, const CService &addr, unsigned int flags) {
-    if (!(flags & BF_EXPLICIT) && IsLimited(addr))
-        return false;
-    std::string strError;
-    if (!connman.BindListenPort(addr, strError, (flags & BF_WHITELIST) != 0)) {
-        if (flags & BF_REPORT_ERROR)
-            return InitError(strError);
-        return false;
-    }
-    return true;
-}
 void OnRPCStarted()
 {
     uiInterface.NotifyBlockTip.connect(&RPCNotifyBlockChange);
@@ -822,7 +803,7 @@ int nUserMaxConnections;
 int nFD;
 ServiceFlags nLocalServices = NODE_NETWORK;
 
-}
+} // namespace
 
 [[noreturn]] static void new_handler_terminate()
 {
@@ -844,8 +825,6 @@ bool AppInitBasicSetup()
     // Turn off Microsoft heap dump noise
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_WARN, CreateFileA("NUL", GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0));
-#endif
-#if _MSC_VER >= 1400
     // Disable confusing "helpful" text message on abort, Ctrl-C
     _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
@@ -900,10 +879,14 @@ bool AppInitParameterInteraction()
             return InitError(_("Prune mode is incompatible with -txindex."));
     }
 
+    // -bind and -whitebind can't be set when not listening
+    size_t nUserBind = gArgs.GetArgs("-bind").size() + gArgs.GetArgs("-whitebind").size();
+    if (nUserBind != 0 && !gArgs.GetBoolArg("-listen", DEFAULT_LISTEN)) {
+        return InitError("Cannot set -bind or -whitebind together with -listen=0");
+    }
+
     // Make sure enough file descriptors are available
-    int nBind = std::max(
-                (gArgs.IsArgSet("-bind") ? gArgs.GetArgs("-bind").size() : 0) +
-                (gArgs.IsArgSet("-whitebind") ? gArgs.GetArgs("-whitebind").size() : 0), size_t(1));
+    int nBind = std::max(nUserBind, size_t(1));
     nUserMaxConnections = GetArg("-maxconnections", DEFAULT_MAX_PEER_CONNECTIONS);
     nMaxConnections = std::max(nUserMaxConnections, 0);
 
@@ -935,15 +918,13 @@ bool AppInitParameterInteraction()
     }
 
     // Now remove the logging categories which were explicitly excluded
-    if (gArgs.IsArgSet("-debugexclude")) {
-        for (const std::string& cat : gArgs.GetArgs("-debugexclude")) {
-            uint32_t flag = 0;
-            if (!GetLogCategory(&flag, &cat)) {
-                InitWarning(strprintf(_("Unsupported logging category %s=%s."), "-debugexclude", cat));
-                continue;
-            }
-            logCategories &= ~flag;
+    for (const std::string& cat : gArgs.GetArgs("-debugexclude")) {
+        uint32_t flag = 0;
+        if (!GetLogCategory(&flag, &cat)) {
+            InitWarning(strprintf(_("Unsupported logging category %s=%s."), "-debugexclude", cat));
+            continue;
         }
+        logCategories &= ~flag;
     }
 
     // Check for -debugnet
@@ -1030,14 +1011,7 @@ bool AppInitParameterInteraction()
     if (nConnectTimeout <= 0)
         nConnectTimeout = DEFAULT_CONNECT_TIMEOUT;
 
-    // Fee-per-kilobyte amount required for mempool acceptance and relay
-    // If you are mining, be careful setting this:
-    // if you set it to zero then
-    // a transaction spammer can cheaply fill blocks using
-    // 0-fee transactions. It should be set above the real
-    // cost to you of processing a transaction.
-    if (IsArgSet("-minrelaytxfee"))
-    {
+    if (IsArgSet("-minrelaytxfee")) {
         CAmount n = 0;
         if (!ParseMoney(GetArg("-minrelaytxfee", ""), n)) {
             return InitError(AmountErrMsg("minrelaytxfee", GetArg("-minrelaytxfee", "")));
@@ -1260,13 +1234,10 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<std::string> uacomments;
-    if (gArgs.IsArgSet("-uacomment")) {
-        for (std::string cmt : gArgs.GetArgs("-uacomment"))
-        {
-            if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
-                return InitError(strprintf(_("User Agent comment (%s) contains unsafe characters."), cmt));
-            uacomments.push_back(cmt);
-        }
+    for (const std::string& cmt : gArgs.GetArgs("-uacomment")) {
+        if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
+            return InitError(strprintf(_("User Agent comment (%s) contains unsafe characters."), cmt));
+        uacomments.push_back(cmt);
     }
     strSubVersion = FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, uacomments);
     if (strSubVersion.size() > MAX_SUBVERSION_LENGTH) {
@@ -1286,16 +1257,6 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
             enum Network net = (enum Network)n;
             if (!nets.count(net))
                 SetLimited(net);
-        }
-    }
-
-    if (gArgs.IsArgSet("-whitelist")) {
-        for (const std::string& net : gArgs.GetArgs("-whitelist")) {
-            CSubNet subnet;
-            LookupSubNet(net.c_str(), subnet);
-            if (!subnet.IsValid())
-                return InitError(strprintf(_("Invalid netmask specified in -whitelist: '%s'"), net));
-            connman.AddWhitelistedRange(subnet);
         }
     }
 
@@ -1349,44 +1310,12 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     fDiscover = GetBoolArg("-discover", true);
     fRelayTxes = !GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY);
 
-    if (fListen) {
-        bool fBound = false;
-        if (gArgs.IsArgSet("-bind")) {
-            for (const std::string& strBind : gArgs.GetArgs("-bind")) {
-                CService addrBind;
-                if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
-                    return InitError(ResolveErrMsg("bind", strBind));
-                fBound |= Bind(connman, addrBind, (BF_EXPLICIT | BF_REPORT_ERROR));
-            }
-        }
-        if (gArgs.IsArgSet("-whitebind")) {
-            for (const std::string& strBind : gArgs.GetArgs("-whitebind")) {
-                CService addrBind;
-                if (!Lookup(strBind.c_str(), addrBind, 0, false))
-                    return InitError(ResolveErrMsg("whitebind", strBind));
-                if (addrBind.GetPort() == 0)
-                    return InitError(strprintf(_("Need to specify a port with -whitebind: '%s'"), strBind));
-                fBound |= Bind(connman, addrBind, (BF_EXPLICIT | BF_REPORT_ERROR | BF_WHITELIST));
-            }
-        }
-        if (!gArgs.IsArgSet("-bind") && !gArgs.IsArgSet("-whitebind")) {
-            struct in_addr inaddr_any;
-            inaddr_any.s_addr = INADDR_ANY;
-            fBound |= Bind(connman, CService(in6addr_any, GetListenPort()), BF_NONE);
-            fBound |= Bind(connman, CService(inaddr_any, GetListenPort()), !fBound ? BF_REPORT_ERROR : BF_NONE);
-        }
-        if (!fBound)
-            return InitError(_("Failed to listen on any port. Use -listen=0 if you want this."));
-    }
-
-    if (gArgs.IsArgSet("-externalip")) {
-        for (const std::string& strAddr : gArgs.GetArgs("-externalip")) {
-            CService addrLocal;
-            if (Lookup(strAddr.c_str(), addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
-                AddLocal(addrLocal, LOCAL_MANUAL);
-            else
-                return InitError(ResolveErrMsg("externalip", strAddr));
-        }
+    for (const std::string& strAddr : gArgs.GetArgs("-externalip")) {
+        CService addrLocal;
+        if (Lookup(strAddr.c_str(), addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
+            AddLocal(addrLocal, LOCAL_MANUAL);
+        else
+            return InitError(ResolveErrMsg("externalip", strAddr));
     }
 
 #if ENABLE_ZMQ
@@ -1615,10 +1544,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
         uiInterface.NotifyBlockTip.connect(BlockNotifyCallback);
 
     std::vector<fs::path> vImportFiles;
-    if (gArgs.IsArgSet("-loadblock"))
-    {
-        for (const std::string& strFile : gArgs.GetArgs("-loadblock"))
-            vImportFiles.push_back(strFile);
+    for (const std::string& strFile : gArgs.GetArgs("-loadblock")) {
+        vImportFiles.push_back(strFile);
     }
 
     threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
@@ -1645,7 +1572,6 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Map ports with UPnP
     MapPort(GetBoolArg("-upnp", DEFAULT_UPNP));
 
-    std::string strNodeError;
     CConnman::Options connOptions;
     connOptions.nLocalServices = nLocalServices;
     connOptions.nRelevantServices = nRelevantServices;
@@ -1661,12 +1587,39 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     connOptions.nMaxOutboundTimeframe = nMaxOutboundTimeframe;
     connOptions.nMaxOutboundLimit = nMaxOutboundLimit;
 
+    for (const std::string& strBind : gArgs.GetArgs("-bind")) {
+        CService addrBind;
+        if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false)) {
+            return InitError(ResolveErrMsg("bind", strBind));
+        }
+        connOptions.vBinds.push_back(addrBind);
+    }
+    for (const std::string& strBind : gArgs.GetArgs("-whitebind")) {
+        CService addrBind;
+        if (!Lookup(strBind.c_str(), addrBind, 0, false)) {
+            return InitError(ResolveErrMsg("whitebind", strBind));
+        }
+        if (addrBind.GetPort() == 0) {
+            return InitError(strprintf(_("Need to specify a port with -whitebind: '%s'"), strBind));
+        }
+        connOptions.vWhiteBinds.push_back(addrBind);
+    }
+
+    for (const auto& net : gArgs.GetArgs("-whitelist")) {
+        CSubNet subnet;
+        LookupSubNet(net.c_str(), subnet);
+        if (!subnet.IsValid())
+            return InitError(strprintf(_("Invalid netmask specified in -whitelist: '%s'"), net));
+        connOptions.vWhitelistedRange.push_back(subnet);
+    }
+
     if (gArgs.IsArgSet("-seednode")) {
         connOptions.vSeedNodes = gArgs.GetArgs("-seednode");
     }
 
-    if (!connman.Start(scheduler, strNodeError, connOptions))
-        return InitError(strNodeError);
+    if (!connman.Start(scheduler, connOptions)) {
+        return false;
+    }
 
     // ********************************************************* Step 12: finished
 
