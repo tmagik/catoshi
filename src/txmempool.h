@@ -618,13 +618,6 @@ public:
         return (mapTx.count(hash) != 0);
     }
 
-    bool exists(const COutPoint& outpoint) const
-    {
-        LOCK(cs);
-        auto it = mapTx.find(outpoint.hash);
-        return (it != mapTx.end() && outpoint.n < it->GetTx().vout.size());
-    }
-
     CTransactionRef get(const uint256& hash) const;
     TxMempoolInfo info(const uint256& hash) const;
     std::vector<TxMempoolInfo> infoAll() const;
@@ -684,8 +677,7 @@ protected:
 
 public:
     CCoinsViewMemPool(CCoinsView* baseIn, const CTxMemPool& mempoolIn);
-    bool GetCoin(const COutPoint &outpoint, Coin &coin) const;
-    bool HaveCoin(const COutPoint &outpoint) const;
+    bool GetCoin(const COutPoint &outpoint, Coin &coin) const override;
 };
 
 /**
