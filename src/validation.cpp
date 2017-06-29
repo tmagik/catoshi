@@ -45,7 +45,6 @@
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/join.hpp>
-#include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
 
 #if defined(NDEBUG)
@@ -98,7 +97,7 @@ namespace {
 
     struct CBlockIndexWorkComparator
     {
-        bool operator()(CBlockIndex *pa, CBlockIndex *pb) const {
+        bool operator()(const CBlockIndex *pa, const CBlockIndex *pb) const {
             // First sort by most total work, ...
             if (pa->nChainWork > pb->nChainWork) return false;
             if (pa->nChainWork < pb->nChainWork) return true;
@@ -161,7 +160,7 @@ namespace {
 CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& locator)
 {
     // Find the first block the caller has in the main chain
-    BOOST_FOREACH(const uint256& hash, locator.vHave) {
+    for (const uint256& hash : locator.vHave) {
         BlockMap::iterator mi = mapBlockIndex.find(hash);
         if (mi != mapBlockIndex.end())
         {
@@ -176,6 +175,7 @@ CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& loc
     return chain.Genesis();
 }
 
+CCoinsViewDB *pcoinsdbview = NULL;
 CCoinsViewCache *pcoinsTip = NULL;
 CBlockTreeDB *pblocktree = NULL;
 
@@ -301,7 +301,7 @@ bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp, bool 
             // lock on a mempool input, so we can use the return value of
             // CheckSequenceLocks to indicate the LockPoints validity
             int maxInputHeight = 0;
-            BOOST_FOREACH(int height, prevheights) {
+            for (int height : prevheights) {
                 // Can ignore mempool inputs since we'll fail if they had non-zero locks
                 if (height != tip->nHeight+1) {
                     maxInputHeight = std::max(maxInputHeight, height);
@@ -324,7 +324,7 @@ static void LimitMempoolSize(CTxMemPool& pool, size_t limit, unsigned long age) 
 
     std::vector<COutPoint> vNoSpendsRemaining;
     pool.TrimToSize(limit, &vNoSpendsRemaining);
-    BOOST_FOREACH(const COutPoint& removed, vNoSpendsRemaining)
+    for (const COutPoint& removed : vNoSpendsRemaining)
         pcoinsTip->Uncache(removed);
 }
 
@@ -470,14 +470,15 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
 
     // is it already in the memory pool?
-    if (pool.exists(hash))
-        return state.Invalid(false, REJECT_ALREADY_KNOWN, "txn-already-in-mempool");
+    if (pool.exists(hash)) {
+        return state.Invalid(false, REJECT_DUPLICATE, "txn-already-in-mempool");
+    }
 
     // Check for conflicts with in-memory transactions
     std::set<uint256> setConflicts;
     {
     LOCK(pool.cs); // protect pool.mapNextTx
-    BOOST_FOREACH(const CTxIn &txin, tx.vin)
+    for (const CTxIn &txin : tx.vin)
     {
         auto itConflicting = pool.mapNextTx.find(txin.prevout);
         if (itConflicting != pool.mapNextTx.end())
@@ -500,7 +501,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
                 bool fReplacementOptOut = true;
                 if (fEnableReplacement)
                 {
-                    BOOST_FOREACH(const CTxIn &_txin, ptxConflicting->vin)
+                    for (const CTxIn &_txin : ptxConflicting->vin)
                     {
                         if (_txin.nSequence < std::numeric_limits<unsigned int>::max()-1)
                         {
@@ -509,8 +510,9 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
                         }
                     }
                 }
-                if (fReplacementOptOut)
-                    return state.Invalid(false, REJECT_CONFLICT, "txn-mempool-conflict");
+                if (fReplacementOptOut) {
+                    return state.Invalid(false, REJECT_DUPLICATE, "txn-mempool-conflict");
+                }
 
                 setConflicts.insert(ptxConflicting->GetHash());
             }
@@ -537,12 +539,12 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
                 if (!had_coin_in_cache) {
                     coins_to_uncache.push_back(outpoint);
                 }
-                return state.Invalid(false, REJECT_ALREADY_KNOWN, "txn-already-known");
+                return state.Invalid(false, REJECT_DUPLICATE, "txn-already-known");
             }
         }
 
         // do all inputs exist?
-        BOOST_FOREACH(const CTxIn txin, tx.vin) {
+        for (const CTxIn txin : tx.vin) {
             if (!pcoinsTip->HaveCoinInCache(txin.prevout)) {
                 coins_to_uncache.push_back(txin.prevout);
             }
@@ -590,7 +592,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
         // Keep track of transactions that spend a coinbase, which we re-scan
         // during reorgs to ensure COINBASE_MATURITY is still met.
         bool fSpendsCoinbase = false;
-        BOOST_FOREACH(const CTxIn &txin, tx.vin) {
+        for (const CTxIn &txin : tx.vin) {
             const Coin &coin = view.AccessCoin(txin.prevout);
             if (coin.IsCoinBase()) {
                 fSpendsCoinbase = true;
@@ -641,7 +643,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
         // that we have the set of all ancestors we can detect this
         // pathological case by making sure setConflicts and setAncestors don't
         // intersect.
-        BOOST_FOREACH(CTxMemPool::txiter ancestorIt, setAncestors)
+        for (CTxMemPool::txiter ancestorIt : setAncestors)
         {
             const uint256 &hashAncestor = ancestorIt->GetTx().GetHash();
             if (setConflicts.count(hashAncestor))
@@ -672,7 +674,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
             std::set<uint256> setConflictsParents;
             const int maxDescendantsToVisit = 100;
             CTxMemPool::setEntries setIterConflicting;
-            BOOST_FOREACH(const uint256 &hashConflicting, setConflicts)
+            for (const uint256 &hashConflicting : setConflicts)
             {
                 CTxMemPool::txiter mi = pool.mapTx.find(hashConflicting);
                 if (mi == pool.mapTx.end())
@@ -708,7 +710,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
                                   oldFeeRate.ToString()));
                 }
 
-                BOOST_FOREACH(const CTxIn &txin, mi->GetTx().vin)
+                for (const CTxIn &txin : mi->GetTx().vin)
                 {
                     setConflictsParents.insert(txin.prevout.hash);
                 }
@@ -721,10 +723,10 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
             if (nConflictingCount <= maxDescendantsToVisit) {
                 // If not too many to replace, then calculate the set of
                 // transactions that would have to be evicted
-                BOOST_FOREACH(CTxMemPool::txiter it, setIterConflicting) {
+                for (CTxMemPool::txiter it : setIterConflicting) {
                     pool.CalculateDescendants(it, allConflicting);
                 }
-                BOOST_FOREACH(CTxMemPool::txiter it, allConflicting) {
+                for (CTxMemPool::txiter it : allConflicting) {
                     nConflictingFees += it->GetModifiedFee();
                     nConflictingSize += it->GetTxSize();
                 }
@@ -837,7 +839,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
         }
 
         // Remove conflicting transactions from the mempool
-        BOOST_FOREACH(const CTxMemPool::txiter it, allConflicting)
+        for (const CTxMemPool::txiter it : allConflicting)
         {
             LogPrint(BCLog::MEMPOOL, "replacing tx %s with %s for %s BTC additional fees, %d delta bytes\n",
                     it->GetTx().GetHash().ToString(),
@@ -879,7 +881,7 @@ static bool AcceptToMemoryPoolWithTime(const CChainParams& chainparams, CTxMemPo
     std::vector<COutPoint> coins_to_uncache;
     bool res = AcceptToMemoryPoolWorker(chainparams, pool, state, tx, fLimitFree, pfMissingInputs, nAcceptTime, plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee, coins_to_uncache);
     if (!res) {
-        BOOST_FOREACH(const COutPoint& hashTx, coins_to_uncache)
+        for (const COutPoint& hashTx : coins_to_uncache)
             pcoinsTip->Uncache(hashTx);
     }
     // After we've (potentially) uncached entries, ensure our coins cache is still within its size limits
@@ -1180,9 +1182,10 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txund
     // mark inputs spent
     if (!tx.IsCoinBase()) {
         txundo.vprevout.reserve(tx.vin.size());
-        BOOST_FOREACH(const CTxIn &txin, tx.vin) {
+        for (const CTxIn &txin : tx.vin) {
             txundo.vprevout.emplace_back();
-            inputs.SpendCoin(txin.prevout, &txundo.vprevout.back());
+            bool is_spent = inputs.SpendCoin(txin.prevout, &txundo.vprevout.back());
+            assert(is_spent);
         }
     }
     // add outputs
@@ -1302,7 +1305,7 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
                             return state.Invalid(false, REJECT_NONSTANDARD, strprintf("non-mandatory-script-verify-flag (%s)", ScriptErrorString(check.GetScriptError())));
                     }
                     // Failures of other flags indicate a transaction that is
-                    // invalid in new blocks, e.g. a invalid P2SH. We DoS ban
+                    // invalid in new blocks, e.g. an invalid P2SH. We DoS ban
                     // such nodes as they are not following the protocol. That
                     // said during an upgrade careful thought should be taken
                     // as to the correct behavior - we may want to continue
@@ -1396,7 +1399,7 @@ bool AbortNode(CValidationState& state, const std::string& strMessage, const std
     return state.Error(strMessage);
 }
 
-} // anon namespace
+} // namespace
 
 enum DisconnectResult
 {
@@ -1430,17 +1433,19 @@ int ApplyTxInUndo(Coin&& undo, CCoinsViewCache& view, const COutPoint& out)
             return DISCONNECT_FAILED; // adding output for transaction without known metadata
         }
     }
-    view.AddCoin(out, std::move(undo), undo.fCoinBase);
+    // The potential_overwrite parameter to AddCoin is only allowed to be false if we know for
+    // sure that the coin did not already exist in the cache. As we have queried for that above
+    // using HaveCoin, we don't need to guess. When fClean is false, a coin already existed and
+    // it is an overwrite.
+    view.AddCoin(out, std::move(undo), !fClean);
 
     return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;
 }
 
 /** Undo the effects of this block (with given index) on the UTXO set represented by coins.
- *  When UNCLEAN or FAILED is returned, view is left in an indeterminate state. */
+ *  When FAILED is returned, view is left in an indeterminate state. */
 static DisconnectResult DisconnectBlock(const CBlock& block, const CBlockIndex* pindex, CCoinsViewCache& view)
 {
-    assert(pindex->GetBlockHash() == view.GetBestBlock());
-
     bool fClean = true;
 
     CBlockUndo blockUndo;
@@ -1463,6 +1468,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, const CBlockIndex* 
     for (int i = block.vtx.size() - 1; i >= 0; i--) {
         const CTransaction &tx = *(block.vtx[i]);
         uint256 hash = tx.GetHash();
+        bool is_coinbase = tx.IsCoinBase();
 
         // Check that all outputs are available and match the outputs in the block itself
         // exactly.
@@ -1470,8 +1476,8 @@ static DisconnectResult DisconnectBlock(const CBlock& block, const CBlockIndex* 
             if (!tx.vout[o].scriptPubKey.IsUnspendable()) {
                 COutPoint out(hash, o);
                 Coin coin;
-                view.SpendCoin(out, &coin);
-                if (tx.vout[o] != coin.out) {
+                bool is_spent = view.SpendCoin(out, &coin);
+                if (!is_spent || tx.vout[o] != coin.out || pindex->nHeight != coin.nHeight || is_coinbase != coin.fCoinBase) {
                     fClean = false; // transaction output mismatch
                 }
             }
@@ -1561,12 +1567,12 @@ private:
 public:
     WarningBitsConditionChecker(int bitIn) : bit(bitIn) {}
 
-    int64_t BeginTime(const Consensus::Params& params) const { return 0; }
-    int64_t EndTime(const Consensus::Params& params) const { return std::numeric_limits<int64_t>::max(); }
-    int Period(const Consensus::Params& params) const { return params.nMinerConfirmationWindow; }
-    int Threshold(const Consensus::Params& params) const { return params.nRuleChangeActivationThreshold; }
+    int64_t BeginTime(const Consensus::Params& params) const override { return 0; }
+    int64_t EndTime(const Consensus::Params& params) const override { return std::numeric_limits<int64_t>::max(); }
+    int Period(const Consensus::Params& params) const override { return params.nMinerConfirmationWindow; }
+    int Threshold(const Consensus::Params& params) const override { return params.nRuleChangeActivationThreshold; }
 
-    bool Condition(const CBlockIndex* pindex, const Consensus::Params& params) const
+    bool Condition(const CBlockIndex* pindex, const Consensus::Params& params) const override
     {
         return ((pindex->nVersion & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) &&
                ((pindex->nVersion >> bit) & 1) != 0 &&
@@ -1893,7 +1899,7 @@ bool static FlushStateToDisk(const CChainParams& chainparams, CValidationState &
         nLastSetChain = nNow;
     }
     int64_t nMempoolSizeMax = GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
-    int64_t cacheSize = pcoinsTip->DynamicMemoryUsage() * DB_PEAK_USAGE_FACTOR;
+    int64_t cacheSize = pcoinsTip->DynamicMemoryUsage();
     int64_t nTotalSpace = nCoinCacheUsage + std::max<int64_t>(nMempoolSizeMax - nMempoolUsage, 0);
     // The cache is large and we're within 10% and 10 MiB of the limit, but we have time now (not in the middle of a block processing).
     bool fCacheLarge = mode == FLUSH_STATE_PERIODIC && cacheSize > std::max((9 * nTotalSpace) / 10, nTotalSpace - MAX_BLOCK_COINSDB_USAGE * 1024 * 1024);
@@ -2060,6 +2066,7 @@ bool static DisconnectTip(CValidationState& state, const CChainParams& chainpara
     int64_t nStart = GetTimeMicros();
     {
         CCoinsViewCache view(pcoinsTip);
+        assert(view.GetBestBlock() == pindexDelete->GetBlockHash());
         if (DisconnectBlock(block, pindexDelete, view) != DISCONNECT_OK)
             return error("DisconnectTip(): DisconnectBlock %s failed", pindexDelete->GetBlockHash().ToString());
         bool flushed = view.Flush();
@@ -2411,6 +2418,7 @@ bool ActivateBestChain(CValidationState &state, const CChainParams& chainparams,
 
     CBlockIndex *pindexMostWork = NULL;
     CBlockIndex *pindexNewTip = NULL;
+    int nStopAtHeight = GetArg("-stopatheight", DEFAULT_STOPATHEIGHT);
     do {
         boost::this_thread::interruption_point();
         if (ShutdownRequested())
@@ -2460,6 +2468,8 @@ bool ActivateBestChain(CValidationState &state, const CChainParams& chainparams,
         if (pindexFork != pindexNewTip) {
             uiInterface.NotifyBlockTip(fInitialDownload, pindexNewTip);
         }
+
+        if (nStopAtHeight && pindexNewTip && pindexNewTip->nHeight >= nStopAtHeight) StartShutdown();
     } while (pindexNewTip != pindexMostWork);
     CheckBlockIndex(chainparams.GetConsensus());
 
@@ -2467,9 +2477,6 @@ bool ActivateBestChain(CValidationState &state, const CChainParams& chainparams,
     if (!FlushStateToDisk(chainparams, state, FLUSH_STATE_PERIODIC)) {
         return false;
     }
-
-    int nStopAtHeight = GetArg("-stopatheight", DEFAULT_STOPATHEIGHT);
-    if (nStopAtHeight && pindexNewTip && pindexNewTip->nHeight >= nStopAtHeight) StartShutdown();
 
     return true;
 }
@@ -3228,7 +3235,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
 static uint64_t CalculateCurrentUsage()
 {
     uint64_t retval = 0;
-    BOOST_FOREACH(const CBlockFileInfo &file, vinfoBlockFile) {
+    for (const CBlockFileInfo &file : vinfoBlockFile) {
         retval += file.nSize + file.nUndoSize;
     }
     return retval;
@@ -3439,7 +3446,7 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
 
 bool static LoadBlockIndexDB(const CChainParams& chainparams)
 {
-    if (!pblocktree->LoadBlockIndexGuts(InsertBlockIndex))
+    if (!pblocktree->LoadBlockIndexGuts(chainparams.GetConsensus(), InsertBlockIndex))
         return false;
 
     boost::this_thread::interruption_point();
@@ -3447,13 +3454,13 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
     // Calculate nChainWork
     std::vector<std::pair<int, CBlockIndex*> > vSortedByHeight;
     vSortedByHeight.reserve(mapBlockIndex.size());
-    BOOST_FOREACH(const PAIRTYPE(uint256, CBlockIndex*)& item, mapBlockIndex)
+    for (const std::pair<uint256, CBlockIndex*>& item : mapBlockIndex)
     {
         CBlockIndex* pindex = item.second;
         vSortedByHeight.push_back(std::make_pair(pindex->nHeight, pindex));
     }
     sort(vSortedByHeight.begin(), vSortedByHeight.end());
-    BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
+    for (const std::pair<int, CBlockIndex*>& item : vSortedByHeight)
     {
         CBlockIndex* pindex = item.second;
         pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + GetBlockProof(*pindex);
@@ -3502,7 +3509,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
     // Check presence of blk files
     LogPrintf("Checking all blk files are present...\n");
     std::set<int> setBlkDataFiles;
-    BOOST_FOREACH(const PAIRTYPE(uint256, CBlockIndex*)& item, mapBlockIndex)
+    for (const std::pair<uint256, CBlockIndex*>& item : mapBlockIndex)
     {
         CBlockIndex* pindex = item.second;
         if (pindex->nStatus & BLOCK_HAVE_DATA) {
@@ -3531,20 +3538,25 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
     pblocktree->ReadFlag("txindex", fTxIndex);
     LogPrintf("%s: transaction index %s\n", __func__, fTxIndex ? "enabled" : "disabled");
 
+    return true;
+}
+
+void LoadChainTip(const CChainParams& chainparams)
+{
+    if (chainActive.Tip() && chainActive.Tip()->GetBlockHash() == pcoinsTip->GetBestBlock()) return;
+
     // Load pointer to end of best chain
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
     if (it == mapBlockIndex.end())
-        return true;
+        return;
     chainActive.SetTip(it->second);
 
     PruneBlockIndexCandidates();
 
-    LogPrintf("%s: hashBestChain=%s height=%d date=%s progress=%f\n", __func__,
+    LogPrintf("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f\n",
         chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
         DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
         GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
-
-    return true;
 }
 
 CVerifyDB::CVerifyDB()
@@ -3613,6 +3625,7 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
         }
         // check level 3: check for inconsistencies during memory-only disconnect of tip blocks
         if (nCheckLevel >= 3 && pindex == pindexState && (coins.DynamicMemoryUsage() + pcoinsTip->DynamicMemoryUsage()) <= nCoinCacheUsage) {
+            assert(coins.GetBestBlock() == pindex->GetBlockHash());
             DisconnectResult res = DisconnectBlock(block, pindex, coins);
             if (res == DISCONNECT_FAILED) {
                 return error("VerifyDB(): *** irrecoverable inconsistency in block data at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
@@ -3649,6 +3662,92 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
     LogPrintf("[DONE].\n");
     LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n", chainActive.Height() - pindexState->nHeight, nGoodTransactions);
 
+    return true;
+}
+
+/** Apply the effects of a block on the utxo cache, ignoring that it may already have been applied. */
+static bool RollforwardBlock(const CBlockIndex* pindex, CCoinsViewCache& inputs, const CChainParams& params)
+{
+    // TODO: merge with ConnectBlock
+    CBlock block;
+    if (!ReadBlockFromDisk(block, pindex, params.GetConsensus())) {
+        return error("ReplayBlock(): ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
+    }
+
+    for (const CTransactionRef& tx : block.vtx) {
+        if (!tx->IsCoinBase()) {
+            for (const CTxIn &txin : tx->vin) {
+                inputs.SpendCoin(txin.prevout);
+            }
+        }
+        // Pass check = true as every addition may be an overwrite.
+        AddCoins(inputs, *tx, pindex->nHeight, true);
+    }
+    return true;
+}
+
+bool ReplayBlocks(const CChainParams& params, CCoinsView* view)
+{
+    LOCK(cs_main);
+
+    CCoinsViewCache cache(view);
+
+    std::vector<uint256> hashHeads = view->GetHeadBlocks();
+    if (hashHeads.empty()) return true; // We're already in a consistent state.
+    if (hashHeads.size() != 2) return error("ReplayBlocks(): unknown inconsistent state");
+
+    uiInterface.ShowProgress(_("Replaying blocks..."), 0);
+    LogPrintf("Replaying blocks\n");
+
+    const CBlockIndex* pindexOld = nullptr;  // Old tip during the interrupted flush.
+    const CBlockIndex* pindexNew;            // New tip during the interrupted flush.
+    const CBlockIndex* pindexFork = nullptr; // Latest block common to both the old and the new tip.
+
+    if (mapBlockIndex.count(hashHeads[0]) == 0) {
+        return error("ReplayBlocks(): reorganization to unknown block requested");
+    }
+    pindexNew = mapBlockIndex[hashHeads[0]];
+
+    if (!hashHeads[1].IsNull()) { // The old tip is allowed to be 0, indicating it's the first flush.
+        if (mapBlockIndex.count(hashHeads[1]) == 0) {
+            return error("ReplayBlocks(): reorganization from unknown block requested");
+        }
+        pindexOld = mapBlockIndex[hashHeads[1]];
+        pindexFork = LastCommonAncestor(pindexOld, pindexNew);
+        assert(pindexFork != nullptr);
+    }
+
+    // Rollback along the old branch.
+    while (pindexOld != pindexFork) {
+        if (pindexOld->nHeight > 0) { // Never disconnect the genesis block.
+            CBlock block;
+            if (!ReadBlockFromDisk(block, pindexOld, params.GetConsensus())) {
+                return error("RollbackBlock(): ReadBlockFromDisk() failed at %d, hash=%s", pindexOld->nHeight, pindexOld->GetBlockHash().ToString());
+            }
+            LogPrintf("Rolling back %s (%i)\n", pindexOld->GetBlockHash().ToString(), pindexOld->nHeight);
+            DisconnectResult res = DisconnectBlock(block, pindexOld, cache);
+            if (res == DISCONNECT_FAILED) {
+                return error("RollbackBlock(): DisconnectBlock failed at %d, hash=%s", pindexOld->nHeight, pindexOld->GetBlockHash().ToString());
+            }
+            // If DISCONNECT_UNCLEAN is returned, it means a non-existing UTXO was deleted, or an existing UTXO was
+            // overwritten. It corresponds to cases where the block-to-be-disconnect never had all its operations
+            // applied to the UTXO set. However, as both writing a UTXO and deleting a UTXO are idempotent operations,
+            // the result is still a version of the UTXO set with the effects of that block undone.
+        }
+        pindexOld = pindexOld->pprev;
+    }
+
+    // Roll forward from the forking point to the new tip.
+    int nForkHeight = pindexFork ? pindexFork->nHeight : 0;
+    for (int nHeight = nForkHeight + 1; nHeight <= pindexNew->nHeight; ++nHeight) {
+        const CBlockIndex* pindex = pindexNew->GetAncestor(nHeight);
+        LogPrintf("Rolling forward %s (%i)\n", pindex->GetBlockHash().ToString(), nHeight);
+        if (!RollforwardBlock(pindex, cache, params)) return false;
+    }
+
+    cache.SetBestBlock(pindexNew->GetBlockHash());
+    cache.Flush();
+    uiInterface.ShowProgress("", 100);
     return true;
 }
 
@@ -3758,7 +3857,7 @@ void UnloadBlockIndex()
         warningcache[b].clear();
     }
 
-    BOOST_FOREACH(BlockMap::value_type& entry, mapBlockIndex) {
+    for (BlockMap::value_type& entry : mapBlockIndex) {
         delete entry.second;
     }
     mapBlockIndex.clear();
@@ -3801,8 +3900,6 @@ bool InitBlockIndex(const CChainParams& chainparams)
             CBlockIndex *pindex = AddToBlockIndex(block);
             if (!ReceivedBlockTransactions(block, state, pindex, blockPos, chainparams.GetConsensus()))
                 return error("LoadBlockIndex(): genesis block not accepted");
-            // Force a chainstate write so that when we VerifyDB in a moment, it doesn't check stale data
-            return FlushStateToDisk(chainparams, state, FLUSH_STATE_ALWAYS);
         } catch (const std::runtime_error& e) {
             return error("LoadBlockIndex(): failed to initialize block database: %s", e.what());
         }
