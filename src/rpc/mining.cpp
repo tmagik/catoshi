@@ -190,7 +190,7 @@ UniValue generatetoaddress(const JSONRPCRequest& request)
             "\nMine blocks immediately to a specified address (before the RPC call returns)\n"
             "\nArguments:\n"
             "1. nblocks      (numeric, required) How many blocks are generated immediately.\n"
-            "2. address      (string, required) The address to send the newly generated litecoin to.\n"
+            "2. address      (string, required) The address to send the newly generated " BRAND_lower " to.\n"
             "3. maxtries     (numeric, optional) How many iterations to try (default = 1000000).\n"
             "\nResult:\n"
             "[ blockhashes ]     (array) hashes of blocks generated\n"
@@ -466,10 +466,10 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
 
     if (g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0)
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Litecoin is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, BRAND_upper " is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Litecoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, BRAND_upper " is downloading blocks...");
 
     static unsigned int nTransactionsUpdatedLast;
 
@@ -524,6 +524,10 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     // to select witness transactions, after segwit activates (otherwise
     // don't).
     bool fSupportsSegwit = setClientRules.find(segwit_info.name) != setClientRules.end();
+#if defined(BRAND_bitcoin)
+    const struct BIP9DeploymentInfo& segwit2x_info = VersionBitsDeploymentInfo[Consensus::DEPLOYMENT_SEGWIT2X];
+    bool fSupportsSegwit2x = setClientRules.find(segwit2x_info.name) != setClientRules.end();
+#endif
 
     // Update block
     static CBlockIndex* pindexPrev;
@@ -682,7 +686,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     result.push_back(Pair("mutable", aMutable));
     result.push_back(Pair("noncerange", "00000000ffffffff"));
 #if defined(BRAND_bitcoin)
-    int64_t nSigOpLimit = MaxBlockSigOpsCost(pindexPrev->nHeight+1, fPreSegWit?false:true);
+    int64_t nSigOpLimit = MaxBlockSigOpsCost(fSupportsSegwit2x); // excl bip102 bufferse:true);
 #else
     int64_t nSigOpLimit = MAX_BLOCK_SIGOPS_COST;
 #endif
@@ -700,7 +704,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     } else {
         result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SERIALIZED_SIZE));
 #if defined(BRAND_bitcoin)
-        result.push_back(Pair("weightlimit", (int64_t)MaxBlockWeight(0, false)));
+        result.push_back(Pair("weightlimit", (int64_t)MaxBlockWeight(fSupportsSegwit2x)));
 #else
         result.push_back(Pair("weightlimit", (int64_t)MAX_BLOCK_WEIGHT));
 #endif
@@ -878,7 +882,7 @@ UniValue estimatesmartfee(const JSONRPCRequest& request)
             "1. nblocks     (numeric)\n"
             "\nResult:\n"
             "{\n"
-            "  \"feerate\" : x.x,     (numeric) estimate fee-per-kilobyte (in LTC)\n"
+            "  \"feerate\" : x.x,     (numeric) estimate fee-per-kilobyte (in " BRAND_SYM ")\n"
             "  \"blocks\" : n         (numeric) block number where estimate was found\n"
             "}\n"
             "\n"

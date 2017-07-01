@@ -92,7 +92,11 @@ BlockAssembler::BlockAssembler(const CChainParams& _chainparams)
     bool fWeightSet = false;
     if (IsArgSet("-blockmaxweight")) {
         nBlockMaxWeight = GetArg("-blockmaxweight", DEFAULT_BLOCK_MAX_WEIGHT);
+#if defined(BRAND_bitcoin)
+        nBlockMaxSize = MaxBlockSerSize(fWitnessSeasoned);
+#else
         nBlockMaxSize = MAX_BLOCK_SERIALIZED_SIZE;
+#endif
         fWeightSet = true;
     }
     if (IsArgSet("-blockmaxsize")) {
@@ -111,14 +115,18 @@ BlockAssembler::BlockAssembler(const CChainParams& _chainparams)
 
     // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity:
 #if defined(BRAND_bitcoin)
-    nBlockMaxWeight = std::max((unsigned int)4000, std::min((unsigned int)(MaxBlockWeight(0, false)-4000), nBlockMaxWeight));
+    nBlockMaxWeight = std::max((unsigned int)4000, std::min((unsigned int)(MaxBlockWeight(fWitnessSeasoned)-4000), nBlockMaxWeight));
+    // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity:
+    nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MaxBlockSerSize(fWitnessSeasoned)-1000), nBlockMaxSize));
+    // Whether we need to account for byte usage (in addition to weight usage)
+    fNeedSizeAccounting = (nBlockMaxSize < MaxBlockSerSize(fWitnessSeasoned)-1000);
 #else
     nBlockMaxWeight = std::max((unsigned int)4000, std::min((unsigned int)(MAX_BLOCK_WEIGHT-4000), nBlockMaxWeight));
-#endif
     // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity:
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SERIALIZED_SIZE-1000), nBlockMaxSize));
     // Whether we need to account for byte usage (in addition to weight usage)
     fNeedSizeAccounting = (nBlockMaxSize < MAX_BLOCK_SERIALIZED_SIZE-1000);
+#endif
 }
 
 void BlockAssembler::resetBlock()
@@ -130,6 +138,7 @@ void BlockAssembler::resetBlock()
     nBlockWeight = 4000;
     nBlockSigOpsCost = 400;
     fIncludeWitness = false;
+    fWitnessSeasoned = false;
 
     // These counters do not include coinbase tx
     nBlockTx = 0;
@@ -180,6 +189,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // TODO: replace this with a call to main to assess validity of a mempool
     // transaction (which in most cases can be a no-op).
     fIncludeWitness = IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
+    fWitnessSeasoned = IsWitnessSeasoned(pindexPrev, chainparams.GetConsensus());
 
     addPriorityTxs();
     int nPackagesSelected = 0;
@@ -255,7 +265,7 @@ bool BlockAssembler::TestPackage(uint64_t packageSize, int64_t packageSigOpsCost
     if (nBlockWeight + WITNESS_SCALE_FACTOR * packageSize >= nBlockMaxWeight)
         return false;
 #if defined(BRAND_bitcoin)
-    if (nBlockSigOpsCost + packageSigOpsCost >= (uint64_t)MaxBlockSigOpsCost(nHeight, fIncludeWitness)) // note - excludes bip102 buffer
+    if (nBlockSigOpsCost + packageSigOpsCost >= (uint64_t)MaxBlockSigOpsCost(fWitnessSeasoned))
 #else
     if (nBlockSigOpsCost + packageSigOpsCost >= MAX_BLOCK_SIGOPS_COST)
 #endif
@@ -319,7 +329,7 @@ bool BlockAssembler::TestForBlock(CTxMemPool::txiter iter)
     }
 
 #if defined(BRAND_bitcoin)
-    uint64_t sigOpMax = MaxBlockSigOpsCost(nHeight, fIncludeWitness);
+    uint64_t sigOpMax = MaxBlockSigOpsCost(fWitnessSeasoned);
 #else
     uint64_t sigOpMax = MAX_BLOCK_SIGOPS_COST;
 #endif
