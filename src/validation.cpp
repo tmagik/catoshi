@@ -1844,6 +1844,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     bool fStrictPayToScriptHash = (pindex->GetBlockTime() >= nBIP16SwitchTime);
 
     unsigned int flags = fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE;
+#if defined(BRAND_bitcoin)
+    bool fSegwitSeasoned = false;
+#endif
 
     // Start enforcing the DERSIG (BIP66) rule
     if (pindex->nHeight >= chainparams.GetConsensus().BIP66Height) {
@@ -1866,6 +1869,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (IsWitnessEnabled(pindex->pprev, chainparams.GetConsensus())) {
         flags |= SCRIPT_VERIFY_WITNESS;
         flags |= SCRIPT_VERIFY_NULLDUMMY;
+#if defined(BRAND_bitcoin)
+        fSegwitSeasoned = IsWitnessSeasoned(pindex->pprev, chainparams.GetConsensus());
+#endif
     }
 
 #if defined(BRAND_bitcoin)
@@ -1941,7 +1947,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // * witness (when witness enabled in flags and excludes coinbase)
         nSigOpsCost += GetTransactionSigOpCost(tx, view, flags);
 #if defined(BRAND_bitcoin)
-        if (nSigOpsCost > MaxBlockSigOpsCost(pindex->nHeight, (flags & SCRIPT_VERIFY_WITNESS) ? true : false))
+        if (nSigOpsCost > MaxBlockSigOpsCost(fSegwitSeasoned))
 #else
         if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
 #endif
@@ -3103,6 +3109,18 @@ bool IsWitnessEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& pa
     return (VersionBitsState(pindexPrev, params, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
 }
 
+bool IsWitnessSeasoned(const CBlockIndex* pindexPrev, const Consensus::Params& params)
+{
+    AssertLockHeld(cs_main);
+    assert(pindexPrev);
+
+    const int nHeight = pindexPrev->nHeight + 1;
+
+    const CBlockIndex* pindexForkBuffer = pindexPrev->GetAncestor(nHeight - params.BIP102HeightDelta);
+
+    return (VersionBitsState(pindexForkBuffer, params, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
+}
+
 // Compute at which vout of the block's coinbase transaction the witness
 // commitment occurs, or -1 if not found.
 static int GetWitnessCommitmentIndex(const CBlock& block)
@@ -3239,7 +3257,10 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
     //   {0xaa, 0x21, 0xa9, 0xed}, and the following 32 bytes are SHA256^2(witness root, witness nonce). In case there are
     //   multiple, the last one is used.
     bool fHaveWitness = false;
+#if defined(BRAND_bitcoin)
     bool fSegwitSeasoned = false;
+    bool fBIP102FirstBlock = false;
+#endif
     bool fSegWitActive = (VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
     if (fSegWitActive) {
         int commitpos = GetWitnessCommitmentIndex(block);
@@ -3260,15 +3281,28 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
         }
 
 #if defined(BRAND_bitcoin)
-        const CBlockIndex* pindexForkBuffer = pindexPrev->GetAncestor(nHeight - BIP102_FORK_BUFFER);
+        // Look back to test SegWit activation period
+        const CBlockIndex* pindexForkBuffer = pindexPrev ? pindexPrev->GetAncestor(nHeight - consensusParams.BIP102HeightDelta) : NULL;
         fSegwitSeasoned = (VersionBitsState(pindexForkBuffer, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
+
+        // Look back one more block, to detect edge
+        if (fSegwitSeasoned) {
+            assert(pindexForkBuffer);
+            const CBlockIndex* pindexLastSeason = pindexForkBuffer->pprev;
+            fBIP102FirstBlock = (VersionBitsState(pindexLastSeason, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) != THRESHOLD_ACTIVE);
+        }
     }
 
-    if (::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) > MaxBlockBaseSize(nHeight, fSegwitSeasoned))
+    // Max block base size limit
+    if (::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) > MaxBlockBaseSize(fSegwitSeasoned))
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-length", false, "size limits failed");
-#else
-    }
+
+    // First block at fork must be large
+    if (fBIP102FirstBlock) {
+        if (::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) <= MAX_LEGACY_BLOCK_SIZE)
+            return state.DoS(100, false, REJECT_INVALID, "bad-blk-length-toosmall", false, "size limits failed");
 #endif
+    }
 
     // No witness data is allowed in blocks that don't commit to witness data, as this would otherwise leave room for spam
     if (!fHaveWitness) {
@@ -3285,7 +3319,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
     {
         nSigOps += GetLegacySigOpCount(*tx);
     }
-    if (nSigOps * WITNESS_SCALE_FACTOR > MaxBlockSigOpsCost(nHeight, fSegwitSeasoned))
+    if (nSigOps * WITNESS_SCALE_FACTOR > MaxBlockSigOpsCost(fSegwitSeasoned))
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-sigops", false, "out-of-bounds SigOpCount");
 #endif
 
@@ -3296,7 +3330,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
     // the block hash, so we couldn't mark the block as permanently
     // failed).
 #if defined(BRAND_bitcoin)
-    if (GetBlockWeight(block) > MaxBlockWeight(nHeight, fSegwitSeasoned)) {
+    if (GetBlockWeight(block) > MaxBlockWeight(fSegwitSeasoned)) {
 #else
     if (GetBlockWeight(block) > MAX_BLOCK_WEIGHT) {
 #endif

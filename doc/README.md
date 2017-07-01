@@ -1,4 +1,4 @@
-*Coin Core 0.14.2
+*Coin Core 0.14.3
 =====================
 
 Copyright (c) 2009-2013 Bitcoin Developers
@@ -68,6 +68,6 @@ The following are developer notes on how to build Bitcoin on your native platfor
 
 License
 ---------------------
-Distributed under the [MIT software license](/COPYING).
+Distributed under the [AGPLv3 software license](/COPYING).
 This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](https://www.openssl.org/). This product includes
 cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.

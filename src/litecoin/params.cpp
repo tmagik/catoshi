@@ -285,10 +285,18 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 0;
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 999999999999ULL;
+
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 0;
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
+#if defined(BRAND_bitcoin) /* yes, this makes no sense here right now, unless LTC adopts this too.. */
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT2X].bit = 4;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT2X].nStartTime = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT2X].nTimeout = 999999999999ULL;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT2X].nOverrideMinerConfirmationWindow = 48;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT2X].nOverrideRuleChangeActivationThreshold = 29; // 60%
+#endif
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00");
 
