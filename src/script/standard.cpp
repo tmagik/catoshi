@@ -272,7 +272,7 @@ public:
         return true;
     }
 };
-}
+} // namespace
 
 CScript GetScriptForDestination(const CTxDestination& dest)
 {
