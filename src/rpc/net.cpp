@@ -19,7 +19,6 @@
 #include "utilstrencodings.h"
 #include "version.h"
 
-#include <boost/foreach.hpp>
 
 #include <univalue.h>
 
@@ -302,9 +301,8 @@ UniValue getaddednodeinfo(const JSONRPCRequest& request)
             "  ,...\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddednodeinfo", "true")
-            + HelpExampleCli("getaddednodeinfo", "true \"192.168.0.201\"")
-            + HelpExampleRpc("getaddednodeinfo", "true, \"192.168.0.201\"")
+            + HelpExampleCli("getaddednodeinfo", "\"192.168.0.201\"")
+            + HelpExampleRpc("getaddednodeinfo", "\"192.168.0.201\"")
         );
 
     if(!g_connman)
@@ -397,7 +395,7 @@ static UniValue GetNetworksInfo()
     for(int n=0; n<NET_MAX; ++n)
     {
         enum Network network = static_cast<enum Network>(n);
-        if(network == NET_UNROUTABLE)
+        if(network == NET_UNROUTABLE || network == NET_INTERNAL)
             continue;
         proxyType proxy;
         UniValue obj(UniValue::VOBJ);
