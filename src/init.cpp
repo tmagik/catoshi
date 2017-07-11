@@ -215,6 +215,19 @@ void Shutdown()
         fFeeEstimatesInitialized = false;
     }
 
+    // FlushStateToDisk generates a SetBestChain callback, which we should avoid missing
+    FlushStateToDisk();
+
+    // After there are no more peers/RPC left to give us new data which may generate
+    // CValidationInterface callbacks, flush them...
+    GetMainSignals().FlushBackgroundCallbacks();
+
+    // Any future callbacks will be dropped. This should absolutely be safe - if
+    // missing a callback results in an unrecoverable situation, unclean shutdown
+    // would too. The only reason to do the above flushes is to let the wallet catch
+    // up with our current chain to avoid any strange pruning edge cases and make
+    // next startup faster by avoiding rescan.
+
     {
         LOCK(cs_main);
         if (pcoinsTip != NULL) {
@@ -251,6 +264,7 @@ void Shutdown()
     }
 #endif
     UnregisterAllValidationInterfaces();
+    GetMainSignals().UnregisterBackgroundSignalScheduler();
 #ifdef ENABLE_WALLET
     for (CWalletRef pwallet : vpwallets) {
         delete pwallet;
@@ -336,6 +350,9 @@ std::string HelpMessage(HelpMessageMode mode)
 #endif
     }
     strUsage += HelpMessageOpt("-datadir=<dir>", _("Specify data directory"));
+    if (showDebug) {
+        strUsage += HelpMessageOpt("-dbbatchsize", strprintf("Maximum database write batch size in bytes (default: %u)", nDefaultDbBatchSize));
+    }
     strUsage += HelpMessageOpt("-dbcache=<n>", strprintf(_("Set database cache size in megabytes (%d to %d, default: %d)"), nMinDbCache, nMaxDbCache, nDefaultDbCache));
     if (showDebug)
         strUsage += HelpMessageOpt("-feefilter", strprintf("Tell other nodes to filter invs to us by our mempool min fee (default: %u)", DEFAULT_FEEFILTER));
@@ -444,7 +461,7 @@ std::string HelpMessage(HelpMessageMode mode)
     {
         strUsage += HelpMessageOpt("-logtimemicros", strprintf("Add microsecond precision to debug timestamps (default: %u)", DEFAULT_LOGTIMEMICROS));
         strUsage += HelpMessageOpt("-mocktime=<n>", "Replace actual time with <n> seconds since epoch (default: 0)");
-        strUsage += HelpMessageOpt("-maxsigcachesize=<n>", strprintf("Limit size of signature cache to <n> MiB (default: %u)", DEFAULT_MAX_SIG_CACHE_SIZE));
+        strUsage += HelpMessageOpt("-maxsigcachesize=<n>", strprintf("Limit sum of signature cache and script execution cache sizes to <n> MiB (default: %u)", DEFAULT_MAX_SIG_CACHE_SIZE));
         strUsage += HelpMessageOpt("-maxtipage=<n>", strprintf("Maximum tip age in seconds to consider node in initial block download (default: %u)", DEFAULT_MAX_TIP_AGE));
     }
     strUsage += HelpMessageOpt("-maxtxfee=<amt>", strprintf(_("Maximum total fees (in %s) to use in a single wallet transaction or raw transaction; setting this too low may abort large transactions (default: %s)"),
@@ -880,9 +897,7 @@ bool AppInitParameterInteraction()
     }
 
     // -bind and -whitebind can't be set when not listening
-    size_t nUserBind =
-        (gArgs.IsArgSet("-bind") ? gArgs.GetArgs("-bind").size() : 0) +
-        (gArgs.IsArgSet("-whitebind") ? gArgs.GetArgs("-whitebind").size() : 0);
+    size_t nUserBind = gArgs.GetArgs("-bind").size() + gArgs.GetArgs("-whitebind").size();
     if (nUserBind != 0 && !gArgs.GetBoolArg("-listen", DEFAULT_LISTEN)) {
         return InitError("Cannot set -bind or -whitebind together with -listen=0");
     }
@@ -920,15 +935,13 @@ bool AppInitParameterInteraction()
     }
 
     // Now remove the logging categories which were explicitly excluded
-    if (gArgs.IsArgSet("-debugexclude")) {
-        for (const std::string& cat : gArgs.GetArgs("-debugexclude")) {
-            uint32_t flag = 0;
-            if (!GetLogCategory(&flag, &cat)) {
-                InitWarning(strprintf(_("Unsupported logging category %s=%s."), "-debugexclude", cat));
-                continue;
-            }
-            logCategories &= ~flag;
+    for (const std::string& cat : gArgs.GetArgs("-debugexclude")) {
+        uint32_t flag = 0;
+        if (!GetLogCategory(&flag, &cat)) {
+            InitWarning(strprintf(_("Unsupported logging category %s=%s."), "-debugexclude", cat));
+            continue;
         }
+        logCategories &= ~flag;
     }
 
     // Check for -debugnet
@@ -1192,6 +1205,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("Using at most %i automatic connections (%i file descriptors available)\n", nMaxConnections, nFD);
 
     InitSignatureCache();
+    InitScriptExecutionCache();
 
     LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
     if (nScriptCheckThreads) {
@@ -1202,6 +1216,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Start the lightweight task scheduler thread
     CScheduler::Function serviceLoop = boost::bind(&CScheduler::serviceQueue, &scheduler);
     threadGroup.create_thread(boost::bind(&TraceThread<CScheduler::Function>, "scheduler", serviceLoop));
+
+    GetMainSignals().RegisterBackgroundSignalScheduler(scheduler);
 
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections
@@ -1238,13 +1254,10 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<std::string> uacomments;
-    if (gArgs.IsArgSet("-uacomment")) {
-        for (std::string cmt : gArgs.GetArgs("-uacomment"))
-        {
-            if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
-                return InitError(strprintf(_("User Agent comment (%s) contains unsafe characters."), cmt));
-            uacomments.push_back(cmt);
-        }
+    for (const std::string& cmt : gArgs.GetArgs("-uacomment")) {
+        if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
+            return InitError(strprintf(_("User Agent comment (%s) contains unsafe characters."), cmt));
+        uacomments.push_back(cmt);
     }
     strSubVersion = FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, uacomments);
     if (strSubVersion.size() > MAX_SUBVERSION_LENGTH) {
@@ -1317,14 +1330,12 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     fDiscover = GetBoolArg("-discover", true);
     fRelayTxes = !GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY);
 
-    if (gArgs.IsArgSet("-externalip")) {
-        for (const std::string& strAddr : gArgs.GetArgs("-externalip")) {
-            CService addrLocal;
-            if (Lookup(strAddr.c_str(), addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
-                AddLocal(addrLocal, LOCAL_MANUAL);
-            else
-                return InitError(ResolveErrMsg("externalip", strAddr));
-        }
+    for (const std::string& strAddr : gArgs.GetArgs("-externalip")) {
+        CService addrLocal;
+        if (Lookup(strAddr.c_str(), addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
+            AddLocal(addrLocal, LOCAL_MANUAL);
+        else
+            return InitError(ResolveErrMsg("externalip", strAddr));
     }
 
 #if ENABLE_ZMQ
@@ -1364,7 +1375,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("* Using %.1fMiB for in-memory UTXO set (plus up to %.1fMiB of unused mempool space)\n", nCoinCacheUsage * (1.0 / 1024 / 1024), nMempoolSizeMax * (1.0 / 1024 / 1024));
 
     bool fLoaded = false;
-    while (!fLoaded) {
+    while (!fLoaded && !fRequestShutdown) {
         bool fReset = fReindex;
         std::string strLoadError;
 
@@ -1382,7 +1393,6 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
                 pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex || fReindexChainState);
                 pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
-                pcoinsTip = new CCoinsViewCache(pcoinscatcher);
 
                 if (fReindex) {
                     pblocktree->WriteReindexing(true);
@@ -1396,6 +1406,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                         break;
                     }
                 }
+                if (fRequestShutdown) break;
 
                 if (!LoadBlockIndex(chainparams)) {
                     strLoadError = _("Error loading block database");
@@ -1425,6 +1436,13 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                     strLoadError = _("You need to rebuild the database using -reindex to go back to unpruned mode.  This will redownload the entire blockchain");
                     break;
                 }
+
+                if (!ReplayBlocks(chainparams, pcoinsdbview)) {
+                    strLoadError = _("Unable to replay blocks. You will need to rebuild the database using -reindex-chainstate.");
+                    break;
+                }
+                pcoinsTip = new CCoinsViewCache(pcoinscatcher);
+                LoadChainTip(chainparams);
 
                 if (!fReindex && chainActive.Tip() != NULL) {
                     uiInterface.InitMessage(_("Rewinding blocks..."));
@@ -1466,7 +1484,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
             fLoaded = true;
         } while(false);
 
-        if (!fLoaded) {
+        if (!fLoaded && !fRequestShutdown) {
             // first suggest a reindex
             if (!fReset) {
                 bool fRet = uiInterface.ThreadSafeQuestion(
@@ -1553,10 +1571,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
         uiInterface.NotifyBlockTip.connect(BlockNotifyCallback);
 
     std::vector<fs::path> vImportFiles;
-    if (gArgs.IsArgSet("-loadblock"))
-    {
-        for (const std::string& strFile : gArgs.GetArgs("-loadblock"))
-            vImportFiles.push_back(strFile);
+    for (const std::string& strFile : gArgs.GetArgs("-loadblock")) {
+        vImportFiles.push_back(strFile);
     }
 
     threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
@@ -1598,36 +1614,30 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     connOptions.nMaxOutboundTimeframe = nMaxOutboundTimeframe;
     connOptions.nMaxOutboundLimit = nMaxOutboundLimit;
 
-    if (gArgs.IsArgSet("-bind")) {
-        for (const std::string& strBind : gArgs.GetArgs("-bind")) {
-            CService addrBind;
-            if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false)) {
-                return InitError(ResolveErrMsg("bind", strBind));
-            }
-            connOptions.vBinds.push_back(addrBind);
+    for (const std::string& strBind : gArgs.GetArgs("-bind")) {
+        CService addrBind;
+        if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false)) {
+            return InitError(ResolveErrMsg("bind", strBind));
         }
+        connOptions.vBinds.push_back(addrBind);
     }
-    if (gArgs.IsArgSet("-whitebind")) {
-        for (const std::string& strBind : gArgs.GetArgs("-whitebind")) {
-            CService addrBind;
-            if (!Lookup(strBind.c_str(), addrBind, 0, false)) {
-                return InitError(ResolveErrMsg("whitebind", strBind));
-            }
-            if (addrBind.GetPort() == 0) {
-                return InitError(strprintf(_("Need to specify a port with -whitebind: '%s'"), strBind));
-            }
-            connOptions.vWhiteBinds.push_back(addrBind);
+    for (const std::string& strBind : gArgs.GetArgs("-whitebind")) {
+        CService addrBind;
+        if (!Lookup(strBind.c_str(), addrBind, 0, false)) {
+            return InitError(ResolveErrMsg("whitebind", strBind));
         }
+        if (addrBind.GetPort() == 0) {
+            return InitError(strprintf(_("Need to specify a port with -whitebind: '%s'"), strBind));
+        }
+        connOptions.vWhiteBinds.push_back(addrBind);
     }
 
-    if (gArgs.IsArgSet("-whitelist")) {
-        for (const auto& net : gArgs.GetArgs("-whitelist")) {
-            CSubNet subnet;
-            LookupSubNet(net.c_str(), subnet);
-            if (!subnet.IsValid())
-                return InitError(strprintf(_("Invalid netmask specified in -whitelist: '%s'"), net));
-            connOptions.vWhitelistedRange.push_back(subnet);
-        }
+    for (const auto& net : gArgs.GetArgs("-whitelist")) {
+        CSubNet subnet;
+        LookupSubNet(net.c_str(), subnet);
+        if (!subnet.IsValid())
+            return InitError(strprintf(_("Invalid netmask specified in -whitelist: '%s'"), net));
+        connOptions.vWhitelistedRange.push_back(subnet);
     }
 
     if (gArgs.IsArgSet("-seednode")) {
