@@ -108,6 +108,7 @@ BASE_SCRIPTS= [
     'signmessages.py',
     'nulldummy.py',
     'import-rescan.py',
+    'mining.py',
     'bumpfee.py',
     'rpcnamedargs.py',
     'listsinceblock.py',
@@ -125,6 +126,7 @@ EXTENDED_SCRIPTS = [
     # vv Tests less than 5m vv
     'maxuploadtarget.py',
     'mempool_packages.py',
+    'dbcrash.py',
     # vv Tests less than 2m vv
     'bip68-sequence.py',
     'getblocktemplate_longpoll.py',
@@ -140,7 +142,6 @@ EXTENDED_SCRIPTS = [
     'bipdersig-p2p.py',
     'bipdersig.py',
     'example_test.py',
-    'getblocktemplate_proposals.py',
     'txn_doublespend.py',
     'txn_clone.py --mineblock',
     'forknotify.py',
