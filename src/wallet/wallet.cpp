@@ -2469,9 +2469,9 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, int& nC
 
     CReserveKey reservekey(this);
     CWalletTx wtx;
-    if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, nChangePosInOut, strFailReason, &coinControl, false))
+    if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, nChangePosInOut, strFailReason, coinControl, false)) {
         return false;
-
+    }
     if (nChangePosInOut != -1)
         tx.vout.insert(tx.vout.begin() + nChangePosInOut, wtx.tx->vout[nChangePosInOut]);
 
@@ -2502,7 +2502,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, int& nC
 }
 
 bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet,
-                                int& nChangePosInOut, std::string& strFailReason, const CCoinControl* coinControl, bool sign)
+                                int& nChangePosInOut, std::string& strFailReason, const CCoinControl& coin_control, bool sign)
 {
     CAmount nValue = 0;
     int nChangePosRequest = nChangePosInOut;
@@ -2567,7 +2567,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
         LOCK2(cs_main, cs_wallet);
         {
             std::vector<COutput> vAvailableCoins;
-            AvailableCoins(vAvailableCoins, true, coinControl);
+            AvailableCoins(vAvailableCoins, true, &coin_control);
 
             // Create change script that will be used if we need change
             // TODO: pass in scriptChange instead of reservekey so
@@ -2575,12 +2575,9 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
             CScript scriptChange;
 
             // coin control: send change to custom address
-            if (coinControl && !boost::get<CNoDestination>(&coinControl->destChange))
-                scriptChange = GetScriptForDestination(coinControl->destChange);
-
-            // no coin control: send change to newly generated address
-            else
-            {
+            if (!boost::get<CNoDestination>(&coin_control.destChange)) {
+                scriptChange = GetScriptForDestination(coin_control.destChange);
+            } else { // no coin control: send change to newly generated address
                 // Note: We use a new key here to keep it from being obvious which side is the change.
                 //  The drawback is that by not reusing a previous key, the change may be lost if a
                 //  backup is restored, if the backup doesn't have the new private key for the change.
@@ -2654,7 +2651,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                 if (pick_new_inputs) {
                     nValueIn = 0;
                     setCoins.clear();
-                    if (!SelectCoins(vAvailableCoins, nValueToSelect, setCoins, nValueIn, coinControl))
+                    if (!SelectCoins(vAvailableCoins, nValueToSelect, setCoins, nValueIn, &coin_control))
                     {
                         strFailReason = _("Insufficient funds");
                         return false;
@@ -2705,8 +2702,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                 // to avoid conflicting with other possible uses of nSequence,
                 // and in the spirit of "smallest possible change from prior
                 // behavior."
-                bool rbf = coinControl ? coinControl->signalRbf : fWalletRbf;
-                const uint32_t nSequence = rbf ? MAX_BIP125_RBF_SEQUENCE : (std::numeric_limits<unsigned int>::max() - 1);
+                const uint32_t nSequence = coin_control.signalRbf ? MAX_BIP125_RBF_SEQUENCE : (std::numeric_limits<unsigned int>::max() - 1);
                 for (const auto& coin : setCoins)
                     txNew.vin.push_back(CTxIn(coin.outpoint,CScript(),
                                               nSequence));
@@ -2725,17 +2721,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                     vin.scriptWitness.SetNull();
                 }
 
-                // Allow to override the default confirmation target over the CoinControl instance
-                int currentConfirmationTarget = nTxConfirmTarget;
-                if (coinControl && coinControl->nConfirmTarget > 0)
-                    currentConfirmationTarget = coinControl->nConfirmTarget;
-
-                // Allow to override the default fee estimate mode over the CoinControl instance
-                bool conservative_estimate = CalculateEstimateType(coinControl ? coinControl->m_fee_mode : FeeEstimateMode::UNSET, rbf);
-
-                CAmount nFeeNeeded = GetMinimumFee(nBytes, currentConfirmationTarget, ::mempool, ::feeEstimator, &feeCalc, false /* ignoreGlobalPayTxFee */, conservative_estimate);
-                if (coinControl && coinControl->fOverrideFeeRate)
-                    nFeeNeeded = coinControl->nFeeRate.GetFee(nBytes);
+                CAmount nFeeNeeded = GetMinimumFee(nBytes, coin_control, ::mempool, ::feeEstimator, &feeCalc);
 
                 // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
                 // because we must be at the maximum allowed fee.
@@ -2760,7 +2746,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                     // new inputs. We now know we only need the smaller fee
                     // (because of reduced tx size) and so we should add a
                     // change output. Only try this once.
-                    CAmount fee_needed_for_change = GetMinimumFee(change_prototype_size, currentConfirmationTarget, ::mempool, ::feeEstimator, nullptr, false /* ignoreGlobalPayTxFee */, conservative_estimate);
+                    CAmount fee_needed_for_change = GetMinimumFee(change_prototype_size, coin_control, ::mempool, ::feeEstimator, nullptr);
                     CAmount minimum_value_for_change = GetDustThreshold(change_prototype_txout, ::dustRelayFee);
                     CAmount max_excess_fee = fee_needed_for_change + minimum_value_for_change;
                     if (nFeeRet > nFeeNeeded + max_excess_fee && nChangePosInOut == -1 && nSubtractFeeFromAmount == 0 && pick_new_inputs) {
@@ -2936,33 +2922,61 @@ CAmount CWallet::GetRequiredFee(unsigned int nTxBytes)
     return std::max(minTxFee.GetFee(nTxBytes), ::minRelayTxFee.GetFee(nTxBytes));
 }
 
-CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool, const CBlockPolicyEstimator& estimator, FeeCalculation *feeCalc, bool ignoreGlobalPayTxFee, bool conservative_estimate)
+CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, const CCoinControl& coin_control, const CTxMemPool& pool, const CBlockPolicyEstimator& estimator, FeeCalculation *feeCalc)
 {
-    // payTxFee is the user-set global for desired feerate
-    CAmount nFeeNeeded = payTxFee.GetFee(nTxBytes);
-    // User didn't set: use -txconfirmtarget to estimate...
-    if (nFeeNeeded == 0 || ignoreGlobalPayTxFee) {
-        nFeeNeeded = estimator.estimateSmartFee(nConfirmTarget, feeCalc, pool, conservative_estimate).GetFee(nTxBytes);
-        // ... unless we don't have enough mempool data for estimatefee, then use fallbackFee
-        if (nFeeNeeded == 0) {
-            nFeeNeeded = fallbackFee.GetFee(nTxBytes);
-            if (feeCalc) feeCalc->reason = FeeReason::FALLBACK;
-        }
-    } else {
+    /* User control of how to calculate fee uses the following parameter precedence:
+       1. coin_control.m_feerate
+       2. coin_control.m_confirm_target
+       3. payTxFee (user-set global variable)
+       4. nTxConfirmTarget (user-set global variable)
+       The first parameter that is set is used.
+    */
+    CAmount fee_needed;
+    if (coin_control.m_feerate) { // 1.
+        fee_needed = coin_control.m_feerate->GetFee(nTxBytes);
+        if (feeCalc) feeCalc->reason = FeeReason::PAYTXFEE;
+        // Allow to override automatic min/max check over coin control instance
+        if (coin_control.fOverrideFeeRate) return fee_needed;
+    }
+    else if (!coin_control.m_confirm_target && ::payTxFee != CFeeRate(0)) { // 3. TODO: remove magic value of 0 for global payTxFee
+        fee_needed = ::payTxFee.GetFee(nTxBytes);
         if (feeCalc) feeCalc->reason = FeeReason::PAYTXFEE;
     }
+    else { // 2. or 4.
+        // We will use smart fee estimation
+        unsigned int target = coin_control.m_confirm_target ? *coin_control.m_confirm_target : ::nTxConfirmTarget;
+        // By default estimates are economical iff we are signaling opt-in-RBF
+        bool conservative_estimate = !coin_control.signalRbf;
+        // Allow to override the default fee estimate mode over the CoinControl instance
+        if (coin_control.m_fee_mode == FeeEstimateMode::CONSERVATIVE) conservative_estimate = true;
+        else if (coin_control.m_fee_mode == FeeEstimateMode::ECONOMICAL) conservative_estimate = false;
+
+        fee_needed = estimator.estimateSmartFee(target, feeCalc, conservative_estimate).GetFee(nTxBytes);
+        if (fee_needed == 0) {
+            // if we don't have enough data for estimateSmartFee, then use fallbackFee
+            fee_needed = fallbackFee.GetFee(nTxBytes);
+            if (feeCalc) feeCalc->reason = FeeReason::FALLBACK;
+        }
+        // Obey mempool min fee when using smart fee estimation
+        CAmount min_mempool_fee = pool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nTxBytes);
+        if (fee_needed < min_mempool_fee) {
+            fee_needed = min_mempool_fee;
+            if (feeCalc) feeCalc->reason = FeeReason::MEMPOOL_MIN;
+        }
+    }
+
     // prevent user from paying a fee below minRelayTxFee or minTxFee
-    CAmount requiredFee = GetRequiredFee(nTxBytes);
-    if (requiredFee > nFeeNeeded) {
-        nFeeNeeded = requiredFee;
+    CAmount required_fee = GetRequiredFee(nTxBytes);
+    if (required_fee > fee_needed) {
+        fee_needed = required_fee;
         if (feeCalc) feeCalc->reason = FeeReason::REQUIRED;
     }
     // But always obey the maximum
-    if (nFeeNeeded > maxTxFee) {
-        nFeeNeeded = maxTxFee;
+    if (fee_needed > maxTxFee) {
+        fee_needed = maxTxFee;
         if (feeCalc) feeCalc->reason = FeeReason::MAXTXFEE;
     }
-    return nFeeNeeded;
+    return fee_needed;
 }
 
 
@@ -2977,7 +2991,8 @@ DBErrors CWallet::LoadWallet(bool& fFirstRunRet)
         if (dbw->Rewrite("\x04pool"))
         {
             LOCK(cs_wallet);
-            setKeyPool.clear();
+            setInternalKeyPool.clear();
+            setExternalKeyPool.clear();
             // Note: can't top-up keypool here, because wallet is locked.
             // User will be prompted to unlock wallet the next operation
             // that requires a new key.
@@ -3005,7 +3020,8 @@ DBErrors CWallet::ZapSelectTx(std::vector<uint256>& vHashIn, std::vector<uint256
     {
         if (dbw->Rewrite("\x04pool"))
         {
-            setKeyPool.clear();
+            setInternalKeyPool.clear();
+            setExternalKeyPool.clear();
             // Note: can't top-up keypool here, because wallet is locked.
             // User will be prompted to unlock wallet the next operation
             // that requires a new key.
@@ -3030,7 +3046,8 @@ DBErrors CWallet::ZapWalletTx(std::vector<CWalletTx>& vWtx)
         if (dbw->Rewrite("\x04pool"))
         {
             LOCK(cs_wallet);
-            setKeyPool.clear();
+            setInternalKeyPool.clear();
+            setExternalKeyPool.clear();
             // Note: can't top-up keypool here, because wallet is locked.
             // User will be prompted to unlock wallet the next operation
             // that requires a new key.
@@ -3114,9 +3131,16 @@ bool CWallet::NewKeyPool()
     {
         LOCK(cs_wallet);
         CWalletDB walletdb(*dbw);
-        for (int64_t nIndex : setKeyPool)
+
+        for (int64_t nIndex : setInternalKeyPool) {
             walletdb.ErasePool(nIndex);
-        setKeyPool.clear();
+        }
+        setInternalKeyPool.clear();
+
+        for (int64_t nIndex : setExternalKeyPool) {
+            walletdb.ErasePool(nIndex);
+        }
+        setExternalKeyPool.clear();
 
         if (!TopUpKeyPool()) {
             return false;
@@ -3128,25 +3152,8 @@ bool CWallet::NewKeyPool()
 
 size_t CWallet::KeypoolCountExternalKeys()
 {
-    AssertLockHeld(cs_wallet); // setKeyPool
-
-    // immediately return setKeyPool's size if HD or HD_SPLIT is disabled or not supported
-    if (!IsHDEnabled() || !CanSupportFeature(FEATURE_HD_SPLIT))
-        return setKeyPool.size();
-
-    CWalletDB walletdb(*dbw);
-
-    // count amount of external keys
-    size_t amountE = 0;
-    for(const int64_t& id : setKeyPool)
-    {
-        CKeyPool tmpKeypool;
-        if (!walletdb.ReadPool(id, tmpKeypool))
-            throw std::runtime_error(std::string(__func__) + ": read failed");
-        amountE += !tmpKeypool.fInternal;
-    }
-
-    return amountE;
+    AssertLockHeld(cs_wallet); // setExternalKeyPool
+    return setExternalKeyPool.size();
 }
 
 bool CWallet::TopUpKeyPool(unsigned int kpSize)
@@ -3166,10 +3173,8 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
 
         // count amount of available keys (internal, external)
         // make sure the keypool of external and internal keys fits the user selected target (-keypool)
-        int64_t amountExternal = KeypoolCountExternalKeys();
-        int64_t amountInternal = setKeyPool.size() - amountExternal;
-        int64_t missingExternal = std::max(std::max((int64_t) nTargetSize, (int64_t) 1) - amountExternal, (int64_t) 0);
-        int64_t missingInternal = std::max(std::max((int64_t) nTargetSize, (int64_t) 1) - amountInternal, (int64_t) 0);
+        int64_t missingExternal = std::max(std::max((int64_t) nTargetSize, (int64_t) 1) - (int64_t)setExternalKeyPool.size(), (int64_t) 0);
+        int64_t missingInternal = std::max(std::max((int64_t) nTargetSize, (int64_t) 1) - (int64_t)setInternalKeyPool.size(), (int64_t) 0);
 
         if (!IsHDEnabled() || !CanSupportFeature(FEATURE_HD_SPLIT))
         {
@@ -3181,20 +3186,32 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
         for (int64_t i = missingInternal + missingExternal; i--;)
         {
             int64_t nEnd = 1;
-            if (i < missingInternal)
+            if (i < missingInternal) {
                 internal = true;
-            if (!setKeyPool.empty())
-                nEnd = *(--setKeyPool.end()) + 1;
+            }
+
+            if (!setInternalKeyPool.empty()) {
+                nEnd = *(setInternalKeyPool.rbegin()) + 1;
+            }
+            if (!setExternalKeyPool.empty()) {
+                nEnd = std::max(nEnd, *(setExternalKeyPool.rbegin()) + 1);
+            }
+
             if (!walletdb.WritePool(nEnd, CKeyPool(GenerateNewKey(internal), internal)))
                 throw std::runtime_error(std::string(__func__) + ": writing generated key failed");
-            setKeyPool.insert(nEnd);
-            LogPrintf("keypool added key %d, size=%u, internal=%d\n", nEnd, setKeyPool.size(), internal);
+
+            if (internal) {
+                setInternalKeyPool.insert(nEnd);
+            } else {
+                setExternalKeyPool.insert(nEnd);
+            }
+            LogPrintf("keypool added key %d, size=%u (%u internal), new key is %s\n", nEnd, setInternalKeyPool.size() + setExternalKeyPool.size(), setInternalKeyPool.size(), internal ? "internal" : "external");
         }
     }
     return true;
 }
 
-void CWallet::ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool internal)
+void CWallet::ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool fRequestedInternal)
 {
     nIndex = -1;
     keypool.vchPubKey = CPubKey();
@@ -3204,30 +3221,30 @@ void CWallet::ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool int
         if (!IsLocked())
             TopUpKeyPool();
 
+        bool fReturningInternal = IsHDEnabled() && CanSupportFeature(FEATURE_HD_SPLIT) && fRequestedInternal;
+        std::set<int64_t>& setKeyPool = fReturningInternal ? setInternalKeyPool : setExternalKeyPool;
+
         // Get the oldest key
         if(setKeyPool.empty())
             return;
 
         CWalletDB walletdb(*dbw);
 
-        // try to find a key that matches the internal/external filter
-        for(const int64_t& id : setKeyPool)
-        {
-            CKeyPool tmpKeypool;
-            if (!walletdb.ReadPool(id, tmpKeypool))
-                throw std::runtime_error(std::string(__func__) + ": read failed");
-            if (!HaveKey(tmpKeypool.vchPubKey.GetID()))
-                throw std::runtime_error(std::string(__func__) + ": unknown key in key pool");
-            if (!IsHDEnabled() || !CanSupportFeature(FEATURE_HD_SPLIT) || tmpKeypool.fInternal == internal)
-            {
-                nIndex = id;
-                keypool = tmpKeypool;
-                setKeyPool.erase(id);
-                assert(keypool.vchPubKey.IsValid());
-                LogPrintf("keypool reserve %d\n", nIndex);
-                return;
-            }
+        auto it = setKeyPool.begin();
+        nIndex = *it;
+        setKeyPool.erase(it);
+        if (!walletdb.ReadPool(nIndex, keypool)) {
+            throw std::runtime_error(std::string(__func__) + ": read failed");
         }
+        if (!HaveKey(keypool.vchPubKey.GetID())) {
+            throw std::runtime_error(std::string(__func__) + ": unknown key in key pool");
+        }
+        if (keypool.fInternal != fReturningInternal) {
+            throw std::runtime_error(std::string(__func__) + ": keypool entry misclassified");
+        }
+
+        assert(keypool.vchPubKey.IsValid());
+        LogPrintf("keypool reserve %d\n", nIndex);
     }
 }
 
@@ -3239,12 +3256,16 @@ void CWallet::KeepKey(int64_t nIndex)
     LogPrintf("keypool keep %d\n", nIndex);
 }
 
-void CWallet::ReturnKey(int64_t nIndex)
+void CWallet::ReturnKey(int64_t nIndex, bool fInternal)
 {
     // Return to key pool
     {
         LOCK(cs_wallet);
-        setKeyPool.insert(nIndex);
+        if (fInternal) {
+            setInternalKeyPool.insert(nIndex);
+        } else {
+            setExternalKeyPool.insert(nIndex);
+        }
     }
     LogPrintf("keypool return %d\n", nIndex);
 }
@@ -3268,46 +3289,33 @@ bool CWallet::GetKeyFromPool(CPubKey& result, bool internal)
     return true;
 }
 
+static int64_t GetOldestKeyTimeInPool(const std::set<int64_t>& setKeyPool, CWalletDB& walletdb) {
+    if (setKeyPool.empty()) {
+        return GetTime();
+    }
+
+    CKeyPool keypool;
+    int64_t nIndex = *(setKeyPool.begin());
+    if (!walletdb.ReadPool(nIndex, keypool)) {
+        throw std::runtime_error(std::string(__func__) + ": read oldest key in keypool failed");
+    }
+    assert(keypool.vchPubKey.IsValid());
+    return keypool.nTime;
+}
+
 int64_t CWallet::GetOldestKeyPoolTime()
 {
     LOCK(cs_wallet);
 
-    // if the keypool is empty, return <NOW>
-    if (setKeyPool.empty())
-        return GetTime();
-
-    CKeyPool keypool;
     CWalletDB walletdb(*dbw);
 
-    if (IsHDEnabled() && CanSupportFeature(FEATURE_HD_SPLIT))
-    {
-        // if HD & HD Chain Split is enabled, response max(oldest-internal-key, oldest-external-key)
-        int64_t now = GetTime();
-        int64_t oldest_external = now, oldest_internal = now;
-
-        for(const int64_t& id : setKeyPool)
-        {
-            if (!walletdb.ReadPool(id, keypool)) {
-                throw std::runtime_error(std::string(__func__) + ": read failed");
-            }
-            if (keypool.fInternal && keypool.nTime < oldest_internal) {
-                oldest_internal = keypool.nTime;
-            }
-            else if (!keypool.fInternal && keypool.nTime < oldest_external) {
-                oldest_external = keypool.nTime;
-            }
-            if (oldest_internal != now && oldest_external != now) {
-                break;
-            }
-        }
-        return std::max(oldest_internal, oldest_external);
-    }
     // load oldest key from keypool, get time and return
-    int64_t nIndex = *(setKeyPool.begin());
-    if (!walletdb.ReadPool(nIndex, keypool))
-        throw std::runtime_error(std::string(__func__) + ": read oldest key in keypool failed");
-    assert(keypool.vchPubKey.IsValid());
-    return keypool.nTime;
+    int64_t oldestKey = GetOldestKeyTimeInPool(setExternalKeyPool, walletdb);
+    if (IsHDEnabled() && CanSupportFeature(FEATURE_HD_SPLIT)) {
+        oldestKey = std::max(GetOldestKeyTimeInPool(setInternalKeyPool, walletdb), oldestKey);
+    }
+
+    return oldestKey;
 }
 
 std::map<CTxDestination, CAmount> CWallet::GetAddressBalances()
@@ -3468,6 +3476,7 @@ bool CReserveKey::GetReservedKey(CPubKey& pubkey, bool internal)
         else {
             return false;
         }
+        fInternal = keypool.fInternal;
     }
     assert(vchPubKey.IsValid());
     pubkey = vchPubKey;
@@ -3484,10 +3493,23 @@ void CReserveKey::KeepKey()
 
 void CReserveKey::ReturnKey()
 {
-    if (nIndex != -1)
-        pwallet->ReturnKey(nIndex);
+    if (nIndex != -1) {
+        pwallet->ReturnKey(nIndex, fInternal);
+    }
     nIndex = -1;
     vchPubKey = CPubKey();
+}
+
+static void LoadReserveKeysToSet(std::set<CKeyID>& setAddress, const std::set<int64_t>& setKeyPool, CWalletDB& walletdb) {
+    for (const int64_t& id : setKeyPool)
+    {
+        CKeyPool keypool;
+        if (!walletdb.ReadPool(id, keypool))
+            throw std::runtime_error(std::string(__func__) + ": read failed");
+        assert(keypool.vchPubKey.IsValid());
+        CKeyID keyID = keypool.vchPubKey.GetID();
+        setAddress.insert(keyID);
+    }
 }
 
 void CWallet::GetAllReserveKeys(std::set<CKeyID>& setAddress) const
@@ -3497,16 +3519,13 @@ void CWallet::GetAllReserveKeys(std::set<CKeyID>& setAddress) const
     CWalletDB walletdb(*dbw);
 
     LOCK2(cs_main, cs_wallet);
-    for (const int64_t& id : setKeyPool)
-    {
-        CKeyPool keypool;
-        if (!walletdb.ReadPool(id, keypool))
-            throw std::runtime_error(std::string(__func__) + ": read failed");
-        assert(keypool.vchPubKey.IsValid());
-        CKeyID keyID = keypool.vchPubKey.GetID();
-        if (!HaveKey(keyID))
+    LoadReserveKeysToSet(setAddress, setInternalKeyPool, walletdb);
+    LoadReserveKeysToSet(setAddress, setExternalKeyPool, walletdb);
+
+    for (const CKeyID& keyID : setAddress) {
+        if (!HaveKey(keyID)) {
             throw std::runtime_error(std::string(__func__) + ": unknown key in key pool");
-        setAddress.insert(keyID);
+        }
     }
 }
 
@@ -4043,13 +4062,19 @@ bool CWallet::ParameterInteraction()
         }
     }
 
-    // -zapwallettx implies a rescan
-    if (GetBoolArg("-zapwallettxes", false)) {
+    int zapwallettxes = GetArg("-zapwallettxes", 0);
+    // -zapwallettxes implies dropping the mempool on startup
+    if (zapwallettxes != 0 && SoftSetBoolArg("-persistmempool", false)) {
+        LogPrintf("%s: parameter interaction: -zapwallettxes=%s -> setting -persistmempool=0\n", __func__, zapwallettxes);
+    }
+
+    // -zapwallettxes implies a rescan
+    if (zapwallettxes != 0) {
         if (is_multiwallet) {
             return InitError(strprintf("%s is only allowed with a single wallet file", "-zapwallettxes"));
         }
         if (SoftSetBoolArg("-rescan", true)) {
-            LogPrintf("%s: parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n", __func__);
+            LogPrintf("%s: parameter interaction: -zapwallettxes=%s -> setting -rescan=1\n", __func__, zapwallettxes);
         }
     }
 
@@ -4188,16 +4213,4 @@ int CMerkleTx::GetBlocksToMaturity() const
 bool CMerkleTx::AcceptToMemoryPool(const CAmount& nAbsurdFee, CValidationState& state)
 {
     return ::AcceptToMemoryPool(mempool, state, tx, true, NULL, NULL, false, nAbsurdFee);
-}
-
-bool CalculateEstimateType(FeeEstimateMode mode, bool opt_in_rbf) {
-    switch (mode) {
-    case FeeEstimateMode::UNSET:
-        return !opt_in_rbf; // Allow for lower fees if RBF is an option
-    case FeeEstimateMode::CONSERVATIVE:
-        return true;
-    case FeeEstimateMode::ECONOMICAL:
-        return false;
-    }
-    return true;
 }
