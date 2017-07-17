@@ -117,7 +117,7 @@ public:
      * Create new TxConfirmStats. This is called by BlockPolicyEstimator's
      * constructor with default values.
      * @param defaultBuckets contains the upper limits for the bucket boundaries
-     * @param maxConfirms max number of confirms to track
+     * @param maxPeriods max number of periods to track
      * @param decay how much to decay the historical moving average per block
      */
     TxConfirmStats(const std::vector<double>& defaultBuckets, const std::map<double, unsigned int>& defaultBucketMap,
@@ -698,7 +698,7 @@ CFeeRate CBlockPolicyEstimator::estimateRawFee(int confTarget, double successThr
         break;
     }
     default: {
-        throw std::out_of_range("CBlockPoicyEstimator::estimateRawFee unknown FeeEstimateHorizon");
+        throw std::out_of_range("CBlockPolicyEstimator::estimateRawFee unknown FeeEstimateHorizon");
     }
     }
 
@@ -730,7 +730,7 @@ unsigned int CBlockPolicyEstimator::HighestTargetTracked(FeeEstimateHorizon hori
         return longStats->GetMaxConfirms();
     }
     default: {
-        throw std::out_of_range("CBlockPoicyEstimator::HighestTargetTracked unknown FeeEstimateHorizon");
+        throw std::out_of_range("CBlockPolicyEstimator::HighestTargetTracked unknown FeeEstimateHorizon");
     }
     }
 }
