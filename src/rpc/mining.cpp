@@ -30,6 +30,16 @@
 
 #include <univalue.h>
 
+unsigned int ParseConfirmTarget(const UniValue& value)
+{
+    int target = value.get_int();
+    unsigned int max_target = ::feeEstimator.HighestTargetTracked(FeeEstimateHorizon::LONG_HALFLIFE);
+    if (target < 1 || (unsigned int)target > max_target) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Invalid conf_target, must be between %u - %u", 1, max_target));
+    }
+    return (unsigned int)target;
+}
+
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
  * or from the last difficulty change if 'lookup' is nonpositive.
@@ -645,15 +655,16 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     result.push_back(Pair("mutable", aMutable));
     result.push_back(Pair("noncerange", "00000000ffffffff"));
     int64_t nSigOpLimit = MAX_BLOCK_SIGOPS_COST;
+    int64_t nSizeLimit = MAX_BLOCK_SERIALIZED_SIZE;
     if (fPreSegWit) {
         assert(nSigOpLimit % WITNESS_SCALE_FACTOR == 0);
         nSigOpLimit /= WITNESS_SCALE_FACTOR;
+        assert(nSizeLimit % WITNESS_SCALE_FACTOR == 0);
+        nSizeLimit /= WITNESS_SCALE_FACTOR;
     }
     result.push_back(Pair("sigoplimit", nSigOpLimit));
-    if (fPreSegWit) {
-        result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_BASE_SIZE));
-    } else {
-        result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SERIALIZED_SIZE));
+    result.push_back(Pair("sizelimit", nSizeLimit));
+    if (!fPreSegWit) {
         result.push_back(Pair("weightlimit", (int64_t)MAX_BLOCK_WEIGHT));
     }
     result.push_back(Pair("curtime", pblock->GetBlockTime()));
@@ -814,7 +825,6 @@ UniValue estimatesmartfee(const JSONRPCRequest& request)
             "\n"
             "A negative value is returned if not enough transactions and blocks\n"
             "have been observed to make an estimate for any number of blocks.\n"
-            "However it will not return a value below the mempool reject fee.\n"
             "\nExample:\n"
             + HelpExampleCli("estimatesmartfee", "6")
             );
@@ -830,7 +840,7 @@ UniValue estimatesmartfee(const JSONRPCRequest& request)
 
     UniValue result(UniValue::VOBJ);
     FeeCalculation feeCalc;
-    CFeeRate feeRate = ::feeEstimator.estimateSmartFee(nBlocks, &feeCalc, ::mempool, conservative);
+    CFeeRate feeRate = ::feeEstimator.estimateSmartFee(nBlocks, &feeCalc, conservative);
     result.push_back(Pair("feerate", feeRate == CFeeRate(0) ? -1.0 : ValueFromAmount(feeRate.GetFeePerK())));
     result.push_back(Pair("blocks", feeCalc.returnedTarget));
     return result;
