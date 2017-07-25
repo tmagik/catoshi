@@ -45,6 +45,8 @@ static const unsigned int DEFAULT_KEYPOOL_SIZE = 1000;
 static const CAmount DEFAULT_TRANSACTION_FEE = 0;
 //! -fallbackfee default
 static const CAmount DEFAULT_FALLBACK_FEE = 20000;
+//! -m_discard_rate default
+static const CAmount DEFAULT_DISCARD_FEE = 10000;
 //! -mintxfee default
 static const CAmount DEFAULT_TRANSACTION_MINFEE = 1000;
 //! minimum recommended increment for BIP 125 replacement txs
@@ -701,6 +703,7 @@ private:
 
     std::set<int64_t> setInternalKeyPool;
     std::set<int64_t> setExternalKeyPool;
+    int64_t m_max_keypool_index;
 
     int64_t nTimeFirstKey;
 
@@ -743,13 +746,14 @@ public:
         }
     }
 
-    void LoadKeyPool(int nIndex, const CKeyPool &keypool)
+    void LoadKeyPool(int64_t nIndex, const CKeyPool &keypool)
     {
         if (keypool.fInternal) {
             setInternalKeyPool.insert(nIndex);
         } else {
             setExternalKeyPool.insert(nIndex);
         }
+        m_max_keypool_index = std::max(m_max_keypool_index, nIndex);
 
         // If no metadata exists yet, create a default with the pool key's
         // creation time. Note that this may be overwritten by actually
@@ -795,6 +799,7 @@ public:
         nAccountingEntryNumber = 0;
         nNextResend = 0;
         nLastResend = 0;
+        m_max_keypool_index = 0;
         nTimeFirstKey = 0;
         fBroadcastTransactions = false;
         nRelockTime = 0;
@@ -946,7 +951,7 @@ public:
      * Insert additional inputs into the transaction by
      * calling CreateTransaction();
      */
-    bool FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, int& nChangePosInOut, std::string& strFailReason, bool lockUnspents, const std::set<int>& setSubtractFeeFromOutputs, CCoinControl, bool keepReserveKey = true);
+    bool FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, int& nChangePosInOut, std::string& strFailReason, bool lockUnspents, const std::set<int>& setSubtractFeeFromOutputs, CCoinControl);
     bool SignTransaction(CMutableTransaction& tx);
 
     /**
@@ -966,6 +971,7 @@ public:
 
     static CFeeRate minTxFee;
     static CFeeRate fallbackFee;
+    static CFeeRate m_discard_rate;
     /**
      * Estimate the minimum fee considering user set parameters
      * and the required fee
@@ -1060,7 +1066,9 @@ public:
     //! Flush wallet (bitdb flush)
     void Flush(bool shutdown=false);
 
-    //! Verify the wallet database and perform salvage if required
+    //! Responsible for reading and validating the -wallet arguments and verifying the wallet database.
+    //  This function will perform salvage on the wallet if requested, as long as only one wallet is
+    //  being loaded (CWallet::ParameterInteraction forbids -salvagewallet, -zapwallettxes or -upgradewallet with multiwallet).
     static bool Verify();
     
     /** 
