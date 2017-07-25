@@ -63,7 +63,6 @@ BASE_SCRIPTS= [
     'segwit.py',
     # vv Tests less than 2m vv
     'wallet.py',
-    'multiwallet.py',
     'wallet-accounts.py',
     'p2p-segwit.py',
     'wallet-dump.py',
@@ -89,6 +88,7 @@ BASE_SCRIPTS= [
     'mempool_spendcoinbase.py',
     'mempool_reorg.py',
     'mempool_persist.py',
+    'multiwallet.py',
     'httpbasics.py',
     'multi_rpc.py',
     'proxy_test.py',
