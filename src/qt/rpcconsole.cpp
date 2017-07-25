@@ -13,8 +13,6 @@
 #include "clientmodel.h"
 #include "guiutil.h"
 #include "platformstyle.h"
-#include "bantablemodel.h"
-
 #include "chainparams.h"
 #include "netbase.h"
 #include "rpc/server.h"
@@ -27,6 +25,7 @@
 
 #ifdef ENABLE_WALLET
 #include <db_cxx.h>
+#include <wallet/wallet.h>
 #endif
 
 #include <QKeyEvent>
@@ -303,6 +302,14 @@ bool RPCConsole::RPCParseCommandLine(std::string &strResult, const std::string &
                             JSONRPCRequest req;
                             req.params = RPCConvertValues(stack.back()[0], std::vector<std::string>(stack.back().begin() + 1, stack.back().end()));
                             req.strMethod = stack.back()[0];
+#ifdef ENABLE_WALLET
+                            // TODO: Move this logic to WalletModel
+                            if (!vpwallets.empty()) {
+                                // in Qt, use always the wallet with index 0 when running with multiple wallets
+                                QByteArray encodedName = QUrl::toPercentEncoding(QString::fromStdString(vpwallets[0]->GetName()));
+                                req.URI = "/wallet/"+std::string(encodedName.constData(), encodedName.length());
+                            }
+#endif
                             lastResult = tableRPC.execute(req);
                         }
 
@@ -674,7 +681,7 @@ void RPCConsole::setFontSize(int newSize)
 {
     QSettings settings;
 
-    //don't allow a insane font size
+    //don't allow an insane font size
     if (newSize < FONT_RANGE.width() || newSize > FONT_RANGE.height())
         return;
 
@@ -740,7 +747,7 @@ void RPCConsole::clear(bool clearHistory)
                         tr("Use up and down arrows to navigate history, and %1 to clear screen.").arg("<b>"+clsKey+"</b>") + "<br>" +
                         tr("Type <b>help</b> for an overview of available commands.")) +
                         "<br><span class=\"secwarning\">" +
-                        tr("WARNING: Scammers have been active, telling users to type commands here, stealing their wallet contents. Do not use this console without fully understanding the ramification of a command.") +
+                        tr("WARNING: Scammers have been active, telling users to type commands here, stealing their wallet contents. Do not use this console without fully understanding the ramifications of a command.") +
                         "</span>",
                         true);
 }
