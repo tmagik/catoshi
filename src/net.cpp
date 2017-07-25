@@ -2076,6 +2076,7 @@ bool CConnman::BindListenPort(const CService &addrBind, std::string& strError, b
 
     // Set to non-blocking, incoming connections will also inherit this
     if (!SetSocketNonBlocking(hListenSocket, true)) {
+        CloseSocket(hListenSocket);
         strError = strprintf("BindListenPort: Setting listening socket to non-blocking failed, error %s\n", NetworkErrorString(WSAGetLastError()));
         LogPrintf("%s\n", strError);
         return false;
@@ -2876,5 +2877,5 @@ uint64_t CConnman::CalculateKeyedNetGroup(const CAddress& ad) const
 {
     std::vector<unsigned char> vchNetGroup(ad.GetGroup());
 
-    return GetDeterministicRandomizer(RANDOMIZER_ID_NETGROUP).Write(&vchNetGroup[0], vchNetGroup.size()).Finalize();
+    return GetDeterministicRandomizer(RANDOMIZER_ID_NETGROUP).Write(vchNetGroup.data(), vchNetGroup.size()).Finalize();
 }
