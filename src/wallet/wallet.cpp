@@ -468,11 +468,26 @@ bool CWallet::Verify()
 
     uiInterface.InitMessage(_("Verifying wallet(s)..."));
 
+    // Keep track of each wallet absolute path to detect duplicates.
+    std::set<fs::path> wallet_paths;
+
     for (const std::string& walletFile : gArgs.GetArgs("-wallet")) {
         if (boost::filesystem::path(walletFile).filename() != walletFile) {
-            return InitError(_("-wallet parameter must only specify a filename (not a path)"));
-        } else if (SanitizeString(walletFile, SAFE_CHARS_FILENAME) != walletFile) {
-            return InitError(_("Invalid characters in -wallet filename"));
+            return InitError(strprintf(_("Error loading wallet %s. -wallet parameter must only specify a filename (not a path)."), walletFile));
+        }
+
+        if (SanitizeString(walletFile, SAFE_CHARS_FILENAME) != walletFile) {
+            return InitError(strprintf(_("Error loading wallet %s. Invalid characters in -wallet filename."), walletFile));
+        }
+
+        fs::path wallet_path = fs::absolute(walletFile, GetDataDir());
+
+        if (fs::exists(wallet_path) && (!fs::is_regular_file(wallet_path) || fs::is_symlink(wallet_path))) {
+            return InitError(strprintf(_("Error loading wallet %s. -wallet filename must be a regular file."), walletFile));
+        }
+
+        if (!wallet_paths.insert(wallet_path).second) {
+            return InitError(strprintf(_("Error loading wallet %s. Duplicate -wallet filename specified."), walletFile));
         }
 
         std::string strError;
@@ -1853,6 +1868,7 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime, CCon
     std::vector<uint256> result;
 
     LOCK(cs_wallet);
+
     // Sort them in chronological order
     std::multimap<unsigned int, CWalletTx*> mapSorted;
     for (std::pair<const uint256, CWalletTx>& item : mapWallet)
@@ -2774,10 +2790,6 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                     // selected to meet nFeeNeeded result in a transaction that
                     // requires less fee than the prior iteration.
 
-                    // TODO: The case where nSubtractFeeFromAmount > 0 remains
-                    // to be addressed because it requires returning the fee to
-                    // the payees and not the change output.
-
                     // If we have no change and a big enough excess fee, then
                     // try to construct transaction again only without picking
                     // new inputs. We now know we only need the smaller fee
@@ -2804,6 +2816,8 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                 else if (!pick_new_inputs) {
                     // This shouldn't happen, we should have had enough excess
                     // fee to pay for the new output and still meet nFeeNeeded
+                    // Or we should have just subtracted fee from recipients and
+                    // nFeeNeeded should not have changed
                     strFailReason = _("Transaction fee and change calculation failed");
                     return false;
                 }
@@ -2818,6 +2832,12 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletT
                         nFeeRet += additionalFeeNeeded;
                         break; // Done, able to increase fee from change
                     }
+                }
+
+                // If subtracting fee from recipients, we now know what fee we
+                // need to subtract, we have no reason to reselect inputs
+                if (nSubtractFeeFromAmount > 0) {
+                    pick_new_inputs = false;
                 }
 
                 // Include more fee and try again.
@@ -3824,8 +3844,8 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-keypool=<n>", strprintf(_("Set key pool size to <n> (default: %u)"), DEFAULT_KEYPOOL_SIZE));
     strUsage += HelpMessageOpt("-fallbackfee=<amt>", strprintf(_("A fee rate (in %s/kB) that will be used when fee estimation has insufficient data (default: %s)"),
                                                                CURRENCY_UNIT, FormatMoney(DEFAULT_FALLBACK_FEE)));
-    strUsage += HelpMessageOpt("-discardfee=<amt>", strprintf(_("The fee rate (in %s/kB) used to discard change (to fee) if it would be dust at this fee rate (default: %s) "
-                                                                "Note: We will always discard up to the dust relay fee and a discard fee above that is limited by the longest target fee estimate"),
+    strUsage += HelpMessageOpt("-discardfee=<amt>", strprintf(_("The fee rate (in %s/kB) that indicates your tolerance for discarding change by adding it to the fee (default: %s). "
+                                                                "Note: An output is discarded if it is dust at this rate, but we will always discard up to the dust relay fee and a discard fee above that is limited by the fee estimate for the longest target"),
                                                               CURRENCY_UNIT, FormatMoney(DEFAULT_DISCARD_FEE)));
     strUsage += HelpMessageOpt("-mintxfee=<amt>", strprintf(_("Fees (in %s/kB) smaller than this are considered zero fee for transaction creation (default: %s)"),
                                                             CURRENCY_UNIT, FormatMoney(DEFAULT_TRANSACTION_MINFEE)));

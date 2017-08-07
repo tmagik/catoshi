@@ -43,7 +43,7 @@ CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest& request)
                 return pwallet;
             }
         }
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Requested wallet does not exist or is not loaded");
+        throw JSONRPCError(RPC_WALLET_NOT_FOUND, "Requested wallet does not exist or is not loaded");
     }
     return ::vpwallets.size() == 1 || (request.fHelp && ::vpwallets.size() > 0) ? ::vpwallets[0] : nullptr;
 }
@@ -57,13 +57,19 @@ std::string HelpRequiringPassphrase(CWallet * const pwallet)
 
 bool EnsureWalletIsAvailable(CWallet * const pwallet, bool avoidException)
 {
-    if (!pwallet) {
-        if (!avoidException)
-            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (disabled)");
-        else
-            return false;
+    if (pwallet) return true;
+    if (avoidException) return false;
+    if (::vpwallets.empty()) {
+        // Note: It isn't currently possible to trigger this error because
+        // wallet RPC methods aren't registered unless a wallet is loaded. But
+        // this error is being kept as a precaution, because it's possible in
+        // the future that wallet RPC methods might get or remain registered
+        // when no wallets are loaded.
+        throw JSONRPCError(
+            RPC_METHOD_NOT_FOUND, "Method not found (wallet method is disabled because no wallet is loaded)");
     }
-    return true;
+    throw JSONRPCError(RPC_WALLET_NOT_SPECIFIED,
+        "Wallet file not specified (must request wallet RPC through /wallet/<filename> uri-path).");
 }
 
 void EnsureWalletIsUnlocked(CWallet * const pwallet)
@@ -1124,11 +1130,15 @@ public:
     bool operator()(const CKeyID &keyID) {
         if (pwallet) {
             CScript basescript = GetScriptForDestination(keyID);
-            isminetype typ;
-            typ = IsMine(*pwallet, basescript, SIGVERSION_WITNESS_V0);
-            if (typ != ISMINE_SPENDABLE && typ != ISMINE_WATCH_SOLVABLE)
-                return false;
             CScript witscript = GetScriptForWitness(basescript);
+            SignatureData sigs;
+            // This check is to make sure that the script we created can actually be solved for and signed by us
+            // if we were to have the private keys. This is just to make sure that the script is valid and that,
+            // if found in a transaction, we would still accept and relay that transcation.
+            if (!ProduceSignature(DummySignatureCreator(pwallet), witscript, sigs) ||
+                !VerifyScript(sigs.scriptSig, witscript, &sigs.scriptWitness, MANDATORY_SCRIPT_VERIFY_FLAGS | SCRIPT_VERIFY_WITNESS_PUBKEYTYPE, DummySignatureCreator(pwallet).Checker())) {
+                return false;
+            }
             pwallet->AddCScript(witscript);
             result = CScriptID(witscript);
             return true;
@@ -1145,11 +1155,15 @@ public:
                 result = scriptID;
                 return true;
             }
-            isminetype typ;
-            typ = IsMine(*pwallet, subscript, SIGVERSION_WITNESS_V0);
-            if (typ != ISMINE_SPENDABLE && typ != ISMINE_WATCH_SOLVABLE)
-                return false;
             CScript witscript = GetScriptForWitness(subscript);
+            SignatureData sigs;
+            // This check is to make sure that the script we created can actually be solved for and signed by us
+            // if we were to have the private keys. This is just to make sure that the script is valid and that,
+            // if found in a transaction, we would still accept and relay that transcation.
+            if (!ProduceSignature(DummySignatureCreator(pwallet), witscript, sigs) ||
+                !VerifyScript(sigs.scriptSig, witscript, &sigs.scriptWitness, MANDATORY_SCRIPT_VERIFY_FLAGS | SCRIPT_VERIFY_WITNESS_PUBKEYTYPE, DummySignatureCreator(pwallet).Checker())) {
+                return false;
+            }
             pwallet->AddCScript(witscript);
             result = CScriptID(witscript);
             return true;
@@ -2575,6 +2589,7 @@ UniValue resendwallettransactions(const JSONRPCRequest& request)
             "Immediately re-broadcast unconfirmed wallet transactions to all peers.\n"
             "Intended only for testing; the wallet code periodically re-broadcasts\n"
             "automatically.\n"
+            "Returns an RPC error if -walletbroadcast is set to false.\n"
             "Returns array of transaction ids that were re-broadcast.\n"
             );
 
@@ -2582,6 +2597,10 @@ UniValue resendwallettransactions(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
 
     LOCK2(cs_main, pwallet->cs_wallet);
+
+    if (!pwallet->GetBroadcastTransactions()) {
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Error: Wallet transaction broadcasting is disabled with -walletbroadcast");
+    }
 
     std::vector<uint256> txids = pwallet->ResendWalletTransactionsBefore(GetTime(), g_connman.get());
     UniValue result(UniValue::VARR);
