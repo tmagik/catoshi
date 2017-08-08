@@ -14,15 +14,18 @@
 #include "consensus/merkle.h"
 #include "consensus/tx_verify.h"
 #include "consensus/validation.h"
+#include "cuckoocache.h"
 #include "fs.h"
 #include "hash.h"
 #include "init.h"
 #include "policy/fees.h"
 #include "policy/policy.h"
+#include "policy/rbf.h"
 #include "pow.h"
 #include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "random.h"
+#include "reverse_iterator.h"
 #include "script/script.h"
 #include "script/sigcache.h"
 #include "script/standard.h"
@@ -189,7 +192,7 @@ enum FlushStateMode {
 static bool FlushStateToDisk(const CChainParams& chainParams, CValidationState &state, FlushStateMode mode, int nManualPruneHeight=0);
 static void FindFilesToPruneManual(std::set<int>& setFilesToPrune, int nManualPruneHeight);
 static void FindFilesToPrune(std::set<int>& setFilesToPrune, uint64_t nPruneAfterHeight);
-static bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, PrecomputedTransactionData& txdata, std::vector<CScriptCheck> *pvChecks = NULL);
+bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData& txdata, std::vector<CScriptCheck> *pvChecks = nullptr);
 static FILE* OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 
 bool CheckFinalTx(const CTransaction &tx, int flags)
@@ -312,6 +315,9 @@ bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp, bool 
     return EvaluateSequenceLocks(index, lockPair);
 }
 
+// Returns the script flags which should be checked for a given block
+static unsigned int GetBlockScriptFlags(const CBlockIndex* pindex, const Consensus::Params& chainparams);
+
 static void LimitMempoolSize(CTxMemPool& pool, size_t limit, unsigned long age) {
     int expired = pool.Expire(GetTime() - age);
     if (expired != 0) {
@@ -395,6 +401,42 @@ void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool f
     LimitMempoolSize(mempool, GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
 }
 
+// Used to avoid mempool polluting consensus critical paths if CCoinsViewMempool
+// were somehow broken and returning the wrong scriptPubKeys
+static bool CheckInputsFromMempoolAndCache(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &view, CTxMemPool& pool,
+                 unsigned int flags, bool cacheSigStore, PrecomputedTransactionData& txdata) {
+    AssertLockHeld(cs_main);
+
+    // pool.cs should be locked already, but go ahead and re-take the lock here
+    // to enforce that mempool doesn't change between when we check the view
+    // and when we actually call through to CheckInputs
+    LOCK(pool.cs);
+
+    assert(!tx.IsCoinBase());
+    for (const CTxIn& txin : tx.vin) {
+        const Coin& coin = view.AccessCoin(txin.prevout);
+
+        // At this point we haven't actually checked if the coins are all
+        // available (or shouldn't assume we have, since CheckInputs does).
+        // So we just return failure if the inputs are not available here,
+        // and then only have to check equivalence for available inputs.
+        if (coin.IsSpent()) return false;
+
+        const CTransactionRef& txFrom = pool.get(txin.prevout.hash);
+        if (txFrom) {
+            assert(txFrom->GetHash() == txin.prevout.hash);
+            assert(txFrom->vout.size() > txin.prevout.n);
+            assert(txFrom->vout[txin.prevout.n] == coin.out);
+        } else {
+            const Coin& coinFromDisk = pcoinsTip->AccessCoin(txin.prevout);
+            assert(!coinFromDisk.IsSpent());
+            assert(coinFromDisk.out == coin.out);
+        }
+    }
+
+    return CheckInputs(tx, state, view, true, flags, cacheSigStore, true, txdata);
+}
+
 static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool& pool, CValidationState& state, const CTransactionRef& ptx, bool fLimitFree,
                               bool* pfMissingInputs, int64_t nAcceptTime, std::list<CTransactionRef>* plTxnReplaced,
                               bool fOverrideMempoolLimit, const CAmount& nAbsurdFee, std::vector<COutPoint>& coins_to_uncache)
@@ -414,7 +456,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
 
     // Reject transactions with witness before segregated witness activates (override with -prematurewitness)
     bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), chainparams.GetConsensus());
-    if (!GetBoolArg("-prematurewitness",false) && tx.HasWitness() && !witnessEnabled) {
+    if (!GetBoolArg("-prematurewitness", false) && tx.HasWitness() && !witnessEnabled) {
         return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
     }
 
@@ -447,9 +489,9 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
             if (!setConflicts.count(ptxConflicting->GetHash()))
             {
                 // Allow opt-out of transaction replacement by setting
-                // nSequence >= maxint-1 on all inputs.
+                // nSequence > MAX_BIP125_RBF_SEQUENCE (SEQUENCE_FINAL-2) on all inputs.
                 //
-                // maxint-1 is picked to still allow use of nLockTime by
+                // SEQUENCE_FINAL-1 is picked to still allow use of nLockTime by
                 // non-replaceable transactions. All inputs rather than just one
                 // is for the sake of multi-party protocols, where we don't
                 // want a single party to be able to disable replacement.
@@ -463,7 +505,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
                 {
                     for (const CTxIn &_txin : ptxConflicting->vin)
                     {
-                        if (_txin.nSequence < std::numeric_limits<unsigned int>::max()-1)
+                        if (_txin.nSequence <= MAX_BIP125_RBF_SEQUENCE)
                         {
                             fReplacementOptOut = false;
                             break;
@@ -491,24 +533,20 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
         CCoinsViewMemPool viewMemPool(pcoinsTip, pool);
         view.SetBackend(viewMemPool);
 
-        // do we already have it?
-        for (size_t out = 0; out < tx.vout.size(); out++) {
-            COutPoint outpoint(hash, out);
-            bool had_coin_in_cache = pcoinsTip->HaveCoinInCache(outpoint);
-            if (view.HaveCoin(outpoint)) {
-                if (!had_coin_in_cache) {
-                    coins_to_uncache.push_back(outpoint);
-                }
-                return state.Invalid(false, REJECT_DUPLICATE, "txn-already-known");
-            }
-        }
-
         // do all inputs exist?
         for (const CTxIn txin : tx.vin) {
             if (!pcoinsTip->HaveCoinInCache(txin.prevout)) {
                 coins_to_uncache.push_back(txin.prevout);
             }
             if (!view.HaveCoin(txin.prevout)) {
+                // Are inputs missing because we already have the tx?
+                for (size_t out = 0; out < tx.vout.size(); out++) {
+                    // Optimistically just do efficient check of cache for outputs
+                    if (pcoinsTip->HaveCoinInCache(COutPoint(hash, out))) {
+                        return state.Invalid(false, REJECT_DUPLICATE, "txn-already-known");
+                    }
+                }
+                // Otherwise assume this might be an orphan tx for which we just haven't seen parents yet
                 if (pfMissingInputs) {
                     *pfMissingInputs = true;
                 }
@@ -751,32 +789,51 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
         PrecomputedTransactionData txdata(tx);
-        if (!CheckInputs(tx, state, view, true, scriptVerifyFlags, true, txdata)) {
+        if (!CheckInputs(tx, state, view, true, scriptVerifyFlags, true, false, txdata)) {
             // SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
             // need to turn both off, and compare against just turning off CLEANSTACK
             // to see if the failure is specifically due to witness validation.
             CValidationState stateDummy; // Want reported failures to be from first CheckInputs
-            if (!tx.HasWitness() && CheckInputs(tx, stateDummy, view, true, scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK), true, txdata) &&
-                !CheckInputs(tx, stateDummy, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, txdata)) {
+            if (!tx.HasWitness() && CheckInputs(tx, stateDummy, view, true, scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK), true, false, txdata) &&
+                !CheckInputs(tx, stateDummy, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, false, txdata)) {
                 // Only the witness is missing, so the transaction itself may be fine.
                 state.SetCorruptionPossible();
             }
             return false; // state filled in by CheckInputs
         }
 
-        // Check again against just the consensus-critical mandatory script
-        // verification flags, in case of bugs in the standard flags that cause
+        // Check again against the current block tip's script verification
+        // flags to cache our script execution flags. This is, of course,
+        // useless if the next block has different script flags from the
+        // previous one, but because the cache tracks script flags for us it
+        // will auto-invalidate and we'll just have a few blocks of extra
+        // misses on soft-fork activation.
+        //
+        // This is also useful in case of bugs in the standard flags that cause
         // transactions to pass as valid when they're actually invalid. For
         // instance the STRICTENC flag was incorrectly allowing certain
         // CHECKSIG NOT scripts to pass, even though they were invalid.
         //
         // There is a similar check in CreateNewBlock() to prevent creating
-        // invalid blocks, however allowing such transactions into the mempool
-        // can be exploited as a DoS attack.
-        if (!CheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata))
+        // invalid blocks (using TestBlockValidity), however allowing such
+        // transactions into the mempool can be exploited as a DoS attack.
+        unsigned int currentBlockScriptVerifyFlags = GetBlockScriptFlags(chainActive.Tip(), Params().GetConsensus());
+        if (!CheckInputsFromMempoolAndCache(tx, state, view, pool, currentBlockScriptVerifyFlags, true, txdata))
         {
-            return error("%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s, %s",
-                __func__, hash.ToString(), FormatStateMessage(state));
+            // If we're using promiscuousmempoolflags, we may hit this normally
+            // Check if current block has some flags that scriptVerifyFlags
+            // does not before printing an ominous warning
+            if (!(~scriptVerifyFlags & currentBlockScriptVerifyFlags)) {
+                return error("%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against latest-block but not STANDARD flags %s, %s",
+                    __func__, hash.ToString(), FormatStateMessage(state));
+            } else {
+                if (!CheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, false, txdata)) {
+                    return error("%s: ConnectInputs failed against MANDATORY but not STANDARD flags due to promiscuous mempool %s, %s",
+                        __func__, hash.ToString(), FormatStateMessage(state));
+                } else {
+                    LogPrintf("Warning: -promiscuousmempool flags set to not include currently enforced soft forks, this may break mining or otherwise cause instability!\n");
+                }
+            }
         }
 
         // Remove conflicting transactions from the mempool
@@ -1081,7 +1138,7 @@ static void CheckForkWarningConditionsOnNewFork(CBlockIndex* pindexNewForkTip)
     // or a chain that is entirely longer than ours and invalid (note that this should be detected by both)
     // We define it this way because it allows us to only store the highest fork tip (+ base) which meets
     // the 7-block condition and from this always have the most-likely-to-cause-warning fork
-    if (pfork && (!pindexBestForkTip || (pindexBestForkTip && pindexNewForkTip->nHeight > pindexBestForkTip->nHeight)) &&
+    if (pfork && (!pindexBestForkTip || pindexNewForkTip->nHeight > pindexBestForkTip->nHeight) &&
             pindexNewForkTip->nChainWork - pfork->nChainWork > (GetBlockProof(*pfork) * 7) &&
             chainActive.Height() - pindexNewForkTip->nHeight < 72)
     {
@@ -1152,12 +1209,34 @@ int GetSpendHeight(const CCoinsViewCache& inputs)
     return pindexPrev->nHeight + 1;
 }
 
+
+static CuckooCache::cache<uint256, SignatureCacheHasher> scriptExecutionCache;
+static uint256 scriptExecutionCacheNonce(GetRandHash());
+
+void InitScriptExecutionCache() {
+    // nMaxCacheSize is unsigned. If -maxsigcachesize is set to zero,
+    // setup_bytes creates the minimum possible cache (2 elements).
+    size_t nMaxCacheSize = std::min(std::max((int64_t)0, GetArg("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2), MAX_MAX_SIG_CACHE_SIZE) * ((size_t) 1 << 20);
+    size_t nElems = scriptExecutionCache.setup_bytes(nMaxCacheSize);
+    LogPrintf("Using %zu MiB out of %zu/2 requested for script execution cache, able to store %zu elements\n",
+            (nElems*sizeof(uint256)) >>20, (nMaxCacheSize*2)>>20, nElems);
+}
+
 /**
  * Check whether all inputs of this transaction are valid (no double spends, scripts & sigs, amounts)
- * This does not modify the UTXO set. If pvChecks is not NULL, script checks are pushed onto it
- * instead of being performed inline.
+ * This does not modify the UTXO set.
+ *
+ * If pvChecks is not NULL, script checks are pushed onto it instead of being performed inline. Any
+ * script checks which are not necessary (eg due to script execution cache hits) are, obviously,
+ * not pushed onto pvChecks/run.
+ *
+ * Setting cacheSigStore/cacheFullScriptStore to false will remove elements from the corresponding cache
+ * which are matched. This is useful for checking blocks where we will likely never need the cache
+ * entry again.
+ *
+ * Non-static (and re-declared) in src/test/txvalidationcache_tests.cpp
  */
-static bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, PrecomputedTransactionData& txdata, std::vector<CScriptCheck> *pvChecks)
+bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData& txdata, std::vector<CScriptCheck> *pvChecks)
 {
     if (!tx.IsCoinBase())
     {
@@ -1177,6 +1256,21 @@ static bool CheckInputs(const CTransaction& tx, CValidationState &state, const C
         // Of course, if an assumed valid block is invalid due to false scriptSigs
         // this optimization would allow an invalid chain to be accepted.
         if (fScriptChecks) {
+            // First check if script executions have been cached with the same
+            // flags. Note that this assumes that the inputs provided are
+            // correct (ie that the transaction hash which is in tx's prevouts
+            // properly commits to the scriptPubKey in the inputs view of that
+            // transaction).
+            uint256 hashCacheEntry;
+            // We only use the first 19 bytes of nonce to avoid a second SHA
+            // round - giving us 19 + 32 + 4 = 55 bytes (+ 8 + 1 = 64)
+            static_assert(55 - sizeof(flags) - 32 >= 128/8, "Want at least 128 bits of nonce for script execution cache");
+            CSHA256().Write(scriptExecutionCacheNonce.begin(), 55 - sizeof(flags) - 32).Write(tx.GetWitnessHash().begin(), 32).Write((unsigned char*)&flags, sizeof(flags)).Finalize(hashCacheEntry.begin());
+            AssertLockHeld(cs_main); //TODO: Remove this requirement by making CuckooCache not require external locks
+            if (scriptExecutionCache.contains(hashCacheEntry, !cacheFullScriptStore)) {
+                return true;
+            }
+
             for (unsigned int i = 0; i < tx.vin.size(); i++) {
                 const COutPoint &prevout = tx.vin[i].prevout;
                 const Coin& coin = inputs.AccessCoin(prevout);
@@ -1191,7 +1285,7 @@ static bool CheckInputs(const CTransaction& tx, CValidationState &state, const C
                 const CAmount amount = coin.out.nValue;
 
                 // Verify signature
-                CScriptCheck check(scriptPubKey, amount, tx, i, flags, cacheStore, &txdata);
+                CScriptCheck check(scriptPubKey, amount, tx, i, flags, cacheSigStore, &txdata);
                 if (pvChecks) {
                     pvChecks->push_back(CScriptCheck());
                     check.swap(pvChecks->back());
@@ -1204,7 +1298,7 @@ static bool CheckInputs(const CTransaction& tx, CValidationState &state, const C
                         // avoid splitting the network between upgraded and
                         // non-upgraded nodes.
                         CScriptCheck check2(scriptPubKey, amount, tx, i,
-                                flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheStore, &txdata);
+                                flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheSigStore, &txdata);
                         if (check2())
                             return state.Invalid(false, REJECT_NONSTANDARD, strprintf("non-mandatory-script-verify-flag (%s)", ScriptErrorString(check.GetScriptError())));
                     }
@@ -1217,6 +1311,12 @@ static bool CheckInputs(const CTransaction& tx, CValidationState &state, const C
                     // super-majority signaling has occurred.
                     return state.DoS(100,false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError())));
                 }
+            }
+
+            if (cacheFullScriptStore && !pvChecks) {
+                // We executed all of the provided scripts, and were told to
+                // cache the result. Do so now.
+                scriptExecutionCache.insert(hashCacheEntry);
             }
         }
     }
@@ -1366,6 +1466,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, const CBlockIndex* 
     for (int i = block.vtx.size() - 1; i >= 0; i--) {
         const CTransaction &tx = *(block.vtx[i]);
         uint256 hash = tx.GetHash();
+        bool is_coinbase = tx.IsCoinBase();
 
         // Check that all outputs are available and match the outputs in the block itself
         // exactly.
@@ -1374,7 +1475,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, const CBlockIndex* 
                 COutPoint out(hash, o);
                 Coin coin;
                 bool is_spent = view.SpendCoin(out, &coin);
-                if (!is_spent || tx.vout[o] != coin.out) {
+                if (!is_spent || tx.vout[o] != coin.out || pindex->nHeight != coin.nHeight || is_coinbase != coin.fCoinBase) {
                     fClean = false; // transaction output mismatch
                 }
             }
@@ -1480,6 +1581,41 @@ public:
 // Protected by cs_main
 static ThresholdConditionCache warningcache[VERSIONBITS_NUM_BITS];
 
+static unsigned int GetBlockScriptFlags(const CBlockIndex* pindex, const Consensus::Params& consensusparams) {
+    AssertLockHeld(cs_main);
+
+    // BIP16 didn't become active until Apr 1 2012
+    int64_t nBIP16SwitchTime = 1333238400;
+    bool fStrictPayToScriptHash = (pindex->GetBlockTime() >= nBIP16SwitchTime);
+
+    unsigned int flags = fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE;
+
+    // Start enforcing the DERSIG (BIP66) rule
+    if (pindex->nHeight >= consensusparams.BIP66Height) {
+        flags |= SCRIPT_VERIFY_DERSIG;
+    }
+
+    // Start enforcing CHECKLOCKTIMEVERIFY (BIP65) rule
+    if (pindex->nHeight >= consensusparams.BIP65Height) {
+        flags |= SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
+    }
+
+    // Start enforcing BIP68 (sequence locks) and BIP112 (CHECKSEQUENCEVERIFY) using versionbits logic.
+    if (VersionBitsState(pindex->pprev, consensusparams, Consensus::DEPLOYMENT_CSV, versionbitscache) == THRESHOLD_ACTIVE) {
+        flags |= SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
+    }
+
+    // Start enforcing WITNESS rules using versionbits logic.
+    if (IsWitnessEnabled(pindex->pprev, consensusparams)) {
+        flags |= SCRIPT_VERIFY_WITNESS;
+        flags |= SCRIPT_VERIFY_NULLDUMMY;
+    }
+
+    return flags;
+}
+
+
+
 static int64_t nTimeCheck = 0;
 static int64_t nTimeForks = 0;
 static int64_t nTimeVerify = 0;
@@ -1583,34 +1719,14 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
         }
     }
 
-    // BIP16 didn't become active until Apr 1 2012
-    int64_t nBIP16SwitchTime = 1333238400;
-    bool fStrictPayToScriptHash = (pindex->GetBlockTime() >= nBIP16SwitchTime);
-
-    unsigned int flags = fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE;
-
-    // Start enforcing the DERSIG (BIP66) rule
-    if (pindex->nHeight >= chainparams.GetConsensus().BIP66Height) {
-        flags |= SCRIPT_VERIFY_DERSIG;
-    }
-
-    // Start enforcing CHECKLOCKTIMEVERIFY (BIP65) rule
-    if (pindex->nHeight >= chainparams.GetConsensus().BIP65Height) {
-        flags |= SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
-    }
-
     // Start enforcing BIP68 (sequence locks) and BIP112 (CHECKSEQUENCEVERIFY) using versionbits logic.
     int nLockTimeFlags = 0;
     if (VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_CSV, versionbitscache) == THRESHOLD_ACTIVE) {
-        flags |= SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
         nLockTimeFlags |= LOCKTIME_VERIFY_SEQUENCE;
     }
 
-    // Start enforcing WITNESS rules using versionbits logic.
-    if (IsWitnessEnabled(pindex->pprev, chainparams.GetConsensus())) {
-        flags |= SCRIPT_VERIFY_WITNESS;
-        flags |= SCRIPT_VERIFY_NULLDUMMY;
-    }
+    // Get the script flags for this block
+    unsigned int flags = GetBlockScriptFlags(pindex, chainparams.GetConsensus());
 
     int64_t nTime2 = GetTimeMicros(); nTimeForks += nTime2 - nTime1;
     LogPrint(BCLog::BENCH, "    - Fork checks: %.2fms [%.2fs]\n", 0.001 * (nTime2 - nTime1), nTimeForks * 0.000001);
@@ -1671,7 +1787,7 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
-            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, txdata[i], nScriptCheckThreads ? &vChecks : NULL))
+            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i], nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
@@ -2222,7 +2338,7 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
         nHeight = nTargetHeight;
 
         // Connect new blocks.
-        BOOST_REVERSE_FOREACH(CBlockIndex *pindexConnect, vpindexToConnect) {
+        for (CBlockIndex *pindexConnect : reverse_iterate(vpindexToConnect)) {
             if (!ConnectTip(state, chainparams, pindexConnect, pindexConnect == pindexMostWork ? pblock : std::shared_ptr<const CBlock>(), connectTrace, disconnectpool)) {
                 if (state.IsInvalid()) {
                     // The block violates a consensus rule.
@@ -2684,7 +2800,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
     // checks that use witness data may be performed here.
 
     // Size limits
-    if (block.vtx.empty() || block.vtx.size() > MAX_BLOCK_BASE_SIZE || ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) > MAX_BLOCK_BASE_SIZE)
+    if (block.vtx.empty() || block.vtx.size() * WITNESS_SCALE_FACTOR > MAX_BLOCK_WEIGHT || ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) * WITNESS_SCALE_FACTOR > MAX_BLOCK_WEIGHT)
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-length", false, "size limits failed");
 
     // First transaction must be coinbase, the rest must not be
@@ -2771,7 +2887,7 @@ std::vector<unsigned char> GenerateCoinbaseCommitment(CBlock& block, const CBloc
     if (consensusParams.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout != 0) {
         if (commitpos == -1) {
             uint256 witnessroot = BlockWitnessMerkleRoot(block, NULL);
-            CHash256().Write(witnessroot.begin(), 32).Write(&ret[0], 32).Finalize(witnessroot.begin());
+            CHash256().Write(witnessroot.begin(), 32).Write(ret.data(), 32).Finalize(witnessroot.begin());
             CTxOut out;
             out.nValue = 0;
             out.scriptPubKey.resize(38);
@@ -3423,14 +3539,24 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
     return true;
 }
 
-void LoadChainTip(const CChainParams& chainparams)
+bool LoadChainTip(const CChainParams& chainparams)
 {
-    if (chainActive.Tip() && chainActive.Tip()->GetBlockHash() == pcoinsTip->GetBestBlock()) return;
+    if (chainActive.Tip() && chainActive.Tip()->GetBlockHash() == pcoinsTip->GetBestBlock()) return true;
+
+    if (pcoinsTip->GetBestBlock().IsNull() && mapBlockIndex.size() == 1) {
+        // In case we just added the genesis block, connect it now, so
+        // that we always have a chainActive.Tip() when we return.
+        LogPrintf("%s: Connecting genesis block...\n", __func__);
+        CValidationState state;
+        if (!ActivateBestChain(state, chainparams)) {
+            return false;
+        }
+    }
 
     // Load pointer to end of best chain
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
     if (it == mapBlockIndex.end())
-        return;
+        return false;
     chainActive.SetTip(it->second);
 
     PruneBlockIndexCandidates();
@@ -3439,6 +3565,7 @@ void LoadChainTip(const CChainParams& chainparams)
         chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
         DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
         GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
+    return true;
 }
 
 CVerifyDB::CVerifyDB()
@@ -3458,9 +3585,7 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
         return true;
 
     // Verify blocks in the best chain
-    if (nCheckDepth <= 0)
-        nCheckDepth = 1000000000; // suffices until the year 19000
-    if (nCheckDepth > chainActive.Height())
+    if (nCheckDepth <= 0 || nCheckDepth > chainActive.Height())
         nCheckDepth = chainActive.Height();
     nCheckLevel = std::max(0, std::min(4, nCheckLevel));
     LogPrintf("Verifying last %i blocks at level %i\n", nCheckDepth, nCheckLevel);
@@ -3637,6 +3762,8 @@ bool RewindBlockIndex(const CChainParams& params)
 {
     LOCK(cs_main);
 
+    // Note that during -reindex-chainstate we are called with an empty chainActive!
+
     int nHeight = 1;
     while (nHeight <= chainActive.Height()) {
         if (IsWitnessEnabled(chainActive[nHeight - 1], params.GetConsensus()) && !(chainActive[nHeight]->nStatus & BLOCK_OPT_WITNESS)) {
@@ -3706,12 +3833,19 @@ bool RewindBlockIndex(const CChainParams& params)
         }
     }
 
-    PruneBlockIndexCandidates();
+    if (chainActive.Tip() != NULL) {
+        // We can't prune block index candidates based on our tip if we have
+        // no tip due to chainActive being empty!
+        PruneBlockIndexCandidates();
 
-    CheckBlockIndex(params.GetConsensus());
+        CheckBlockIndex(params.GetConsensus());
 
-    if (!FlushStateToDisk(params, state, FLUSH_STATE_ALWAYS)) {
-        return false;
+        // FlushStateToDisk can possibly read chainActive. Be conservative
+        // and skip it here, we're about to -reindex-chainstate anyway, so
+        // it'll get called a bunch real soon.
+        if (!FlushStateToDisk(params, state, FLUSH_STATE_ALWAYS)) {
+            return false;
+        }
     }
 
     return true;
@@ -3749,42 +3883,54 @@ void UnloadBlockIndex()
 bool LoadBlockIndex(const CChainParams& chainparams)
 {
     // Load block index from databases
-    if (!fReindex && !LoadBlockIndexDB(chainparams))
-        return false;
+    bool needs_init = fReindex;
+    if (!fReindex) {
+        bool ret = LoadBlockIndexDB(chainparams);
+        if (!ret) return false;
+        needs_init = mapBlockIndex.empty();
+    }
+
+    if (needs_init) {
+        // Everything here is for *new* reindex/DBs. Thus, though
+        // LoadBlockIndexDB may have set fReindex if we shut down
+        // mid-reindex previously, we don't check fReindex and
+        // instead only check it prior to LoadBlockIndexDB to set
+        // needs_init.
+
+        LogPrintf("Initializing databases...\n");
+        // Use the provided setting for -txindex in the new database
+        fTxIndex = GetBoolArg("-txindex", DEFAULT_TXINDEX);
+        pblocktree->WriteFlag("txindex", fTxIndex);
+    }
     return true;
 }
 
-bool InitBlockIndex(const CChainParams& chainparams)
+bool LoadGenesisBlock(const CChainParams& chainparams)
 {
     LOCK(cs_main);
 
-    // Check whether we're already initialized
-    if (chainActive.Genesis() != NULL)
+    // Check whether we're already initialized by checking for genesis in
+    // mapBlockIndex. Note that we can't use chainActive here, since it is
+    // set based on the coins db, not the block index db, which is the only
+    // thing loaded at this point.
+    if (mapBlockIndex.count(chainparams.GenesisBlock().GetHash()))
         return true;
 
-    // Use the provided setting for -txindex in the new database
-    fTxIndex = GetBoolArg("-txindex", DEFAULT_TXINDEX);
-    pblocktree->WriteFlag("txindex", fTxIndex);
-    LogPrintf("Initializing databases...\n");
-
-    // Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
-    if (!fReindex) {
-        try {
-            CBlock &block = const_cast<CBlock&>(chainparams.GenesisBlock());
-            // Start new block file
-            unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
-            CDiskBlockPos blockPos;
-            CValidationState state;
-            if (!FindBlockPos(state, blockPos, nBlockSize+8, 0, block.GetBlockTime()))
-                return error("LoadBlockIndex(): FindBlockPos failed");
-            if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
-                return error("LoadBlockIndex(): writing genesis block to disk failed");
-            CBlockIndex *pindex = AddToBlockIndex(block);
-            if (!ReceivedBlockTransactions(block, state, pindex, blockPos, chainparams.GetConsensus()))
-                return error("LoadBlockIndex(): genesis block not accepted");
-        } catch (const std::runtime_error& e) {
-            return error("LoadBlockIndex(): failed to initialize block database: %s", e.what());
-        }
+    try {
+        CBlock &block = const_cast<CBlock&>(chainparams.GenesisBlock());
+        // Start new block file
+        unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
+        CDiskBlockPos blockPos;
+        CValidationState state;
+        if (!FindBlockPos(state, blockPos, nBlockSize+8, 0, block.GetBlockTime()))
+            return error("%s: FindBlockPos failed", __func__);
+        if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
+            return error("%s: writing genesis block to disk failed", __func__);
+        CBlockIndex *pindex = AddToBlockIndex(block);
+        if (!ReceivedBlockTransactions(block, state, pindex, blockPos, chainparams.GetConsensus()))
+            return error("%s: genesis block not accepted", __func__);
+    } catch (const std::runtime_error& e) {
+        return error("%s: failed to write genesis block: %s", __func__, e.what());
     }
 
     return true;

@@ -159,7 +159,12 @@ bool AppInit(int argc, char* argv[])
             return false;
 #endif // HAVE_DECL_DAEMON
         }
-
+        // Lock data directory after daemonization
+        if (!AppInitLockDataDirectory())
+        {
+            // If locking the data directory failed, exit immediately
+            exit(EXIT_FAILURE);
+        }
         fRet = AppInitMain(threadGroup, scheduler);
     }
     catch (const std::exception& e) {
@@ -171,9 +176,7 @@ bool AppInit(int argc, char* argv[])
     if (!fRet)
     {
         Interrupt(threadGroup);
-        // threadGroup.join_all(); was left out intentionally here, because we didn't re-test all of
-        // the startup-failure cases to make sure they don't result in a hang due to some
-        // thread-blocking-waiting-for-another-thread-during-startup case
+        threadGroup.join_all();
     } else {
         WaitForShutdown(&threadGroup);
     }
