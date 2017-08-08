@@ -18,7 +18,6 @@
 #include <stdio.h>
 
 #include <boost/algorithm/string.hpp> // boost::trim
-#include <boost/foreach.hpp>
 
 /** WWW-Authenticate to present with 401 Unauthorized response */
 static const char* WWW_AUTH_HEADER_DATA = "Basic realm=\"jsonrpc\"";
@@ -234,7 +233,10 @@ bool StartHTTPRPC()
         return false;
 
     RegisterHTTPHandler("/", true, HTTPReq_JSONRPC);
-
+#ifdef ENABLE_WALLET
+    // ifdef can be removed once we switch to better endpoint support and API versioning
+    RegisterHTTPHandler("/wallet/", false, HTTPReq_JSONRPC);
+#endif
     assert(EventBase());
     httpRPCTimerInterface = new HTTPRPCTimerInterface(EventBase());
     RPCSetTimerInterface(httpRPCTimerInterface);
