@@ -17,7 +17,6 @@
 #include <univalue.h>
 
 #include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/algorithm/string/case_conv.hpp> // for to_upper()
 #include <boost/algorithm/string/classification.hpp>
@@ -122,16 +121,6 @@ CAmount AmountFromValue(const UniValue& value)
     if (!MoneyRange(amount))
         throw JSONRPCError(RPC_TYPE_ERROR, "Amount out of range");
     return amount;
-}
-
-UniValue ValueFromAmount(const CAmount& amount)
-{
-    bool sign = amount < 0;
-    int64_t n_abs = (sign ? -amount : amount);
-    int64_t quotient = n_abs / COIN;
-    int64_t remainder = n_abs % COIN;
-    return UniValue(UniValue::VNUM,
-            strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder));
 }
 
 uint256 ParseHashV(const UniValue& v, std::string strName)

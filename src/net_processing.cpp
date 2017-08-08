@@ -22,6 +22,7 @@
 #include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "random.h"
+#include "reverse_iterator.h"
 #include "tinyformat.h"
 #include "txmempool.h"
 #include "ui_interface.h"
@@ -827,7 +828,7 @@ void PeerLogicValidation::UpdatedBlockTip(const CBlockIndex *pindexNew, const CB
         // Relay inventory, but don't relay old inventory during initial block download.
         connman->ForEachNode([nNewHeight, &vHashes](CNode* pnode) {
             if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : 0)) {
-                BOOST_REVERSE_FOREACH(const uint256& hash, vHashes) {
+                for (const uint256& hash : reverse_iterate(vHashes)) {
                     pnode->PushBlockHash(hash);
                 }
             }
@@ -1257,6 +1258,17 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                                strprintf("Expected to offer services %08x", pfrom->nServicesExpected)));
             pfrom->fDisconnect = true;
             return false;
+        }
+
+        if (nServices & ((1 << 7) | (1 << 5))) {
+            if (GetTime() < 1533096000) {
+                // Immediately disconnect peers that use service bits 6 or 8 until August 1st, 2018
+                // These bits have been used as a flag to indicate that a node is running incompatible
+                // consensus rules instead of changing the network magic, so we're stuck disconnecting
+                // based on these service bits, at least for a while.
+                pfrom->fDisconnect = true;
+                return false;
+            }
         }
 
         if (nVersion < MIN_PEER_PROTO_VERSION)
@@ -2338,7 +2350,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             } else {
                 std::vector<CInv> vGetData;
                 // Download as much as possible, from earliest to latest.
-                BOOST_REVERSE_FOREACH(const CBlockIndex *pindex, vToFetch) {
+                for (const CBlockIndex *pindex : reverse_iterate(vToFetch)) {
                     if (nodestate->nBlocksInFlight >= MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
                         // Can't download any more from this peer
                         break;

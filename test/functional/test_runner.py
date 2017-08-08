@@ -88,6 +88,7 @@ BASE_SCRIPTS= [
     'mempool_spendcoinbase.py',
     'mempool_reorg.py',
     'mempool_persist.py',
+    'multiwallet.py',
     'httpbasics.py',
     'multi_rpc.py',
     'proxy_test.py',
@@ -108,6 +109,7 @@ BASE_SCRIPTS= [
     'signmessages.py',
     'nulldummy.py',
     'import-rescan.py',
+    'mining.py',
     'bumpfee.py',
     'rpcnamedargs.py',
     'listsinceblock.py',
@@ -139,7 +141,6 @@ EXTENDED_SCRIPTS = [
     # vv Tests less than 30s vv
     'assumevalid.py',
     'example_test.py',
-    'getblocktemplate_proposals.py',
     'txn_doublespend.py',
     'txn_clone.py --mineblock',
     'forknotify.py',
