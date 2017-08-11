@@ -7,6 +7,7 @@
 #include "chainparams.h"
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
+#include "crypto/sha256.h"
 #include "fs.h"
 #include "key.h"
 #include "validation.h"
@@ -33,6 +34,7 @@ extern void noui_connect();
 
 BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
 {
+        SHA256AutoDetect();
         RandomInit();
         ECC_Start();
         SetupEnvironment();
@@ -72,8 +74,8 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
         pblocktree = new CBlockTreeDB(1 << 20, true);
         pcoinsdbview = new CCoinsViewDB(1 << 23, true);
         pcoinsTip = new CCoinsViewCache(pcoinsdbview);
-        if (!InitBlockIndex(chainparams)) {
-            throw std::runtime_error("InitBlockIndex failed.");
+        if (!LoadGenesisBlock(chainparams)) {
+            throw std::runtime_error("LoadGenesisBlock failed.");
         }
         {
             CValidationState state;
