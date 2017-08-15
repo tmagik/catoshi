@@ -204,7 +204,7 @@ def rpc_port(n):
     return PORT_MIN + PORT_RANGE + n + (MAX_NODES * PortSeed.n) % (PORT_RANGE - 1 - MAX_NODES)
 
 def rpc_url(datadir, i, rpchost=None):
-    rpc_u, rpc_p = get_auth_cookie(datadir, i)
+    rpc_u, rpc_p = get_auth_cookie(datadir)
     host = '127.0.0.1'
     port = rpc_port(i)
     if rpchost:
@@ -232,11 +232,11 @@ def initialize_datadir(dirname, n):
 def get_datadir_path(dirname, n):
     return os.path.join(dirname, "node" + str(n))
 
-def get_auth_cookie(datadir, n):
+def get_auth_cookie(datadir):
     user = None
     password = None
     if os.path.isfile(os.path.join(datadir, "bitcoin.conf")):
-        with open(os.path.join(datadir, "bitcoin.conf"), 'r') as f:
+        with open(os.path.join(datadir, "bitcoin.conf"), 'r', encoding='utf8') as f:
             for line in f:
                 if line.startswith("rpcuser="):
                     assert user is None  # Ensure that there is only one rpcuser line
@@ -412,7 +412,10 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 # Helper to create at least "count" utxos
 # Pass in a fee that is sufficient for relay and mining new transactions.
 def create_confirmed_utxos(fee, node, count):
-    node.generate(int(0.5 * count) + 101)
+    to_generate = int(0.5 * count) + 101
+    while to_generate > 0:
+        node.generate(min(25, to_generate))
+        to_generate -= 25
     utxos = node.listunspent()
     iterations = count - len(utxos)
     addr1 = node.getnewaddress()

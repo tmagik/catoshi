@@ -18,7 +18,6 @@
 #include <stdio.h>
 
 #include <boost/algorithm/string.hpp> // boost::trim
-#include <boost/foreach.hpp>
 
 /** WWW-Authenticate to present with 401 Unauthorized response */
 static const char* WWW_AUTH_HEADER_DATA = "Basic realm=\"jsonrpc\"";
@@ -211,7 +210,7 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
 
 static bool InitRPCAuthentication()
 {
-    if (GetArg("-rpcpassword", "") == "")
+    if (gArgs.GetArg("-rpcpassword", "") == "")
     {
         LogPrintf("No rpcpassword set - using random cookie authentication\n");
         if (!GenerateAuthCookie(&strRPCUserColonPass)) {
@@ -222,7 +221,7 @@ static bool InitRPCAuthentication()
         }
     } else {
         LogPrintf("Config options rpcuser and rpcpassword will soon be deprecated. Locally-run instances may remove rpcuser to use cookie-based auth, or may be replaced with rpcauth. Please see share/rpcuser for rpcauth auth generation.\n");
-        strRPCUserColonPass = GetArg("-rpcuser", "") + ":" + GetArg("-rpcpassword", "");
+        strRPCUserColonPass = gArgs.GetArg("-rpcuser", "") + ":" + gArgs.GetArg("-rpcpassword", "");
     }
     return true;
 }
@@ -234,7 +233,10 @@ bool StartHTTPRPC()
         return false;
 
     RegisterHTTPHandler("/", true, HTTPReq_JSONRPC);
-
+#ifdef ENABLE_WALLET
+    // ifdef can be removed once we switch to better endpoint support and API versioning
+    RegisterHTTPHandler("/wallet/", false, HTTPReq_JSONRPC);
+#endif
     assert(EventBase());
     httpRPCTimerInterface = new HTTPRPCTimerInterface(EventBase());
     RPCSetTimerInterface(httpRPCTimerInterface);

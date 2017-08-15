@@ -79,6 +79,7 @@ BASE_SCRIPTS= [
     'rawtransactions.py',
     'reindex.py',
     # vv Tests less than 30s vv
+    'keypool-topup.py',
     'zmq_test.py',
     'mempool_resurrect_test.py',
     'txn_doublespend.py --mineblock',
@@ -88,6 +89,7 @@ BASE_SCRIPTS= [
     'mempool_spendcoinbase.py',
     'mempool_reorg.py',
     'mempool_persist.py',
+    'multiwallet.py',
     'httpbasics.py',
     'multi_rpc.py',
     'proxy_test.py',
@@ -108,12 +110,16 @@ BASE_SCRIPTS= [
     'signmessages.py',
     'nulldummy.py',
     'import-rescan.py',
+    'mining.py',
     'bumpfee.py',
     'rpcnamedargs.py',
     'listsinceblock.py',
     'p2p-leaktests.py',
     'wallet-encryption.py',
+    'bipdersig-p2p.py',
+    'bip65-cltv-p2p.py',
     'uptime.py',
+    'resendwallettransactions.py',
 ]
 
 EXTENDED_SCRIPTS = [
@@ -136,12 +142,7 @@ EXTENDED_SCRIPTS = [
     'rpcbind_test.py',
     # vv Tests less than 30s vv
     'assumevalid.py',
-    'bip65-cltv.py',
-    'bip65-cltv-p2p.py',
-    'bipdersig-p2p.py',
-    'bipdersig.py',
     'example_test.py',
-    'getblocktemplate_proposals.py',
     'txn_doublespend.py',
     'txn_clone.py --mineblock',
     'forknotify.py',

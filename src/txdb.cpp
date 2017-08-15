@@ -11,6 +11,8 @@
 #include "pow.h"
 #include "uint256.h"
 #include "util.h"
+#include "ui_interface.h"
+#include "init.h"
 
 #include <stdint.h>
 
@@ -83,8 +85,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
     CDBBatch batch(db);
     size_t count = 0;
     size_t changed = 0;
-    size_t batch_size = (size_t)GetArg("-dbbatchsize", nDefaultDbBatchSize);
-    int crash_simulate = GetArg("-dbcrashratio", 0);
+    size_t batch_size = (size_t)gArgs.GetArg("-dbbatchsize", nDefaultDbBatchSize);
+    int crash_simulate = gArgs.GetArg("-dbcrashratio", 0);
     assert(!hashBlock.IsNull());
 
     uint256 old_tip = GetBestBlock();
@@ -170,7 +172,7 @@ bool CBlockTreeDB::ReadLastBlockFile(int &nFile) {
 
 CCoinsViewCursor *CCoinsViewDB::Cursor() const
 {
-    CCoinsViewDBCursor *i = new CCoinsViewDBCursor(const_cast<CDBWrapper*>(&db)->NewIterator(), GetBestBlock());
+    CCoinsViewDBCursor *i = new CCoinsViewDBCursor(const_cast<CDBWrapper&>(db).NewIterator(), GetBestBlock());
     /* It seems that there are no "const iterators" for LevelDB.  Since we
        only need read operations on it, use a const-cast to get around
        that restriction.  */
@@ -366,13 +368,31 @@ bool CCoinsViewDB::Upgrade() {
         return true;
     }
 
-    LogPrintf("Upgrading database...\n");
+    int64_t count = 0;
+    LogPrintf("Upgrading utxo-set database...\n");
+    LogPrintf("[0%%]...");
     size_t batch_size = 1 << 24;
     CDBBatch batch(db);
+    uiInterface.SetProgressBreakAction(StartShutdown);
+    int reportDone = 0;
+    std::pair<unsigned char, uint256> key;
+    std::pair<unsigned char, uint256> prev_key = {DB_COINS, uint256()};
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
-        std::pair<unsigned char, uint256> key;
+        if (ShutdownRequested()) {
+            break;
+        }
         if (pcursor->GetKey(key) && key.first == DB_COINS) {
+            if (count++ % 256 == 0) {
+                uint32_t high = 0x100 * *key.second.begin() + *(key.second.begin() + 1);
+                int percentageDone = (int)(high * 100.0 / 65536.0 + 0.5);
+                uiInterface.ShowProgress(_("Upgrading UTXO database") + "\n"+ _("(press q to shutdown and continue later)") + "\n", percentageDone);
+                if (reportDone < percentageDone/10) {
+                    // report max. every 10% step
+                    LogPrintf("[%d%%]...", percentageDone);
+                    reportDone = percentageDone/10;
+                }
+            }
             CCoins old_coins;
             if (!pcursor->GetValue(old_coins)) {
                 return error("%s: cannot parse CCoins record", __func__);
@@ -390,6 +410,8 @@ bool CCoinsViewDB::Upgrade() {
             if (batch.SizeEstimate() > batch_size) {
                 db.WriteBatch(batch);
                 batch.Clear();
+                db.CompactRange(prev_key, key);
+                prev_key = key;
             }
             pcursor->Next();
         } else {
@@ -397,5 +419,8 @@ bool CCoinsViewDB::Upgrade() {
         }
     }
     db.WriteBatch(batch);
-    return true;
+    db.CompactRange({DB_COINS, uint256()}, key);
+    uiInterface.SetProgressBreakAction(std::function<void(void)>());
+    LogPrintf("[%s].\n", ShutdownRequested() ? "CANCELLED" : "DONE");
+    return !ShutdownRequested();
 }

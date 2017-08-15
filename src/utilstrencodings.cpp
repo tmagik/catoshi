@@ -91,6 +91,25 @@ std::vector<unsigned char> ParseHex(const std::string& str)
     return ParseHex(str.c_str());
 }
 
+void SplitHostPort(std::string in, int &portOut, std::string &hostOut) {
+    size_t colon = in.find_last_of(':');
+    // if a : is found, and it either follows a [...], or no other : is in the string, treat it as port separator
+    bool fHaveColon = colon != in.npos;
+    bool fBracketed = fHaveColon && (in[0]=='[' && in[colon-1]==']'); // if there is a colon, and in[0]=='[', colon is not 0, so in[colon-1] is safe
+    bool fMultiColon = fHaveColon && (in.find_last_of(':',colon-1) != in.npos);
+    if (fHaveColon && (colon==0 || fBracketed || !fMultiColon)) {
+        int32_t n;
+        if (ParseInt32(in.substr(colon + 1), &n) && n > 0 && n < 0x10000) {
+            in = in.substr(0, colon);
+            portOut = n;
+        }
+    }
+    if (in.size()>0 && in[0] == '[' && in[in.size()-1] == ']')
+        hostOut = in.substr(1, in.size()-2);
+    else
+        hostOut = in;
+}
+
 std::string EncodeBase64(const unsigned char* pch, size_t len)
 {
     static const char *pbase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -228,7 +247,7 @@ std::vector<unsigned char> DecodeBase64(const char* p, bool* pfInvalid)
 std::string DecodeBase64(const std::string& str)
 {
     std::vector<unsigned char> vchRet = DecodeBase64(str.c_str());
-    return (vchRet.size() == 0) ? std::string() : std::string((const char*)&vchRet[0], vchRet.size());
+    return std::string((const char*)vchRet.data(), vchRet.size());
 }
 
 std::string EncodeBase32(const unsigned char* pch, size_t len)
@@ -415,7 +434,7 @@ std::vector<unsigned char> DecodeBase32(const char* p, bool* pfInvalid)
 std::string DecodeBase32(const std::string& str)
 {
     std::vector<unsigned char> vchRet = DecodeBase32(str.c_str());
-    return (vchRet.size() == 0) ? std::string() : std::string((const char*)&vchRet[0], vchRet.size());
+    return std::string((const char*)vchRet.data(), vchRet.size());
 }
 
 static bool ParsePrechecks(const std::string& str)
@@ -433,7 +452,7 @@ bool ParseInt32(const std::string& str, int32_t *out)
 {
     if (!ParsePrechecks(str))
         return false;
-    char *endp = NULL;
+    char *endp = nullptr;
     errno = 0; // strtol will not set errno if valid
     long int n = strtol(str.c_str(), &endp, 10);
     if(out) *out = (int32_t)n;
@@ -449,7 +468,7 @@ bool ParseInt64(const std::string& str, int64_t *out)
 {
     if (!ParsePrechecks(str))
         return false;
-    char *endp = NULL;
+    char *endp = nullptr;
     errno = 0; // strtoll will not set errno if valid
     long long int n = strtoll(str.c_str(), &endp, 10);
     if(out) *out = (int64_t)n;
@@ -466,7 +485,7 @@ bool ParseUInt32(const std::string& str, uint32_t *out)
         return false;
     if (str.size() >= 1 && str[0] == '-') // Reject negative values, unfortunately strtoul accepts these by default if they fit in the range
         return false;
-    char *endp = NULL;
+    char *endp = nullptr;
     errno = 0; // strtoul will not set errno if valid
     unsigned long int n = strtoul(str.c_str(), &endp, 10);
     if(out) *out = (uint32_t)n;
@@ -483,7 +502,7 @@ bool ParseUInt64(const std::string& str, uint64_t *out)
         return false;
     if (str.size() >= 1 && str[0] == '-') // Reject negative values, unfortunately strtoull accepts these by default if they fit in the range
         return false;
-    char *endp = NULL;
+    char *endp = nullptr;
     errno = 0; // strtoull will not set errno if valid
     unsigned long long int n = strtoull(str.c_str(), &endp, 10);
     if(out) *out = (uint64_t)n;
@@ -564,7 +583,7 @@ int64_t atoi64(const char* psz)
 #ifdef _MSC_VER
     return _atoi64(psz);
 #else
-    return strtoll(psz, NULL, 10);
+    return strtoll(psz, nullptr, 10);
 #endif
 }
 
@@ -573,7 +592,7 @@ int64_t atoi64(const std::string& str)
 #ifdef _MSC_VER
     return _atoi64(str.c_str());
 #else
-    return strtoll(str.c_str(), NULL, 10);
+    return strtoll(str.c_str(), nullptr, 10);
 #endif
 }
 
