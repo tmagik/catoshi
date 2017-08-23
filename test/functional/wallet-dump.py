@@ -7,7 +7,7 @@
 import os
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import (assert_equal, bitcoind_processes)
+from test_framework.util import assert_equal
 
 
 def read_dump(file_name, addrs, hd_master_addr_old):
@@ -94,8 +94,7 @@ class WalletDumpTest(BitcoinTestFramework):
         assert_equal(found_addr_rsv, 90*2) # 90 keys plus 100% internal keys
 
         #encrypt wallet, restart, unlock and dump
-        self.nodes[0].encryptwallet('test')
-        bitcoind_processes[0].wait()
+        self.nodes[0].node_encrypt_wallet('test')
         self.nodes[0] = self.start_node(0, self.options.tmpdir, self.extra_args[0])
         self.nodes[0].walletpassphrase('test', 10)
         # Should be a no-op:
