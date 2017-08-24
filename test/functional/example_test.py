@@ -23,13 +23,13 @@ from test_framework.mininode import (
     mininode_lock,
     msg_block,
     msg_getdata,
-    wait_until,
 )
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     connect_nodes,
     p2p_port,
+    wait_until,
 )
 
 # NodeConnCB is a class containing callbacks to be executed when a P2P
@@ -200,7 +200,7 @@ class ExampleTest(BitcoinTestFramework):
         node2.add_connection(connections[1])
         node2.wait_for_verack()
 
-        self.log.info("Wait for node2 reach current tip. Test that it has propogated all the blocks to us")
+        self.log.info("Wait for node2 reach current tip. Test that it has propagated all the blocks to us")
 
         getdata_request = msg_getdata()
         for block in blocks:
@@ -209,7 +209,7 @@ class ExampleTest(BitcoinTestFramework):
 
         # wait_until() will loop until a predicate condition is met. Use it to test properties of the
         # NodeConnCB objects.
-        assert wait_until(lambda: sorted(blocks) == sorted(list(node2.block_receive_map.keys())), timeout=5)
+        wait_until(lambda: sorted(blocks) == sorted(list(node2.block_receive_map.keys())), timeout=5, lock=mininode_lock)
 
         self.log.info("Check that each block was received only once")
         # The network thread uses a global lock on data access to the NodeConn objects when sending and receiving
