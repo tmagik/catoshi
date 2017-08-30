@@ -94,15 +94,14 @@ class WalletDumpTest(BitcoinTestFramework):
         assert_equal(found_addr_rsv, 90*2) # 90 keys plus 100% internal keys
 
         #encrypt wallet, restart, unlock and dump
-        self.nodes[0].encryptwallet('test')
-        self.bitcoind_processes[0].wait()
+        self.nodes[0].node_encrypt_wallet('test')
         self.nodes[0] = self.start_node(0, self.options.tmpdir, self.extra_args[0])
         self.nodes[0].walletpassphrase('test', 10)
         # Should be a no-op:
         self.nodes[0].keypoolrefill()
         self.nodes[0].dumpwallet(tmpdir + "/node0/wallet.encrypted.dump")
 
-        found_addr, found_addr_chg, found_addr_rsv, hd_master_addr_enc = \
+        found_addr, found_addr_chg, found_addr_rsv, _ = \
             read_dump(tmpdir + "/node0/wallet.encrypted.dump", addrs, hd_master_addr_unenc)
         assert_equal(found_addr, test_addr_count)
         assert_equal(found_addr_chg, 90*2 + 50)  # old reserve keys are marked as change now
