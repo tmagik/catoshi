@@ -312,7 +312,6 @@ class RawTransactionsTest(BitcoinTestFramework):
         ##############################################
         # test a fundrawtransaction with invalid vin #
         ##############################################
-        listunspent = self.nodes[2].listunspent()
         inputs  = [ {'txid' : "1c7f966dab21119bac53213a2bc7532bff1fa844c124fd750a7d0b1332440bd1", 'vout' : 0} ] #invalid vin!
         outputs = { self.nodes[0].getnewaddress() : 1.0}
         rawtx   = self.nodes[2].createrawtransaction(inputs, outputs)
@@ -451,8 +450,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.stop_node(0)
         self.stop_node(2)
         self.stop_node(3)
-        self.nodes[1].encryptwallet("test")
-        self.bitcoind_processes[1].wait(timeout=BITCOIND_PROC_WAIT_TIMEOUT)
+        self.nodes[1].node_encrypt_wallet("test")
 
         self.nodes = self.start_nodes(self.num_nodes, self.options.tmpdir)
         # This test is not meant to test fee estimation and we'd like
@@ -636,20 +634,9 @@ class RawTransactionsTest(BitcoinTestFramework):
         assert_fee_amount(result2['fee'], count_bytes(result2['hex']), 2 * result_fee_rate)
         assert_fee_amount(result3['fee'], count_bytes(result3['hex']), 10 * result_fee_rate)
 
-        #############################
-        # Test address reuse option #
-        #############################
-
-        result3 = self.nodes[3].fundrawtransaction(rawtx, {"reserveChangeKey": False})
-        res_dec = self.nodes[0].decoderawtransaction(result3["hex"])
-        changeaddress = ""
-        for out in res_dec['vout']:
-            if out['value'] > 1.0:
-                changeaddress += out['scriptPubKey']['addresses'][0]
-        assert(changeaddress != "")
-        nextaddr = self.nodes[3].getrawchangeaddress()
-        # frt should not have removed the key from the keypool
-        assert(changeaddress == nextaddr)
+        ################################
+        # Test no address reuse occurs #
+        ################################
 
         result3 = self.nodes[3].fundrawtransaction(rawtx)
         res_dec = self.nodes[0].decoderawtransaction(result3["hex"])
