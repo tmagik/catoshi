@@ -82,7 +82,7 @@ class CVectorWriter
  * @param[in]  nVersionIn Serialization Version (including any flags)
  * @param[in]  vchDataIn  Referenced byte vector to overwrite/append
  * @param[in]  nPosIn Starting position. Vector index where writes should start. The vector will initially
- *                    grow as necessary to  max(index, vec.size()). So to append, use vec.size().
+ *                    grow as necessary to  max(nPosIn, vec.size()). So to append, use vec.size().
 */
     CVectorWriter(int nTypeIn, int nVersionIn, std::vector<unsigned char>& vchDataIn, size_t nPosIn) : nType(nTypeIn), nVersion(nVersionIn), vchData(vchDataIn), nPos(nPosIn)
     {
@@ -91,7 +91,7 @@ class CVectorWriter
     }
 /*
  * (other params same as above)
- * @param[in]  args  A list of items to serialize starting at nPos.
+ * @param[in]  args  A list of items to serialize starting at nPosIn.
 */
     template <typename... Args>
     CVectorWriter(int nTypeIn, int nVersionIn, std::vector<unsigned char>& vchDataIn, size_t nPosIn, Args&&... args) : CVectorWriter(nTypeIn, nVersionIn, vchDataIn, nPosIn)
@@ -332,7 +332,7 @@ public:
     //
     bool eof() const             { return size() == 0; }
     CDataStream* rdbuf()         { return this; }
-    int in_avail()               { return size(); }
+    int in_avail() const         { return size(); }
 
     void SetType(int n)          { nType = n; }
     int GetType() const          { return nType; }
@@ -648,7 +648,7 @@ public:
     }
 
     // return the current reading position
-    uint64_t GetPos() {
+    uint64_t GetPos() const {
         return nReadPos;
     }
 

@@ -22,8 +22,6 @@
 #include "rpc/register.h"
 #include "script/sigcache.h"
 
-#include "test/testutil.h"
-
 #include <memory>
 
 uint256 insecure_rand_seed = GetRandHash();
@@ -61,9 +59,9 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
 
         RegisterAllCoreRPCCommands(tableRPC);
         ClearDatadirCache();
-        pathTemp = GetTempPath() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(InsecureRandRange(100000)));
+        pathTemp = fs::temp_directory_path() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(InsecureRandRange(100000)));
         fs::create_directories(pathTemp);
-        ForceSetArg("-datadir", pathTemp.string());
+        gArgs.ForceSetArg("-datadir", pathTemp.string());
 
         // Note that because we don't bother running a scheduler thread here,
         // callbacks via CValidationInterface are unreliable, but that's OK,
