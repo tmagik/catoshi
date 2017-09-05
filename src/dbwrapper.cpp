@@ -19,7 +19,7 @@ class CBitcoinLevelDBLogger : public leveldb::Logger {
 public:
     // This code is adapted from posix_logger.h, which is why it is using vsprintf.
     // Please do not do this in normal code
-    virtual void Logv(const char * format, va_list ap) override {
+    void Logv(const char * format, va_list ap) override {
             if (!LogAcceptCategory(BCLog::LEVELDB)) {
                 return;
             }
@@ -115,7 +115,7 @@ CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fMemory, bo
     dbwrapper_private::HandleError(status);
     LogPrintf("Opened LevelDB successfully\n");
 
-    if (GetBoolArg("-forcecompactdb", false)) {
+    if (gArgs.GetBoolArg("-forcecompactdb", false)) {
         LogPrintf("Starting database compaction of %s\n", path.string());
         pdb->CompactRange(nullptr, nullptr);
         LogPrintf("Finished database compaction of %s\n", path.string());
@@ -190,7 +190,7 @@ bool CDBWrapper::IsEmpty()
 }
 
 CDBIterator::~CDBIterator() { delete piter; }
-bool CDBIterator::Valid() { return piter->Valid(); }
+bool CDBIterator::Valid() const { return piter->Valid(); }
 void CDBIterator::SeekToFirst() { piter->SeekToFirst(); }
 void CDBIterator::Next() { piter->Next(); }
 

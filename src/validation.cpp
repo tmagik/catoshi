@@ -53,6 +53,9 @@
 # error "Bitcoin cannot be compiled without assertions."
 #endif
 
+#define MICRO 0.000001
+#define MILLI 0.001
+
 /**
  * Global state
  */
@@ -398,7 +401,7 @@ void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool f
     // We also need to remove any now-immature transactions
     mempool.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
     // Re-limit mempool size, in case we added any transactions
-    LimitMempoolSize(mempool, GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
+    LimitMempoolSize(mempool, gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, gArgs.GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
 }
 
 // Used to avoid mempool polluting consensus critical paths if CCoinsViewMempool
@@ -456,7 +459,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
 
     // Reject transactions with witness before segregated witness activates (override with -prematurewitness)
     bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), chainparams.GetConsensus());
-    if (!GetBoolArg("-prematurewitness", false) && tx.HasWitness() && !witnessEnabled) {
+    if (!gArgs.GetBoolArg("-prematurewitness", false) && tx.HasWitness() && !witnessEnabled) {
         return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
     }
 
@@ -611,7 +614,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", false,
                 strprintf("%d", nSigOpsCost));
 
-        CAmount mempoolRejectFee = pool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
+        CAmount mempoolRejectFee = pool.GetMinFee(gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
         if (mempoolRejectFee > 0 && nModifiedFees < mempoolRejectFee) {
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool min fee not met", false, strprintf("%d < %d", nFees, mempoolRejectFee));
         }
@@ -628,10 +631,10 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
 
         // Calculate in-mempool ancestors, up to a limit.
         CTxMemPool::setEntries setAncestors;
-        size_t nLimitAncestors = GetArg("-limitancestorcount", DEFAULT_ANCESTOR_LIMIT);
-        size_t nLimitAncestorSize = GetArg("-limitancestorsize", DEFAULT_ANCESTOR_SIZE_LIMIT)*1000;
-        size_t nLimitDescendants = GetArg("-limitdescendantcount", DEFAULT_DESCENDANT_LIMIT);
-        size_t nLimitDescendantSize = GetArg("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT)*1000;
+        size_t nLimitAncestors = gArgs.GetArg("-limitancestorcount", DEFAULT_ANCESTOR_LIMIT);
+        size_t nLimitAncestorSize = gArgs.GetArg("-limitancestorsize", DEFAULT_ANCESTOR_SIZE_LIMIT)*1000;
+        size_t nLimitDescendants = gArgs.GetArg("-limitdescendantcount", DEFAULT_DESCENDANT_LIMIT);
+        size_t nLimitDescendantSize = gArgs.GetArg("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT)*1000;
         std::string errString;
         if (!pool.CalculateMemPoolAncestors(entry, setAncestors, nLimitAncestors, nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, errString)) {
             return state.DoS(0, false, REJECT_NONSTANDARD, "too-long-mempool-chain", false, errString);
@@ -783,7 +786,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
 
         unsigned int scriptVerifyFlags = STANDARD_SCRIPT_VERIFY_FLAGS;
         if (!chainparams.RequireStandard()) {
-            scriptVerifyFlags = GetArg("-promiscuousmempoolflags", scriptVerifyFlags);
+            scriptVerifyFlags = gArgs.GetArg("-promiscuousmempoolflags", scriptVerifyFlags);
         }
 
         // Check against previous transactions
@@ -860,7 +863,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
 
         // trim mempool and check if tx was trimmed
         if (!fOverrideMempoolLimit) {
-            LimitMempoolSize(pool, GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
+            LimitMempoolSize(pool, gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, gArgs.GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
             if (!pool.exists(hash))
                 return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool full");
         }
@@ -1061,7 +1064,7 @@ CBlockIndex *pindexBestForkTip = nullptr, *pindexBestForkBase = nullptr;
 static void AlertNotify(const std::string& strMessage)
 {
     uiInterface.NotifyAlertChanged();
-    std::string strCmd = GetArg("-alertnotify", "");
+    std::string strCmd = gArgs.GetArg("-alertnotify", "");
     if (strCmd.empty()) return;
 
     // Alert text should be plain ascii coming from a trusted source, but to
@@ -1216,7 +1219,7 @@ static uint256 scriptExecutionCacheNonce(GetRandHash());
 void InitScriptExecutionCache() {
     // nMaxCacheSize is unsigned. If -maxsigcachesize is set to zero,
     // setup_bytes creates the minimum possible cache (2 elements).
-    size_t nMaxCacheSize = std::min(std::max((int64_t)0, GetArg("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2), MAX_MAX_SIG_CACHE_SIZE) * ((size_t) 1 << 20);
+    size_t nMaxCacheSize = std::min(std::max((int64_t)0, gArgs.GetArg("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2), MAX_MAX_SIG_CACHE_SIZE) * ((size_t) 1 << 20);
     size_t nElems = scriptExecutionCache.setup_bytes(nMaxCacheSize);
     LogPrintf("Using %zu MiB out of %zu/2 requested for script execution cache, able to store %zu elements\n",
             (nElems*sizeof(uint256)) >>20, (nMaxCacheSize*2)>>20, nElems);
@@ -1563,7 +1566,7 @@ private:
     int bit;
 
 public:
-    WarningBitsConditionChecker(int bitIn) : bit(bitIn) {}
+    explicit WarningBitsConditionChecker(int bitIn) : bit(bitIn) {}
 
     int64_t BeginTime(const Consensus::Params& params) const override { return 0; }
     int64_t EndTime(const Consensus::Params& params) const override { return std::numeric_limits<int64_t>::max(); }
@@ -1623,6 +1626,7 @@ static int64_t nTimeConnect = 0;
 static int64_t nTimeIndex = 0;
 static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
+static int64_t nBlocksTotal = 0;
 
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins.
  *  Validity checks that depend on the UTXO set are also done; ConnectBlock()
@@ -1653,6 +1657,8 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
         return true;
     }
 
+    nBlocksTotal++;
+
     bool fScriptChecks = true;
     if (!hashAssumeValid.IsNull()) {
         // We've been configured with the hash of a block which has been externally verified to have a valid history.
@@ -1680,7 +1686,7 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
     }
 
     int64_t nTime1 = GetTimeMicros(); nTimeCheck += nTime1 - nTimeStart;
-    LogPrint(BCLog::BENCH, "    - Sanity checks: %.2fms [%.2fs]\n", 0.001 * (nTime1 - nTimeStart), nTimeCheck * 0.000001);
+    LogPrint(BCLog::BENCH, "    - Sanity checks: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime1 - nTimeStart), nTimeCheck * MICRO, nTimeCheck * MILLI / nBlocksTotal);
 
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
     // unless those are already completely spent.
@@ -1729,7 +1735,7 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
     unsigned int flags = GetBlockScriptFlags(pindex, chainparams.GetConsensus());
 
     int64_t nTime2 = GetTimeMicros(); nTimeForks += nTime2 - nTime1;
-    LogPrint(BCLog::BENCH, "    - Fork checks: %.2fms [%.2fs]\n", 0.001 * (nTime2 - nTime1), nTimeForks * 0.000001);
+    LogPrint(BCLog::BENCH, "    - Fork checks: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime2 - nTime1), nTimeForks * MICRO, nTimeForks * MILLI / nBlocksTotal);
 
     CBlockUndo blockundo;
 
@@ -1803,7 +1809,7 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
-    LogPrint(BCLog::BENCH, "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs-1), nTimeConnect * 0.000001);
+    LogPrint(BCLog::BENCH, "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs (%.2fms/blk)]\n", (unsigned)block.vtx.size(), MILLI * (nTime3 - nTime2), MILLI * (nTime3 - nTime2) / block.vtx.size(), nInputs <= 1 ? 0 : MILLI * (nTime3 - nTime2) / (nInputs-1), nTimeConnect * MICRO, nTimeConnect * MILLI / nBlocksTotal);
 
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
     if (block.vtx[0]->GetValueOut() > blockReward)
@@ -1815,7 +1821,7 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
     if (!control.Wait())
         return state.DoS(100, error("%s: CheckQueue failed", __func__), REJECT_INVALID, "block-validation-failed");
     int64_t nTime4 = GetTimeMicros(); nTimeVerify += nTime4 - nTime2;
-    LogPrint(BCLog::BENCH, "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
+    LogPrint(BCLog::BENCH, "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs (%.2fms/blk)]\n", nInputs - 1, MILLI * (nTime4 - nTime2), nInputs <= 1 ? 0 : MILLI * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * MICRO, nTimeVerify * MILLI / nBlocksTotal);
 
     if (fJustCheck)
         return true;
@@ -1847,10 +1853,10 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
     view.SetBestBlock(pindex->GetBlockHash());
 
     int64_t nTime5 = GetTimeMicros(); nTimeIndex += nTime5 - nTime4;
-    LogPrint(BCLog::BENCH, "    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimeIndex * 0.000001);
+    LogPrint(BCLog::BENCH, "    - Index writing: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime5 - nTime4), nTimeIndex * MICRO, nTimeIndex * MILLI / nBlocksTotal);
 
     int64_t nTime6 = GetTimeMicros(); nTimeCallbacks += nTime6 - nTime5;
-    LogPrint(BCLog::BENCH, "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
+    LogPrint(BCLog::BENCH, "    - Callbacks: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime6 - nTime5), nTimeCallbacks * MICRO, nTimeCallbacks * MILLI / nBlocksTotal);
 
     return true;
 }
@@ -1900,7 +1906,7 @@ bool static FlushStateToDisk(const CChainParams& chainparams, CValidationState &
         if (nLastSetChain == 0) {
             nLastSetChain = nNow;
         }
-        int64_t nMempoolSizeMax = GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
+        int64_t nMempoolSizeMax = gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
         int64_t cacheSize = pcoinsTip->DynamicMemoryUsage();
         int64_t nTotalSpace = nCoinCacheUsage + std::max<int64_t>(nMempoolSizeMax - nMempoolUsage, 0);
         // The cache is large and we're within 10% and 10 MiB of the limit, but we have time now (not in the middle of a block processing).
@@ -2075,7 +2081,7 @@ bool static DisconnectTip(CValidationState& state, const CChainParams& chainpara
         bool flushed = view.Flush();
         assert(flushed);
     }
-    LogPrint(BCLog::BENCH, "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
+    LogPrint(BCLog::BENCH, "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * MILLI);
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(chainparams, state, FLUSH_STATE_IF_NEEDED))
         return false;
@@ -2135,7 +2141,7 @@ private:
     CTxMemPool &pool;
 
 public:
-    ConnectTrace(CTxMemPool &_pool) : blocksConnected(1), pool(_pool) {
+    explicit ConnectTrace(CTxMemPool &_pool) : blocksConnected(1), pool(_pool) {
         pool.NotifyEntryRemoved.connect(boost::bind(&ConnectTrace::NotifyEntryRemoved, this, _1, _2));
     }
 
@@ -2196,7 +2202,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     // Apply the block atomically to the chain state.
     int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;
-    LogPrint(BCLog::BENCH, "  - Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001, nTimeReadFromDisk * 0.000001);
+    LogPrint(BCLog::BENCH, "  - Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * MILLI, nTimeReadFromDisk * MICRO);
     {
         CCoinsViewCache view(pcoinsTip);
         bool rv = ConnectBlock(blockConnecting, state, pindexNew, view, chainparams);
@@ -2207,17 +2213,17 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
             return error("ConnectTip(): ConnectBlock %s failed", pindexNew->GetBlockHash().ToString());
         }
         nTime3 = GetTimeMicros(); nTimeConnectTotal += nTime3 - nTime2;
-        LogPrint(BCLog::BENCH, "  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001, nTimeConnectTotal * 0.000001);
+        LogPrint(BCLog::BENCH, "  - Connect total: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime3 - nTime2) * MILLI, nTimeConnectTotal * MICRO, nTimeConnectTotal * MILLI / nBlocksTotal);
         bool flushed = view.Flush();
         assert(flushed);
     }
     int64_t nTime4 = GetTimeMicros(); nTimeFlush += nTime4 - nTime3;
-    LogPrint(BCLog::BENCH, "  - Flush: %.2fms [%.2fs]\n", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
+    LogPrint(BCLog::BENCH, "  - Flush: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime4 - nTime3) * MILLI, nTimeFlush * MICRO, nTimeFlush * MILLI / nBlocksTotal);
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(chainparams, state, FLUSH_STATE_IF_NEEDED))
         return false;
     int64_t nTime5 = GetTimeMicros(); nTimeChainState += nTime5 - nTime4;
-    LogPrint(BCLog::BENCH, "  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001, nTimeChainState * 0.000001);
+    LogPrint(BCLog::BENCH, "  - Writing chainstate: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime5 - nTime4) * MILLI, nTimeChainState * MICRO, nTimeChainState * MILLI / nBlocksTotal);
     // Remove conflicting transactions from the mempool.;
     mempool.removeForBlock(blockConnecting.vtx, pindexNew->nHeight);
     disconnectpool.removeForBlock(blockConnecting.vtx);
@@ -2225,8 +2231,8 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     UpdateTip(pindexNew, chainparams);
 
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
-    LogPrint(BCLog::BENCH, "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
-    LogPrint(BCLog::BENCH, "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    LogPrint(BCLog::BENCH, "  - Connect postprocess: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime6 - nTime5) * MILLI, nTimePostConnect * MICRO, nTimePostConnect * MILLI / nBlocksTotal);
+    LogPrint(BCLog::BENCH, "- Connect block: %.2fms [%.2fs (%.2fms/blk)]\n", (nTime6 - nTime1) * MILLI, nTimeTotal * MICRO, nTimeTotal * MILLI / nBlocksTotal);
 
     connectTrace.BlockConnected(pindexNew, std::move(pthisBlock));
     return true;
@@ -2421,7 +2427,7 @@ bool ActivateBestChain(CValidationState &state, const CChainParams& chainparams,
 
     CBlockIndex *pindexMostWork = nullptr;
     CBlockIndex *pindexNewTip = nullptr;
-    int nStopAtHeight = GetArg("-stopatheight", DEFAULT_STOPATHEIGHT);
+    int nStopAtHeight = gArgs.GetArg("-stopatheight", DEFAULT_STOPATHEIGHT);
     do {
         boost::this_thread::interruption_point();
         if (ShutdownRequested())
@@ -3892,7 +3898,7 @@ bool LoadBlockIndex(const CChainParams& chainparams)
 
         LogPrintf("Initializing databases...\n");
         // Use the provided setting for -txindex in the new database
-        fTxIndex = GetBoolArg("-txindex", DEFAULT_TXINDEX);
+        fTxIndex = gArgs.GetBoolArg("-txindex", DEFAULT_TXINDEX);
         pblocktree->WriteFlag("txindex", fTxIndex);
     }
     return true;
@@ -4263,7 +4269,7 @@ static const uint64_t MEMPOOL_DUMP_VERSION = 1;
 bool LoadMempool(void)
 {
     const CChainParams& chainparams = Params();
-    int64_t nExpiryTimeout = GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60;
+    int64_t nExpiryTimeout = gArgs.GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60;
     FILE* filestr = fsbridge::fopen(GetDataDir() / "mempool.dat", "rb");
     CAutoFile file(filestr, SER_DISK, CLIENT_VERSION);
     if (file.IsNull()) {
@@ -4367,7 +4373,7 @@ void DumpMempool(void)
         file.fclose();
         RenameOver(GetDataDir() / "mempool.dat.new", GetDataDir() / "mempool.dat");
         int64_t last = GetTimeMicros();
-        LogPrintf("Dumped mempool: %gs to copy, %gs to dump\n", (mid-start)*0.000001, (last-mid)*0.000001);
+        LogPrintf("Dumped mempool: %gs to copy, %gs to dump\n", (mid-start)*MICRO, (last-mid)*MICRO);
     } catch (const std::exception& e) {
         LogPrintf("Failed to dump mempool: %s. Continuing anyway.\n", e.what());
     }

@@ -208,7 +208,7 @@ public:
         Init();
     }
 
-    CMerkleTx(CTransactionRef arg)
+    explicit CMerkleTx(CTransactionRef arg)
     {
         SetTx(std::move(arg));
         Init();
@@ -548,7 +548,7 @@ public:
     //! todo: add something to note what created it (user, getnewaddress, change)
     //!   maybe should have a map<string, string> property map
 
-    CWalletKey(int64_t nExpires=0);
+    explicit CWalletKey(int64_t nExpires=0);
 
     ADD_SERIALIZE_METHODS;
 
@@ -651,7 +651,7 @@ private:
  * A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
  */
-class CWallet : public CCryptoKeyStore, public CValidationInterface
+class CWallet final : public CCryptoKeyStore, public CValidationInterface
 {
 private:
     static std::atomic<bool> fFlushScheduled;
@@ -765,7 +765,7 @@ public:
     }
 
     // Create wallet with passed-in database handle
-    CWallet(std::unique_ptr<CWalletDBWrapper> dbw_in) : dbw(std::move(dbw_in))
+    explicit CWallet(std::unique_ptr<CWalletDBWrapper> dbw_in) : dbw(std::move(dbw_in))
     {
         SetNull();
     }
@@ -806,8 +806,6 @@ public:
     std::map<uint256, int> mapRequestCount;
 
     std::map<CTxDestination, CAddressBookData> mapAddressBook;
-
-    CPubKey vchDefaultKey;
 
     std::set<COutPoint> setLockedCoins;
 
@@ -960,16 +958,6 @@ public:
     static CFeeRate minTxFee;
     static CFeeRate fallbackFee;
     static CFeeRate m_discard_rate;
-    /**
-     * Estimate the minimum fee considering user set parameters
-     * and the required fee
-     */
-    static CAmount GetMinimumFee(unsigned int nTxBytes, const CCoinControl& coin_control, const CTxMemPool& pool, const CBlockPolicyEstimator& estimator, FeeCalculation *feeCalc);
-    /**
-     * Return the minimum required fee taking into account the
-     * floating relay fee and user set minimum transaction fee
-     */
-    static CAmount GetRequiredFee(unsigned int nTxBytes);
 
     bool NewKeyPool();
     size_t KeypoolCountExternalKeys();
@@ -984,8 +972,6 @@ public:
      */
     void MarkReserveKeysAsUsed(int64_t keypool_id);
     const std::map<CKeyID, int64_t>& GetAllReserveKeys() const { return m_pool_key_to_index; }
-    /** Does the wallet have at least min_keys in the keypool? */
-    bool HasUnusedKeys(int min_keys) const;
 
     std::set< std::set<CTxDestination> > GetAddressGroupings();
     std::map<CTxDestination, CAmount> GetAddressBalances();
@@ -1040,8 +1026,6 @@ public:
         return setInternalKeyPool.size() + setExternalKeyPool.size();
     }
 
-    bool SetDefaultKey(const CPubKey &vchPubKey);
-
     //! signify that a particular wallet feature is now used. this may change nWalletVersion and nWalletMaxVersion if those are lower
     bool SetMinVersion(enum WalletFeature, CWalletDB* pwalletdbIn = nullptr, bool fExplicit = false);
 
@@ -1060,11 +1044,6 @@ public:
     //! Flush wallet (bitdb flush)
     void Flush(bool shutdown=false);
 
-    //! Responsible for reading and validating the -wallet arguments and verifying the wallet database.
-    //  This function will perform salvage on the wallet if requested, as long as only one wallet is
-    //  being loaded (CWallet::ParameterInteraction forbids -salvagewallet, -zapwallettxes or -upgradewallet with multiwallet).
-    static bool Verify();
-    
     /** 
      * Address book entry changed.
      * @note called with lock cs_wallet held.
@@ -1101,21 +1080,14 @@ public:
     /** Mark a transaction as replaced by another transaction (e.g., BIP 125). */
     bool MarkReplaced(const uint256& originalHash, const uint256& newHash);
 
-    /* Returns the wallets help message */
-    static std::string GetWalletHelpString(bool showDebug);
-
     /* Initializes the wallet, returns a new CWallet instance or a null pointer in case of an error */
     static CWallet* CreateWalletFromFile(const std::string walletFile);
-    static bool InitLoadWallet();
 
     /**
      * Wallet post-init setup
      * Gives the wallet a chance to register repetitive tasks and complete post-init tasks
      */
     void postInitProcess(CScheduler& scheduler);
-
-    /* Wallets parameter interaction */
-    static bool ParameterInteraction();
 
     bool BackupWallet(const std::string& strDest);
 
@@ -1137,7 +1109,7 @@ public:
 };
 
 /** A key allocated from the key pool. */
-class CReserveKey : public CReserveScript
+class CReserveKey final : public CReserveScript
 {
 protected:
     CWallet* pwallet;
@@ -1145,7 +1117,7 @@ protected:
     CPubKey vchPubKey;
     bool fInternal;
 public:
-    CReserveKey(CWallet* pwalletIn)
+    explicit CReserveKey(CWallet* pwalletIn)
     {
         nIndex = -1;
         pwallet = pwalletIn;

@@ -78,7 +78,7 @@ bool CDBEnv::Open(const fs::path& pathIn)
     LogPrintf("CDBEnv::Open: LogDir=%s ErrorFile=%s\n", pathLogDir.string(), pathErrorFile.string());
 
     unsigned int nEnvFlags = 0;
-    if (GetBoolArg("-privdb", DEFAULT_WALLET_PRIVDB))
+    if (gArgs.GetBoolArg("-privdb", DEFAULT_WALLET_PRIVDB))
         nEnvFlags |= DB_PRIVATE;
 
     dbenv->set_lg_dir(pathLogDir.string().c_str());
@@ -101,8 +101,10 @@ bool CDBEnv::Open(const fs::path& pathIn)
                              DB_RECOVER |
                              nEnvFlags,
                          S_IRUSR | S_IWUSR);
-    if (ret != 0)
+    if (ret != 0) {
+        dbenv->close(0);
         return error("CDBEnv::Open: Error %d opening database environment: %s\n", ret, DbEnv::strerror(ret));
+    }
 
     fDbEnvInit = true;
     fMockDb = false;
@@ -196,9 +198,9 @@ bool CDB::Recover(const std::string& filename, void *callbackDataIn, bool (*reco
                             DB_BTREE,           // Database type
                             DB_CREATE,          // Flags
                             0);
-    if (ret > 0)
-    {
+    if (ret > 0) {
         LogPrintf("Cannot create database file %s\n", filename);
+        pdbCopy->close(0);
         return false;
     }
 
@@ -429,7 +431,7 @@ void CDB::Flush()
     if (fReadOnly)
         nMinutes = 1;
 
-    env->dbenv->txn_checkpoint(nMinutes ? GetArg("-dblogsize", DEFAULT_WALLET_DBLOGSIZE) * 1024 : 0, nMinutes, 0);
+    env->dbenv->txn_checkpoint(nMinutes ? gArgs.GetArg("-dblogsize", DEFAULT_WALLET_DBLOGSIZE) * 1024 : 0, nMinutes, 0);
 }
 
 void CWalletDBWrapper::IncrementUpdateCounter()
@@ -536,8 +538,10 @@ bool CDB::Rewrite(CWalletDBWrapper& dbw, const char* pszSkip)
                         env->CloseDb(strFile);
                         if (pdbCopy->close(0))
                             fSuccess = false;
-                        delete pdbCopy;
+                    } else {
+                        pdbCopy->close(0);
                     }
+                    delete pdbCopy;
                 }
                 if (fSuccess) {
                     Db dbA(env->dbenv, 0);
