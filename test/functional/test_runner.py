@@ -79,7 +79,9 @@ BASE_SCRIPTS= [
     'rawtransactions.py',
     'reindex.py',
     # vv Tests less than 30s vv
+    'keypool-topup.py',
     'zmq_test.py',
+    'bitcoin_cli.py',
     'mempool_resurrect_test.py',
     'txn_doublespend.py --mineblock',
     'txn_clone.py',
@@ -88,6 +90,7 @@ BASE_SCRIPTS= [
     'mempool_spendcoinbase.py',
     'mempool_reorg.py',
     'mempool_persist.py',
+    'multiwallet.py',
     'httpbasics.py',
     'multi_rpc.py',
     'proxy_test.py',
@@ -108,12 +111,17 @@ BASE_SCRIPTS= [
     'signmessages.py',
     'nulldummy.py',
     'import-rescan.py',
+    'mining.py',
     'bumpfee.py',
     'rpcnamedargs.py',
     'listsinceblock.py',
     'p2p-leaktests.py',
     'wallet-encryption.py',
+    'bipdersig-p2p.py',
+    'bip65-cltv-p2p.py',
     'uptime.py',
+    'resendwallettransactions.py',
+    'minchainwork.py',
 ]
 
 EXTENDED_SCRIPTS = [
@@ -125,6 +133,7 @@ EXTENDED_SCRIPTS = [
     # vv Tests less than 5m vv
     'maxuploadtarget.py',
     'mempool_packages.py',
+    'dbcrash.py',
     # vv Tests less than 2m vv
     'bip68-sequence.py',
     'getblocktemplate_longpoll.py',
@@ -135,12 +144,7 @@ EXTENDED_SCRIPTS = [
     'rpcbind_test.py',
     # vv Tests less than 30s vv
     'assumevalid.py',
-    'bip65-cltv.py',
-    'bip65-cltv-p2p.py',
-    'bipdersig-p2p.py',
-    'bipdersig.py',
     'example_test.py',
-    'getblocktemplate_proposals.py',
     'txn_doublespend.py',
     'txn_clone.py --mineblock',
     'forknotify.py',
@@ -168,7 +172,7 @@ def main():
     Help text and arguments for individual test script:''',
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--coverage', action='store_true', help='generate a basic coverage report for the RPC interface')
-    parser.add_argument('--exclude', '-x', help='specify a comma-seperated-list of scripts to exclude.')
+    parser.add_argument('--exclude', '-x', help='specify a comma-separated-list of scripts to exclude.')
     parser.add_argument('--extended', action='store_true', help='run the extended test suite in addition to the basic tests')
     parser.add_argument('--force', '-f', action='store_true', help='run tests even on platforms where they are disabled by default (e.g. windows).')
     parser.add_argument('--help', '-h', '-?', action='store_true', help='print help text and exit')
@@ -277,6 +281,7 @@ def run_tests(test_list, src_dir, build_dir, exeext, tmpdir, jobs=1, enable_cove
     #Set env vars
     if "BITCOIND" not in os.environ:
         os.environ["BITCOIND"] = build_dir + '/src/bitcoind' + exeext
+        os.environ["BITCOINCLI"] = build_dir + '/src/bitcoin-cli' + exeext
 
     tests_dir = src_dir + '/test/functional/'
 
@@ -350,7 +355,7 @@ def print_results(test_results, max_len_name, runtime):
 
 class TestHandler:
     """
-    Trigger the testscrips passed in via the list.
+    Trigger the test scripts passed in via the list.
     """
 
     def __init__(self, num_tests_parallel, tests_dir, tmpdir, test_list=None, flags=None):
