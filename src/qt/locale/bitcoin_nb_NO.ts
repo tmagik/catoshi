@@ -1,38 +1,37 @@
-<TS language="ms_MY" version="2.1">
+<TS language="nb_NO" version="2.1">
 <context>
     <name>AddressBookPage</name>
     <message>
         <source>Right-click to edit address or label</source>
-        <translation>Klik-kanan untuk edit alamat ataupun label</translation>
+        <translation>Høyreklikk for å redigere adresse, eller beskrivelse</translation>
     </message>
     <message>
         <source>Create a new address</source>
-        <translation>Cipta alamat baru</translation>
+        <translation>Opprett en ny adresse</translation>
     </message>
     <message>
         <source>&amp;New</source>
-        <translation>&amp;Baru</translation>
+        <translation>&amp;Ny</translation>
     </message>
     <message>
         <source>Copy the currently selected address to the system clipboard</source>
-        <translation>Salin alamat terpilih ke dalam sistem papan klip</translation>
+        <translation>Kopier den valgte adressen til utklippstavlen</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Salin</translation>
+        <translation>&amp;Kopier</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation>&amp;Tutup</translation>
+        <translation>&amp;Lukk</translation>
     </message>
     <message>
         <source>Delete the currently selected address from the list</source>
-        <translation>Padam alamat semasa yang dipilih dari senaraiyang dipilih dari senarai</translation>
+        <translation>Slett den valgte adressen fra listen</translation>
     </message>
     <message>
         <source>Export the data in the current tab to a file</source>
-        <translation>
-Alihkan fail data ke dalam tab semasa</translation>
+        <translation>Eksporter data i den valgte fliken til en fil</translation>
     </message>
     <message>
         <source>&amp;Export</source>
@@ -40,327 +39,327 @@ Alihkan fail data ke dalam tab semasa</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;Padam</translation>
+        <translation>&amp;Slett</translation>
     </message>
     <message>
         <source>Choose the address to send coins to</source>
-        <translation>Pilih alamat untuk hantar koin kepada</translation>
+        <translation>Velg en adresse å sende mynter til</translation>
     </message>
     <message>
         <source>Choose the address to receive coins with</source>
-        <translation>Pilih alamat untuk menerima koin dengan</translation>
+        <translation>Velg adressen som skal motta myntene</translation>
     </message>
     <message>
         <source>C&amp;hoose</source>
-        <translation>&amp;Pilih</translation>
+        <translation>&amp;Velg</translation>
     </message>
     <message>
         <source>Sending addresses</source>
-        <translation>alamat-alamat penghantaran</translation>
+        <translation>Avsender adresser</translation>
     </message>
     <message>
         <source>Receiving addresses</source>
-        <translation>alamat-alamat penerimaan</translation>
+        <translation>Mottager adresser</translation>
     </message>
     <message>
         <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Ini adalah alamat Bitcoin anda untuk pembayaran. Periksa jumlah dan alamat penerima sebelum membuat penghantaran koin sentiasa.</translation>
+        <translation>Dette er dine Bitcoin adresser for å sende  å sende betalinger. Husk å sjekke beløp og mottager adresser før du sender mynter.</translation>
     </message>
     <message>
         <source>These are your Bitcoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
-        <translation>Ini adalah alamat Bitcoin anda untuk menerima pembayaraan.  Anda disyorkan untuk menguna alamat menerima untuk setiap transaksi.</translation>
+        <translation>Dette er dine Bitcoin adresse for å motta betalinger. Det er anbefalt å bruke en ny mottager adresse for hver transaksjon.</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
-        <translation>&amp;Salin Aamat</translation>
+        <translation>&amp;Kopier adresse</translation>
     </message>
     <message>
         <source>Copy &amp;Label</source>
-        <translation>Salin &amp; Label</translation>
+        <translation>Kopier &amp;beskrivelse</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation>&amp;Edit</translation>
+        <translation>R&amp;ediger</translation>
     </message>
     <message>
         <source>Export Address List</source>
-        <translation>Eskport Senarai Alamat</translation>
+        <translation>Eksporter adresse listen</translation>
     </message>
     <message>
         <source>Comma separated file (*.csv)</source>
-        <translation>Fail dibahagi oleh koma(*.csv)</translation>
+        <translation>Komma separert fil (*.csv)</translation>
     </message>
     <message>
         <source>Exporting Failed</source>
-        <translation>Mengeksport Gagal</translation>
+        <translation>Eksporten feilet</translation>
     </message>
     <message>
         <source>There was an error trying to save the address list to %1. Please try again.</source>
-        <translation>Terdapat ralat semasa cubaan menyimpan senarai alamat kepada %1. Sila cuba lagi.</translation>
+        <translation>Fet oppstod en feil ved lagring av adresselisten til %1. Vennligst prøv igjen.</translation>
     </message>
 </context>
 <context>
     <name>AddressTableModel</name>
     <message>
         <source>Label</source>
-        <translation>Label</translation>
+        <translation>Beskrivelse</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Alamat</translation>
+        <translation>Adresse</translation>
     </message>
     <message>
         <source>(no label)</source>
-        <translation>(tiada label)</translation>
+        <translation>(ingen beskrivelse)</translation>
     </message>
 </context>
 <context>
     <name>AskPassphraseDialog</name>
     <message>
         <source>Passphrase Dialog</source>
-        <translation>Dialog frasa laluan</translation>
+        <translation>Passord dialog</translation>
     </message>
     <message>
         <source>Enter passphrase</source>
-        <translation>memasukkan frasa laluan</translation>
+        <translation>Oppgi passord setning</translation>
     </message>
     <message>
         <source>New passphrase</source>
-        <translation>Frasa laluan baru</translation>
+        <translation>Ny passord setning</translation>
     </message>
     <message>
         <source>Repeat new passphrase</source>
-        <translation>Ulangi frasa laluan baru</translation>
+        <translation>Repeter passorsetningen</translation>
     </message>
     <message>
         <source>Enter the new passphrase to the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
-        <translation>Memasukkan frasa laluan baru kepada dompet.&lt;br/&gt;Sila mengunakkan frasa laluan yang&lt;b&gt;mengandungi 10 atau lebih aksara rawak&lt;/b&gt;,ataupun&lt;b&gt;lapan atau lebih perkataan.&lt;/b&gt;</translation>
+        <translation>Oppgi passordsetningen for lommeboken. &lt;br/&gt;Vennligst bruk en passordsetninge med &lt;b&gt;ti, eller flere tilfeldige tegn &lt;/b&gt;, eller &lt;b&gt;åtte, eller flere ord&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Encrypt wallet</source>
-        <translation>Dompet encrypt</translation>
+        <translation>Krypter lommeboken</translation>
     </message>
     <message>
         <source>This operation needs your wallet passphrase to unlock the wallet.</source>
-        <translation>Operasi ini perlukan frasa laluan dompet anda untuk membuka kunci dompet.</translation>
+        <translation>Denne operasjonen krever passordsetningen for å låse opp lommeboken.</translation>
     </message>
     <message>
         <source>Unlock wallet</source>
-        <translation>Membuka kunci dompet</translation>
+        <translation>Lås opp lommeboken</translation>
     </message>
     <message>
         <source>This operation needs your wallet passphrase to decrypt the wallet.</source>
-        <translation>Operasi ini memerlukan frasa laluan dompet anda untuk menyahsulit dompet.</translation>
+        <translation>Denne operasjonen krever passordsetningen for å dekryptere lommeboken.</translation>
     </message>
     <message>
         <source>Decrypt wallet</source>
-        <translation>Menyahsulit dompet</translation>
+        <translation>Dekrypter lommeboken</translation>
     </message>
     <message>
         <source>Change passphrase</source>
-        <translation>Menukar frasa laluan</translation>
+        <translation>Endre passordsetningen</translation>
     </message>
     <message>
         <source>Enter the old passphrase and new passphrase to the wallet.</source>
-        <translation>Memasukkan frasa laluan lama dan frasa laluan baru untuk.</translation>
+        <translation>Oppgi den gamle og den nye passordsetningen for lommeboken.</translation>
     </message>
     <message>
         <source>Confirm wallet encryption</source>
-        <translation>Mengesahkan enkripsi dompet</translation>
+        <translation>Bekreft kryptering av lommeboken</translation>
     </message>
     <message>
         <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
-        <translation>Amaran: Jika anda enkripkan dompet anda dan hilangkan frasa laluan, anda akan &lt;b&gt;ANDA AKAN HILANGKAN SEMUA BITCOIN ANDA&lt;/b&gt;!</translation>
+        <translation>Advarsel: Dersom du krypterer lommeboken og mister passordsetningen vil du &lt;b&gt;MISTE ALLE DINE BITCOIN&lt;/b&gt;!</translation>
     </message>
     <message>
         <source>Are you sure you wish to encrypt your wallet?</source>
-        <translation>Anda pasti untuk membuat enkripsi dompet anda?</translation>
+        <translation>Er du sikker på at du vil kryptere lommeboken?</translation>
     </message>
     <message>
         <source>Wallet encrypted</source>
-        <translation>Dompet dienkripsi</translation>
+        <translation>Lommeboken er kryptert</translation>
     </message>
     <message>
         <source>%1 will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>%1 akan tutup untuk menyelesaikan proses enkripsi. Ingat bahawa enkripsi tidak boleh melidungi sepenuhnya bitcoins anda daripada dicuri oleh malware yang menjangkiti komputer anda.</translation>
+        <translation>%1 vil nå lukkes for å fullføre krypteringsprosessen. Husk at å kryptere lommeboken ikke kan beskytte dine bitcoin fullstendig fra å bli stjålet av skadelig programvare som har infisert datamaskinen din.</translation>
     </message>
     <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
-        <translation>PENTING: Apa-apa sandaran yang anda buat sebelum ini untuk fail dompet anda hendaklah digantikan dengan fail dompet enkripsi yang dijana baru. Untuk sebab-sebab keselamatan , sandaran fail dompet yang belum dibuat enkripsi sebelum ini akan menjadi tidak berguna secepat anda mula guna dompet enkripsi baru.</translation>
+        <translation>VIKTIG: Alle tidligere sikkerhetskopier du har tatt av lommebokfilen bør erstattes med den nye krypterte lommebokfilen. Av sikkerhetsgrunner vil tidligere sikkerhetskopier av lommebokfilen bli ubrukelige når du begynner å bruke den ny kypterte lommeboken.</translation>
     </message>
     <message>
         <source>Wallet encryption failed</source>
-        <translation>Enkripsi dompet gagal</translation>
+        <translation>Lommebokkrypteringen feilet</translation>
     </message>
     <message>
         <source>Wallet encryption failed due to an internal error. Your wallet was not encrypted.</source>
-        <translation>Enkripsi dompet gagal kerana ralat dalaman. Dompet anda tidak dienkripkan.</translation>
+        <translation>Lommebokkrypteringen feilet pga. en intern feil. Lommeboken din ble ikke kryptert.</translation>
     </message>
     <message>
         <source>The supplied passphrases do not match.</source>
-        <translation>Frasa laluan yang dibekalkan tidak sepadan.</translation>
+        <translation>De oppgitte passordsetningene er forskjellige.</translation>
     </message>
     <message>
         <source>Wallet unlock failed</source>
-        <translation>Pembukaan kunci dompet gagal</translation>
+        <translation>Opplåsing av lommeboken feilet</translation>
     </message>
     <message>
         <source>The passphrase entered for the wallet decryption was incorrect.</source>
-        <translation>Frasa laluan dimasukki untuk dekripsi dompet adalah tidak betul.</translation>
+        <translation>Passordsetningen som ble oppgitt for å dekryptere lommeboken var feil.</translation>
     </message>
     <message>
         <source>Wallet decryption failed</source>
-        <translation>Dekripsi dompet gagal</translation>
+        <translation>Dekryptering av lommeboken feilet</translation>
     </message>
     <message>
         <source>Wallet passphrase was successfully changed.</source>
-        <translation>Frasa laluan dompet berjaya ditukar.</translation>
+        <translation>Passordsetningen for lommeboken ble endret</translation>
     </message>
     <message>
         <source>Warning: The Caps Lock key is on!</source>
-        <translation>Amaran: Kunci Caps Lock buka!</translation>
+        <translation>Advarsel: Caps Lock er på!</translation>
     </message>
 </context>
 <context>
     <name>BanTableModel</name>
     <message>
         <source>IP/Netmask</source>
-        <translation>IP/Netmask</translation>
+        <translation>IP/Nettmaske</translation>
     </message>
     <message>
         <source>Banned Until</source>
-        <translation>Diharamkan sehingga</translation>
+        <translation>Utestengt Til</translation>
     </message>
 </context>
 <context>
     <name>BitcoinGUI</name>
     <message>
         <source>Sign &amp;message...</source>
-        <translation>Tandatangan &amp; mesej...</translation>
+        <translation>Signer &amp;melding</translation>
     </message>
     <message>
         <source>Synchronizing with network...</source>
-        <translation>Penyegerakan dengan rangkaian...</translation>
+        <translation>Synkroniserer med nettverket</translation>
     </message>
     <message>
         <source>&amp;Overview</source>
-        <translation>&amp;Gambaran Keseluruhan</translation>
+        <translation>&amp;Oversikt</translation>
     </message>
     <message>
         <source>Node</source>
-        <translation>Nod</translation>
+        <translation>Node</translation>
     </message>
     <message>
         <source>Show general overview of wallet</source>
-        <translation>Tunjuk gambaran keseluruhan umum dompet</translation>
+        <translation>Vis generell oversikt over lommeboken</translation>
     </message>
     <message>
         <source>&amp;Transactions</source>
-        <translation>&amp;Transaksi</translation>
+        <translation>&amp;Transaksjoner</translation>
     </message>
     <message>
         <source>Browse transaction history</source>
-        <translation>Menyemak imbas sejarah transaksi </translation>
+        <translation>Bla gjennom transaksjoner</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
-        <translation>&amp;Keluar</translation>
+        <translation>&amp;Avslutt</translation>
     </message>
     <message>
         <source>Quit application</source>
-        <translation>Berhenti aplikasi</translation>
+        <translation>Avslutt program</translation>
     </message>
     <message>
         <source>&amp;About %1</source>
-        <translation>&amp;Mengenai%1</translation>
+        <translation>&amp;Om %1</translation>
     </message>
     <message>
         <source>Show information about %1</source>
-        <translation>Menunjuk informasi mengenai%1</translation>
+        <translation>Vis informasjon om %1</translation>
     </message>
     <message>
         <source>About &amp;Qt</source>
-        <translation>Mengenai &amp;Qt</translation>
+        <translation>Om &amp;Qt</translation>
     </message>
     <message>
         <source>Show information about Qt</source>
-        <translation>Menunjuk informasi megenai Qt</translation>
+        <translation>Vis informasjon om Qt</translation>
     </message>
     <message>
         <source>&amp;Options...</source>
-        <translation>Pilihan</translation>
+        <translation>&amp;Valg</translation>
     </message>
     <message>
         <source>Modify configuration options for %1</source>
-        <translation>Mengubah suai pilihan konfigurasi untuk %1</translation>
+        <translation>Endre konfigurasjonsalternativer for %1</translation>
     </message>
     <message>
         <source>&amp;Encrypt Wallet...</source>
-        <translation>&amp;Enkripsi Dompet</translation>
+        <translation>&amp;Krypter lommebok...</translation>
     </message>
     <message>
         <source>&amp;Backup Wallet...</source>
-        <translation>&amp;Dompet Sandaran...</translation>
+        <translation>&amp;Sikkerhetskopier lommebok</translation>
     </message>
     <message>
         <source>&amp;Change Passphrase...</source>
-        <translation>&amp;Menukar frasa-laluan</translation>
+        <translation>&amp;Endre passordsetning</translation>
     </message>
     <message>
         <source>&amp;Sending addresses...</source>
-        <translation>&amp;Menghantar frasa-laluan</translation>
+        <translation>&amp;Avsender adresser</translation>
     </message>
     <message>
         <source>&amp;Receiving addresses...</source>
-        <translation>&amp;Menerima frasa-laluan...</translation>
+        <translation>&amp;Mottager adresser</translation>
     </message>
     <message>
         <source>Open &amp;URI...</source>
-        <translation>Buka &amp;URI...</translation>
+        <translation>Åpne &amp;URI</translation>
     </message>
     <message>
         <source>Click to disable network activity.</source>
-        <translation>Tekan untuk lumpuhkan rangkaian</translation>
+        <translation>Klikk for å slå av nettverksaktivitet.</translation>
     </message>
     <message>
         <source>Network activity disabled.</source>
-        <translation>Aktiviti rangkaian dilumpuhkan</translation>
+        <translation>Nettverksaktivitet er slått av</translation>
     </message>
     <message>
         <source>Click to enable network activity again.</source>
-        <translation>Tekan untuk mengaktifkan rangkain semula</translation>
+        <translation>Klikk for å slå på nettverksaktivitet igjen.</translation>
     </message>
     <message>
         <source>Syncing Headers (%1%)...</source>
-        <translation>Penyelarasn tajuk (%1%)...</translation>
+        <translation>Synkroniserer Headers (%1%)...</translation>
     </message>
     <message>
         <source>Reindexing blocks on disk...</source>
-        <translation>Reindexi blok pada cakera...</translation>
+        <translation>Reindekserer blokker på disken</translation>
     </message>
     <message>
         <source>Send coins to a Bitcoin address</source>
-        <translation>Menghantar koin kepada alamat Bitcoin</translation>
+        <translation>Send mynter til en Bitcoin adresse</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
-        <translation>Wallet sandaran ke lokasi lain</translation>
+        <translation>Sikkerhetskopier lommeboken til en annen lokasjon</translation>
     </message>
     <message>
         <source>Change the passphrase used for wallet encryption</source>
-        <translation>Tukar kata laluan untuk dompet disulitkan</translation>
+        <translation>Endre passordsetningen for kryptering av lommeboken</translation>
     </message>
     <message>
         <source>&amp;Debug window</source>
-        <translation>Tetingkap Debug</translation>
+        <translation>&amp;Feilsøkingsvindu</translation>
     </message>
     <message>
         <source>Open debugging and diagnostic console</source>
-        <translation>buka debug dan konsol diagnostik</translation>
+        <translation>Åpne konsoll for feilsøking og diagnostisering</translation>
     </message>
     <message>
         <source>&amp;Verify message...</source>
-        <translation>sahkan mesej</translation>
+        <translation>&amp;Verifiser meldingen...</translation>
     </message>
     <message>
         <source>Bitcoin</source>
@@ -368,66 +367,62 @@ Alihkan fail data ke dalam tab semasa</translation>
     </message>
     <message>
         <source>Wallet</source>
-        <translation>dompet</translation>
+        <translation>Lommebok</translation>
     </message>
     <message>
         <source>&amp;Send</source>
-        <translation>hantar</translation>
+        <translation>&amp;Sende</translation>
     </message>
     <message>
         <source>&amp;Receive</source>
-        <translation>terima</translation>
+        <translation>&amp;Motta</translation>
     </message>
     <message>
         <source>&amp;Show / Hide</source>
-        <translation>&amp;tunjuk/sembunyi</translation>
+        <translation>Vi&amp;s / Skjul</translation>
     </message>
     <message>
         <source>Show or hide the main Window</source>
-        <translation>tunjuk atau sembunyi tetingkap utama</translation>
+        <translation>Vis, eller skjul, hovedvinduet</translation>
     </message>
     <message>
         <source>Encrypt the private keys that belong to your wallet</source>
-        <translation>sulitkan kata laluan milik peribadi anda </translation>
+        <translation>Krypter de private nøklene som tilhører lommeboken din</translation>
     </message>
     <message>
         <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Log mesej dengan alamat Bitcoin anda untuk membuktikan anda memilikinya</translation>
+        <translation>Signer meldingene med Bitcoin adresse for å bevise at diu eier dem</translation>
     </message>
     <message>
         <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Sahkan mesej untuk memastikan mereka telah ditandatangani dengan alamat Bitcoin yang ditentukan</translation>
+        <translation>Verifiser meldinger for å sikre at de ble signert med en angitt Bitcoin adresse</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>fail</translation>
+        <translation>&amp;Fil</translation>
     </message>
     <message>
         <source>&amp;Settings</source>
-        <translation>tetapan</translation>
+        <translation>In&amp;stillinger</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>tolong</translation>
+        <translation>&amp;Hjelp</translation>
+    </message>
+    <message>
+        <source>Tabs toolbar</source>
+        <translation>Hjelpelinje for fliker</translation>
     </message>
     </context>
 <context>
     <name>CoinControlDialog</name>
     <message>
         <source>(no label)</source>
-        <translation>(tiada label)</translation>
+        <translation>(ingen beskrivelse)</translation>
     </message>
     </context>
 <context>
     <name>EditAddressDialog</name>
-    <message>
-        <source>Edit Address</source>
-        <translation>Alamat</translation>
-    </message>
-    <message>
-        <source>&amp;Address</source>
-        <translation>Alamat</translation>
-    </message>
     </context>
 <context>
     <name>FreespaceChecker</name>
@@ -474,38 +469,30 @@ Alihkan fail data ke dalam tab semasa</translation>
 <context>
     <name>ReceiveRequestDialog</name>
     <message>
-        <source>Copy &amp;Address</source>
-        <translation>&amp;Salin Alamat</translation>
-    </message>
-    <message>
         <source>Address</source>
-        <translation>Alamat</translation>
+        <translation>Adresse</translation>
     </message>
     <message>
         <source>Label</source>
-        <translation>Label</translation>
+        <translation>Beskrivelse</translation>
     </message>
     </context>
 <context>
     <name>RecentRequestsTableModel</name>
     <message>
         <source>Label</source>
-        <translation>Label</translation>
+        <translation>Beskrivelse</translation>
     </message>
     <message>
         <source>(no label)</source>
-        <translation>(tiada label)</translation>
+        <translation>(ingen beskrivelse)</translation>
     </message>
     </context>
 <context>
     <name>SendCoinsDialog</name>
     <message>
-        <source>Balance:</source>
-        <translation>Baki</translation>
-    </message>
-    <message>
         <source>(no label)</source>
-        <translation>(tiada label)</translation>
+        <translation>(ingen beskrivelse)</translation>
     </message>
 </context>
 <context>
@@ -536,30 +523,30 @@ Alihkan fail data ke dalam tab semasa</translation>
     <name>TransactionTableModel</name>
     <message>
         <source>Label</source>
-        <translation>Label</translation>
+        <translation>Beskrivelse</translation>
     </message>
     <message>
         <source>(no label)</source>
-        <translation>(tiada label)</translation>
+        <translation>(ingen beskrivelse)</translation>
     </message>
     </context>
 <context>
     <name>TransactionView</name>
     <message>
         <source>Comma separated file (*.csv)</source>
-        <translation>Fail dibahagi oleh koma(*.csv)</translation>
+        <translation>Komma separert fil (*.csv)</translation>
     </message>
     <message>
         <source>Label</source>
-        <translation>Label</translation>
+        <translation>Beskrivelse</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Alamat</translation>
+        <translation>Adresse</translation>
     </message>
     <message>
         <source>Exporting Failed</source>
-        <translation>Mengeksport Gagal</translation>
+        <translation>Eksporten feilet</translation>
     </message>
     </context>
 <context>
@@ -574,9 +561,12 @@ Alihkan fail data ke dalam tab semasa</translation>
 <context>
     <name>WalletView</name>
     <message>
+        <source>&amp;Export</source>
+        <translation>&amp;Eksport</translation>
+    </message>
+    <message>
         <source>Export the data in the current tab to a file</source>
-        <translation>
-Alihkan fail data ke dalam tab semasa</translation>
+        <translation>Eksporter data i den valgte fliken til en fil</translation>
     </message>
     </context>
 <context>
