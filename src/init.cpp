@@ -45,7 +45,6 @@
 #include "validationinterface.h"
 #ifdef ENABLE_WALLET
 #include "wallet/init.h"
-#include "wallet/wallet.h"
 #endif
 #include "warnings.h"
 #include <stdint.h>
@@ -189,17 +188,18 @@ void Shutdown()
     StopRPC();
     StopHTTPServer();
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : vpwallets) {
-        pwallet->Flush(false);
-    }
+    FlushWallets();
 #endif
     MapPort(false);
+
+    // Because these depend on each-other, we make sure that neither can be
+    // using the other before destroying them.
     UnregisterValidationInterface(peerLogic.get());
+    g_connman->Stop();
     peerLogic.reset();
     g_connman.reset();
 
     StopTorControl();
-    UnregisterNodeSignals(GetNodeSignals());
     if (fDumpMempoolLater && gArgs.GetArg("-persistmempool", DEFAULT_PERSIST_MEMPOOL)) {
         DumpMempool();
     }
@@ -246,9 +246,7 @@ void Shutdown()
         pblocktree = nullptr;
     }
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : vpwallets) {
-        pwallet->Flush(true);
-    }
+    StopWallets();
 #endif
 
 #if ENABLE_ZMQ
@@ -269,10 +267,7 @@ void Shutdown()
     UnregisterAllValidationInterfaces();
     GetMainSignals().UnregisterBackgroundSignalScheduler();
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : vpwallets) {
-        delete pwallet;
-    }
-    vpwallets.clear();
+    CloseWallets();
 #endif
     globalVerifyHandle.reset();
     ECC_Stop();
@@ -1031,7 +1026,7 @@ bool AppInitParameterInteraction()
 
     RegisterAllCoreRPCCommands(tableRPC);
 #ifdef ENABLE_WALLET
-    RegisterWalletRPCCommands(tableRPC);
+    RegisterWalletRPC(tableRPC);
 #endif
 
     nConnectTimeout = gArgs.GetArg("-timeout", DEFAULT_CONNECT_TIMEOUT);
@@ -1253,7 +1248,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 5: verify wallet database integrity
 #ifdef ENABLE_WALLET
-    if (!WalletVerify())
+    if (!VerifyWallets())
         return false;
 #endif
     // ********************************************************* Step 6: network initialization
@@ -1268,7 +1263,6 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     peerLogic.reset(new PeerLogicValidation(&connman));
     RegisterValidationInterface(peerLogic.get());
-    RegisterNodeSignals(GetNodeSignals());
 
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<std::string> uacomments;
@@ -1574,7 +1568,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET
-    if (!InitLoadWallet())
+    if (!OpenWallets())
         return false;
 #else
     LogPrintf("No wallet support compiled in!\n");
@@ -1659,6 +1653,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     connOptions.nMaxFeeler = 1;
     connOptions.nBestHeight = chainActive.Height();
     connOptions.uiInterface = &uiInterface;
+    connOptions.m_msgproc = peerLogic.get();
     connOptions.nSendBufferMaxSize = 1000*gArgs.GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
     connOptions.nReceiveFloodSize = 1000*gArgs.GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
 
@@ -1712,9 +1707,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     uiInterface.InitMessage(_("Done loading"));
 
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : vpwallets) {
-        pwallet->postInitProcess(scheduler);
-    }
+    StartWallets(scheduler);
 #endif
 
     return !fRequestShutdown;
