@@ -614,7 +614,7 @@ UniValue signmessage(const JSONRPCRequest& request)
     if (!key.SignCompact(ss.GetHash(), vchSig))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Sign failed");
 
-    return EncodeBase64(&vchSig[0], vchSig.size());
+    return EncodeBase64(vchSig.data(), vchSig.size());
 }
 
 UniValue getreceivedbyaddress(const JSONRPCRequest& request)
@@ -3250,9 +3250,6 @@ static const CRPCCommand commands[] =
 
 void RegisterWalletRPCCommands(CRPCTable &t)
 {
-    if (gArgs.GetBoolArg("-disablewallet", false))
-        return;
-
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         t.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }
