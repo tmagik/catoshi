@@ -161,7 +161,6 @@ extern CTxMemPool mempool;
 typedef std::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
 extern BlockMap mapBlockIndex;
 extern uint64_t nLastBlockTx;
-extern uint64_t nLastBlockSize;
 extern uint64_t nLastBlockWeight;
 extern const std::string strMessageMagic;
 extern CWaitableCriticalSection csBestBlock;
@@ -185,6 +184,9 @@ extern bool fEnableReplacement;
 
 /** Block hash whose ancestors we will assume to have valid scripts without checking them. */
 extern uint256 hashAssumeValid;
+
+/** Minimum work we will assume exists on some valid chain. */
+extern arith_uint256 nMinimumChainWork;
 
 /** Best header we've seen so far (used for getheaders queries' starting points). */
 extern CBlockIndex *pindexBestHeader;
@@ -475,7 +477,7 @@ static const unsigned int REJECT_HIGHFEE = 0x100;
 CBlockFileInfo* GetBlockFileInfo(size_t n);
 
 /** Dump the mempool to disk. */
-void DumpMempool();
+bool DumpMempool();
 
 /** Load the mempool from disk. */
 bool LoadMempool();
