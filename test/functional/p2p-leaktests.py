@@ -92,8 +92,7 @@ class CNodeNoVerackIdle(CLazyNode):
         conn.send_message(msg_getaddr())
 
 class P2PLeakTest(BitcoinTestFramework):
-    def __init__(self):
-        super().__init__()
+    def set_test_params(self):
         self.num_nodes = 1
         self.extra_args = [['-banscore='+str(banscore)]]
 
@@ -140,6 +139,9 @@ class P2PLeakTest(BitcoinTestFramework):
 
         [conn.disconnect_node() for conn in connections]
 
+        # Wait until all connections are closed
+        wait_until(lambda: len(self.nodes[0].getpeerinfo()) == 0)
+
         # Make sure no unexpected messages came in
         assert(no_version_bannode.unexpected_msg == False)
         assert(no_version_idlenode.unexpected_msg == False)
@@ -158,8 +160,10 @@ class P2PLeakTest(BitcoinTestFramework):
         allowed_service_bit5_node.add_connection(connections[5])
         allowed_service_bit7_node.add_connection(connections[6])
 
-        wait_until(lambda: allowed_service_bit5_node.message_count["verack"], timeout=10, lock=mininode_lock)
-        wait_until(lambda: allowed_service_bit7_node.message_count["verack"], timeout=10, lock=mininode_lock)
+        NetworkThread().start()  # Network thread stopped when all previous NodeConnCBs disconnected. Restart it
+
+        wait_until(lambda: allowed_service_bit5_node.message_count["verack"], lock=mininode_lock)
+        wait_until(lambda: allowed_service_bit7_node.message_count["verack"], lock=mininode_lock)
 
 if __name__ == '__main__':
     P2PLeakTest().main()

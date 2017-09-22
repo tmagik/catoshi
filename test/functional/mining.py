@@ -27,9 +27,7 @@ def assert_template(node, block, expect, rehash=True):
     assert_equal(rsp, expect)
 
 class MiningTest(BitcoinTestFramework):
-
-    def __init__(self):
-        super().__init__()
+    def set_test_params(self):
         self.num_nodes = 2
         self.setup_clean_chain = False
 
@@ -40,7 +38,6 @@ class MiningTest(BitcoinTestFramework):
         mining_info = node.getmininginfo()
         assert_equal(mining_info['blocks'], 200)
         assert_equal(mining_info['chain'], 'regtest')
-        assert_equal(mining_info['currentblocksize'], 0)
         assert_equal(mining_info['currentblocktx'], 0)
         assert_equal(mining_info['currentblockweight'], 0)
         assert_equal(mining_info['difficulty'], Decimal('4.656542373906925E-10'))
