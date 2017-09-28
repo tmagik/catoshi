@@ -519,6 +519,7 @@ void CWallet::SyncMetaData(std::pair<TxSpends::iterator, TxSpends::iterator> ran
         const uint256& hash = it->second;
         CWalletTx* copyTo = &mapWallet[hash];
         if (copyFrom == copyTo) continue;
+        assert(copyFrom && "Oldest wallet transaction in range assumed to have been found.");
         if (!copyFrom->IsEquivalentTo(*copyTo)) continue;
         copyTo->mapValue = copyFrom->mapValue;
         copyTo->vOrderForm = copyFrom->vOrderForm;
@@ -912,6 +913,15 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFlushOnClose)
         if (wtxIn.fFromMe && wtxIn.fFromMe != wtx.fFromMe)
         {
             wtx.fFromMe = wtxIn.fFromMe;
+            fUpdated = true;
+        }
+        // If we have a witness-stripped version of this transaction, and we
+        // see a new version with a witness, then we must be upgrading a pre-segwit
+        // wallet.  Store the new version of the transaction with the witness,
+        // as the stripped-version must be invalid.
+        // TODO: Store all versions of the transaction, instead of just one.
+        if (wtxIn.tx->HasWitness() && !wtx.tx->HasWitness()) {
+            wtx.SetTx(wtxIn.tx);
             fUpdated = true;
         }
     }
@@ -3600,13 +3610,10 @@ void CWallet::GetKeyBirthTimes(std::map<CTxDestination, int64_t> &mapKeyBirth) c
     // map in which we'll infer heights of other keys
     CBlockIndex *pindexMax = chainActive[std::max(0, chainActive.Height() - 144)]; // the tip can be reorganized; use a 144-block safety margin
     std::map<CKeyID, CBlockIndex*> mapKeyFirstBlock;
-    std::set<CKeyID> setKeys;
-    GetKeys(setKeys);
-    for (const CKeyID &keyid : setKeys) {
+    for (const CKeyID &keyid : GetKeys()) {
         if (mapKeyBirth.count(keyid) == 0)
             mapKeyFirstBlock[keyid] = pindexMax;
     }
-    setKeys.clear();
 
     // if there are no such keys, we're done
     if (mapKeyFirstBlock.empty())
@@ -3829,17 +3836,17 @@ CWallet* CWallet::CreateWalletFromFile(const std::string walletFile)
 
     if (fFirstRun)
     {
-        // Create new keyUser and set as default key
-        if (gArgs.GetBoolArg("-usehd", DEFAULT_USE_HD_WALLET) && !walletInstance->IsHDEnabled()) {
-
-            // ensure this wallet.dat can only be opened by clients supporting HD with chain split
-            walletInstance->SetMinVersion(FEATURE_HD_SPLIT);
-
-            // generate a new master key
-            CPubKey masterPubKey = walletInstance->GenerateNewHDMasterKey();
-            if (!walletInstance->SetHDMasterKey(masterPubKey))
-                throw std::runtime_error(std::string(__func__) + ": Storing master key failed");
+        // ensure this wallet.dat can only be opened by clients supporting HD with chain split and expects no default key
+        if (!gArgs.GetBoolArg("-usehd", true)) {
+            InitError(strprintf(_("Error creating %s: You can't create non-HD wallets with this version."), walletFile));
+            return nullptr;
         }
+        walletInstance->SetMinVersion(FEATURE_NO_DEFAULT_KEY);
+
+        // generate a new master key
+        CPubKey masterPubKey = walletInstance->GenerateNewHDMasterKey();
+        if (!walletInstance->SetHDMasterKey(masterPubKey))
+            throw std::runtime_error(std::string(__func__) + ": Storing master key failed");
 
         // Top up the keypool
         if (!walletInstance->TopUpKeyPool()) {
@@ -3850,7 +3857,7 @@ CWallet* CWallet::CreateWalletFromFile(const std::string walletFile)
         walletInstance->SetBestChain(chainActive.GetLocator());
     }
     else if (gArgs.IsArgSet("-usehd")) {
-        bool useHD = gArgs.GetBoolArg("-usehd", DEFAULT_USE_HD_WALLET);
+        bool useHD = gArgs.GetBoolArg("-usehd", true);
         if (walletInstance->IsHDEnabled() && !useHD) {
             InitError(strprintf(_("Error loading %s: You can't disable HD on an already existing HD wallet"), walletFile));
             return nullptr;
