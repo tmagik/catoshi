@@ -196,7 +196,6 @@ UniValue getmininginfo(const JSONRPCRequest& request)
             "\nResult:\n"
             "{\n"
             "  \"blocks\": nnn,             (numeric) The current block\n"
-            "  \"currentblocksize\": nnn,   (numeric) The last block size\n"
             "  \"currentblockweight\": nnn, (numeric) The last block weight\n"
             "  \"currentblocktx\": nnn,     (numeric) The last block transaction\n"
             "  \"difficulty\": xxx.xxxxx    (numeric) The current difficulty\n"
@@ -215,7 +214,6 @@ UniValue getmininginfo(const JSONRPCRequest& request)
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("blocks",           (int)chainActive.Height()));
-    obj.push_back(Pair("currentblocksize", (uint64_t)nLastBlockSize));
     obj.push_back(Pair("currentblockweight", (uint64_t)nLastBlockWeight));
     obj.push_back(Pair("currentblocktx",   (uint64_t)nLastBlockTx));
     obj.push_back(Pair("difficulty",       (double)GetDifficulty()));
@@ -791,6 +789,12 @@ UniValue estimatefee(const JSONRPCRequest& request)
             + HelpExampleCli("estimatefee", "6")
             );
 
+    if (!IsDeprecatedRPCEnabled("estimatefee")) {
+        throw JSONRPCError(RPC_METHOD_DEPRECATED, "estimatefee is deprecated and will be fully removed in v0.17. "
+            "To use estimatefee in v0.16, restart bitcoind with -deprecatedrpc=estimatefee.\n"
+            "Projects should transition to using estimatesmartfee before upgrading to v0.17");
+    }
+
     RPCTypeCheck(request.params, {UniValue::VNUM});
 
     int nBlocks = request.params[0].get_int();
@@ -980,7 +984,7 @@ static const CRPCCommand commands[] =
     { "generating",         "generatetoaddress",      &generatetoaddress,      {"nblocks","address","maxtries"} },
 
     { "util",               "estimatefee",            &estimatefee,            {"nblocks"} },
-    { "util",               "estimatesmartfee",       &estimatesmartfee,       {"nblocks", "estimate_mode"} },
+    { "util",               "estimatesmartfee",       &estimatesmartfee,       {"conf_target", "estimate_mode"} },
 
     { "hidden",             "estimaterawfee",         &estimaterawfee,         {"conf_target", "threshold"} },
 };
