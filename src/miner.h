@@ -11,8 +11,8 @@
 
 #include <stdint.h>
 #include <memory>
-#include "boost/multi_index_container.hpp"
-#include "boost/multi_index/ordered_index.hpp"
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
 
 class CBlockIndex;
 class CChainParams;
@@ -139,13 +139,11 @@ private:
 
     // Configuration parameters for the block size
     bool fIncludeWitness;
-    unsigned int nBlockMaxWeight, nBlockMaxSize;
-    bool fNeedSizeAccounting;
+    unsigned int nBlockMaxWeight;
     CFeeRate blockMinFeeRate;
 
     // Information on the current status of the block
     uint64_t nBlockWeight;
-    uint64_t nBlockSize;
     uint64_t nBlockTx;
     uint64_t nBlockSigOpsCost;
     CAmount nFees;
@@ -160,7 +158,6 @@ public:
     struct Options {
         Options();
         size_t nBlockMaxWeight;
-        size_t nBlockMaxSize;
         CFeeRate blockMinFeeRate;
     };
 

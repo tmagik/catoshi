@@ -332,6 +332,12 @@ C++ data structures
   - *Rationale*: Ensure determinism by avoiding accidental use of uninitialized
     values. Also, static analyzers balk about this.
 
+- By default, declare single-argument constructors `explicit`.
+
+  - *Rationale*: This is a precaution to avoid unintended conversions that might
+    arise when single-argument constructors are used as implicit conversion
+    functions.
+
 - Use explicitly signed or unsigned `char`s, or even better `uint8_t` and
   `int8_t`. Do not use bare `char` unless it is to pass to a third-party API.
   This type can be signed or unsigned depending on the architecture, which can
@@ -543,6 +549,26 @@ Git and GitHub tips
   or `git fetch upstream-pull`. Afterwards, you can use `upstream-pull/NUMBER/head` in arguments to `git show`,
   `git checkout` and anywhere a commit id would be acceptable to see the changes from pull request NUMBER.
 
+Scripted diffs
+--------------
+
+For reformatting and refactoring commits where the changes can be easily automated using a bash script, we use
+scripted-diff commits. The bash script is included in the commit message and our Travis CI job checks that
+the result of the script is identical to the commit. This aids reviewers since they can verify that the script
+does exactly what it's supposed to do. It is also helpful for rebasing (since the same script can just be re-run
+on the new master commit).
+
+To create a scripted-diff:
+
+- start the commit message with `scripted-diff:` (and then a description of the diff on the same line)
+- in the commit message include the bash script between lines containing just the following text:
+    - `-BEGIN VERIFY SCRIPT-`
+    - `-END VERIFY SCRIPT-`
+
+The scripted-diff is verified by the tool `contrib/devtools/commit-script-check.sh`
+
+Commit `bb81e173` is an example of a scripted-diff.
+
 RPC interface guidelines
 --------------------------
 
@@ -607,9 +633,14 @@ A few guidelines for introducing and reviewing new RPC interfaces:
     from there.
 
 - A RPC method must either be a wallet method or a non-wallet method. Do not
-  introduce new methods such as `getinfo` and `signrawtransaction` that differ
-  in behavior based on presence of a wallet.
+  introduce new methods such as `signrawtransaction` that differ in behavior
+  based on presence of a wallet.
 
   - *Rationale*: as well as complicating the implementation and interfering
     with the introduction of multi-wallet, wallet and non-wallet code should be
     separated to avoid introducing circular dependencies between code units.
+
+- Try to make the RPC response a JSON object.
+
+  - *Rationale*: If a RPC response is not a JSON object then it is harder to avoid API breakage if
+    new data in the response is needed.
