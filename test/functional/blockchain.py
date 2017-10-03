@@ -21,7 +21,7 @@ from decimal import Decimal
 import http.client
 import subprocess
 
-from test_framework.test_framework import (BitcoinTestFramework, BITCOIND_PROC_WAIT_TIMEOUT)
+from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises,
@@ -30,16 +30,13 @@ from test_framework.util import (
     assert_is_hash_string,
 )
 
-
 class BlockchainTest(BitcoinTestFramework):
-
-    def __init__(self):
-        super().__init__()
-        self.setup_clean_chain = False
+    def set_test_params(self):
         self.num_nodes = 1
-        self.extra_args = [['-stopatheight=207']]
+        self.extra_args = [['-stopatheight=207', '-prune=1']]
 
     def run_test(self):
+        self._test_getblockchaininfo()
         self._test_getchaintxstats()
         self._test_gettxoutsetinfo()
         self._test_getblockheader()
@@ -48,6 +45,34 @@ class BlockchainTest(BitcoinTestFramework):
         self._test_stopatheight()
         assert self.nodes[0].verifychain(4, 0)
 
+    def _test_getblockchaininfo(self):
+        self.log.info("Test getblockchaininfo")
+
+        keys = [
+            'bestblockhash',
+            'bip9_softforks',
+            'blocks',
+            'chain',
+            'chainwork',
+            'difficulty',
+            'headers',
+            'mediantime',
+            'pruned',
+            'softforks',
+            'verificationprogress',
+            'warnings',
+        ]
+        res = self.nodes[0].getblockchaininfo()
+        # result should have pruneheight and default keys if pruning is enabled
+        assert_equal(sorted(res.keys()), sorted(['pruneheight'] + keys))
+        # pruneheight should be greater or equal to 0
+        assert res['pruneheight'] >= 0
+
+        self.restart_node(0, ['-stopatheight=207'])
+        res = self.nodes[0].getblockchaininfo()
+        # should have exact keys
+        assert_equal(sorted(res.keys()), keys)
+
     def _test_getchaintxstats(self):
         chaintxstats = self.nodes[0].getchaintxstats(1)
         # 200 txs plus genesis tx
@@ -55,6 +80,28 @@ class BlockchainTest(BitcoinTestFramework):
         # tx rate should be 1 per 10 minutes, or 1/600
         # we have to round because of binary math
         assert_equal(round(chaintxstats['txrate'] * 600, 10), Decimal(1))
+
+        b1 = self.nodes[0].getblock(self.nodes[0].getblockhash(1))
+        b200 = self.nodes[0].getblock(self.nodes[0].getblockhash(200))
+        time_diff = b200['mediantime'] - b1['mediantime']
+
+        chaintxstats = self.nodes[0].getchaintxstats()
+        assert_equal(chaintxstats['time'], b200['time'])
+        assert_equal(chaintxstats['txcount'], 201)
+        assert_equal(chaintxstats['window_block_count'], 199)
+        assert_equal(chaintxstats['window_tx_count'], 199)
+        assert_equal(chaintxstats['window_interval'], time_diff)
+        assert_equal(round(chaintxstats['txrate'] * time_diff, 10), Decimal(199))
+
+        chaintxstats = self.nodes[0].getchaintxstats(blockhash=b1['hash'])
+        assert_equal(chaintxstats['time'], b1['time'])
+        assert_equal(chaintxstats['txcount'], 2)
+        assert_equal(chaintxstats['window_block_count'], 0)
+        assert('window_tx_count' not in chaintxstats)
+        assert('window_interval' not in chaintxstats)
+        assert('txrate' not in chaintxstats)
+
+        assert_raises_jsonrpc(-8, "Invalid block count: should be between 0 and the block's height - 1", self.nodes[0].getchaintxstats, 201)
 
     def _test_gettxoutsetinfo(self):
         node = self.nodes[0]
@@ -139,14 +186,14 @@ class BlockchainTest(BitcoinTestFramework):
         self.nodes[0].generate(6)
         assert_equal(self.nodes[0].getblockcount(), 206)
         self.log.debug('Node should not stop at this height')
-        assert_raises(subprocess.TimeoutExpired, lambda: self.bitcoind_processes[0].wait(timeout=3))
+        assert_raises(subprocess.TimeoutExpired, lambda: self.nodes[0].process.wait(timeout=3))
         try:
             self.nodes[0].generate(1)
         except (ConnectionError, http.client.BadStatusLine):
             pass  # The node already shut down before response
         self.log.debug('Node should stop at this height...')
-        self.bitcoind_processes[0].wait(timeout=BITCOIND_PROC_WAIT_TIMEOUT)
-        self.nodes[0] = self.start_node(0, self.options.tmpdir)
+        self.nodes[0].wait_until_stopped()
+        self.start_node(0)
         assert_equal(self.nodes[0].getblockcount(), 207)
 
 
