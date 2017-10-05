@@ -21,7 +21,7 @@ happened previously.
 
 from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import (start_nodes, connect_nodes, sync_blocks, assert_equal, set_node_times)
+from test_framework.util import (connect_nodes, sync_blocks, assert_equal, set_node_times)
 
 import collections
 import enum
@@ -111,8 +111,7 @@ TIMESTAMP_WINDOW = 2 * 60 * 60
 
 
 class ImportRescanTest(BitcoinTestFramework):
-    def __init__(self):
-        super().__init__()
+    def set_test_params(self):
         self.num_nodes = 2 + len(IMPORT_NODES)
 
     def setup_network(self):
@@ -121,7 +120,8 @@ class ImportRescanTest(BitcoinTestFramework):
             if import_node.prune:
                 extra_args[i] += ["-prune=1"]
 
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
+        self.add_nodes(self.num_nodes, extra_args)
+        self.start_nodes()
         for i in range(1, self.num_nodes):
             connect_nodes(self.nodes[i], 0)
 
@@ -161,7 +161,6 @@ class ImportRescanTest(BitcoinTestFramework):
                 variant.check()
 
         # Create new transactions sending to each address.
-        fee = self.nodes[0].getnetworkinfo()["relayfee"]
         for i, variant in enumerate(IMPORT_VARIANTS):
             variant.sent_amount = 10 - (2 * i + 1) / 8.0
             variant.sent_txid = self.nodes[0].sendtoaddress(variant.address["address"], variant.sent_amount)

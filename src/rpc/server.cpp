@@ -17,10 +17,7 @@
 #include <univalue.h>
 
 #include <boost/bind.hpp>
-#include <boost/foreach.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/signals2/signal.hpp>
-#include <boost/thread.hpp>
 #include <boost/algorithm/string/case_conv.hpp> // for to_upper()
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -33,7 +30,7 @@ static bool fRPCInWarmup = true;
 static std::string rpcWarmupStatus("RPC server started");
 static CCriticalSection cs_rpcWarmup;
 /* Timer-creating functions */
-static RPCTimerInterface* timerInterface = NULL;
+static RPCTimerInterface* timerInterface = nullptr;
 /* Map of name to timer. */
 static std::map<std::string, std::unique_ptr<RPCTimerBase> > deadlineTimers;
 
@@ -54,17 +51,12 @@ void RPCServer::OnStopped(std::function<void ()> slot)
     g_rpcSignals.Stopped.connect(slot);
 }
 
-void RPCServer::OnPreCommand(std::function<void (const CRPCCommand&)> slot)
-{
-    g_rpcSignals.PreCommand.connect(boost::bind(slot, _1));
-}
-
 void RPCTypeCheck(const UniValue& params,
                   const std::list<UniValue::VType>& typesExpected,
                   bool fAllowNull)
 {
     unsigned int i = 0;
-    BOOST_FOREACH(UniValue::VType t, typesExpected)
+    for (UniValue::VType t : typesExpected)
     {
         if (params.size() <= i)
             break;
@@ -103,7 +95,7 @@ void RPCTypeCheckObj(const UniValue& o,
 
     if (fStrict)
     {
-        BOOST_FOREACH(const std::string& k, o.getKeys())
+        for (const std::string& k : o.getKeys())
         {
             if (typesExpected.count(k) == 0)
             {
@@ -124,16 +116,6 @@ CAmount AmountFromValue(const UniValue& value)
     if (!MoneyRange(amount))
         throw JSONRPCError(RPC_TYPE_ERROR, "Amount out of range");
     return amount;
-}
-
-UniValue ValueFromAmount(const CAmount& amount)
-{
-    bool sign = amount < 0;
-    int64_t n_abs = (sign ? -amount : amount);
-    int64_t quotient = n_abs / COIN;
-    int64_t remainder = n_abs % COIN;
-    return UniValue(UniValue::VNUM,
-            strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder));
 }
 
 uint256 ParseHashV(const UniValue& v, std::string strName)
@@ -186,7 +168,7 @@ std::string CRPCTable::help(const std::string& strCommand, const JSONRPCRequest&
     jreq.fHelp = true;
     jreq.params = UniValue();
 
-    BOOST_FOREACH(const PAIRTYPE(std::string, const CRPCCommand*)& command, vCommands)
+    for (const std::pair<std::string, const CRPCCommand*>& command : vCommands)
     {
         const CRPCCommand *pcmd = command.second;
         std::string strMethod = pcmd->name;
@@ -260,15 +242,32 @@ UniValue stop(const JSONRPCRequest& jsonRequest)
     return "Bitcoin server stopping";
 }
 
+UniValue uptime(const JSONRPCRequest& jsonRequest)
+{
+    if (jsonRequest.fHelp || jsonRequest.params.size() > 1)
+        throw std::runtime_error(
+                "uptime\n"
+                        "\nReturns the total uptime of the server.\n"
+                        "\nResult:\n"
+                        "ttt        (numeric) The number of seconds that the server has been running\n"
+                        "\nExamples:\n"
+                + HelpExampleCli("uptime", "")
+                + HelpExampleRpc("uptime", "")
+        );
+
+    return GetTime() - GetStartupTime();
+}
+
 /**
  * Call Table
  */
 static const CRPCCommand vRPCCommands[] =
-{ //  category              name                      actor (function)         okSafe argNames
-  //  --------------------- ------------------------  -----------------------  ------ ----------
+{ //  category              name                      actor (function)         argNames
+  //  --------------------- ------------------------  -----------------------  ----------
     /* Overall control/query calls */
-    { "control",            "help",                   &help,                   true,  {"command"}  },
-    { "control",            "stop",                   &stop,                   true,  {}  },
+    { "control",            "help",                   &help,                   {"command"}  },
+    { "control",            "stop",                   &stop,                   {}  },
+    { "control",            "uptime",                 &uptime,                 {}  },
 };
 
 CRPCTable::CRPCTable()
@@ -287,7 +286,7 @@ const CRPCCommand *CRPCTable::operator[](const std::string &name) const
 {
     std::map<std::string, const CRPCCommand*>::const_iterator it = mapCommands.find(name);
     if (it == mapCommands.end())
-        return NULL;
+        return nullptr;
     return (*it).second;
 }
 
@@ -381,6 +380,13 @@ void JSONRPCRequest::parse(const UniValue& valRequest)
         params = UniValue(UniValue::VARR);
     else
         throw JSONRPCError(RPC_INVALID_REQUEST, "Params must be an array or object");
+}
+
+bool IsDeprecatedRPCEnabled(const std::string& method)
+{
+    const std::vector<std::string> enabled_methods = gArgs.GetArgs("-deprecatedrpc");
+
+    return find(enabled_methods.begin(), enabled_methods.end(), method) != enabled_methods.end();
 }
 
 static UniValue JSONRPCExecOne(const UniValue& req)
@@ -533,7 +539,7 @@ void RPCSetTimerInterface(RPCTimerInterface *iface)
 void RPCUnsetTimerInterface(RPCTimerInterface *iface)
 {
     if (timerInterface == iface)
-        timerInterface = NULL;
+        timerInterface = nullptr;
 }
 
 void RPCRunLater(const std::string& name, std::function<void(void)> func, int64_t nSeconds)
@@ -548,7 +554,7 @@ void RPCRunLater(const std::string& name, std::function<void(void)> func, int64_
 int RPCSerializationFlags()
 {
     int flag = 0;
-    if (GetArg("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) == 0)
+    if (gArgs.GetArg("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) == 0)
         flag |= SERIALIZE_TRANSACTION_NO_WITNESS;
     return flag;
 }

@@ -17,12 +17,6 @@
 #include "netbase.h"
 #include "txdb.h" // for -dbcache defaults
 
-#ifdef ENABLE_WALLET
-#include "wallet/wallet.h" // for CWallet::GetRequiredFee()
-#endif
-
-#include <boost/thread.hpp>
-
 #include <QDataWidgetMapper>
 #include <QDir>
 #include <QIntValidator>
@@ -82,9 +76,11 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     ui->bitcoinAtStartup->setToolTip(ui->bitcoinAtStartup->toolTip().arg(tr(PACKAGE_NAME)));
     ui->bitcoinAtStartup->setText(ui->bitcoinAtStartup->text().arg(tr(PACKAGE_NAME)));
 
+    ui->openBitcoinConfButton->setToolTip(ui->openBitcoinConfButton->toolTip().arg(tr(PACKAGE_NAME)));
+
     ui->lang->setToolTip(ui->lang->toolTip().arg(tr(PACKAGE_NAME)));
     ui->lang->addItem(QString("(") + tr("default") + QString(")"), QVariant(""));
-    Q_FOREACH(const QString &langStr, translations.entryList())
+    for (const QString &langStr : translations.entryList())
     {
         QLocale locale(langStr);
 
