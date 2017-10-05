@@ -49,7 +49,7 @@ Optional dependencies:
  univalue    | Utility          | JSON parsing and encoding (bundled version will be used unless --with-system-univalue passed to configure)
  libzmq3     | ZMQ notification | Optional, allows generating ZMQ notifications (requires ZMQ version >= 4.x)
 
-For the versions used in the release, see [release-process.md](release-process.md) under *Fetch and build inputs*.
+For the versions used, see [dependencies.md](dependencies.md)
 
 Memory Requirements
 --------------------
@@ -65,7 +65,7 @@ Dependency Build Instructions: Ubuntu & Debian
 ----------------------------------------------
 Build requirements:
 
-    sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
+    sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils python3
 
 Options when installing required Boost library files:
 
@@ -131,7 +131,7 @@ Dependency Build Instructions: Fedora
 -------------------------------------
 Build requirements:
 
-    sudo dnf install gcc-c++ libtool make autoconf automake openssl-devel libevent-devel boost-devel libdb4-devel libdb4-cxx-devel
+    sudo dnf install gcc-c++ libtool make autoconf automake openssl-devel libevent-devel boost-devel libdb4-devel libdb4-cxx-devel python3
 
 Optional:
 
@@ -315,14 +315,16 @@ For further documentation on the depends system see [README.md](../depends/READM
 Building on FreeBSD
 --------------------
 
-(Updated as of FreeBSD 10.3)
+(Updated as of FreeBSD 11.0)
 
 Clang is installed by default as `cc` compiler, this makes it easier to get
 started than on [OpenBSD](build-openbsd.md). Installing dependencies:
 
     pkg install autoconf automake libtool pkgconf
-    pkg install boost-libs openssl libevent2
+    pkg install boost-libs openssl libevent
+    pkg install gmake
 
+You need to use GNU make (`gmake`) instead of `make`.
 (`libressl` instead of `openssl` will also work)
 
 For the wallet (optional):
@@ -337,8 +339,8 @@ with 4.8-built Bitcoin Core is needed follow the steps under "Berkeley DB" above
 Then build using:
 
     ./autogen.sh
-    ./configure --with-incompatible-bdb CPPFLAGS=-I/usr/local/include/db5 LDFLAGS=-L/usr/local/lib/db5
-    make
+    ./configure --with-incompatible-bdb BDB_CFLAGS="-I/usr/local/include/db5" BDB_LIBS="-L/usr/local/lib -ldb_cxx-5"
+    gmake
 
 *Note on debugging*: The version of `gdb` installed by default is [ancient and considered harmful](https://wiki.freebsd.org/GdbRetirement).
 It is not suitable for debugging a multi-threaded C++ program, not even for getting backtraces. Please install the package `gdb` and

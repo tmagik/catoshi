@@ -5,21 +5,25 @@
 #include "bench.h"
 #include "perf.h"
 
+#include <assert.h>
 #include <iostream>
 #include <iomanip>
 #include <sys/time.h>
 
-std::map<std::string, benchmark::BenchFunction> benchmark::BenchRunner::benchmarks;
+benchmark::BenchRunner::BenchmarkMap &benchmark::BenchRunner::benchmarks() {
+    static std::map<std::string, benchmark::BenchFunction> benchmarks_map;
+    return benchmarks_map;
+}
 
 static double gettimedouble(void) {
     struct timeval tv;
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     return tv.tv_usec * 0.000001 + tv.tv_sec;
 }
 
 benchmark::BenchRunner::BenchRunner(std::string name, benchmark::BenchFunction func)
 {
-    benchmarks.insert(std::make_pair(name, func));
+    benchmarks().insert(std::make_pair(name, func));
 }
 
 void
@@ -29,12 +33,9 @@ benchmark::BenchRunner::RunAll(double elapsedTimeForOne)
     std::cout << "#Benchmark" << "," << "count" << "," << "min" << "," << "max" << "," << "average" << ","
               << "min_cycles" << "," << "max_cycles" << "," << "average_cycles" << "\n";
 
-    for (std::map<std::string,benchmark::BenchFunction>::iterator it = benchmarks.begin();
-         it != benchmarks.end(); ++it) {
-
-        State state(it->first, elapsedTimeForOne);
-        benchmark::BenchFunction& func = it->second;
-        func(state);
+    for (const auto &p: benchmarks()) {
+        State state(p.first, elapsedTimeForOne);
+        p.second(state);
     }
     perf_fini();
 }
@@ -54,13 +55,13 @@ bool benchmark::State::KeepRunning()
     else {
         now = gettimedouble();
         double elapsed = now - lastTime;
-        double elapsedOne = elapsed * countMaskInv;
+        double elapsedOne = elapsed / (countMask + 1);
         if (elapsedOne < minTime) minTime = elapsedOne;
         if (elapsedOne > maxTime) maxTime = elapsedOne;
 
         // We only use relative values, so don't have to handle 64-bit wrap-around specially
         nowCycles = perf_cpucycles();
-        uint64_t elapsedOneCycles = (nowCycles - lastCycles) * countMaskInv;
+        uint64_t elapsedOneCycles = (nowCycles - lastCycles) / (countMask + 1);
         if (elapsedOneCycles < minCycles) minCycles = elapsedOneCycles;
         if (elapsedOneCycles > maxCycles) maxCycles = elapsedOneCycles;
 
@@ -68,7 +69,6 @@ bool benchmark::State::KeepRunning()
           // If the execution was much too fast (1/128th of maxElapsed), increase the count mask by 8x and restart timing.
           // The restart avoids including the overhead of this code in the measurement.
           countMask = ((countMask<<3)|7) & ((1LL<<60)-1);
-          countMaskInv = 1./(countMask+1);
           count = 0;
           minTime = std::numeric_limits<double>::max();
           maxTime = std::numeric_limits<double>::min();
@@ -80,7 +80,6 @@ bool benchmark::State::KeepRunning()
           uint64_t newCountMask = ((countMask<<1)|1) & ((1LL<<60)-1);
           if ((count & newCountMask)==0) {
               countMask = newCountMask;
-              countMaskInv = 1./(countMask+1);
           }
         }
     }
@@ -92,11 +91,14 @@ bool benchmark::State::KeepRunning()
 
     --count;
 
+    assert(count != 0 && "count == 0 => (now == 0 && beginTime == 0) => return above");
+
     // Output results
     double average = (now-beginTime)/count;
     int64_t averageCycles = (nowCycles-beginCycles)/count;
     std::cout << std::fixed << std::setprecision(15) << name << "," << count << "," << minTime << "," << maxTime << "," << average << ","
               << minCycles << "," << maxCycles << "," << averageCycles << "\n";
+    std::cout.copyfmt(std::ios(nullptr));
 
     return false;
 }

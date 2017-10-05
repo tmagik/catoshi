@@ -5,16 +5,17 @@
 #ifndef BITCOIN_BENCH_BENCH_H
 #define BITCOIN_BENCH_BENCH_H
 
+#include <functional>
+#include <limits>
 #include <map>
 #include <string>
 
-#include <boost/function.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/stringize.hpp>
 
 // Simple micro-benchmarking framework; API mostly matches a subset of the Google Benchmark
 // framework (see https://github.com/google/benchmark)
-// Wny not use the Google Benchmark framework? Because adding Yet Another Dependency
+// Why not use the Google Benchmark framework? Because adding Yet Another Dependency
 // (that uses cmake as its build system and has lots of features we don't need) isn't
 // worth it.
 
@@ -40,7 +41,7 @@ namespace benchmark {
         std::string name;
         double maxElapsed;
         double beginTime;
-        double lastTime, minTime, maxTime, countMaskInv;
+        double lastTime, minTime, maxTime;
         uint64_t count;
         uint64_t countMask;
         uint64_t beginCycles;
@@ -54,16 +55,16 @@ namespace benchmark {
             minCycles = std::numeric_limits<uint64_t>::max();
             maxCycles = std::numeric_limits<uint64_t>::min();
             countMask = 1;
-            countMaskInv = 1./(countMask + 1);
         }
         bool KeepRunning();
     };
 
-    typedef boost::function<void(State&)> BenchFunction;
+    typedef std::function<void(State&)> BenchFunction;
 
     class BenchRunner
     {
-        static std::map<std::string, BenchFunction> benchmarks;
+        typedef std::map<std::string, BenchFunction> BenchmarkMap;
+        static BenchmarkMap &benchmarks();
 
     public:
         BenchRunner(std::string name, BenchFunction func);

@@ -11,14 +11,16 @@ Install the OS X command line tools:
 
 When the popup appears, click `Install`.
 
-Then install [Homebrew](http://brew.sh).
+Then install [Homebrew](https://brew.sh).
 
 Dependencies
 ----------------------
 
-    brew install automake berkeley-db4 libtool boost --c++11 miniupnpc openssl pkg-config protobuf --c++11 qt5 libevent
+    brew install automake berkeley-db4 libtool boost --c++11 miniupnpc openssl pkg-config protobuf python3 qt libevent
 
-In case you want to build the disk image with `make deploy` (.dmg / optional), you need RSVG
+See [dependencies.md](dependencies.md) for a complete overview.
+
+If you want to build the disk image with `make deploy` (.dmg / optional), you need RSVG
 
     brew install librsvg
 
