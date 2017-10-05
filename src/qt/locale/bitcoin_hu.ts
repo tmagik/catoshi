@@ -41,9 +41,17 @@
         <source>&amp;Delete</source>
         <translation>&amp;Törlés</translation>
     </message>
+    <message>
+        <source>&amp;Copy Address</source>
+        <translation>&amp;Cím másolása</translation>
+    </message>
     </context>
 <context>
     <name>AddressTableModel</name>
+    <message>
+        <source>Label</source>
+        <translation>Címke</translation>
+    </message>
     </context>
 <context>
     <name>AskPassphraseDialog</name>
@@ -62,6 +70,10 @@
     <message>
         <source>Repeat new passphrase</source>
         <translation>Új jelszó újra</translation>
+    </message>
+    <message>
+        <source>Decrypt wallet</source>
+        <translation>Tárca dekódolása</translation>
     </message>
     </context>
 <context>
@@ -256,10 +268,6 @@
     <message numerus="yes">
         <source>%n active connection(s) to Bitcoin network</source>
         <translation><numerusform>%n aktív kapcsolat a Bitcoin hálózathoz</numerusform><numerusform>%n aktív kapcsolat a Bitcoin hálózathoz</numerusform></translation>
-    </message>
-    <message>
-        <source>No block source available...</source>
-        <translation>Blokk forrása ismeretlen...</translation>
     </message>
     <message numerus="yes">
         <source>Processed %n block(s) of transaction history.</source>
@@ -1082,9 +1090,17 @@
         <source>&amp;Save Image...</source>
         <translation>&amp;Kép mentése</translation>
     </message>
+    <message>
+        <source>Label</source>
+        <translation>Címke</translation>
+    </message>
     </context>
 <context>
     <name>RecentRequestsTableModel</name>
+    <message>
+        <source>Label</source>
+        <translation>Címke</translation>
+    </message>
     </context>
 <context>
     <name>SendCoinsDialog</name>
@@ -1335,9 +1351,17 @@
     </context>
 <context>
     <name>TransactionTableModel</name>
+    <message>
+        <source>Label</source>
+        <translation>Címke</translation>
+    </message>
     </context>
 <context>
     <name>TransactionView</name>
+    <message>
+        <source>Label</source>
+        <translation>Címke</translation>
+    </message>
     </context>
 <context>
     <name>UnitDisplayStatusBarControl</name>
