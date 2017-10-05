@@ -45,7 +45,7 @@ from test_framework.mininode import (CBlockHeader,
                                      msg_headers)
 from test_framework.script import (CScript, OP_TRUE)
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import (start_node, p2p_port, assert_equal)
+from test_framework.util import (p2p_port, assert_equal)
 
 class BaseNode(NodeConnCB):
     def send_header_for_blocks(self, new_blocks):
@@ -54,20 +54,22 @@ class BaseNode(NodeConnCB):
         self.send_message(headers_message)
 
 class AssumeValidTest(BitcoinTestFramework):
-    def __init__(self):
-        super().__init__()
+    def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 3
 
     def setup_network(self):
+        self.add_nodes(3)
         # Start node0. We don't start the other nodes yet since
         # we need to pre-mine a block with an invalid transaction
         # signature so we can pass in the block hash as assumevalid.
-        self.nodes = [start_node(0, self.options.tmpdir)]
+        self.start_node(0)
 
     def send_blocks_until_disconnected(self, node):
         """Keep sending blocks to the node until we're disconnected."""
         for i in range(len(self.blocks)):
+            if not node.connection:
+                break
             try:
                 node.send_message(msg_block(self.blocks[i]))
             except IOError as e:
@@ -162,15 +164,13 @@ class AssumeValidTest(BitcoinTestFramework):
             height += 1
 
         # Start node1 and node2 with assumevalid so they accept a block with a bad signature.
-        self.nodes.append(start_node(1, self.options.tmpdir,
-                                     ["-assumevalid=" + hex(block102.sha256)]))
+        self.start_node(1, extra_args=["-assumevalid=" + hex(block102.sha256)])
         node1 = BaseNode()  # connects to node1
         connections.append(NodeConn('127.0.0.1', p2p_port(1), self.nodes[1], node1))
         node1.add_connection(connections[1])
         node1.wait_for_verack()
 
-        self.nodes.append(start_node(2, self.options.tmpdir,
-                                     ["-assumevalid=" + hex(block102.sha256)]))
+        self.start_node(2, extra_args=["-assumevalid=" + hex(block102.sha256)])
         node2 = BaseNode()  # connects to node2
         connections.append(NodeConn('127.0.0.1', p2p_port(2), self.nodes[2], node2))
         node2.add_connection(connections[2])

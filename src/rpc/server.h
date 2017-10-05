@@ -25,16 +25,12 @@ namespace RPCServer
 {
     void OnStarted(std::function<void ()> slot);
     void OnStopped(std::function<void ()> slot);
-    void OnPreCommand(std::function<void (const CRPCCommand&)> slot);
 }
-
-class CBlockIndex;
-class CNetAddr;
 
 /** Wrapper for UniValue::VType, which includes typeAny:
  * Used to denote don't care type. Only used by RPCTypeCheckObj */
 struct UniValueType {
-    UniValueType(UniValue::VType _type) : typeAny(false), type(_type) {}
+    explicit UniValueType(UniValue::VType _type) : typeAny(false), type(_type) {}
     UniValueType() : typeAny(true) {}
     bool typeAny;
     UniValue::VType type;
@@ -50,7 +46,7 @@ public:
     std::string URI;
     std::string authUser;
 
-    JSONRPCRequest() { id = NullUniValue; params = NullUniValue; fHelp = false; }
+    JSONRPCRequest() : id(NullUniValue), params(NullUniValue), fHelp(false) {}
     void parse(const UniValue& valRequest);
 };
 
@@ -137,7 +133,6 @@ public:
     std::string category;
     std::string name;
     rpcfn_type actor;
-    bool okSafeMode;
     std::vector<std::string> argNames;
 };
 
@@ -176,6 +171,8 @@ public:
     bool appendCommand(const std::string& name, const CRPCCommand* pcmd);
 };
 
+bool IsDeprecatedRPCEnabled(const std::string& method);
+
 extern CRPCTable tableRPC;
 
 /**
@@ -188,7 +185,6 @@ extern std::vector<unsigned char> ParseHexV(const UniValue& v, std::string strNa
 extern std::vector<unsigned char> ParseHexO(const UniValue& o, std::string strKey);
 
 extern CAmount AmountFromValue(const UniValue& value);
-extern UniValue ValueFromAmount(const CAmount& amount);
 extern std::string HelpExampleCli(const std::string& methodname, const std::string& args);
 extern std::string HelpExampleRpc(const std::string& methodname, const std::string& args);
 

@@ -17,10 +17,8 @@ SEQUENCE_LOCKTIME_MASK = 0x0000ffff
 NOT_FINAL_ERROR = "64: non-BIP68-final"
 
 class BIP68Test(BitcoinTestFramework):
-    def __init__(self):
-        super().__init__()
+    def set_test_params(self):
         self.num_nodes = 2
-        self.setup_clean_chain = False
         self.extra_args = [[], ["-acceptnonstdtxn=0"]]
 
     def run_test(self):
@@ -241,7 +239,7 @@ class BIP68Test(BitcoinTestFramework):
 
         # Now mine some blocks, but make sure tx2 doesn't get mined.
         # Use prioritisetransaction to lower the effective feerate to 0
-        self.nodes[0].prioritisetransaction(tx2.hash, int(-self.relayfee*COIN))
+        self.nodes[0].prioritisetransaction(txid=tx2.hash, fee_delta=int(-self.relayfee*COIN))
         cur_time = int(time.time())
         for i in range(10):
             self.nodes[0].setmocktime(cur_time + 600)
@@ -254,7 +252,7 @@ class BIP68Test(BitcoinTestFramework):
         test_nonzero_locks(tx2, self.nodes[0], self.relayfee, use_height_lock=False)
 
         # Mine tx2, and then try again
-        self.nodes[0].prioritisetransaction(tx2.hash, int(self.relayfee*COIN))
+        self.nodes[0].prioritisetransaction(txid=tx2.hash, fee_delta=int(self.relayfee*COIN))
 
         # Advance the time on the node so that we can test timelocks
         self.nodes[0].setmocktime(cur_time+600)
@@ -371,11 +369,14 @@ class BIP68Test(BitcoinTestFramework):
 
     def activateCSV(self):
         # activation should happen at block height 432 (3 periods)
+        # getblockchaininfo will show CSV as active at block 431 (144 * 3 -1) since it's returning whether CSV is active for the next block.
         min_activation_height = 432
         height = self.nodes[0].getblockcount()
-        assert(height < min_activation_height)
-        self.nodes[0].generate(min_activation_height-height)
-        assert(get_bip9_status(self.nodes[0], 'csv')['status'] == 'active')
+        assert_greater_than(min_activation_height - height, 2)
+        self.nodes[0].generate(min_activation_height - height - 2)
+        assert_equal(get_bip9_status(self.nodes[0], 'csv')['status'], "locked_in")
+        self.nodes[0].generate(1)
+        assert_equal(get_bip9_status(self.nodes[0], 'csv')['status'], "active")
         sync_blocks(self.nodes)
 
     # Use self.nodes[1] to test that version 2 transactions are standard.
@@ -387,7 +388,7 @@ class BIP68Test(BitcoinTestFramework):
         tx = FromHex(CTransaction(), rawtxfund)
         tx.nVersion = 2
         tx_signed = self.nodes[1].signrawtransaction(ToHex(tx))["hex"]
-        tx_id = self.nodes[1].sendrawtransaction(tx_signed)
+        self.nodes[1].sendrawtransaction(tx_signed)
 
 if __name__ == '__main__':
     BIP68Test().main()
