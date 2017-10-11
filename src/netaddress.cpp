@@ -271,7 +271,7 @@ std::string CNetAddr::ToStringIP() const
     socklen_t socklen = sizeof(sockaddr);
     if (serv.GetSockAddr((struct sockaddr*)&sockaddr, &socklen)) {
         char name[1025] = "";
-        if (!getnameinfo((const struct sockaddr*)&sockaddr, socklen, name, sizeof(name), NULL, 0, NI_NUMERICHOST))
+        if (!getnameinfo((const struct sockaddr*)&sockaddr, socklen, name, sizeof(name), nullptr, 0, NI_NUMERICHOST))
             return std::string(name);
     }
     if (IsIPv4())
@@ -407,7 +407,7 @@ static const int NET_UNKNOWN = NET_MAX + 0;
 static const int NET_TEREDO  = NET_MAX + 1;
 int static GetExtNetwork(const CNetAddr *addr)
 {
-    if (addr == NULL)
+    if (addr == nullptr)
         return NET_UNKNOWN;
     if (addr->IsRFC4380())
         return NET_TEREDO;
@@ -573,7 +573,7 @@ std::vector<unsigned char> CService::GetKey() const
 {
      std::vector<unsigned char> vKey;
      vKey.resize(18);
-     memcpy(&vKey[0], ip, 16);
+     memcpy(vKey.data(), ip, 16);
      vKey[16] = port / 0x100;
      vKey[17] = port & 0x0FF;
      return vKey;
@@ -596,11 +596,6 @@ std::string CService::ToStringIPPort() const
 std::string CService::ToString() const
 {
     return ToStringIPPort();
-}
-
-void CService::SetPort(unsigned short portIn)
-{
-    port = portIn;
 }
 
 CSubNet::CSubNet():

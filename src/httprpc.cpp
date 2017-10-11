@@ -18,7 +18,6 @@
 #include <stdio.h>
 
 #include <boost/algorithm/string.hpp> // boost::trim
-#include <boost/foreach.hpp>
 
 /** WWW-Authenticate to present with 401 Unauthorized response */
 static const char* WWW_AUTH_HEADER_DATA = "Basic realm=\"jsonrpc\"";
@@ -44,14 +43,14 @@ private:
 class HTTPRPCTimerInterface : public RPCTimerInterface
 {
 public:
-    HTTPRPCTimerInterface(struct event_base* _base) : base(_base)
+    explicit HTTPRPCTimerInterface(struct event_base* _base) : base(_base)
     {
     }
-    const char* Name()
+    const char* Name() override
     {
         return "HTTP";
     }
-    RPCTimerBase* NewTimer(std::function<void(void)>& func, int64_t millis)
+    RPCTimerBase* NewTimer(std::function<void(void)>& func, int64_t millis) override
     {
         return new HTTPRPCTimer(base, func, millis);
     }
@@ -63,7 +62,7 @@ private:
 /* Pre-base64-encoded authentication token */
 static std::string strRPCUserColonPass;
 /* Stored RPC timer interface (for unregistration) */
-static HTTPRPCTimerInterface* httpRPCTimerInterface = 0;
+static HTTPRPCTimerInterface* httpRPCTimerInterface = nullptr;
 
 static void JSONErrorReply(HTTPRequest* req, const UniValue& objError, const UniValue& id)
 {
@@ -92,35 +91,32 @@ static bool multiUserAuthorized(std::string strUserPass)
     std::string strUser = strUserPass.substr(0, strUserPass.find(":"));
     std::string strPass = strUserPass.substr(strUserPass.find(":") + 1);
 
-    if (gArgs.IsArgSet("-rpcauth")) {
+    for (const std::string& strRPCAuth : gArgs.GetArgs("-rpcauth")) {
         //Search for multi-user login/pass "rpcauth" from config
-        for (std::string strRPCAuth : gArgs.GetArgs("-rpcauth"))
-        {
-            std::vector<std::string> vFields;
-            boost::split(vFields, strRPCAuth, boost::is_any_of(":$"));
-            if (vFields.size() != 3) {
-                //Incorrect formatting in config file
-                continue;
-            }
+        std::vector<std::string> vFields;
+        boost::split(vFields, strRPCAuth, boost::is_any_of(":$"));
+        if (vFields.size() != 3) {
+            //Incorrect formatting in config file
+            continue;
+        }
 
-            std::string strName = vFields[0];
-            if (!TimingResistantEqual(strName, strUser)) {
-                continue;
-            }
+        std::string strName = vFields[0];
+        if (!TimingResistantEqual(strName, strUser)) {
+            continue;
+        }
 
-            std::string strSalt = vFields[1];
-            std::string strHash = vFields[2];
+        std::string strSalt = vFields[1];
+        std::string strHash = vFields[2];
 
-            static const unsigned int KEY_SIZE = 32;
-            unsigned char out[KEY_SIZE];
+        static const unsigned int KEY_SIZE = 32;
+        unsigned char out[KEY_SIZE];
 
-            CHMAC_SHA256(reinterpret_cast<const unsigned char*>(strSalt.c_str()), strSalt.size()).Write(reinterpret_cast<const unsigned char*>(strPass.c_str()), strPass.size()).Finalize(out);
-            std::vector<unsigned char> hexvec(out, out+KEY_SIZE);
-            std::string strHashFromPass = HexStr(hexvec);
+        CHMAC_SHA256(reinterpret_cast<const unsigned char*>(strSalt.c_str()), strSalt.size()).Write(reinterpret_cast<const unsigned char*>(strPass.c_str()), strPass.size()).Finalize(out);
+        std::vector<unsigned char> hexvec(out, out+KEY_SIZE);
+        std::string strHashFromPass = HexStr(hexvec);
 
-            if (TimingResistantEqual(strHashFromPass, strHash)) {
-                return true;
-            }
+        if (TimingResistantEqual(strHashFromPass, strHash)) {
+            return true;
         }
     }
     return false;
@@ -214,7 +210,7 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
 
 static bool InitRPCAuthentication()
 {
-    if (GetArg("-rpcpassword", "") == "")
+    if (gArgs.GetArg("-rpcpassword", "") == "")
     {
         LogPrintf("No rpcpassword set - using random cookie authentication\n");
         if (!GenerateAuthCookie(&strRPCUserColonPass)) {
@@ -225,7 +221,7 @@ static bool InitRPCAuthentication()
         }
     } else {
         LogPrintf("Config options rpcuser and rpcpassword will soon be deprecated. Locally-run instances may remove rpcuser to use cookie-based auth, or may be replaced with rpcauth. Please see share/rpcuser for rpcauth auth generation.\n");
-        strRPCUserColonPass = GetArg("-rpcuser", "") + ":" + GetArg("-rpcpassword", "");
+        strRPCUserColonPass = gArgs.GetArg("-rpcuser", "") + ":" + gArgs.GetArg("-rpcpassword", "");
     }
     return true;
 }
@@ -237,7 +233,10 @@ bool StartHTTPRPC()
         return false;
 
     RegisterHTTPHandler("/", true, HTTPReq_JSONRPC);
-
+#ifdef ENABLE_WALLET
+    // ifdef can be removed once we switch to better endpoint support and API versioning
+    RegisterHTTPHandler("/wallet/", false, HTTPReq_JSONRPC);
+#endif
     assert(EventBase());
     httpRPCTimerInterface = new HTTPRPCTimerInterface(EventBase());
     RPCSetTimerInterface(httpRPCTimerInterface);
@@ -256,6 +255,6 @@ void StopHTTPRPC()
     if (httpRPCTimerInterface) {
         RPCUnsetTimerInterface(httpRPCTimerInterface);
         delete httpRPCTimerInterface;
-        httpRPCTimerInterface = 0;
+        httpRPCTimerInterface = nullptr;
     }
 }
