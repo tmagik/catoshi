@@ -40,7 +40,7 @@
 static const size_t MAX_HEADERS_SIZE = 8192;
 
 /** HTTP request work item */
-class HTTPWorkItem : public HTTPClosure
+class HTTPWorkItem final : public HTTPClosure
 {
 public:
     HTTPWorkItem(std::unique_ptr<HTTPRequest> _req, const std::string &_path, const HTTPRequestHandler& _func):
@@ -79,7 +79,7 @@ private:
     {
     public:
         WorkQueue &wq;
-        ThreadCounter(WorkQueue &w): wq(w)
+        explicit ThreadCounter(WorkQueue &w): wq(w)
         {
             std::lock_guard<std::mutex> lock(wq.cs);
             wq.numThreads += 1;
@@ -93,7 +93,7 @@ private:
     };
 
 public:
-    WorkQueue(size_t _maxDepth) : running(true),
+    explicit WorkQueue(size_t _maxDepth) : running(true),
                                  maxDepth(_maxDepth),
                                  numThreads(0)
     {
