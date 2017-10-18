@@ -123,6 +123,8 @@ BASE_SCRIPTS= [
     'uptime.py',
     'resendwallettransactions.py',
     'minchainwork.py',
+    'p2p-fingerprint.py',
+    'uacomment.py',
 ]
 
 EXTENDED_SCRIPTS = [
@@ -148,7 +150,7 @@ EXTENDED_SCRIPTS = [
     'example_test.py',
     'txn_doublespend.py',
     'txn_clone.py --mineblock',
-    'forknotify.py',
+    'notifications.py',
     'invalidateblock.py',
     'p2p-acceptblock.py',
     'replace-by-fee.py',
@@ -458,7 +460,7 @@ def check_script_list(src_dir):
             # On travis this warning is an error to prevent merging incomplete commits into master
             sys.exit(1)
 
-class RPCCoverage(object):
+class RPCCoverage():
     """
     Coverage reporting utilities for test_runner.
 
