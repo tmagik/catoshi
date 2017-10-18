@@ -32,8 +32,8 @@ def get_virtual_size(witness_block):
     return vsize
 
 class TestNode(NodeConnCB):
-    def set_test_params(self):
-        self.num_nodes = 3
+    def __init__(self):
+        super().__init__()
         self.getdataset = set()
 
     def on_getdata(self, conn, message):
@@ -89,7 +89,7 @@ class TestNode(NodeConnCB):
         assert_equal(self.connection.rpc.getbestblockhash() == block.hash, accepted)
 
 # Used to keep track of anyone-can-spend outputs that we can use in the tests
-class UTXO(object):
+class UTXO():
     def __init__(self, sha256, n, nValue):
         self.sha256 = sha256
         self.n = n

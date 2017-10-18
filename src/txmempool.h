@@ -21,11 +21,10 @@
 #include "sync.h"
 #include "random.h"
 
-#include "boost/multi_index_container.hpp"
-#include "boost/multi_index/ordered_index.hpp"
-#include "boost/multi_index/hashed_index.hpp"
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
-
 #include <boost/signals2/signal.hpp>
 
 class CBlockIndex;
@@ -508,7 +507,7 @@ public:
      * check does nothing.
      */
     void check(const CCoinsViewCache *pcoins) const;
-    void setSanityCheck(double dFrequency = 1.0) { nCheckFrequency = dFrequency * 4294967295.0; }
+    void setSanityCheck(double dFrequency = 1.0) { nCheckFrequency = static_cast<uint32_t>(dFrequency * 4294967295.0); }
 
     // addUnchecked must updated state for all ancestors of a given transaction,
     // to track size/count of descendant transactions.  First version of
