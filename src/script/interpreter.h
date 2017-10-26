@@ -113,8 +113,9 @@ bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned i
 struct PrecomputedTransactionData
 {
     uint256 hashPrevouts, hashSequence, hashOutputs;
+    bool ready = false;
 
-    PrecomputedTransactionData(const CTransaction& tx);
+    explicit PrecomputedTransactionData(const CTransaction& tx);
 };
 
 enum SigVersion
