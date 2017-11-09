@@ -10,6 +10,17 @@ Setup:
   receive inv's (omitted from testing description below, this is our control).
   Second node is used for creating reorgs.
 
+test_null_locators
+==================
+
+Sends two getheaders requests with null locator values. First request's hashstop
+value refers to validated block, while second request's hashstop value refers to
+a block which hasn't been validated. Verifies only the first request returns
+headers.
+
+test_nonnull_locators
+=====================
+
 Part 1: No headers announcements before "sendheaders"
 a. node mines a block [expect: inv]
    send getdata for the block [expect: block]
@@ -121,9 +132,6 @@ class TestNode(NodeConnCB):
             message.headers[-1].calc_sha256()
             self.last_blockhash_announced = message.headers[-1].sha256
 
-    def on_block(self, conn, message):
-        self.last_message["block"].calc_sha256()
-
     # Test whether the last announcement we received had the
     # right header or the right inv
     # inv and headers should be lists of block hashes
@@ -131,7 +139,7 @@ class TestNode(NodeConnCB):
         expect_headers = headers if headers != None else []
         expect_inv = inv if inv != None else []
         test_function = lambda: self.block_announced
-        assert(wait_until(test_function, timeout=60))
+        wait_until(test_function, timeout=60, lock=mininode_lock)
         with mininode_lock:
             self.block_announced = False
 
@@ -158,12 +166,12 @@ class TestNode(NodeConnCB):
             return
 
         test_function = lambda: "getdata" in self.last_message and [x.hash for x in self.last_message["getdata"].inv] == hash_list
-        assert(wait_until(test_function, timeout=timeout))
+        wait_until(test_function, timeout=timeout, lock=mininode_lock)
         return
 
     def wait_for_block_announcement(self, block_hash, timeout=60):
         test_function = lambda: self.last_blockhash_announced == block_hash
-        assert(wait_until(test_function, timeout=timeout))
+        wait_until(test_function, timeout=timeout, lock=mininode_lock)
         return
 
     def send_header_for_blocks(self, new_blocks):
@@ -177,15 +185,14 @@ class TestNode(NodeConnCB):
         self.send_message(getblocks_message)
 
 class SendHeadersTest(BitcoinTestFramework):
-    def __init__(self):
-        super().__init__()
+    def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
 
     # mine count blocks and return the new tip
     def mine_blocks(self, count):
         # Clear out last block announcement from each p2p listener
-        [ x.clear_last_announcement() for x in self.p2p_connections ]
+        [x.clear_last_announcement() for x in self.nodes[0].p2ps]
         self.nodes[0].generate(count)
         return int(self.nodes[0].getbestblockhash(), 16)
 
@@ -197,7 +204,7 @@ class SendHeadersTest(BitcoinTestFramework):
     def mine_reorg(self, length):
         self.nodes[0].generate(length) # make sure all invalidated blocks are node0's
         sync_blocks(self.nodes, wait=0.1)
-        for x in self.p2p_connections:
+        for x in self.nodes[0].p2ps:
             x.wait_for_block_announcement(int(self.nodes[0].getbestblockhash(), 16))
             x.clear_last_announcement()
 
@@ -210,18 +217,10 @@ class SendHeadersTest(BitcoinTestFramework):
 
     def run_test(self):
         # Setup the p2p connections and start up the network thread.
-        inv_node = TestNode()
-        test_node = TestNode()
-
-        self.p2p_connections = [inv_node, test_node]
-
-        connections = []
-        connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], inv_node))
+        inv_node = self.nodes[0].add_p2p_connection(TestNode())
         # Set nServices to 0 for test_node, so no block download will occur outside of
         # direct fetching
-        connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test_node, services=0))
-        inv_node.add_connection(connections[0])
-        test_node.add_connection(connections[1])
+        test_node = self.nodes[0].add_p2p_connection(TestNode(), services=NODE_WITNESS)
 
         NetworkThread().start() # Start up network handling in another thread
 
@@ -229,6 +228,33 @@ class SendHeadersTest(BitcoinTestFramework):
         inv_node.wait_for_verack()
         test_node.wait_for_verack()
 
+        # Ensure verack's have been processed by our peer
+        inv_node.sync_with_ping()
+        test_node.sync_with_ping()
+
+        self.test_null_locators(test_node)
+        self.test_nonnull_locators(test_node, inv_node)
+
+    def test_null_locators(self, test_node):
+        tip = self.nodes[0].getblockheader(self.nodes[0].generate(1)[0])
+        tip_hash = int(tip["hash"], 16)
+
+        self.log.info("Verify getheaders with null locator and valid hashstop returns headers.")
+        test_node.clear_last_announcement()
+        test_node.get_headers(locator=[], hashstop=tip_hash)
+        assert_equal(test_node.check_last_announcement(headers=[tip_hash]), True)
+
+        self.log.info("Verify getheaders with null locator and invalid hashstop does not return headers.")
+        block = create_block(int(tip["hash"], 16), create_coinbase(tip["height"] + 1), tip["mediantime"] + 1)
+        block.solve()
+        test_node.send_header_for_blocks([block])
+        test_node.clear_last_announcement()
+        test_node.get_headers(locator=[], hashstop=int(block.hash, 16))
+        test_node.sync_with_ping()
+        assert_equal(test_node.block_announced, False)
+        test_node.send_message(msg_block(block))
+
+    def test_nonnull_locators(self, test_node, inv_node):
         tip = int(self.nodes[0].getbestblockhash(), 16)
 
         # PART 1
