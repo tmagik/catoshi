@@ -8,6 +8,8 @@
 #include "wallet/db.h"
 #include "wallet/wallet.h"
 
+CWallet *pwalletMain;
+
 WalletTestingSetup::WalletTestingSetup(const std::string& chainName):
     TestingSetup(chainName)
 {
@@ -26,7 +28,7 @@ WalletTestingSetup::~WalletTestingSetup()
 {
     UnregisterValidationInterface(pwalletMain);
     delete pwalletMain;
-    pwalletMain = NULL;
+    pwalletMain = nullptr;
 
     bitdb.Flush(true);
     bitdb.Reset();
