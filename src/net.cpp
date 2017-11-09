@@ -961,6 +961,16 @@ static bool CompareNodeTXTime(const NodeEvictionCandidate &a, const NodeEviction
     return a.nTimeConnected > b.nTimeConnected;
 }
 
+
+//! Sort an array by the specified comparator, then erase the last K elements.
+template<typename T, typename Comparator>
+static void EraseLastKElements(std::vector<T> &elements, Comparator comparator, size_t k)
+{
+    std::sort(elements.begin(), elements.end(), comparator);
+    size_t eraseSize = std::min(k, elements.size());
+    elements.erase(elements.end() - eraseSize, elements.end());
+}
+
 /** Try to find a connection to evict when the node is full.
  *  Extreme care must be taken to avoid opening the node to attacker
  *   triggered network partitioning.
@@ -990,42 +1000,23 @@ bool CConnman::AttemptToEvictConnection()
         }
     }
 
-    if (vEvictionCandidates.empty()) return false;
-
     // Protect connections with certain characteristics
 
     // Deterministically select 4 peers to protect by netgroup.
     // An attacker cannot predict which netgroups will be protected
-    std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), CompareNetGroupKeyed);
-    vEvictionCandidates.erase(vEvictionCandidates.end() - std::min(4, static_cast<int>(vEvictionCandidates.size())), vEvictionCandidates.end());
-
-    if (vEvictionCandidates.empty()) return false;
-
+    EraseLastKElements(vEvictionCandidates, CompareNetGroupKeyed, 4);
     // Protect the 8 nodes with the lowest minimum ping time.
     // An attacker cannot manipulate this metric without physically moving nodes closer to the target.
-    std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), ReverseCompareNodeMinPingTime);
-    vEvictionCandidates.erase(vEvictionCandidates.end() - std::min(8, static_cast<int>(vEvictionCandidates.size())), vEvictionCandidates.end());
-
-    if (vEvictionCandidates.empty()) return false;
-
+    EraseLastKElements(vEvictionCandidates, ReverseCompareNodeMinPingTime, 8);
     // Protect 4 nodes that most recently sent us transactions.
     // An attacker cannot manipulate this metric without performing useful work.
-    std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), CompareNodeTXTime);
-    vEvictionCandidates.erase(vEvictionCandidates.end() - std::min(4, static_cast<int>(vEvictionCandidates.size())), vEvictionCandidates.end());
-
-    if (vEvictionCandidates.empty()) return false;
-
+    EraseLastKElements(vEvictionCandidates, CompareNodeTXTime, 4);
     // Protect 4 nodes that most recently sent us blocks.
     // An attacker cannot manipulate this metric without performing useful work.
-    std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), CompareNodeBlockTime);
-    vEvictionCandidates.erase(vEvictionCandidates.end() - std::min(4, static_cast<int>(vEvictionCandidates.size())), vEvictionCandidates.end());
-
-    if (vEvictionCandidates.empty()) return false;
-
+    EraseLastKElements(vEvictionCandidates, CompareNodeBlockTime, 4);
     // Protect the half of the remaining nodes which have been connected the longest.
     // This replicates the non-eviction implicit behavior, and precludes attacks that start later.
-    std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), ReverseCompareNodeTimeConnected);
-    vEvictionCandidates.erase(vEvictionCandidates.end() - static_cast<int>(vEvictionCandidates.size() / 2), vEvictionCandidates.end());
+    EraseLastKElements(vEvictionCandidates, ReverseCompareNodeTimeConnected, vEvictionCandidates.size() / 2);
 
     if (vEvictionCandidates.empty()) return false;
 
@@ -1036,12 +1027,12 @@ bool CConnman::AttemptToEvictConnection()
     int64_t nMostConnectionsTime = 0;
     std::map<uint64_t, std::vector<NodeEvictionCandidate> > mapNetGroupNodes;
     for (const NodeEvictionCandidate &node : vEvictionCandidates) {
-        mapNetGroupNodes[node.nKeyedNetGroup].push_back(node);
-        int64_t grouptime = mapNetGroupNodes[node.nKeyedNetGroup][0].nTimeConnected;
-        size_t groupsize = mapNetGroupNodes[node.nKeyedNetGroup].size();
+        std::vector<NodeEvictionCandidate> &group = mapNetGroupNodes[node.nKeyedNetGroup];
+        group.push_back(node);
+        int64_t grouptime = group[0].nTimeConnected;
 
-        if (groupsize > nMostConnections || (groupsize == nMostConnections && grouptime > nMostConnectionsTime)) {
-            nMostConnections = groupsize;
+        if (group.size() > nMostConnections || (group.size() == nMostConnections && grouptime > nMostConnectionsTime)) {
+            nMostConnections = group.size();
             nMostConnectionsTime = grouptime;
             naMostConnections = node.nKeyedNetGroup;
         }
@@ -1693,6 +1684,37 @@ void CConnman::ProcessOneShot()
     }
 }
 
+bool CConnman::GetTryNewOutboundPeer()
+{
+    return m_try_another_outbound_peer;
+}
+
+void CConnman::SetTryNewOutboundPeer(bool flag)
+{
+    m_try_another_outbound_peer = flag;
+    LogPrint(BCLog::NET, "net: setting try another outbound peer=%s\n", flag ? "true" : "false");
+}
+
+// Return the number of peers we have over our outbound connection limit
+// Exclude peers that are marked for disconnect, or are going to be
+// disconnected soon (eg one-shots and feelers)
+// Also exclude peers that haven't finished initial connection handshake yet
+// (so that we don't decide we're over our desired connection limit, and then
+// evict some peer that has finished the handshake)
+int CConnman::GetExtraOutboundCount()
+{
+    int nOutbound = 0;
+    {
+        LOCK(cs_vNodes);
+        for (CNode* pnode : vNodes) {
+            if (!pnode->fInbound && !pnode->m_manual_connection && !pnode->fFeeler && !pnode->fDisconnect && !pnode->fOneShot && pnode->fSuccessfullyConnected) {
+                ++nOutbound;
+            }
+        }
+    }
+    return std::max(nOutbound - nMaxOutbound, 0);
+}
+
 void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
 {
     // Connect to specific addresses
@@ -1781,7 +1803,8 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
         //  * Only make a feeler connection once every few minutes.
         //
         bool fFeeler = false;
-        if (nOutbound >= nMaxOutbound) {
+
+        if (nOutbound >= nMaxOutbound && !GetTryNewOutboundPeer()) {
             int64_t nTime = GetTimeMicros(); // The current time right now (in microseconds).
             if (nTime > nNextFeeler) {
                 nNextFeeler = PoissonNextSend(nTime, FEELER_INTERVAL);
@@ -2204,6 +2227,7 @@ CConnman::CConnman(uint64_t nSeed0In, uint64_t nSeed1In) : nSeed0(nSeed0In), nSe
     semOutbound = nullptr;
     semAddnode = nullptr;
     flagInterruptMsgProc = false;
+    SetTryNewOutboundPeer(false);
 
     Options connOptions;
     Init(connOptions);
@@ -2754,8 +2778,7 @@ CNode::~CNode()
 {
     CloseSocket(hSocket);
 
-    if (pfilter)
-        delete pfilter;
+    delete pfilter;
 }
 
 void CNode::AskFor(const CInv& inv)
