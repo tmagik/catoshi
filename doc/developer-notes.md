@@ -3,41 +3,66 @@ Developer Notes
 
 Various coding styles have been used during the history of the codebase,
 and the result is not very consistent. However, we're now trying to converge to
-a single style, so please use it in new code. Old code will be converted
-gradually and you are encouraged to use the provided
-[clang-format-diff script](/contrib/devtools/README.md#clang-format-diffpy)
-to clean up the patch automatically before submitting a pull request.
+a single style, which is specified below. When writing patches, favor the new
+style over attempting to mimic the surrounding style, except for move-only
+commits.
 
-- Basic rules specified in [src/.clang-format](/src/.clang-format).
+Do not submit patches solely to modify the style of existing code.
+
+- **Indentation and whitespace rules** as specified in
+[src/.clang-format](/src/.clang-format). You can use the provided
+[clang-format-diff script](/contrib/devtools/README.md#clang-format-diffpy)
+tool to clean up patches automatically before submission.
   - Braces on new lines for namespaces, classes, functions, methods.
   - Braces on the same line for everything else.
   - 4 space indentation (no tabs) for every block except namespaces.
   - No indentation for `public`/`protected`/`private` or for `namespace`.
   - No extra spaces inside parenthesis; don't do ( this )
   - No space after function names; one space after `if`, `for` and `while`.
-  - If an `if` only has a single-statement then-clause, it can appear
-    on the same line as the if, without braces. In every other case,
-    braces are required, and the then and else clauses must appear
+  - If an `if` only has a single-statement `then`-clause, it can appear
+    on the same line as the `if`, without braces. In every other case,
+    braces are required, and the `then` and `else` clauses must appear
     correctly indented on a new line.
+
+- **Symbol naming conventions**. These are preferred in new code, but are not
+required when doing so would need changes to significant pieces of existing
+code.
+  - Variable and namespace names are all lowercase, and may use `_` to
+    separate words (snake_case).
+    - Class member variables have a `m_` prefix.
+    - Global variables have a `g_` prefix.
+  - Constant names are all uppercase, and use `_` to separate words.
+  - Class names, function names and method names are UpperCamelCase
+    (PascalCase). Do not prefix class names with `C`.
+
+- **Miscellaneous**
   - `++i` is preferred over `i++`.
+  - `nullptr` is preferred over `NULL` or `(void*)0`.
+  - `static_assert` is preferred over `assert` where possible. Generally; compile-time checking is preferred over run-time checking.
 
 Block style example:
 ```c++
+int g_count = 0;
+
 namespace foo
 {
 class Class
 {
+    std::string m_name;
+
+public:
     bool Function(const std::string& s, int n)
     {
         // Comment summarising what this section of code does
         for (int i = 0; i < n; ++i) {
+            int total_sum = 0;
             // When something fails, return early
             if (!Something()) return false;
             ...
-            if (SomethingElse()) {
-                DoMore();
+            if (SomethingElse(i)) {
+                total_sum += ComputeSomething(g_count);
             } else {
-                DoLess();
+                DoSomething(m_name, total_sum);
             }
         }
 
@@ -45,7 +70,7 @@ class Class
         return true;
     }
 }
-}
+} // namespace foo
 ```
 
 Doxygen comments
@@ -252,7 +277,7 @@ Wallet
 
   - *Rationale*: In RPC code that conditionally uses the wallet (such as
     `validateaddress`) it is easy to forget that global pointer `pwalletMain`
-    can be NULL. See `test/functional/disablewallet.py` for functional tests
+    can be nullptr. See `test/functional/disablewallet.py` for functional tests
     exercising the API with `-disablewallet`
 
 - Include `db_cxx.h` (BerkeleyDB header) only when `ENABLE_WALLET` is set
@@ -264,7 +289,7 @@ General C++
 
 - Assertions should not have side-effects
 
-  - *Rationale*: Even though the source code is set to to refuse to compile
+  - *Rationale*: Even though the source code is set to refuse to compile
     with assertions disabled, having side-effects in assertions is unexpected and
     makes the code harder to understand
 
@@ -307,6 +332,12 @@ C++ data structures
   - *Rationale*: Ensure determinism by avoiding accidental use of uninitialized
     values. Also, static analyzers balk about this.
 
+- By default, declare single-argument constructors `explicit`.
+
+  - *Rationale*: This is a precaution to avoid unintended conversions that might
+    arise when single-argument constructors are used as implicit conversion
+    functions.
+
 - Use explicitly signed or unsigned `char`s, or even better `uint8_t` and
   `int8_t`. Do not use bare `char` unless it is to pass to a third-party API.
   This type can be signed or unsigned depending on the architecture, which can
@@ -343,10 +374,9 @@ Strings and formatting
 Variable names
 --------------
 
-The shadowing warning (`-Wshadow`) is enabled by default. It prevents issues rising
-from using a different variable with the same name.
-
-Please name variables so that their names do not shadow variables defined in the source code.
+Although the shadowing warning (`-Wshadow`) is not enabled by default (it prevents issues rising
+from using a different variable with the same name),
+please name variables so that their names do not shadow variables defined in the source code.
 
 E.g. in member initializers, prepend `_` to the argument name shadowing the
 member name:
@@ -403,10 +433,33 @@ Source code organization
 
   - *Rationale*: Shorter and simpler header files are easier to read, and reduce compile time
 
+- Every `.cpp` and `.h` file should `#include` every header file it directly uses classes, functions or other
+  definitions from, even if those headers are already included indirectly through other headers. One exception
+  is that a `.cpp` file does not need to re-include the includes already included in its corresponding `.h` file.
+
+  - *Rationale*: Excluding headers because they are already indirectly included results in compilation
+    failures when those indirect dependencies change. Furthermore, it obscures what the real code
+    dependencies are.
+
 - Don't import anything into the global namespace (`using namespace ...`). Use
   fully specified types such as `std::string`.
 
   - *Rationale*: Avoids symbol conflicts
+
+- Terminate namespaces with a comment (`// namespace mynamespace`). The comment
+  should be placed on the same line as the brace closing the namespace, e.g.
+
+```c++
+namespace mynamespace {
+    ...
+} // namespace mynamespace
+
+namespace {
+    ...
+} // namespace
+```
+
+  - *Rationale*: Avoids confusion about the namespace context
 
 GUI
 -----
@@ -496,6 +549,26 @@ Git and GitHub tips
   or `git fetch upstream-pull`. Afterwards, you can use `upstream-pull/NUMBER/head` in arguments to `git show`,
   `git checkout` and anywhere a commit id would be acceptable to see the changes from pull request NUMBER.
 
+Scripted diffs
+--------------
+
+For reformatting and refactoring commits where the changes can be easily automated using a bash script, we use
+scripted-diff commits. The bash script is included in the commit message and our Travis CI job checks that
+the result of the script is identical to the commit. This aids reviewers since they can verify that the script
+does exactly what it's supposed to do. It is also helpful for rebasing (since the same script can just be re-run
+on the new master commit).
+
+To create a scripted-diff:
+
+- start the commit message with `scripted-diff:` (and then a description of the diff on the same line)
+- in the commit message include the bash script between lines containing just the following text:
+    - `-BEGIN VERIFY SCRIPT-`
+    - `-END VERIFY SCRIPT-`
+
+The scripted-diff is verified by the tool `contrib/devtools/commit-script-check.sh`
+
+Commit `bb81e173` is an example of a scripted-diff.
+
 RPC interface guidelines
 --------------------------
 
@@ -516,24 +589,22 @@ A few guidelines for introducing and reviewing new RPC interfaces:
     which is error prone, and it is easy to get things such as escaping wrong.
     JSON already supports nested data structures, no need to re-invent the wheel.
 
-  - *Exception*: AmountToValue can parse amounts as string. This was introduced because many JSON
+  - *Exception*: AmountFromValue can parse amounts as string. This was introduced because many JSON
     parsers and formatters hard-code handling decimal numbers as floating point
     values, resulting in potential loss of precision. This is unacceptable for
-    monetary values. **Always** use `AmountToValue` and `ValueToAmount` when
+    monetary values. **Always** use `AmountFromValue` and `ValueFromAmount` when
     inputting or outputting monetary values. The only exceptions to this are
     `prioritisetransaction` and `getblocktemplate` because their interface
     is specified as-is in BIP22.
 
 - Missing arguments and 'null' should be treated the same: as default values. If there is no
-  default value, both cases should fail in the same way.
+  default value, both cases should fail in the same way. The easiest way to follow this
+  guideline is detect unspecified arguments with `params[x].isNull()` instead of
+  `params.size() <= x`. The former returns true if the argument is either null or missing,
+  while the latter returns true if is missing, and false if it is null.
 
   - *Rationale*: Avoids surprises when switching to name-based arguments. Missing name-based arguments
   are passed as 'null'.
-
-  - *Exception*: Many legacy exceptions to this exist, one of the worst ones is
-    `getbalance` which follows a completely different code path based on the
-    number of arguments. We are still in the process of cleaning these up. Do not introduce
-    new ones.
 
 - Try not to overload methods on argument type. E.g. don't make `getblock(true)` and `getblock("hash")`
   do different things.
@@ -562,9 +633,14 @@ A few guidelines for introducing and reviewing new RPC interfaces:
     from there.
 
 - A RPC method must either be a wallet method or a non-wallet method. Do not
-  introduce new methods such as `getinfo` and `signrawtransaction` that differ
-  in behavior based on presence of a wallet.
+  introduce new methods such as `signrawtransaction` that differ in behavior
+  based on presence of a wallet.
 
   - *Rationale*: as well as complicating the implementation and interfering
     with the introduction of multi-wallet, wallet and non-wallet code should be
     separated to avoid introducing circular dependencies between code units.
+
+- Try to make the RPC response a JSON object.
+
+  - *Rationale*: If a RPC response is not a JSON object then it is harder to avoid API breakage if
+    new data in the response is needed.
