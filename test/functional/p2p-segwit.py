@@ -17,7 +17,6 @@ from binascii import hexlify
 # The versionbit bit used to signal activation of SegWit
 VB_WITNESS_BIT = 1
 VB_PERIOD = 144
-VB_ACTIVATION_THRESHOLD = 108
 VB_TOP_BITS = 0x20000000
 
 MAX_SIGOP_COST = 80000
@@ -90,7 +89,7 @@ class TestNode(NodeConnCB):
         assert_equal(self.connection.rpc.getbestblockhash() == block.hash, accepted)
 
 # Used to keep track of anyone-can-spend outputs that we can use in the tests
-class UTXO(object):
+class UTXO():
     def __init__(self, sha256, n, nValue):
         self.sha256 = sha256
         self.n = n
@@ -109,12 +108,11 @@ def sign_P2PK_witness_input(script, txTo, inIdx, hashtype, value, key):
 
 
 class SegWitTest(BitcoinTestFramework):
-
-    def __init__(self):
-        super().__init__()
+    def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 3
-        self.extra_args = [["-whitelist=127.0.0.1"], ["-whitelist=127.0.0.1", "-acceptnonstdtxn=0"], ["-whitelist=127.0.0.1", "-vbparams=segwit:0:0"]]
+        # This test tests SegWit both pre and post-activation, so use the normal BIP9 activation.
+        self.extra_args = [["-whitelist=127.0.0.1", "-vbparams=segwit:0:999999999999"], ["-whitelist=127.0.0.1", "-acceptnonstdtxn=0", "-vbparams=segwit:0:999999999999"], ["-whitelist=127.0.0.1", "-vbparams=segwit:0:0"]]
 
     def setup_network(self):
         self.setup_nodes()
@@ -1496,7 +1494,7 @@ class SegWitTest(BitcoinTestFramework):
 
         # Restart with the new binary
         self.stop_node(node_id)
-        self.nodes[node_id] = self.start_node(node_id, self.options.tmpdir)
+        self.start_node(node_id, extra_args=["-vbparams=segwit:0:999999999999"])
         connect_nodes(self.nodes[0], node_id)
 
         sync_blocks(self.nodes)
@@ -1870,19 +1868,12 @@ class SegWitTest(BitcoinTestFramework):
 
     def run_test(self):
         # Setup the p2p connections and start up the network thread.
-        self.test_node = TestNode() # sets NODE_WITNESS|NODE_NETWORK
-        self.old_node = TestNode()  # only NODE_NETWORK
-        self.std_node = TestNode() # for testing node1 (fRequireStandard=true)
-
-        self.p2p_connections = [self.test_node, self.old_node]
-
-        self.connections = []
-        self.connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], self.test_node, services=NODE_NETWORK|NODE_WITNESS))
-        self.connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], self.old_node, services=NODE_NETWORK))
-        self.connections.append(NodeConn('127.0.0.1', p2p_port(1), self.nodes[1], self.std_node, services=NODE_NETWORK|NODE_WITNESS))
-        self.test_node.add_connection(self.connections[0])
-        self.old_node.add_connection(self.connections[1])
-        self.std_node.add_connection(self.connections[2])
+        # self.test_node sets NODE_WITNESS|NODE_NETWORK
+        self.test_node = self.nodes[0].add_p2p_connection(TestNode(), services=NODE_NETWORK|NODE_WITNESS)
+        # self.old_node sets only NODE_NETWORK
+        self.old_node = self.nodes[0].add_p2p_connection(TestNode(), services=NODE_NETWORK)
+        # self.std_node is for testing node1 (fRequireStandard=true)
+        self.std_node = self.nodes[1].add_p2p_connection(TestNode(), services=NODE_NETWORK|NODE_WITNESS)
 
         NetworkThread().start() # Start up network handling in another thread
 
