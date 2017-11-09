@@ -128,7 +128,7 @@ class TestNode(NodeConnCB):
         expect_headers = headers if headers != None else []
         expect_inv = inv if inv != None else []
         test_function = lambda: self.block_announced
-        assert(wait_until(test_function, timeout=60))
+        wait_until(test_function, timeout=60, lock=mininode_lock)
         with mininode_lock:
             self.block_announced = False
 
@@ -155,12 +155,12 @@ class TestNode(NodeConnCB):
             return
 
         test_function = lambda: "getdata" in self.last_message and [x.hash for x in self.last_message["getdata"].inv] == hash_list
-        assert(wait_until(test_function, timeout=timeout))
+        wait_until(test_function, timeout=timeout, lock=mininode_lock)
         return
 
     def wait_for_block_announcement(self, block_hash, timeout=60):
         test_function = lambda: self.last_blockhash_announced == block_hash
-        assert(wait_until(test_function, timeout=timeout))
+        wait_until(test_function, timeout=timeout, lock=mininode_lock)
         return
 
     def send_header_for_blocks(self, new_blocks):
@@ -174,15 +174,14 @@ class TestNode(NodeConnCB):
         self.send_message(getblocks_message)
 
 class SendHeadersTest(BitcoinTestFramework):
-    def __init__(self):
-        super().__init__()
+    def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
 
     # mine count blocks and return the new tip
     def mine_blocks(self, count):
         # Clear out last block announcement from each p2p listener
-        [ x.clear_last_announcement() for x in self.p2p_connections ]
+        [x.clear_last_announcement() for x in self.nodes[0].p2ps]
         self.nodes[0].generate(count)
         return int(self.nodes[0].getbestblockhash(), 16)
 
@@ -194,7 +193,7 @@ class SendHeadersTest(BitcoinTestFramework):
     def mine_reorg(self, length):
         self.nodes[0].generate(length) # make sure all invalidated blocks are node0's
         sync_blocks(self.nodes, wait=0.1)
-        for x in self.p2p_connections:
+        for x in self.nodes[0].p2ps:
             x.wait_for_block_announcement(int(self.nodes[0].getbestblockhash(), 16))
             x.clear_last_announcement()
 
@@ -207,24 +206,20 @@ class SendHeadersTest(BitcoinTestFramework):
 
     def run_test(self):
         # Setup the p2p connections and start up the network thread.
-        inv_node = TestNode()
-        test_node = TestNode()
-
-        self.p2p_connections = [inv_node, test_node]
-
-        connections = []
-        connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], inv_node))
+        inv_node = self.nodes[0].add_p2p_connection(TestNode())
         # Set nServices to 0 for test_node, so no block download will occur outside of
         # direct fetching
-        connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test_node, services=0))
-        inv_node.add_connection(connections[0])
-        test_node.add_connection(connections[1])
+        test_node = self.nodes[0].add_p2p_connection(TestNode(), services=NODE_WITNESS)
 
         NetworkThread().start() # Start up network handling in another thread
 
         # Test logic begins here
         inv_node.wait_for_verack()
         test_node.wait_for_verack()
+
+        # Ensure verack's have been processed by our peer
+        inv_node.sync_with_ping()
+        test_node.sync_with_ping()
 
         tip = int(self.nodes[0].getbestblockhash(), 16)
 
