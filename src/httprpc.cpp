@@ -43,7 +43,7 @@ private:
 class HTTPRPCTimerInterface : public RPCTimerInterface
 {
 public:
-    HTTPRPCTimerInterface(struct event_base* _base) : base(_base)
+    explicit HTTPRPCTimerInterface(struct event_base* _base) : base(_base)
     {
     }
     const char* Name() override
@@ -192,7 +192,7 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
 
         // array of requests
         } else if (valRequest.isArray())
-            strReply = JSONRPCExecBatch(valRequest.get_array());
+            strReply = JSONRPCExecBatch(jreq, valRequest.get_array());
         else
             throw JSONRPCError(RPC_PARSE_ERROR, "Top-level object parse error");
 
