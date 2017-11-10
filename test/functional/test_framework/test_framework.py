@@ -43,7 +43,7 @@ TEST_EXIT_PASSED = 0
 TEST_EXIT_FAILED = 1
 TEST_EXIT_SKIPPED = 77
 
-class BitcoinTestFramework(object):
+class BitcoinTestFramework():
     """Base class for a bitcoin test script.
 
     Individual bitcoin test scripts should subclass this class and override the set_test_params() and run_test() methods.
@@ -102,8 +102,11 @@ class BitcoinTestFramework(object):
 
         check_json_precision()
 
+        self.options.cachedir = os.path.abspath(self.options.cachedir)
+
         # Set up temp directory and start logging
         if self.options.tmpdir:
+            self.options.tmpdir = os.path.abspath(self.options.tmpdir)
             os.makedirs(self.options.tmpdir, exist_ok=False)
         else:
             self.options.tmpdir = tempfile.mkdtemp(prefix="test")
@@ -272,6 +275,11 @@ class BitcoinTestFramework(object):
         for node in self.nodes:
             # Wait for nodes to stop
             node.wait_until_stopped()
+
+    def restart_node(self, i, extra_args=None):
+        """Stop and start a test node"""
+        self.stop_node(i)
+        self.start_node(i, extra_args)
 
     def assert_start_raises_init_error(self, i, extra_args=None, expected_msg=None):
         with tempfile.SpooledTemporaryFile(max_size=2**16) as log_stderr:
