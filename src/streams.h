@@ -345,18 +345,16 @@ public:
 
         // Read from the beginning of the buffer
         unsigned int nReadPosNext = nReadPos + nSize;
-        if (nReadPosNext >= vch.size())
+        if (nReadPosNext > vch.size()) {
+            throw std::ios_base::failure("CDataStream::read(): end of data");
+        }
+        memcpy(pch, &vch[nReadPos], nSize);        
+        if (nReadPosNext == vch.size())
         {
-            if (nReadPosNext > vch.size())
-            {
-                throw std::ios_base::failure("CDataStream::read(): end of data");
-            }
-            memcpy(pch, &vch[nReadPos], nSize);
             nReadPos = 0;
             vch.clear();
             return;
         }
-        memcpy(pch, &vch[nReadPos], nSize);
         nReadPos = nReadPosNext;
     }
 
@@ -455,10 +453,6 @@ public:
 class CAutoFile
 {
 private:
-    // Disallow copies
-    CAutoFile(const CAutoFile&);
-    CAutoFile& operator=(const CAutoFile&);
-
     const int nType;
     const int nVersion;
 
@@ -474,6 +468,10 @@ public:
     {
         fclose();
     }
+
+    // Disallow copies
+    CAutoFile(const CAutoFile&) = delete;
+    CAutoFile& operator=(const CAutoFile&) = delete;
 
     void fclose()
     {
@@ -564,10 +562,6 @@ public:
 class CBufferedFile
 {
 private:
-    // Disallow copies
-    CBufferedFile(const CBufferedFile&);
-    CBufferedFile& operator=(const CBufferedFile&);
-
     const int nType;
     const int nVersion;
 
@@ -608,6 +602,10 @@ public:
     {
         fclose();
     }
+
+    // Disallow copies
+    CBufferedFile(const CBufferedFile&) = delete;
+    CBufferedFile& operator=(const CBufferedFile&) = delete;
 
     int GetVersion() const { return nVersion; }
     int GetType() const { return nType; }
