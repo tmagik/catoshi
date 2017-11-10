@@ -27,7 +27,7 @@ logger=logging.getLogger("TestFramework.comptool")
 
 global mininode_lock
 
-class RejectResult(object):
+class RejectResult():
     """Outcome that expects rejection of a transaction or block."""
     def __init__(self, code, reason=b''):
         self.code = code
@@ -80,9 +80,9 @@ class TestNode(NodeConnCB):
         [conn.send_message(r) for r in self.tx_store.get_transactions(message.inv)]
 
         for i in message.inv:
-            if i.type == 1:
+            if i.type == 1 or i.type == 1 | (1 << 30): # MSG_TX or MSG_WITNESS_TX
                 self.tx_request_map[i.hash] = True
-            elif i.type == 2:
+            elif i.type == 2 or i.type == 2 | (1 << 30): # MSG_BLOCK or MSG_WITNESS_BLOCK
                 self.block_request_map[i.hash] = True
 
     def on_inv(self, conn, message):
@@ -156,13 +156,13 @@ class TestNode(NodeConnCB):
 #    across all connections.  (If outcome of final tx is specified as true
 #    or false, then only the last tx is tested against outcome.)
 
-class TestInstance(object):
+class TestInstance():
     def __init__(self, objects=None, sync_every_block=True, sync_every_tx=False):
         self.blocks_and_transactions = objects if objects else []
         self.sync_every_block = sync_every_block
         self.sync_every_tx = sync_every_tx
 
-class TestManager(object):
+class TestManager():
 
     def __init__(self, testgen, datadir):
         self.test_generator = testgen
