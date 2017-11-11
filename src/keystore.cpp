@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2009-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,8 +9,6 @@
 #include "pubkey.h"
 #include "util.h"
 
-#include <boost/foreach.hpp>
-
 bool CKeyStore::AddKey(const CKey &key) {
     return AddKeyPubKey(key, key.GetPubKey());
 }
@@ -19,6 +17,7 @@ bool CBasicKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) con
 {
     CKey key;
     if (!GetKey(address, key)) {
+        LOCK(cs_KeyStore);
         WatchKeyMap::const_iterator it = mapWatchKeys.find(address);
         if (it != mapWatchKeys.end()) {
             vchPubKeyOut = it->second;
@@ -35,6 +34,33 @@ bool CBasicKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
     LOCK(cs_KeyStore);
     mapKeys[pubkey.GetID()] = key;
     return true;
+}
+
+bool CBasicKeyStore::HaveKey(const CKeyID &address) const
+{
+    LOCK(cs_KeyStore);
+    return mapKeys.count(address) > 0;
+}
+
+std::set<CKeyID> CBasicKeyStore::GetKeys() const
+{
+    LOCK(cs_KeyStore);
+    std::set<CKeyID> set_address;
+    for (const auto& mi : mapKeys) {
+        set_address.insert(mi.first);
+    }
+    return set_address;
+}
+
+bool CBasicKeyStore::GetKey(const CKeyID &address, CKey &keyOut) const
+{
+    LOCK(cs_KeyStore);
+    KeyMap::const_iterator mi = mapKeys.find(address);
+    if (mi != mapKeys.end()) {
+        keyOut = mi->second;
+        return true;
+    }
+    return false;
 }
 
 bool CBasicKeyStore::AddCScript(const CScript& redeemScript)
