@@ -1,10 +1,10 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2016 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "bitcoinunits.h"
 
-#include "core.h"
+#include "primitives/transaction.h"
 
 #include <QStringList>
 
@@ -33,17 +33,6 @@ bool BitcoinUnits::valid(int unit)
         return true;
     default:
         return false;
-    }
-}
-
-QString BitcoinUnits::id(int unit)
-{
-    switch(unit)
-    {
-    case BTC: return QString("btc");
-    case mBTC: return QString("mbtc");
-    case uBTC: return QString("ubtc");
-    default: return QString("???");
     }
 }
 
@@ -91,12 +80,13 @@ int BitcoinUnits::decimals(int unit)
     }
 }
 
-QString BitcoinUnits::format(int unit, qint64 n, bool fPlus, SeparatorStyle separators)
+QString BitcoinUnits::format(int unit, const CAmount& nIn, bool fPlus, SeparatorStyle separators)
 {
     // Note: not using straight sprintf here because we do NOT want
     // localized number formatting.
     if(!valid(unit))
         return QString(); // Refuse to format invalid unit
+    qint64 n = (qint64)nIn;
     qint64 coin = factor(unit);
     int num_decimals = decimals(unit);
     qint64 n_abs = (n > 0 ? n : -n);
@@ -105,20 +95,13 @@ QString BitcoinUnits::format(int unit, qint64 n, bool fPlus, SeparatorStyle sepa
     QString quotient_str = QString::number(quotient);
     QString remainder_str = QString::number(remainder).rightJustified(num_decimals, '0');
 
-    // Use SI-stule separators as these are locale indendent and can't be
-    // confused with the decimal marker.  Rule is to use a thin space every
-    // three digits on *both* sides of the decimal point - but only if there
-    // are five or more digits
+    // Use SI-style thin space separators as these are locale independent and can't be
+    // confused with the decimal marker.
     QChar thin_sp(THIN_SP_CP);
     int q_size = quotient_str.size();
     if (separators == separatorAlways || (separators == separatorStandard && q_size > 4))
         for (int i = 3; i < q_size; i += 3)
             quotient_str.insert(q_size - i, thin_sp);
-
-    int r_size = remainder_str.size();
-    if (separators == separatorAlways || (separators == separatorStandard && r_size > 4))
-        for (int i = 3, adj = 0; i < r_size ; i += 3, adj++)
-            remainder_str.insert(i + adj, thin_sp);
 
     if (n < 0)
         quotient_str.insert(0, '-');
@@ -128,13 +111,6 @@ QString BitcoinUnits::format(int unit, qint64 n, bool fPlus, SeparatorStyle sepa
 }
 
 
-// TODO: Review all remaining calls to BitcoinUnits::formatWithUnit to
-// TODO: determine whether the output is used in a plain text context
-// TODO: or an HTML context (and replace with
-// TODO: BtcoinUnits::formatHtmlWithUnit in the latter case). Hopefully
-// TODO: there aren't instances where the result could be used in
-// TODO: either context.
-
 // NOTE: Using formatWithUnit in an HTML context risks wrapping
 // quantities at the thousands separator. More subtly, it also results
 // in a standard space rather than a thin space, due to a bug in Qt's
@@ -143,12 +119,12 @@ QString BitcoinUnits::format(int unit, qint64 n, bool fPlus, SeparatorStyle sepa
 // Please take care to use formatHtmlWithUnit instead, when
 // appropriate.
 
-QString BitcoinUnits::formatWithUnit(int unit, qint64 amount, bool plussign, SeparatorStyle separators)
+QString BitcoinUnits::formatWithUnit(int unit, const CAmount& amount, bool plussign, SeparatorStyle separators)
 {
     return format(unit, amount, plussign, separators) + QString(" ") + name(unit);
 }
 
-QString BitcoinUnits::formatHtmlWithUnit(int unit, qint64 amount, bool plussign, SeparatorStyle separators)
+QString BitcoinUnits::formatHtmlWithUnit(int unit, const CAmount& amount, bool plussign, SeparatorStyle separators)
 {
     QString str(formatWithUnit(unit, amount, plussign, separators));
     str.replace(QChar(THIN_SP_CP), QString(THIN_SP_HTML));
@@ -156,7 +132,7 @@ QString BitcoinUnits::formatHtmlWithUnit(int unit, qint64 amount, bool plussign,
 }
 
 
-bool BitcoinUnits::parse(int unit, const QString &value, qint64 *val_out)
+bool BitcoinUnits::parse(int unit, const QString &value, CAmount *val_out)
 {
     if(!valid(unit) || value.isEmpty())
         return false; // Refuse to parse invalid unit or empty string
@@ -187,7 +163,7 @@ bool BitcoinUnits::parse(int unit, const QString &value, qint64 *val_out)
     {
         return false; // Longer numbers will exceed 63 bits
     }
-    qint64 retvalue = str.toLongLong(&ok);
+    CAmount retvalue(str.toLongLong(&ok));
     if(val_out)
     {
         *val_out = retvalue;
@@ -231,7 +207,7 @@ QVariant BitcoinUnits::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-qint64 BitcoinUnits::maxMoney()
+CAmount BitcoinUnits::maxMoney()
 {
     return MAX_MONEY;
 }
