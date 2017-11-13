@@ -1,9 +1,11 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Copyright (c) 2011-2016 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOINUNITS_H
-#define BITCOINUNITS_H
+#ifndef BITCOIN_QT_BITCOINUNITS_H
+#define BITCOIN_QT_BITCOINUNITS_H
+
+#include "amount.h"
 
 #include <QAbstractListModel>
 #include <QString>
@@ -74,8 +76,6 @@ public:
     static QList<Unit> availableUnits();
     //! Is unit ID valid?
     static bool valid(int unit);
-    //! Identifier, e.g. for image names
-    static QString id(int unit);
     //! Short name
     static QString name(int unit);
     //! Longer description
@@ -85,12 +85,13 @@ public:
     //! Number of decimals left
     static int decimals(int unit);
     //! Format as string
-    static QString format(int unit, qint64 amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
+    static QString format(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
     //! Format as string (with unit)
-    static QString formatWithUnit(int unit, qint64 amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
-    static QString formatHtmlWithUnit(int unit, qint64 amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
+    static QString formatWithUnit(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
+    //! Format as HTML string (with unit)
+    static QString formatHtmlWithUnit(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
     //! Parse string to coin amount
-    static bool parse(int unit, const QString &value, qint64 *val_out);
+    static bool parse(int unit, const QString &value, CAmount *val_out);
     //! Gets title for amount column including current display unit if optionsModel reference available */
     static QString getAmountColumnTitle(int unit);
     ///@}
@@ -117,11 +118,11 @@ public:
     }
 
     //! Return maximum number of base units (Satoshis)
-    static qint64 maxMoney();
+    static CAmount maxMoney();
 
 private:
     QList<BitcoinUnits::Unit> unitlist;
 };
 typedef BitcoinUnits::Unit BitcoinUnit;
 
-#endif // BITCOINUNITS_H
+#endif // BITCOIN_QT_BITCOINUNITS_H
