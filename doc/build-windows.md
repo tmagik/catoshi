@@ -31,24 +31,19 @@ This feature is not supported in versions of Windows prior to Windows 10 or on
 Windows Server SKUs. In addition, it is available [only for 64-bit versions of
 Windows](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide).
 
-For Windows 10 systems with the Fall Creators Update applied (version >= 16215.0) use the Windows Store
-to install Ubuntu. Search for "Linux" in the Windows Store and install the free "Ubuntu" application.
-Full instructions are available on the above link.
+Full instructions to install WSL are available on the above link.
+To install WSL on Windows 10 with Fall Creators Update installed (version >= 16215.0) do the following:
 
-To get the bash shell, you must first activate the feature in Windows.
-
-1. Turn on Developer Mode
-  * Open Settings -> Update and Security -> For developers
-  * Select the Developer Mode radio button
-  * Restart if necessary
-2. Enable the Windows Subsystem for Linux feature
+1. Enable the Windows Subsystem for Linux feature
   * From Start, search for "Turn Windows features on or off" (type 'turn')
-  * Select Windows Subsystem for Linux (beta)
+  * Select Windows Subsystem for Linux
   * Click OK
   * Restart if necessary
+2. Install Ubuntu
+  * Open Microsoft Store and search for Ubuntu or use [this link](https://www.microsoft.com/store/productId/9NBLGGH4MSV6)
+  * Click Install
 3. Complete Installation
-  * Open a cmd prompt and type "bash"
-  * Accept the license
+  * Open a cmd prompt and type "Ubuntu"
   * Create a new UNIX user account (this is a separate account from your Windows account)
 
 After the bash shell is active, you can follow the instructions below, starting
@@ -148,7 +143,7 @@ Footnotes
 causes two of the bitcoin executables to crash shortly after start up. The bug is related to the
 -fstack-protector-all g++ compiler flag which is used to mitigate buffer overflows.
 Installing the mingw-w64 packages from the Ubuntu 17 distribution solves the issue, however, this is not
-an officially supported approach and it's only recommended if you are prepared to reinstall WSL/Ubutntu should
+an officially supported approach and it's only recommended if you are prepared to reinstall WSL/Ubuntu should
 something break.
 
 <a name="footnote2">2</a>: Starting from Ubuntu Xenial 16.04 both the 32 and 64 bit mingw-w64 packages install two different
