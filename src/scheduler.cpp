@@ -2,10 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "scheduler.h"
+#include <scheduler.h>
 
-#include "random.h"
-#include "reverselock.h"
+#include <random.h>
+#include <reverselock.h>
 
 #include <assert.h>
 #include <boost/bind.hpp>
@@ -141,6 +141,7 @@ size_t CScheduler::getQueueInfo(boost::chrono::system_clock::time_point &first,
 }
 
 bool CScheduler::AreThreadsServicingQueue() const {
+    boost::unique_lock<boost::mutex> lock(newTaskMutex);
     return nThreadsServicingQueue;
 }
 
@@ -173,7 +174,7 @@ void SingleThreadedSchedulerClient::ProcessQueue() {
     // to ensure both happen safely even if callback() throws.
     struct RAIICallbacksRunning {
         SingleThreadedSchedulerClient* instance;
-        RAIICallbacksRunning(SingleThreadedSchedulerClient* _instance) : instance(_instance) {}
+        explicit RAIICallbacksRunning(SingleThreadedSchedulerClient* _instance) : instance(_instance) {}
         ~RAIICallbacksRunning() {
             {
                 LOCK(instance->m_cs_callbacks_pending);
