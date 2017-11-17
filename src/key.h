@@ -6,10 +6,10 @@
 #ifndef BITCOIN_KEY_H
 #define BITCOIN_KEY_H
 
-#include "pubkey.h"
-#include "serialize.h"
-#include "support/allocators/secure.h"
-#include "uint256.h"
+#include <pubkey.h>
+#include <serialize.h>
+#include <support/allocators/secure.h>
+#include <uint256.h>
 
 #include <stdexcept>
 #include <vector>
@@ -54,11 +54,6 @@ public:
     {
         // Important: vch must be 32 bytes in length to not break serialization
         keydata.resize(32);
-    }
-
-    //! Destructor (again necessary because of memlocking).
-    ~CKey()
-    {
     }
 
     friend bool operator==(const CKey& a, const CKey& b)
@@ -172,6 +167,8 @@ struct CExtKey {
     {
         unsigned int len = ::ReadCompactSize(s);
         unsigned char code[BIP32_EXTKEY_SIZE];
+        if (len != BIP32_EXTKEY_SIZE)
+            throw std::runtime_error("Invalid extended key size\n");
         s.read((char *)&code[0], len);
         Decode(code);
     }
