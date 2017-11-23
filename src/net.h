@@ -6,21 +6,21 @@
 #ifndef BITCOIN_NET_H
 #define BITCOIN_NET_H
 
-#include "addrdb.h"
-#include "addrman.h"
-#include "amount.h"
-#include "bloom.h"
-#include "compat.h"
-#include "hash.h"
-#include "limitedmap.h"
-#include "netaddress.h"
-#include "policy/feerate.h"
-#include "protocol.h"
-#include "random.h"
-#include "streams.h"
-#include "sync.h"
-#include "uint256.h"
-#include "threadinterrupt.h"
+#include <addrdb.h>
+#include <addrman.h>
+#include <amount.h>
+#include <bloom.h>
+#include <compat.h>
+#include <hash.h>
+#include <limitedmap.h>
+#include <netaddress.h>
+#include <policy/feerate.h>
+#include <protocol.h>
+#include <random.h>
+#include <streams.h>
+#include <sync.h>
+#include <uint256.h>
+#include <threadinterrupt.h>
 
 #include <atomic>
 #include <deque>
@@ -399,8 +399,8 @@ private:
     /** Services this instance offers */
     ServiceFlags nLocalServices;
 
-    CSemaphore *semOutbound;
-    CSemaphore *semAddnode;
+    std::unique_ptr<CSemaphore> semOutbound;
+    std::unique_ptr<CSemaphore> semAddnode;
     int nMaxConnections;
     int nMaxOutbound;
     int nMaxAddnode;
@@ -648,7 +648,7 @@ public:
     bool fSentAddr;
     CSemaphoreGrant grantOutbound;
     CCriticalSection cs_filter;
-    CBloomFilter* pfilter;
+    std::unique_ptr<CBloomFilter> pfilter;
     std::atomic<int> nRefCount;
 
     const uint64_t nKeyedNetGroup;

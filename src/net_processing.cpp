@@ -3,34 +3,34 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "net_processing.h"
+#include <net_processing.h>
 
-#include "addrman.h"
-#include "arith_uint256.h"
-#include "blockencodings.h"
-#include "chainparams.h"
-#include "consensus/validation.h"
-#include "hash.h"
-#include "init.h"
-#include "validation.h"
-#include "merkleblock.h"
-#include "net.h"
-#include "netmessagemaker.h"
-#include "netbase.h"
-#include "policy/fees.h"
-#include "policy/policy.h"
-#include "primitives/block.h"
-#include "primitives/transaction.h"
-#include "random.h"
-#include "reverse_iterator.h"
-#include "scheduler.h"
-#include "tinyformat.h"
-#include "txmempool.h"
-#include "ui_interface.h"
-#include "util.h"
-#include "utilmoneystr.h"
-#include "utilstrencodings.h"
-#include "validationinterface.h"
+#include <addrman.h>
+#include <arith_uint256.h>
+#include <blockencodings.h>
+#include <chainparams.h>
+#include <consensus/validation.h>
+#include <hash.h>
+#include <init.h>
+#include <validation.h>
+#include <merkleblock.h>
+#include <net.h>
+#include <netmessagemaker.h>
+#include <netbase.h>
+#include <policy/fees.h>
+#include <policy/policy.h>
+#include <primitives/block.h>
+#include <primitives/transaction.h>
+#include <random.h>
+#include <reverse_iterator.h>
+#include <scheduler.h>
+#include <tinyformat.h>
+#include <txmempool.h>
+#include <ui_interface.h>
+#include <util.h>
+#include <utilmoneystr.h>
+#include <utilstrencodings.h>
+#include <validationinterface.h>
 
 #if defined(NDEBUG)
 # error "Bitcoin cannot be compiled without assertions."
@@ -633,7 +633,7 @@ bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats) {
 // mapOrphanTransactions
 //
 
-void AddToCompactExtraTransactions(const CTransactionRef& tx)
+void AddToCompactExtraTransactions(const CTransactionRef& tx) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
     size_t max_extra_txn = gArgs.GetArg("-blockreconstructionextratxn", DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
     if (max_extra_txn <= 0)
@@ -781,11 +781,13 @@ void Misbehaving(NodeId pnode, int howmuch)
 
 // To prevent fingerprinting attacks, only send blocks/headers outside of the
 // active chain if they are no more than a month older (both in time, and in
-// best equivalent proof of work) than the best header chain we know about.
-static bool StaleBlockRequestAllowed(const CBlockIndex* pindex, const Consensus::Params& consensusParams)
+// best equivalent proof of work) than the best header chain we know about and
+// we fully-validated them at some point.
+static bool BlockRequestAllowed(const CBlockIndex* pindex, const Consensus::Params& consensusParams)
 {
     AssertLockHeld(cs_main);
-    return (pindexBestHeader != nullptr) &&
+    if (chainActive.Contains(pindex)) return true;
+    return pindex->IsValid(BLOCK_VALID_SCRIPTS) && (pindexBestHeader != nullptr) &&
         (pindexBestHeader->GetBlockTime() - pindex->GetBlockTime() < STALE_RELAY_AGE_LIMIT) &&
         (GetBlockProofEquivalentTime(*pindexBestHeader, *pindex, *pindexBestHeader, consensusParams) < STALE_RELAY_AGE_LIMIT);
 }
@@ -1074,14 +1076,9 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                         CValidationState dummy;
                         ActivateBestChain(dummy, Params(), a_recent_block);
                     }
-                    if (chainActive.Contains(mi->second)) {
-                        send = true;
-                    } else {
-                        send = mi->second->IsValid(BLOCK_VALID_SCRIPTS) &&
-                            StaleBlockRequestAllowed(mi->second, consensusParams);
-                        if (!send) {
-                            LogPrintf("%s: ignoring request from peer=%i for old block that isn't in the main chain\n", __func__, pfrom->GetId());
-                        }
+                    send = BlockRequestAllowed(mi->second, consensusParams);
+                    if (!send) {
+                        LogPrintf("%s: ignoring request from peer=%i for old block that isn't in the main chain\n", __func__, pfrom->GetId());
                     }
                 }
                 // disconnect node in case we have reached the outbound limit for serving historical blocks
@@ -2034,8 +2031,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 return true;
             pindex = (*mi).second;
 
-            if (!chainActive.Contains(pindex) &&
-                !StaleBlockRequestAllowed(pindex, chainparams.GetConsensus())) {
+            if (!BlockRequestAllowed(pindex, chainparams.GetConsensus())) {
                 LogPrintf("%s: ignoring request from peer=%i for old block header that isn't in the main chain\n", __func__, pfrom->GetId());
                 return true;
             }
@@ -2106,7 +2102,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         if (!AlreadyHave(inv) &&
             AcceptToMemoryPool(mempool, state, ptx, &fMissingInputs, &lRemovedTxn, false /* bypass_limits */, 0 /* nAbsurdFee */)) {
-            mempool.check(pcoinsTip);
+            mempool.check(pcoinsTip.get());
             RelayTransaction(tx, connman);
             for (unsigned int i = 0; i < tx.vout.size(); i++) {
                 vWorkQueue.emplace_back(inv.hash, i);
@@ -2173,7 +2169,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                             recentRejects->insert(orphanHash);
                         }
                     }
-                    mempool.check(pcoinsTip);
+                    mempool.check(pcoinsTip.get());
                 }
             }
 
@@ -2755,8 +2751,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         else
         {
             LOCK(pfrom->cs_filter);
-            delete pfrom->pfilter;
-            pfrom->pfilter = new CBloomFilter(filter);
+            pfrom->pfilter.reset(new CBloomFilter(filter));
             pfrom->pfilter->UpdateEmptyFull();
             pfrom->fRelayTxes = true;
         }
@@ -2792,8 +2787,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
     {
         LOCK(pfrom->cs_filter);
         if (pfrom->GetLocalServices() & NODE_BLOOM) {
-            delete pfrom->pfilter;
-            pfrom->pfilter = new CBloomFilter();
+            pfrom->pfilter.reset(new CBloomFilter());
         }
         pfrom->fRelayTxes = true;
     }
@@ -3012,6 +3006,7 @@ void PeerLogicValidation::ConsiderEviction(CNode *pto, int64_t time_in_seconds)
                 LogPrintf("Disconnecting outbound peer %d for old chain, best known block = %s\n", pto->GetId(), state.pindexBestKnownBlock != nullptr ? state.pindexBestKnownBlock->GetBlockHash().ToString() : "<none>");
                 pto->fDisconnect = true;
             } else {
+                assert(state.m_chain_sync.m_work_header);
                 LogPrint(BCLog::NET, "sending getheaders to outbound peer=%d to verify chain work (current best known block:%s, benchmark blockhash: %s)\n", pto->GetId(), state.pindexBestKnownBlock != nullptr ? state.pindexBestKnownBlock->GetBlockHash().ToString() : "<none>", state.m_chain_sync.m_work_header->GetBlockHash().ToString());
                 connman->PushMessage(pto, msgMaker.Make(NetMsgType::GETHEADERS, chainActive.GetLocator(state.m_chain_sync.m_work_header->pprev), uint256()));
                 state.m_chain_sync.m_sent_getheaders = true;

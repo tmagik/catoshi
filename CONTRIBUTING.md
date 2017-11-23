@@ -24,9 +24,9 @@ facilitates social contribution, easy testing and peer review.
 
 To contribute a patch, the workflow is as follows:
 
-  - Fork repository
-  - Create topic branch
-  - Commit patches
+  1. Fork repository
+  1. Create topic branch
+  1. Commit patches
 
 The project coding conventions in the [developer notes](doc/developer-notes.md)
 must be adhered to.
@@ -186,7 +186,7 @@ In general, all pull requests must:
     the project (for example refactoring for modularisation);
   - Be well peer reviewed;
   - Have unit tests and functional tests where appropriate;
-  - Follow code style guidelines;
+  - Follow code style guidelines ([C++](doc/developer-notes.md), [functional tests](test/functional/README.md));
   - Not break the existing test suite;
   - Where bugs are fixed, where possible, there should be unit tests
     demonstrating the bug and also proving the fix. This helps prevent regression.
