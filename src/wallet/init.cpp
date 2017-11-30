@@ -3,13 +3,15 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "wallet/init.h"
+#include <wallet/init.h>
 
-#include "net.h"
-#include "util.h"
-#include "utilmoneystr.h"
-#include "validation.h"
-#include "wallet/wallet.h"
+#include <net.h>
+#include <util.h>
+#include <utilmoneystr.h>
+#include <validation.h>
+#include <wallet/rpcwallet.h>
+#include <wallet/wallet.h>
+#include <wallet/walletutil.h>
 
 std::string GetWalletHelpString(bool showDebug)
 {
@@ -29,11 +31,11 @@ std::string GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet on startup"));
     strUsage += HelpMessageOpt("-spendzeroconfchange", strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), DEFAULT_SPEND_ZEROCONF_CHANGE));
     strUsage += HelpMessageOpt("-txconfirmtarget=<n>", strprintf(_("If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks (default: %u)"), DEFAULT_TX_CONFIRM_TARGET));
-    strUsage += HelpMessageOpt("-usehd", _("Use hierarchical deterministic key generation (HD) after BIP32. Only has effect during wallet creation/first start") + " " + strprintf(_("(default: %u)"), DEFAULT_USE_HD_WALLET));
     strUsage += HelpMessageOpt("-walletrbf", strprintf(_("Send transactions with full-RBF opt-in enabled (default: %u)"), DEFAULT_WALLET_RBF));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format on startup"));
     strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file (within data directory)") + " " + strprintf(_("(default: %s)"), DEFAULT_WALLET_DAT));
     strUsage += HelpMessageOpt("-walletbroadcast", _("Make the wallet broadcast transactions") + " " + strprintf(_("(default: %u)"), DEFAULT_WALLETBROADCAST));
+    strUsage += HelpMessageOpt("-walletdir=<dir>", _("Specify directory to hold wallets (default: <datadir>/wallets if it exists, otherwise <datadir>)"));
     strUsage += HelpMessageOpt("-walletnotify=<cmd>", _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)"));
     strUsage += HelpMessageOpt("-zapwallettxes=<mode>", _("Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup") +
                                " " + _("(1 = keep tx meta data e.g. account owner and payment request information, 2 = drop tx meta data)"));
@@ -53,11 +55,16 @@ std::string GetWalletHelpString(bool showDebug)
 
 bool WalletParameterInteraction()
 {
+    if (gArgs.GetBoolArg("-disablewallet", DEFAULT_DISABLE_WALLET)) {
+        for (const std::string& wallet : gArgs.GetArgs("-wallet")) {
+            LogPrintf("%s: parameter interaction: -disablewallet -> ignoring -wallet=%s\n", __func__, wallet);
+        }
+
+        return true;
+    }
+
     gArgs.SoftSetArg("-wallet", DEFAULT_WALLET_DAT);
     const bool is_multiwallet = gArgs.GetArgs("-wallet").size() > 1;
-
-    if (gArgs.GetBoolArg("-disablewallet", DEFAULT_DISABLE_WALLET))
-        return true;
 
     if (gArgs.GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY) && gArgs.SoftSetBoolArg("-walletbroadcast", false)) {
         LogPrintf("%s: parameter interaction: -blocksonly=1 -> setting -walletbroadcast=0\n", __func__);
@@ -171,10 +178,26 @@ bool WalletParameterInteraction()
     return true;
 }
 
-bool WalletVerify()
+void RegisterWalletRPC(CRPCTable &t)
 {
-    if (gArgs.GetBoolArg("-disablewallet", DEFAULT_DISABLE_WALLET))
+    if (gArgs.GetBoolArg("-disablewallet", DEFAULT_DISABLE_WALLET)) {
+        return;
+    }
+
+    RegisterWalletRPCCommands(t);
+}
+
+bool VerifyWallets()
+{
+    if (gArgs.GetBoolArg("-disablewallet", DEFAULT_DISABLE_WALLET)) {
         return true;
+    }
+
+    if (gArgs.IsArgSet("-walletdir") && !fs::is_directory(GetWalletDir())) {
+        return InitError(strprintf(_("Error: Specified wallet directory \"%s\" does not exist."), gArgs.GetArg("-walletdir", "").c_str()));
+    }
+
+    LogPrintf("Using wallet directory %s\n", GetWalletDir().string());
 
     uiInterface.InitMessage(_("Verifying wallet(s)..."));
 
@@ -190,7 +213,7 @@ bool WalletVerify()
             return InitError(strprintf(_("Error loading wallet %s. Invalid characters in -wallet filename."), walletFile));
         }
 
-        fs::path wallet_path = fs::absolute(walletFile, GetDataDir());
+        fs::path wallet_path = fs::absolute(walletFile, GetWalletDir());
 
         if (fs::exists(wallet_path) && (!fs::is_regular_file(wallet_path) || fs::is_symlink(wallet_path))) {
             return InitError(strprintf(_("Error loading wallet %s. -wallet filename must be a regular file."), walletFile));
@@ -201,7 +224,7 @@ bool WalletVerify()
         }
 
         std::string strError;
-        if (!CWalletDB::VerifyEnvironment(walletFile, GetDataDir().string(), strError)) {
+        if (!CWalletDB::VerifyEnvironment(walletFile, GetWalletDir().string(), strError)) {
             return InitError(strError);
         }
 
@@ -215,7 +238,7 @@ bool WalletVerify()
         }
 
         std::string strWarning;
-        bool dbV = CWalletDB::VerifyDatabaseFile(walletFile, GetDataDir().string(), strWarning, strError);
+        bool dbV = CWalletDB::VerifyDatabaseFile(walletFile, GetWalletDir().string(), strWarning, strError);
         if (!strWarning.empty()) {
             InitWarning(strWarning);
         }
@@ -228,7 +251,7 @@ bool WalletVerify()
     return true;
 }
 
-bool InitLoadWallet()
+bool OpenWallets()
 {
     if (gArgs.GetBoolArg("-disablewallet", DEFAULT_DISABLE_WALLET)) {
         LogPrintf("Wallet disabled!\n");
@@ -244,4 +267,29 @@ bool InitLoadWallet()
     }
 
     return true;
+}
+
+void StartWallets(CScheduler& scheduler) {
+    for (CWalletRef pwallet : vpwallets) {
+        pwallet->postInitProcess(scheduler);
+    }
+}
+
+void FlushWallets() {
+    for (CWalletRef pwallet : vpwallets) {
+        pwallet->Flush(false);
+    }
+}
+
+void StopWallets() {
+    for (CWalletRef pwallet : vpwallets) {
+        pwallet->Flush(true);
+    }
+}
+
+void CloseWallets() {
+    for (CWalletRef pwallet : vpwallets) {
+        delete pwallet;
+    }
+    vpwallets.clear();
 }

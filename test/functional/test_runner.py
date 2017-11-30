@@ -98,6 +98,7 @@ BASE_SCRIPTS= [
     'disconnect_ban.py',
     'decodescript.py',
     'blockchain.py',
+    'deprecated_rpc.py',
     'disablewallet.py',
     'net.py',
     'keypool.py',
@@ -121,6 +122,10 @@ BASE_SCRIPTS= [
     'bip65-cltv-p2p.py',
     'uptime.py',
     'resendwallettransactions.py',
+    'minchainwork.py',
+    'p2p-fingerprint.py',
+    'uacomment.py',
+    'p2p-acceptblock.py',
 ]
 
 EXTENDED_SCRIPTS = [
@@ -146,9 +151,8 @@ EXTENDED_SCRIPTS = [
     'example_test.py',
     'txn_doublespend.py',
     'txn_clone.py --mineblock',
-    'forknotify.py',
+    'notifications.py',
     'invalidateblock.py',
-    'p2p-acceptblock.py',
     'replace-by-fee.py',
 ]
 
@@ -296,7 +300,11 @@ def run_tests(test_list, src_dir, build_dir, exeext, tmpdir, jobs=1, enable_cove
 
     if len(test_list) > 1 and jobs > 1:
         # Populate cache
-        subprocess.check_output([tests_dir + 'create_cache.py'] + flags + ["--tmpdir=%s/cache" % tmpdir])
+        try:
+            subprocess.check_output([tests_dir + 'create_cache.py'] + flags + ["--tmpdir=%s/cache" % tmpdir])
+        except Exception as e:
+            print(e.output)
+            raise e
 
     #Run Tests
     job_queue = TestHandler(jobs, tests_dir, tmpdir, test_list, flags)
@@ -456,7 +464,7 @@ def check_script_list(src_dir):
             # On travis this warning is an error to prevent merging incomplete commits into master
             sys.exit(1)
 
-class RPCCoverage(object):
+class RPCCoverage():
     """
     Coverage reporting utilities for test_runner.
 
