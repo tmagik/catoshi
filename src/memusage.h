@@ -5,7 +5,7 @@
 #ifndef BITCOIN_MEMUSAGE_H
 #define BITCOIN_MEMUSAGE_H
 
-#include "indirectmap.h"
+#include <indirectmap.h>
 
 #include <stdlib.h>
 
@@ -15,7 +15,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <boost/foreach.hpp>
 
 namespace memusage
 {

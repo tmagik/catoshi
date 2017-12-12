@@ -3,18 +3,31 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "policy/fees.h"
-#include "policy/policy.h"
+#include <policy/fees.h>
+#include <policy/policy.h>
 
-#include "amount.h"
-#include "clientversion.h"
-#include "primitives/transaction.h"
-#include "random.h"
-#include "streams.h"
-#include "txmempool.h"
-#include "util.h"
+#include <amount.h>
+#include <clientversion.h>
+#include <primitives/transaction.h>
+#include <random.h>
+#include <streams.h>
+#include <txmempool.h>
+#include <util.h>
 
 static constexpr double INF_FEERATE = 1e99;
+
+std::string StringForFeeEstimateHorizon(FeeEstimateHorizon horizon) {
+    static const std::map<FeeEstimateHorizon, std::string> horizon_strings = {
+        {FeeEstimateHorizon::SHORT_HALFLIFE, "short"},
+        {FeeEstimateHorizon::MED_HALFLIFE, "medium"},
+        {FeeEstimateHorizon::LONG_HALFLIFE, "long"},
+    };
+    auto horizon_string = horizon_strings.find(horizon);
+
+    if (horizon_string == horizon_strings.end()) return "unknown";
+
+    return horizon_string->second;
+}
 
 std::string StringForFeeReason(FeeReason reason) {
     static const std::map<FeeReason, std::string> fee_reason_strings = {
@@ -34,6 +47,20 @@ std::string StringForFeeReason(FeeReason reason) {
     if (reason_string == fee_reason_strings.end()) return "Unknown";
 
     return reason_string->second;
+}
+
+bool FeeModeFromString(const std::string& mode_string, FeeEstimateMode& fee_estimate_mode) {
+    static const std::map<std::string, FeeEstimateMode> fee_modes = {
+        {"UNSET", FeeEstimateMode::UNSET},
+        {"ECONOMICAL", FeeEstimateMode::ECONOMICAL},
+        {"CONSERVATIVE", FeeEstimateMode::CONSERVATIVE},
+    };
+    auto mode = fee_modes.find(mode_string);
+
+    if (mode == fee_modes.end()) return false;
+
+    fee_estimate_mode = mode->second;
+    return true;
 }
 
 /**
@@ -90,7 +117,7 @@ public:
      * Create new TxConfirmStats. This is called by BlockPolicyEstimator's
      * constructor with default values.
      * @param defaultBuckets contains the upper limits for the bucket boundaries
-     * @param maxConfirms max number of confirms to track
+     * @param maxPeriods max number of periods to track
      * @param decay how much to decay the historical moving average per block
      */
     TxConfirmStats(const std::vector<double>& defaultBuckets, const std::map<double, unsigned int>& defaultBucketMap,
@@ -153,6 +180,7 @@ TxConfirmStats::TxConfirmStats(const std::vector<double>& defaultBuckets,
     : buckets(defaultBuckets), bucketMap(defaultBucketMap)
 {
     decay = _decay;
+    assert(_scale != 0 && "_scale must be non-zero");
     scale = _scale;
     confAvg.resize(maxPeriods);
     for (unsigned int i = 0; i < maxPeriods; i++) {
@@ -391,6 +419,9 @@ void TxConfirmStats::Read(CAutoFile& filein, int nFileVersion, size_t numBuckets
             throw std::runtime_error("Corrupt estimates file. Decay must be between 0 and 1 (non-inclusive)");
         }
         filein >> scale;
+        if (scale == 0) {
+            throw std::runtime_error("Corrupt estimates file. Scale must be non-zero");
+        }
     }
 
     filein >> avg;
@@ -476,6 +507,7 @@ void TxConfirmStats::removeTx(unsigned int entryHeight, unsigned int nBestSeenHe
         }
     }
     if (!inBlock && (unsigned int)blocksAgo >= scale) { // Only counts as a failure if not confirmed for entire period
+        assert(scale != 0);
         unsigned int periodsAgo = blocksAgo / scale;
         for (size_t i = 0; i < periodsAgo && i < failAvg.size(); i++) {
             failAvg[i][bucketindex]++;
@@ -516,16 +548,13 @@ CBlockPolicyEstimator::CBlockPolicyEstimator()
     bucketMap[INF_FEERATE] = bucketIndex;
     assert(bucketMap.size() == buckets.size());
 
-    feeStats = new TxConfirmStats(buckets, bucketMap, MED_BLOCK_PERIODS, MED_DECAY, MED_SCALE);
-    shortStats = new TxConfirmStats(buckets, bucketMap, SHORT_BLOCK_PERIODS, SHORT_DECAY, SHORT_SCALE);
-    longStats = new TxConfirmStats(buckets, bucketMap, LONG_BLOCK_PERIODS, LONG_DECAY, LONG_SCALE);
+    feeStats = std::unique_ptr<TxConfirmStats>(new TxConfirmStats(buckets, bucketMap, MED_BLOCK_PERIODS, MED_DECAY, MED_SCALE));
+    shortStats = std::unique_ptr<TxConfirmStats>(new TxConfirmStats(buckets, bucketMap, SHORT_BLOCK_PERIODS, SHORT_DECAY, SHORT_SCALE));
+    longStats = std::unique_ptr<TxConfirmStats>(new TxConfirmStats(buckets, bucketMap, LONG_BLOCK_PERIODS, LONG_DECAY, LONG_SCALE));
 }
 
 CBlockPolicyEstimator::~CBlockPolicyEstimator()
 {
-    delete feeStats;
-    delete shortStats;
-    delete longStats;
 }
 
 void CBlockPolicyEstimator::processTransaction(const CTxMemPoolEntry& entry, bool validFeeEstimate)
@@ -658,20 +687,20 @@ CFeeRate CBlockPolicyEstimator::estimateRawFee(int confTarget, double successThr
     double sufficientTxs = SUFFICIENT_FEETXS;
     switch (horizon) {
     case FeeEstimateHorizon::SHORT_HALFLIFE: {
-        stats = shortStats;
+        stats = shortStats.get();
         sufficientTxs = SUFFICIENT_TXS_SHORT;
         break;
     }
     case FeeEstimateHorizon::MED_HALFLIFE: {
-        stats = feeStats;
+        stats = feeStats.get();
         break;
     }
     case FeeEstimateHorizon::LONG_HALFLIFE: {
-        stats = longStats;
+        stats = longStats.get();
         break;
     }
     default: {
-        return CFeeRate(0);
+        throw std::out_of_range("CBlockPolicyEstimator::estimateRawFee unknown FeeEstimateHorizon");
     }
     }
 
@@ -687,7 +716,25 @@ CFeeRate CBlockPolicyEstimator::estimateRawFee(int confTarget, double successThr
     if (median < 0)
         return CFeeRate(0);
 
-    return CFeeRate(median);
+    return CFeeRate(llround(median));
+}
+
+unsigned int CBlockPolicyEstimator::HighestTargetTracked(FeeEstimateHorizon horizon) const
+{
+    switch (horizon) {
+    case FeeEstimateHorizon::SHORT_HALFLIFE: {
+        return shortStats->GetMaxConfirms();
+    }
+    case FeeEstimateHorizon::MED_HALFLIFE: {
+        return feeStats->GetMaxConfirms();
+    }
+    case FeeEstimateHorizon::LONG_HALFLIFE: {
+        return longStats->GetMaxConfirms();
+    }
+    default: {
+        throw std::out_of_range("CBlockPolicyEstimator::HighestTargetTracked unknown FeeEstimateHorizon");
+    }
+    }
 }
 
 unsigned int CBlockPolicyEstimator::BlockSpan() const
@@ -781,8 +828,10 @@ double CBlockPolicyEstimator::estimateConservativeFee(unsigned int doubleTarget,
  * estimates, however, required the 95% threshold at 2 * target be met for any
  * longer time horizons also.
  */
-CFeeRate CBlockPolicyEstimator::estimateSmartFee(int confTarget, FeeCalculation *feeCalc, const CTxMemPool& pool, bool conservative) const
+CFeeRate CBlockPolicyEstimator::estimateSmartFee(int confTarget, FeeCalculation *feeCalc, bool conservative) const
 {
+    LOCK(cs_feeEstimator);
+
     if (feeCalc) {
         feeCalc->desiredTarget = confTarget;
         feeCalc->returnedTarget = confTarget;
@@ -790,84 +839,71 @@ CFeeRate CBlockPolicyEstimator::estimateSmartFee(int confTarget, FeeCalculation 
 
     double median = -1;
     EstimationResult tempResult;
-    {
-        LOCK(cs_feeEstimator);
 
-        // Return failure if trying to analyze a target we're not tracking
-        if (confTarget <= 0 || (unsigned int)confTarget > longStats->GetMaxConfirms())
-            return CFeeRate(0);
-
-        // It's not possible to get reasonable estimates for confTarget of 1
-        if (confTarget == 1)
-            confTarget = 2;
-
-        unsigned int maxUsableEstimate = MaxUsableEstimate();
-        if (maxUsableEstimate <= 1)
-            return CFeeRate(0);
-
-        if ((unsigned int)confTarget > maxUsableEstimate) {
-            confTarget = maxUsableEstimate;
-        }
-
-        assert(confTarget > 0); //estimateCombinedFee and estimateConservativeFee take unsigned ints
-        /** true is passed to estimateCombined fee for target/2 and target so
-         * that we check the max confirms for shorter time horizons as well.
-         * This is necessary to preserve monotonically increasing estimates.
-         * For non-conservative estimates we do the same thing for 2*target, but
-         * for conservative estimates we want to skip these shorter horizons
-         * checks for 2*target because we are taking the max over all time
-         * horizons so we already have monotonically increasing estimates and
-         * the purpose of conservative estimates is not to let short term
-         * fluctuations lower our estimates by too much.
-         */
-        double halfEst = estimateCombinedFee(confTarget/2, HALF_SUCCESS_PCT, true, &tempResult);
-        if (feeCalc) {
-            feeCalc->est = tempResult;
-            feeCalc->reason = FeeReason::HALF_ESTIMATE;
-        }
-        median = halfEst;
-        double actualEst = estimateCombinedFee(confTarget, SUCCESS_PCT, true, &tempResult);
-        if (actualEst > median) {
-            median = actualEst;
-            if (feeCalc) {
-                feeCalc->est = tempResult;
-                feeCalc->reason = FeeReason::FULL_ESTIMATE;
-            }
-        }
-        double doubleEst = estimateCombinedFee(2 * confTarget, DOUBLE_SUCCESS_PCT, !conservative, &tempResult);
-        if (doubleEst > median) {
-            median = doubleEst;
-            if (feeCalc) {
-                feeCalc->est = tempResult;
-                feeCalc->reason = FeeReason::DOUBLE_ESTIMATE;
-            }
-        }
-
-        if (conservative || median == -1) {
-            double consEst =  estimateConservativeFee(2 * confTarget, &tempResult);
-            if (consEst > median) {
-                median = consEst;
-                if (feeCalc) {
-                    feeCalc->est = tempResult;
-                    feeCalc->reason = FeeReason::CONSERVATIVE;
-                }
-            }
-        }
-    } // Must unlock cs_feeEstimator before taking mempool locks
-
-    if (feeCalc) feeCalc->returnedTarget = confTarget;
-
-    // If mempool is limiting txs , return at least the min feerate from the mempool
-    CAmount minPoolFee = pool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFeePerK();
-    if (minPoolFee > 0 && minPoolFee > median) {
-        if (feeCalc) feeCalc->reason = FeeReason::MEMPOOL_MIN;
-        return CFeeRate(minPoolFee);
+    // Return failure if trying to analyze a target we're not tracking
+    if (confTarget <= 0 || (unsigned int)confTarget > longStats->GetMaxConfirms()) {
+        return CFeeRate(0);  // error condition
     }
 
-    if (median < 0)
-        return CFeeRate(0);
+    // It's not possible to get reasonable estimates for confTarget of 1
+    if (confTarget == 1) confTarget = 2;
 
-    return CFeeRate(median);
+    unsigned int maxUsableEstimate = MaxUsableEstimate();
+    if ((unsigned int)confTarget > maxUsableEstimate) {
+        confTarget = maxUsableEstimate;
+    }
+    if (feeCalc) feeCalc->returnedTarget = confTarget;
+
+    if (confTarget <= 1) return CFeeRate(0); // error condition
+
+    assert(confTarget > 0); //estimateCombinedFee and estimateConservativeFee take unsigned ints
+    /** true is passed to estimateCombined fee for target/2 and target so
+     * that we check the max confirms for shorter time horizons as well.
+     * This is necessary to preserve monotonically increasing estimates.
+     * For non-conservative estimates we do the same thing for 2*target, but
+     * for conservative estimates we want to skip these shorter horizons
+     * checks for 2*target because we are taking the max over all time
+     * horizons so we already have monotonically increasing estimates and
+     * the purpose of conservative estimates is not to let short term
+     * fluctuations lower our estimates by too much.
+     */
+    double halfEst = estimateCombinedFee(confTarget/2, HALF_SUCCESS_PCT, true, &tempResult);
+    if (feeCalc) {
+        feeCalc->est = tempResult;
+        feeCalc->reason = FeeReason::HALF_ESTIMATE;
+    }
+    median = halfEst;
+    double actualEst = estimateCombinedFee(confTarget, SUCCESS_PCT, true, &tempResult);
+    if (actualEst > median) {
+        median = actualEst;
+        if (feeCalc) {
+            feeCalc->est = tempResult;
+            feeCalc->reason = FeeReason::FULL_ESTIMATE;
+        }
+    }
+    double doubleEst = estimateCombinedFee(2 * confTarget, DOUBLE_SUCCESS_PCT, !conservative, &tempResult);
+    if (doubleEst > median) {
+        median = doubleEst;
+        if (feeCalc) {
+            feeCalc->est = tempResult;
+            feeCalc->reason = FeeReason::DOUBLE_ESTIMATE;
+        }
+    }
+
+    if (conservative || median == -1) {
+        double consEst =  estimateConservativeFee(2 * confTarget, &tempResult);
+        if (consEst > median) {
+            median = consEst;
+            if (feeCalc) {
+                feeCalc->est = tempResult;
+                feeCalc->reason = FeeReason::CONSERVATIVE;
+            }
+        }
+    }
+
+    if (median < 0) return CFeeRate(0); // error condition
+
+    return CFeeRate(llround(median));
 }
 
 
@@ -963,12 +999,9 @@ bool CBlockPolicyEstimator::Read(CAutoFile& filein)
             }
 
             // Destroy old TxConfirmStats and point to new ones that already reference buckets and bucketMap
-            delete feeStats;
-            delete shortStats;
-            delete longStats;
-            feeStats = fileFeeStats.release();
-            shortStats = fileShortStats.release();
-            longStats = fileLongStats.release();
+            feeStats = std::move(fileFeeStats);
+            shortStats = std::move(fileShortStats);
+            longStats = std::move(fileLongStats);
 
             nBestSeenHeight = nFileBestSeenHeight;
             historicalFirst = nFileHistoricalFirst;
@@ -1009,5 +1042,5 @@ CAmount FeeFilterRounder::round(CAmount currentMinFee)
     if ((it != feeset.begin() && insecure_rand.rand32() % 3 != 0) || it == feeset.end()) {
         it--;
     }
-    return *it;
+    return static_cast<CAmount>(*it);
 }
