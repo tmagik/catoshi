@@ -9,13 +9,11 @@
 
 #include <net.h>
 
-#include <addrman.h>
 #include <chainparams.h>
 #include <clientversion.h>
 #include <consensus/consensus.h>
 #include <crypto/common.h>
 #include <crypto/sha256.h>
-#include <hash.h>
 #include <primitives/transaction.h>
 #include <netbase.h>
 #include <scheduler.h>
@@ -1102,7 +1100,7 @@ void CConnman::AcceptConnection(const ListenSocket& hListenSocket) {
 
     if (IsBanned(addr) && !whitelisted)
     {
-        LogPrintf("connection from %s dropped (banned)\n", addr.ToString());
+        LogPrint(BCLog::NET, "connection from %s dropped (banned)\n", addr.ToString());
         CloseSocket(hSocket);
         return;
     }
