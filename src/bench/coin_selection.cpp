@@ -2,10 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "bench.h"
-#include "wallet/wallet.h"
+#include <bench/bench.h>
+#include <wallet/wallet.h>
 
-#include <boost/foreach.hpp>
 #include <set>
 
 static void addCoin(const CAmount& nValue, const CWallet& wallet, std::vector<COutput>& vCoins)
