@@ -14,7 +14,6 @@ import subprocess
 import time
 
 from .authproxy import JSONRPCException
-from .mininode import NodeConn
 from .util import (
     assert_equal,
     get_rpc_proxy,
@@ -158,7 +157,7 @@ class TestNode():
         self.encryptwallet(passphrase)
         self.wait_until_stopped()
 
-    def add_p2p_connection(self, p2p_conn, **kwargs):
+    def add_p2p_connection(self, p2p_conn, *args, **kwargs):
         """Add a p2p connection to the node.
 
         This method adds the p2p connection to the self.p2ps list and also
@@ -167,9 +166,9 @@ class TestNode():
             kwargs['dstport'] = p2p_port(self.index)
         if 'dstaddr' not in kwargs:
             kwargs['dstaddr'] = '127.0.0.1'
+
+        p2p_conn.peer_connect(*args, **kwargs)
         self.p2ps.append(p2p_conn)
-        kwargs.update({'rpc': self.rpc, 'callback': p2p_conn})
-        p2p_conn.add_connection(NodeConn(**kwargs))
 
         return p2p_conn
 
@@ -182,13 +181,12 @@ class TestNode():
         assert self.p2ps, "No p2p connection"
         return self.p2ps[0]
 
-    def disconnect_p2p(self, index=0):
-        """Close the p2p connection to the node."""
-        # Connection could have already been closed by other end. Calling disconnect_p2p()
-        # on an already disconnected p2p connection is not an error.
-        if self.p2ps[index].connection is not None:
-            self.p2ps[index].connection.disconnect_node()
-        del self.p2ps[index]
+    def disconnect_p2ps(self):
+        """Close all p2p connections to the node."""
+        for p in self.p2ps:
+            p.peer_disconnect()
+        del self.p2ps[:]
+
 
 class TestNodeCLI():
     """Interface to bitcoin-cli for an individual node"""

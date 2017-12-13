@@ -2,26 +2,20 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "test_bitcoin.h"
+#include <test/test_bitcoin.h>
 
-#include "chainparams.h"
-#include "consensus/consensus.h"
-#include "consensus/validation.h"
-#include "crypto/sha256.h"
-#include "fs.h"
-#include "key.h"
-#include "validation.h"
-#include "miner.h"
-#include "net_processing.h"
-#include "pubkey.h"
-#include "random.h"
-#include "txdb.h"
-#include "txmempool.h"
-#include "ui_interface.h"
-#include "streams.h"
-#include "rpc/server.h"
-#include "rpc/register.h"
-#include "script/sigcache.h"
+#include <chainparams.h>
+#include <consensus/consensus.h>
+#include <consensus/validation.h>
+#include <crypto/sha256.h>
+#include <validation.h>
+#include <miner.h>
+#include <net_processing.h>
+#include <ui_interface.h>
+#include <streams.h>
+#include <rpc/server.h>
+#include <rpc/register.h>
+#include <script/sigcache.h>
 
 #include <memory>
 
@@ -81,9 +75,9 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
         GetMainSignals().RegisterBackgroundSignalScheduler(scheduler);
 
         mempool.setSanityCheck(1.0);
-        pblocktree = new CBlockTreeDB(1 << 20, true);
-        pcoinsdbview = new CCoinsViewDB(1 << 23, true);
-        pcoinsTip = new CCoinsViewCache(pcoinsdbview);
+        pblocktree.reset(new CBlockTreeDB(1 << 20, true));
+        pcoinsdbview.reset(new CCoinsViewDB(1 << 23, true));
+        pcoinsTip.reset(new CCoinsViewCache(pcoinsdbview.get()));
         if (!LoadGenesisBlock(chainparams)) {
             throw std::runtime_error("LoadGenesisBlock failed.");
         }
@@ -110,9 +104,9 @@ TestingSetup::~TestingSetup()
         g_connman.reset();
         peerLogic.reset();
         UnloadBlockIndex();
-        delete pcoinsTip;
-        delete pcoinsdbview;
-        delete pblocktree;
+        pcoinsTip.reset();
+        pcoinsdbview.reset();
+        pblocktree.reset();
         fs::remove_all(pathTemp);
 }
 
@@ -149,7 +143,10 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
         block.vtx.push_back(MakeTransactionRef(tx));
     // IncrementExtraNonce creates a valid coinbase and merkleRoot
     unsigned int extraNonce = 0;
-    IncrementExtraNonce(&block, chainActive.Tip(), extraNonce);
+    {
+        LOCK(cs_main);
+        IncrementExtraNonce(&block, chainActive.Tip(), extraNonce);
+    }
 
     while (!CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus())) ++block.nNonce;
 
