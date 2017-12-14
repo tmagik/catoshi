@@ -13,7 +13,6 @@
 #include <qt/optionsmodel.h>
 #include <qt/platformstyle.h>
 #include <qt/sendcoinsentry.h>
-#include <qt/walletmodel.h>
 
 #include <base58.h>
 #include <chainparams.h>
@@ -25,11 +24,9 @@
 #include <wallet/fees.h>
 
 #include <QFontMetrics>
-#include <QMessageBox>
 #include <QScrollBar>
 #include <QSettings>
 #include <QTextDocument>
-#include <QTimer>
 
 static const std::array<int, 9> confTargets = { {2, 4, 6, 12, 24, 48, 144, 504, 1008} };
 int getConfTargetForIndex(int index) {
@@ -345,7 +342,7 @@ void SendCoinsDialog::on_sendButton_clicked()
     if (ui->optInRBF->isChecked())
     {
         questionString.append("<hr /><span>");
-        questionString.append(tr("This transaction signals replaceability (optin-RBF)."));
+        questionString.append(tr("You can increase the fee later (signals Replace-By-Fee)."));
         questionString.append("</span>");
     }
 
