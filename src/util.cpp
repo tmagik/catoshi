@@ -3,18 +3,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
-
 #include <util.h>
 
 #include <chainparamsbase.h>
-#include <fs.h>
 #include <random.h>
 #include <serialize.h>
 #include <utilstrencodings.h>
-#include <utiltime.h>
 
 #include <stdarg.h>
 
@@ -639,6 +633,9 @@ void ArgsManager::ReadConfigFile(const std::string& confPath)
     }
     // If datadir is changed in .conf file:
     ClearDatadirCache();
+    if (!fs::is_directory(GetDataDir(false))) {
+        throw std::runtime_error(strprintf("specified data directory \"%s\" does not exist.", gArgs.GetArg("-datadir", "").c_str()));
+    }
 }
 
 #ifndef WIN32
