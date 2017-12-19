@@ -2,22 +2,22 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "base58.h"
-#include "chain.h"
-#include "rpc/safemode.h"
-#include "rpc/server.h"
-#include "init.h"
-#include "validation.h"
-#include "script/script.h"
-#include "script/standard.h"
-#include "sync.h"
-#include "util.h"
-#include "utiltime.h"
-#include "wallet.h"
-#include "merkleblock.h"
-#include "core_io.h"
+#include <base58.h>
+#include <chain.h>
+#include <rpc/safemode.h>
+#include <rpc/server.h>
+#include <wallet/init.h>
+#include <validation.h>
+#include <script/script.h>
+#include <script/standard.h>
+#include <sync.h>
+#include <util.h>
+#include <utiltime.h>
+#include <wallet/wallet.h>
+#include <merkleblock.h>
+#include <core_io.h>
 
-#include "rpcwallet.h"
+#include <wallet/rpcwallet.h>
 
 #include <fstream>
 #include <stdint.h>
@@ -165,7 +165,7 @@ UniValue abortrescan(const JSONRPCRequest& request)
     if (request.fHelp || request.params.size() > 0)
         throw std::runtime_error(
             "abortrescan\n"
-            "\nStops current wallet rescan triggered e.g. by an importprivkey call.\n"
+            "\nStops current wallet rescan triggered by an RPC call, e.g. by an importprivkey call.\n"
             "\nExamples:\n"
             "\nImport a private key\n"
             + HelpExampleCli("importprivkey", "\"mykey\"") +
@@ -340,7 +340,7 @@ UniValue importprunedfunds(const JSONRPCRequest& request)
 
     LOCK2(cs_main, pwallet->cs_wallet);
 
-    if (pwallet->IsMine(wtx)) {
+    if (pwallet->IsMine(*wtx.tx)) {
         pwallet->AddToWallet(wtx, false);
         return NullUniValue;
     }
@@ -721,8 +721,8 @@ UniValue ProcessImport(CWallet * const pwallet, const UniValue& data, const int6
         const std::string& strRedeemScript = data.exists("redeemscript") ? data["redeemscript"].get_str() : "";
         const UniValue& pubKeys = data.exists("pubkeys") ? data["pubkeys"].get_array() : UniValue();
         const UniValue& keys = data.exists("keys") ? data["keys"].get_array() : UniValue();
-        const bool& internal = data.exists("internal") ? data["internal"].get_bool() : false;
-        const bool& watchOnly = data.exists("watchonly") ? data["watchonly"].get_bool() : false;
+        const bool internal = data.exists("internal") ? data["internal"].get_bool() : false;
+        const bool watchOnly = data.exists("watchonly") ? data["watchonly"].get_bool() : false;
         const std::string& label = data.exists("label") && !internal ? data["label"].get_str() : "";
 
         bool isScript = scriptPubKey.getType() == UniValue::VSTR;
