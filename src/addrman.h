@@ -6,12 +6,12 @@
 #ifndef BITCOIN_ADDRMAN_H
 #define BITCOIN_ADDRMAN_H
 
-#include "netaddress.h"
-#include "protocol.h"
-#include "random.h"
-#include "sync.h"
-#include "timedata.h"
-#include "util.h"
+#include <netaddress.h>
+#include <protocol.h>
+#include <random.h>
+#include <sync.h>
+#include <timedata.h>
+#include <util.h>
 
 #include <map>
 #include <set>
@@ -313,9 +313,9 @@ public:
         s << nUBuckets;
         std::map<int, int> mapUnkIds;
         int nIds = 0;
-        for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++) {
-            mapUnkIds[(*it).first] = nIds;
-            const CAddrInfo &info = (*it).second;
+        for (const auto& entry : mapInfo) {
+            mapUnkIds[entry.first] = nIds;
+            const CAddrInfo &info = entry.second;
             if (info.nRefCount) {
                 assert(nIds != nNew); // this means nNew was wrong, oh ow
                 s << info;
@@ -323,8 +323,8 @@ public:
             }
         }
         nIds = 0;
-        for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++) {
-            const CAddrInfo &info = (*it).second;
+        for (const auto& entry : mapInfo) {
+            const CAddrInfo &info = entry.second;
             if (info.fInTried) {
                 assert(nIds != nTried); // this means nTried was wrong, oh ow
                 s << info;
