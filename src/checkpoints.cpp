@@ -2,13 +2,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "checkpoints.h"
+#include <checkpoints.h>
 
-#include "chain.h"
-#include "chainparams.h"
-#include "reverse_iterator.h"
-#include "validation.h"
-#include "uint256.h"
+#include <chain.h>
+#include <chainparams.h>
+#include <reverse_iterator.h>
+#include <validation.h>
 
 #include <stdint.h>
 
@@ -26,7 +25,7 @@ namespace Checkpoints {
             if (t != mapBlockIndex.end())
                 return t->second;
         }
-        return NULL;
+        return nullptr;
     }
 
 } // namespace Checkpoints
