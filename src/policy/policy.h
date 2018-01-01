@@ -1,11 +1,17 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2014 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, Grant, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_POLICY_POLICY_H
-#define BITCOIN_POLICY_POLICY_H
+#ifndef CODECOIN_POLICY_POLICY_H
+#define CODECOIN_POLICY_POLICY_H
 
+#include "codecoin.h"
 #include "consensus/consensus.h"
 #include "feerate.h"
 #include "script/interpreter.h"
@@ -14,10 +20,16 @@
 #include <string>
 
 class CCoinsViewCache;
-class CTxOut;
+//class CTxOut; // Codecoin TODO: move to TxOut
 
 /** Default for -blockmaxsize, which controls the maximum size of block the mining code will create **/
+/* Catoshi sez: Defaults should be sane for expected environment.
+ * This might be a sane default for Litecoin. If you want to know why it
+ * might be somewhat unsane, search for "best bitcoin block size flames"
+ * TODO: move this to *coin/policy.h */
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 750000;
+/** Default for -blockprioritysize, maximum space for zero/low-fee transactions **/
+static const unsigned int DEFAULT_BLOCK_PRIORITY_SIZE = 0;
 /** Default for -blockmaxweight, which controls the range of block weights the mining code will create **/
 static const unsigned int DEFAULT_BLOCK_MAX_WEIGHT = 3000000;
 /** Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code **/
@@ -29,7 +41,11 @@ static const unsigned int MAX_P2SH_SIGOPS = 15;
 /** The maximum number of sigops we're willing to relay/mine in a single tx */
 static const unsigned int MAX_STANDARD_TX_SIGOPS_COST = MAX_BLOCK_SIGOPS_COST/5;
 /** Default for -maxmempool, maximum megabytes of mempool memory usage */
+#if defined(BRAND_bitcoin)
+static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 300;
+#else
 static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 5;
+#endif
 /** Default for -incrementalrelayfee, which sets the minimum feerate increase for mempool limiting or BIP 125 replacement **/
 static const unsigned int DEFAULT_INCREMENTAL_RELAY_FEE = 1000;
 /** Default for -bytespersigop */
@@ -40,12 +56,16 @@ static const unsigned int MAX_STANDARD_P2WSH_STACK_ITEMS = 100;
 static const unsigned int MAX_STANDARD_P2WSH_STACK_ITEM_SIZE = 80;
 /** The maximum size of a standard witnessScript */
 static const unsigned int MAX_STANDARD_P2WSH_SCRIPT_SIZE = 3600;
-/** Min feerate for defining dust. Historically this has been based on the
+/** Min feerate for defining dust. Historically this has been the same as the
  * minRelayTxFee, however changing the dust limit changes which transactions are
  * standard and should be done with care and ideally rarely. It makes sense to
  * only increase the dust limit after prior releases were already not creating
  * outputs below the new threshold */
+#if defined(BRAND_bitcoin)
+static const unsigned int DUST_RELAY_TX_FEE = 1000;
+#else
 static const unsigned int DUST_RELAY_TX_FEE = 300000;
+#endif
 /**
  * Standard script verification flags that standard transactions will comply
  * with. However scripts violating these flags may still be present in valid

@@ -2,9 +2,12 @@
 // Copyright (c) 2009-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_MINER_H
-#define BITCOIN_MINER_H
+#ifndef CODECOIN_MINER_H
+#define CODECOIN_MINER_H
 
 #include "primitives/block.h"
 #include "txmempool.h"
@@ -17,6 +20,10 @@
 class CBlockIndex;
 class CChainParams;
 class CScript;
+#if defined( FEATURE_blocksig )
+class CReserveKey;
+class CWallet;
+#endif
 
 namespace Consensus { struct Params; };
 

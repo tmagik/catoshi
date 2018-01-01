@@ -1,19 +1,25 @@
-// Copyright (c) 2011-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2011-2015 The Bitcoin Core developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_QT_CLIENTMODEL_H
-#define BITCOIN_QT_CLIENTMODEL_H
+#ifndef CODECOIN_QT_CLIENTMODEL_H
+#define CODECOIN_QT_CLIENTMODEL_H
 
 #include <QObject>
 #include <QDateTime>
 
-#include <atomic>
-
+class AddressTableModel;
 class BanTableModel;
 class OptionsModel;
 class PeerTableModel;
+class TransactionTableModel;
 
+class CWallet;
 class CBlockIndex;
 
 QT_BEGIN_NAMESPACE
@@ -80,10 +86,6 @@ public:
     QString formatClientStartupTime() const;
     QString dataDir() const;
 
-    // caches for the best header
-    mutable std::atomic<int> cachedBestHeaderHeight;
-    mutable std::atomic<int64_t> cachedBestHeaderTime;
-
 private:
     OptionsModel *optionsModel;
     PeerTableModel *peerTableModel;
@@ -116,4 +118,4 @@ public Q_SLOTS:
     void updateBanlist();
 };
 
-#endif // BITCOIN_QT_CLIENTMODEL_H
+#endif // CODECOIN_QT_CLIENTMODEL_H

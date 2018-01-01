@@ -1,6 +1,9 @@
 // Copyright (c) 2017-2017 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include "tx_verify.h"
 
@@ -175,6 +178,10 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-negative");
         if (txout.nValue > MAX_MONEY)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-toolarge");
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+        if ((!txout.IsEmpty()) && txout.nValue < CENT) // Cent || CTransaction::nMinTxFee
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-toosmall"));
+#endif
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge");
@@ -228,12 +235,46 @@ bool Consensus::CheckTxInputs(const CTransaction& tx, CValidationState& state, c
                         strprintf("tried to spend coinbase at depth %d", nSpendHeight - coin.nHeight));
             }
 
+#if defined(PPCOINSTAKE)
+#if defined(BRAND_grantcoin)
+	#warning "can't check previous tx timestamps without CCoins ppcoinstake structures"
+#endif
+			// peercoin: check transaction timestamp
+			if (coins.nTime > nTime)
+				return state.DoS(100, error("CheckInputs() : tx %s timestamp %d earlier than input tx timestamp %d",
+				GetHash().ToString().c_str(), nTime, coins.nTime));
+#endif
+
             // Check for negative or overflow input values
             nValueIn += coin.out.nValue;
             if (!MoneyRange(coin.out.nValue) || !MoneyRange(nValueIn))
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
         }
+#if defined(PPCOINSTAKE)
+		if (IsCoinStake())
+		{
+			// ppcoin: coin stake tx earns reward instead of paying fee
+			uint64_t nCoinAge;
+			if (!GetCoinAge(state, inputs, nCoinAge))
+				return error("CheckInputs() : %s unable to get coin age for coinstake", GetHash().ToString().c_str());
+			int64_t nStakeReward = GetValueOut() - nValueIn;
+			CBlockIndex indexDummy;
+			indexDummy.nHeight = nSpendHeight; /* hack */
+			indexDummy.SetProofOfStake();  /* hack2 */
+#if defined(BRAND_cleanwatercoin)
+			#warning "check this further"
+			int64_t nStakeLimit = indexDummy.GetSeigniorage(0, nCoinAge);
+#else
+			int64_t nStakeLimit = indexDummy.GetSeigniorage(0, nCoinAge) - GetMinFee() + CTransaction::nMinTxFee;
+#endif
+			if (nStakeReward > nStakeLimit)
+				return state.DoS(100, error("CheckInputs() : %s stake reward %" PRId64 " exceeds limit %" PRId64 ,
+					GetHash().ToString().c_str(), nStakeReward, indexDummy.GetSeigniorage(0,nCoinAge) ));
+		}
+		else
+		{
+#endif
 
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,
@@ -243,7 +284,13 @@ bool Consensus::CheckTxInputs(const CTransaction& tx, CValidationState& state, c
         CAmount nTxFee = nValueIn - tx.GetValueOut();
         if (nTxFee < 0)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-negative");
-        nFees += nTxFee;
+#if defined(PPCOINSTAKE) || defined (BRAND_grantcoin)
+        if (nTxFee < tx.GetMinFee()) // CODECOIN
+            return state.DoS(100, error("CheckInputs() : %s nTxFee not paying required fee=%s, paid=%s",
+	tx.GetHash().ToString(), FormatMoney(tx.GetMinFee()), FormatMoney(nTxFee)),
+                             REJECT_INVALID, "bad-txns-fee-too-low");
+#endif
+        nFees += nTxFee; // TODO: check this with ppcoin logic. May not be correct for PPCOINSTAKE
         if (!MoneyRange(nFees))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-outofrange");
     return true;

@@ -692,8 +692,14 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
     BOOST_CHECK(IsStandardTx(t, reason));
 
     // Check dust with default relay fee:
-    CAmount nDustThreshold = 182 * dustRelayFee.GetFeePerK()/1000;
+    CAmount nDustThreshold = 182 * dustRelayFee.GetFeePerK()/1000 * 3;
+#if defined(BRAND_bitcoin)
+    BOOST_CHECK_EQUAL(nDustThreshold, 546);
+#elif defined(BRAND_litecoin)
     BOOST_CHECK_EQUAL(nDustThreshold, 54600);
+#else
+    #warning "Add correct BOOST_CHECK_EQUAL for coin" // TODO	
+#endif
     // dust:
     t.vout[0].nValue = nDustThreshold - 1;
     BOOST_CHECK(!IsStandardTx(t, reason));

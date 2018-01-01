@@ -54,7 +54,7 @@ struct CoinEntry {
 
 }
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe, true) 
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fWipe, true) 
 {
 }
 
@@ -286,16 +286,34 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
                 pindexNew->nNonce         = diskindex.nNonce;
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
+#if defined(FEATURE_MONEYSUPPLY)
+				pindexNew->nMoneySupply   = diskindex.nMoneySupply;
+#endif
+#if defined(PPCOINSTAKE)
+				pindexNew->nMint		  = diskindex.nMint;
+				pindexNew->nFlags		  = diskindex.nFlags;
+				pindexNew->nStakeModifier = diskindex.nStakeModifier;
+				pindexNew->prevoutStake   = diskindex.prevoutStake;
+				pindexNew->nStakeTime	  = diskindex.nStakeTime;
+				pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
+				// ppcoin: build setStakeSeen
+				if (pindexNew->IsProofOfStake()){
+					//printf("blk %d StakeTime %d\n", pindexNew->nHeight, pindexNew->nStakeTime);
+					setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
+				}
+#endif
 
+#if defined(LITECOIN_SCRYPT_POWHASH) || defined(FEATURE_FAST_LOAD)
                 // Litecoin: Disable PoW Sanity check while loading block index from disk.
                 // We use the sha256 hash for the block index for performance reasons, which is recorded for later use.
                 // CheckProofOfWork() uses the scrypt hash which is discarded after a block is accepted.
                 // While it is technically feasible to verify the PoW, doing so takes several minutes as it
                 // requires recomputing every PoW hash during every Litecoin startup.
                 // We opt instead to simply trust the data that is on your local disk.
-                //if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams))
-                //    return error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
-
+#else
+                if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams))
+                    return error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
+#endif
                 pcursor->Next();
             } else {
                 return error("%s: failed to read value", __func__);

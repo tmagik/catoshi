@@ -1,16 +1,22 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_PRIMITIVES_TRANSACTION_H
-#define BITCOIN_PRIMITIVES_TRANSACTION_H
+#ifndef CODECOIN_PRIMITIVES_TRANSACTION_H
+#define CODECOIN_PRIMITIVES_TRANSACTION_H
 
+#include <codecoin.h>
 #include <stdint.h>
-#include "amount.h"
-#include "script/script.h"
-#include "serialize.h"
-#include "uint256.h"
+#include <amount.h>
+#include <script/script.h>
+#include <serialize.h>
+#include <uintBIG.h>
 
 static const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
 
@@ -58,7 +64,7 @@ public:
  * transaction's output that it claims and a signature that matches the
  * output's public key.
  */
-class CTxIn
+class TxIn
 {
 public:
     COutPoint prevout;
@@ -93,13 +99,13 @@ public:
      * 9 bits. */
     static const int SEQUENCE_LOCKTIME_GRANULARITY = 9;
 
-    CTxIn()
+    TxIn()
     {
         nSequence = SEQUENCE_FINAL;
     }
 
-    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), uint32_t nSequenceIn=SEQUENCE_FINAL);
-    CTxIn(uint256 hashPrevTx, uint32_t nOut, CScript scriptSigIn=CScript(), uint32_t nSequenceIn=SEQUENCE_FINAL);
+    explicit TxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), uint32_t nSequenceIn=SEQUENCE_FINAL);
+    TxIn(uint256 hashPrevTx, uint32_t nOut, CScript scriptSigIn=CScript(), uint32_t nSequenceIn=SEQUENCE_FINAL);
 
     ADD_SERIALIZE_METHODS;
 
@@ -110,14 +116,14 @@ public:
         READWRITE(nSequence);
     }
 
-    friend bool operator==(const CTxIn& a, const CTxIn& b)
+    friend bool operator==(const TxIn& a, const TxIn& b)
     {
         return (a.prevout   == b.prevout &&
                 a.scriptSig == b.scriptSig &&
                 a.nSequence == b.nSequence);
     }
 
-    friend bool operator!=(const CTxIn& a, const CTxIn& b)
+    friend bool operator!=(const TxIn& a, const TxIn& b)
     {
         return !(a == b);
     }
@@ -128,25 +134,25 @@ public:
 /** An output of a transaction.  It contains the public key that the next input
  * must be able to sign with to claim it.
  */
-class CTxOut
+class TxOut
 {
 public:
     CAmount nValue;
     CScript scriptPubKey;
 
-    CTxOut()
+    TxOut()
     {
         SetNull();
     }
 
-    CTxOut(const CAmount& nValueIn, CScript scriptPubKeyIn);
+    TxOut(const CAmount& nValueIn, CScript scriptPubKeyIn);
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(nValue);
-        READWRITE(scriptPubKey);
+        READWRITE(*(CScriptBase*)(&scriptPubKey));
     }
 
     void SetNull()
@@ -160,13 +166,13 @@ public:
         return (nValue == -1);
     }
 
-    friend bool operator==(const CTxOut& a, const CTxOut& b)
+    friend bool operator==(const TxOut& a, const TxOut& b)
     {
         return (a.nValue       == b.nValue &&
                 a.scriptPubKey == b.scriptPubKey);
     }
 
-    friend bool operator!=(const CTxOut& a, const CTxOut& b)
+    friend bool operator!=(const TxOut& a, const TxOut& b)
     {
         return !(a == b);
     }
@@ -174,7 +180,12 @@ public:
     std::string ToString() const;
 };
 
-struct CMutableTransaction;
+/* Codecoin TODO: combine below with fancy C++ features (templates & 
+ * https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error )
+ * to eliminate duplicate code
+ */
+
+class MutableTransaction;
 
 /**
  * Basic transaction serialization format:
@@ -243,7 +254,7 @@ inline void SerializeTransaction(const TxType& tx, Stream& s) {
     }
     if (flags) {
         /* Use extended format in case witnesses are to be serialized. */
-        std::vector<CTxIn> vinDummy;
+        std::vector<TxIn> vinDummy;
         s << vinDummy;
         s << flags;
     }
@@ -261,7 +272,7 @@ inline void SerializeTransaction(const TxType& tx, Stream& s) {
 /** The basic transaction that is broadcasted on the network and contained in
  * blocks.  A transaction can contain multiple inputs and outputs.
  */
-class CTransaction
+class Transaction
 {
 public:
     // Default transaction version.
@@ -278,9 +289,14 @@ public:
     // actually immutable; deserialization and assignment are implemented,
     // and bypass the constness. This is safe, as they update the entire
     // structure, including the hash.
+    // Catoshi sez: There needs to be a darn good reason why these might
+    // not be in the same order here as they are in the wire protocol.
+    // Claims of size reduction without confirmation on multiple architectures (as in
+    // https://github.com/bitcoin/bitcoin/commit/59e17899a762c08ce9a9edd7f464e884edbe8654
+    // are not particularly usefull
     const int32_t nVersion;
-    const std::vector<CTxIn> vin;
-    const std::vector<CTxOut> vout;
+    const std::vector<TxIn> vin;
+    const std::vector<TxOut> vout;
     const uint32_t nLockTime;
 
 private:
@@ -291,11 +307,11 @@ private:
 
 public:
     /** Construct a CTransaction that qualifies as IsNull() */
-    CTransaction();
+    Transaction();
 
     /** Convert a CMutableTransaction into a CTransaction. */
-    CTransaction(const CMutableTransaction &tx);
-    CTransaction(CMutableTransaction &&tx);
+    Transaction(const MutableTransaction &tx);
+    Transaction(MutableTransaction &&tx);
 
     template <typename Stream>
     inline void Serialize(Stream& s) const {
@@ -305,7 +321,7 @@ public:
     /** This deserializing constructor is provided instead of an Unserialize method.
      *  Unserialize is not possible, since it would require overwriting const fields. */
     template <typename Stream>
-    CTransaction(deserialize_type, Stream& s) : CTransaction(CMutableTransaction(deserialize, s)) {}
+    Transaction(deserialize_type, Stream& s) : Transaction(CMutableTransaction(deserialize, s)) {}
 
     bool IsNull() const {
         return vin.empty() && vout.empty();
@@ -323,6 +339,12 @@ public:
     // GetValueIn() is a method on CCoinsViewCache, because
     // inputs must be known to compute value in.
 
+    // Compute priority, given priority of inputs and (optionally) tx size
+    double ComputePriority(double dPriorityInputs, unsigned int nTxSize=0) const;
+
+    // Compute modified tx size for priority calculation (optionally given tx size)
+    unsigned int CalculateModifiedSize(unsigned int nTxSize=0) const;
+
     /**
      * Get the total transaction size in bytes, including witness data.
      * "Total Size" defined in BIP141 and BIP144.
@@ -335,12 +357,12 @@ public:
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
 
-    friend bool operator==(const CTransaction& a, const CTransaction& b)
+    friend bool operator==(const Transaction& a, const Transaction& b)
     {
         return a.hash == b.hash;
     }
 
-    friend bool operator!=(const CTransaction& a, const CTransaction& b)
+    friend bool operator!=(const Transaction& a, const Transaction& b)
     {
         return a.hash != b.hash;
     }
@@ -358,16 +380,81 @@ public:
     }
 };
 
-/** A mutable version of CTransaction. */
-struct CMutableTransaction
+#if defined(BRAND_grantcoin) /* FIXME update this later */
+class MutableTransactionGRT;
+
+class TransactionGRT : public Transaction
 {
+private:
+	void UpdateHash() const;
+	
+	enum GetMinFee_mode
+	{
+		GMF_BLOCK,
+		GMF_RELAY,
+		GMF_SEND,
+	};
+
+public:
+/** TODO: this goes into src/policy/fees.cpp when latest bitcoin code is merged */
+/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
+	const static int64_t nMinTxFee = CENT;
+/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
+	const static int64_t nMinRelayTxFee = CENT;
+
+    uint32_t nTime; // FIXME just make this 'Time'  
+
+    /** Construct a CTransaction that qualifies as IsNull() */
+    TransactionGRT();
+
+    /** Convert a CMutableTransaction into a CTransaction. */
+    TransactionGRT(const MutableTransactionGRT &tx);
+
+    /* must be replicated or serialization is pulled from base object */
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(*const_cast<int32_t*>(&this->nVersion));
+        nVersion = this->nVersion;
+        READWRITE(*const_cast<uint32_t*>(&this->nTime));
+        READWRITE(*const_cast<std::vector<TxIn>*>(&vin));
+        READWRITE(*const_cast<std::vector<TxOut>*>(&vout));
+        READWRITE(*const_cast<uint32_t*>(&nLockTime));
+        if (ser_action.ForRead())
+            UpdateHash();
+    }
+
+	// Apply the effects of this transaction on the UTXO set represented by view
+	//void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash);
+
+	int64_t GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK, unsigned int nBytes=0) const;
+
+    /* What stake (ppcoin derivatives, + grantcoin do */
+    bool IsCoinBase() const
+    {
+        return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+    }
+
+
+};
+#endif /* BRAND_grantcoin */
+
+/** A mutable version of CTransaction. */
+/* let codecoin.h/BITCOIN_COMPAT defines instantiate the right class name */
+class MutableTransaction
+{
+public:
     int32_t nVersion;
-    std::vector<CTxIn> vin;
-    std::vector<CTxOut> vout;
+#if 0 && defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+    uint32_t nTime;
+#endif
+    std::vector<TxIn> vin;
+    std::vector<TxOut> vout;
     uint32_t nLockTime;
 
-    CMutableTransaction();
-    CMutableTransaction(const CTransaction& tx);
+    MutableTransaction();
+    MutableTransaction(const Transaction& tx);
 
     template <typename Stream>
     inline void Serialize(Stream& s) const {
@@ -381,16 +468,16 @@ struct CMutableTransaction
     }
 
     template <typename Stream>
-    CMutableTransaction(deserialize_type, Stream& s) {
+    MutableTransaction(deserialize_type, Stream& s) {
         Unserialize(s);
     }
 
-    /** Compute the hash of this CMutableTransaction. This is computed on the
-     * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
+    /** Compute the hash of this MutableTransaction. This is computed on the
+     * fly, as opposed to GetHash() in Transaction, which uses a cached result.
      */
     uint256 GetHash() const;
 
-    friend bool operator==(const CMutableTransaction& a, const CMutableTransaction& b)
+    friend bool operator==(const MutableTransaction& a, const CMutableTransaction& b)
     {
         return a.GetHash() == b.GetHash();
     }
@@ -406,8 +493,36 @@ struct CMutableTransaction
     }
 };
 
+#if defined(BRAND_grantcoin) // FIXME later
+class MutableTransactionGRT: public MutableTransaction
+{
+public:
+	uint32_t nTime; // FIXME: evaluate if this should be signed or unsigned
+
+	MutableTransactionGRT();
+	MutableTransactionGRT(const TransactionGRT& tx);
+
+	template <typename Stream, typename Operation>
+	inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+		READWRITE(this->nVersion);
+		nVersion = this->nVersion;
+		READWRITE(nTime);
+		READWRITE(vin);
+		READWRITE(vout);
+		READWRITE(nLockTime);
+	}
+
+	uint256 GetHash() const;
+};
+#endif
+
 typedef std::shared_ptr<const CTransaction> CTransactionRef;
 static inline CTransactionRef MakeTransactionRef() { return std::make_shared<const CTransaction>(); }
 template <typename Tx> static inline CTransactionRef MakeTransactionRef(Tx&& txIn) { return std::make_shared<const CTransaction>(std::forward<Tx>(txIn)); }
 
-#endif // BITCOIN_PRIMITIVES_TRANSACTION_H
+#if defined(BITCOIN_COMPAT)
+typedef TxIn CTxIn;
+typedef TxOut CTxOut;
+#endif
+
+#endif // CODECOIN_PRIMITIVES_TRANSACTION_H

@@ -1,15 +1,20 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2012 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_UNDO_H
-#define BITCOIN_UNDO_H
+#ifndef CODECOIN_UNDO_H
+#define CODECOIN_UNDO_H
 
-#include "compressor.h" 
-#include "consensus/consensus.h"
-#include "primitives/transaction.h"
-#include "serialize.h"
+#include <compressor.h>
+#include <consensus/consensus.h>
+#include <primitives/transaction.h>
+#include <serialize.h>
 
 /** Undo information for a CTxIn
  *
@@ -33,7 +38,7 @@ public:
         ::Serialize(s, CTxOutCompressor(REF(txout->out)));
     }
 
-    TxInUndoSerializer(const Coin* coin) : txout(coin) {}
+    explicit TxInUndoSerializer(const Coin* coin) : txout(coin) {}
 };
 
 class TxInUndoDeserializer
@@ -57,7 +62,7 @@ public:
         ::Unserialize(s, REF(CTxOutCompressor(REF(txout->out))));
     }
 
-    TxInUndoDeserializer(Coin* coin) : txout(coin) {}
+    explicit TxInUndoDeserializer(Coin* coin) : txout(coin) {}
 };
 
 static const size_t MIN_TRANSACTION_INPUT_WEIGHT = WITNESS_SCALE_FACTOR * ::GetSerializeSize(CTxIn(), SER_NETWORK, PROTOCOL_VERSION);
@@ -108,5 +113,19 @@ public:
         READWRITE(vtxundo);
     }
 };
+
+/* Prototypes for undo.cpp */
+/** Undo information for a CBlock */
+/* Catoshi sez: We had a perfectly good CBlockUndo:: object, why did we throw it away? */
+
+class CDiskBlockPos;
+class uint256;
+
+#include "protocol.h"
+
+bool UndoWriteToDisk(const CBlockUndo& blockundo, CDiskBlockPos& pos, const uint256& hashBlock, const CMessageHeader::MessageStartChars& messageStart);
+
+bool UndoReadFromDisk(CBlockUndo& blockundo, const CBlockIndex *pindex);
+
 
 #endif // BITCOIN_UNDO_H

@@ -7,7 +7,7 @@
 #define BITCOIN_MERKLEBLOCK_H
 
 #include "serialize.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "primitives/block.h"
 #include "bloom.h"
 

@@ -8,7 +8,7 @@
 
 #include "crypto/chacha20.h"
 #include "crypto/common.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 #include <stdint.h>
 

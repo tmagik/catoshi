@@ -7,7 +7,7 @@
 
 #include "amount.h"
 #include "feerate.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "random.h"
 #include "sync.h"
 

@@ -255,8 +255,14 @@ BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
 
     // Before MedianTimePast of the chain has crossed nStartTime, the bit
     // should not be set.
-    CBlockIndex *lastBlock = nullptr;
+    CBlockIndex *lastBlock = NULL;
+#if defined(BRAND_bitcoin)
+    lastBlock = firstChain.Mine(2016, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+#elif defined(BRAND_litecoin)
     lastBlock = firstChain.Mine(8064, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+#else
+#warning "fix versionbits lastblock for chosen BRAND
+#endif
     BOOST_CHECK_EQUAL(ComputeBlockVersion(lastBlock, mainnetParams) & (1<<bit), 0);
 
     // Mine 2011 more blocks at the old time, and check that CBV isn't setting the bit yet.
