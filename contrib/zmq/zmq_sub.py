@@ -8,8 +8,8 @@
 
     Bitcoin should be started with the command line arguments:
         bitcoind -testnet -daemon \
-                -zmqpubhashblock=tcp://127.0.0.1:28332 \
                 -zmqpubrawtx=tcp://127.0.0.1:28332 \
+                -zmqpubrawblock=tcp://127.0.0.1:28332 \
                 -zmqpubhashtx=tcp://127.0.0.1:28332 \
                 -zmqpubhashblock=tcp://127.0.0.1:28332
 
@@ -32,9 +32,9 @@ import sys
 
 if not (sys.version_info.major >= 3 and sys.version_info.minor >= 5):
     print("This example only works with Python 3.5 and greater")
-    exit(1)
+    sys.exit(1)
 
-port = 29332
+port = 28332
 
 class ZMQHandler():
     def __init__(self):

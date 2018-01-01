@@ -7,15 +7,14 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
+#include <util.h>
 
-#include "util.h"
-
-#include "clientversion.h"
-#include "primitives/transaction.h"
-#include "sync.h"
-#include "utilstrencodings.h"
-#include "utilmoneystr.h"
-#include "test/test_bitcoin.h"
+#include <clientversion.h>
+#include <primitives/transaction.h>
+#include <sync.h>
+#include <utilstrencodings.h>
+#include <utilmoneystr.h>
+#include <test/test_bitcoin.h>
 
 #include <stdint.h>
 #include <vector>
@@ -257,6 +256,31 @@ BOOST_AUTO_TEST_CASE(util_IsHex)
     BOOST_CHECK(!IsHex("eleven"));
     BOOST_CHECK(!IsHex("00xx00"));
     BOOST_CHECK(!IsHex("0x0000"));
+}
+
+BOOST_AUTO_TEST_CASE(util_IsHexNumber)
+{
+    BOOST_CHECK(IsHexNumber("0x0"));
+    BOOST_CHECK(IsHexNumber("0"));
+    BOOST_CHECK(IsHexNumber("0x10"));
+    BOOST_CHECK(IsHexNumber("10"));
+    BOOST_CHECK(IsHexNumber("0xff"));
+    BOOST_CHECK(IsHexNumber("ff"));
+    BOOST_CHECK(IsHexNumber("0xFfa"));
+    BOOST_CHECK(IsHexNumber("Ffa"));
+    BOOST_CHECK(IsHexNumber("0x00112233445566778899aabbccddeeffAABBCCDDEEFF"));
+    BOOST_CHECK(IsHexNumber("00112233445566778899aabbccddeeffAABBCCDDEEFF"));
+
+    BOOST_CHECK(!IsHexNumber(""));   // empty string not allowed
+    BOOST_CHECK(!IsHexNumber("0x")); // empty string after prefix not allowed
+    BOOST_CHECK(!IsHexNumber("0x0 ")); // no spaces at end,
+    BOOST_CHECK(!IsHexNumber(" 0x0")); // or beginning,
+    BOOST_CHECK(!IsHexNumber("0x 0")); // or middle,
+    BOOST_CHECK(!IsHexNumber(" "));    // etc.
+    BOOST_CHECK(!IsHexNumber("0x0ga")); // invalid character
+    BOOST_CHECK(!IsHexNumber("x0"));    // broken prefix
+    BOOST_CHECK(!IsHexNumber("0x0x00")); // two prefixes not allowed
+
 }
 
 BOOST_AUTO_TEST_CASE(util_seed_insecure_rand)

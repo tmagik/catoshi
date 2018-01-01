@@ -11,15 +11,11 @@
 #include <netdb.h>
 #include <endian.h>
 #endif
-#if defined(HAVE_CONFIG_H)
-#include "config/bitcoin-config.h"
-#endif
 
-#include "codecoingui.h"
+#include "bitcoingui.h"
 
 #include "chainparams.h"
 #include "clientmodel.h"
-#include "fs.h"
 #include "guiconstants.h"
 #include "guiutil.h"
 #include "intro.h"
@@ -31,19 +27,19 @@
 #include "winshutdownmonitor.h"
 
 #ifdef ENABLE_WALLET
-#include "paymentserver.h"
-#include "walletmodel.h"
+#include <qt/paymentserver.h>
+#include <qt/walletmodel.h>
 #endif
 
-#include "init.h"
-#include "rpc/server.h"
-#include "scheduler.h"
-#include "ui_interface.h"
-#include "util.h"
-#include "warnings.h"
+#include <init.h>
+#include <rpc/server.h>
+#include <scheduler.h>
+#include <ui_interface.h>
+#include <util.h>
+#include <warnings.h>
 
 #ifdef ENABLE_WALLET
-#include "wallet/wallet.h"
+#include <wallet/wallet.h>
 #endif
 
 #include <stdint.h>
@@ -236,7 +232,7 @@ public:
     void requestShutdown();
 
     /// Get process return value
-    int getReturnValue() { return returnValue; }
+    int getReturnValue() const { return returnValue; }
 
     /// Get window identifier of QMainWindow (BitcoinGUI)
     WId getMainWinId() const;
@@ -270,7 +266,7 @@ private:
     void startThread();
 };
 
-#include "bitcoin.moc"
+#include <qt/bitcoin.moc>
 
 BitcoinCore::BitcoinCore():
     QObject()
@@ -540,7 +536,7 @@ void BitcoinApplication::shutdownResult()
 
 void BitcoinApplication::handleRunawayException(const QString &message)
 {
-    QMessageBox::critical(0, "Runaway exception", BitcoinGUI::tr("A fatal error occurred. Litecoin can no longer continue safely and will quit.") + QString("\n\n") + message);
+    QMessageBox::critical(0, "Runaway exception", BitcoinGUI::tr("A fatal error occurred. Bitcoin can no longer continue safely and will quit.") + QString("\n\n") + message);
     ::exit(EXIT_FAILURE);
 }
 

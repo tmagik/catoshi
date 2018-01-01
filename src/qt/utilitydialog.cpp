@@ -7,20 +7,20 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "utilitydialog.h"
+#include <qt/utilitydialog.h>
 
-#include "ui_helpmessagedialog.h"
+#include <qt/forms/ui_helpmessagedialog.h>
 
-#include "bitcoingui.h"
-#include "clientmodel.h"
-#include "guiconstants.h"
-#include "intro.h"
-#include "paymentrequestplus.h"
-#include "guiutil.h"
+#include <qt/bitcoingui.h>
+#include <qt/clientmodel.h>
+#include <qt/guiconstants.h>
+#include <qt/intro.h>
+#include <qt/paymentrequestplus.h>
+#include <qt/guiutil.h>
 
-#include "clientversion.h"
-#include "init.h"
-#include "util.h"
+#include <clientversion.h>
+#include <init.h>
+#include <util.h>
 
 #include <stdio.h>
 
@@ -71,7 +71,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
     } else {
         setWindowTitle(tr("Command-line options"));
         QString header = tr("Usage:") + "\n" +
-            "  litecoin-qt [" + tr("command-line options") + "]                     " + "\n";
+            "  bitcoin-qt [" + tr("command-line options") + "]                     " + "\n";
         QTextCursor cursor(ui->helpMessage->document());
         cursor.insertText(version);
         cursor.insertBlock();

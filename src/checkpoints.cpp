@@ -7,14 +7,12 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
+#include <checkpoints.h>
 
-#include "checkpoints.h"
-
-#include "chain.h"
-#include "chainparams.h"
-#include "reverse_iterator.h"
-#include "validation.h"
-#include "uintBIG.h"
+#include <chain.h>
+#include <chainparams.h>
+#include <reverse_iterator.h>
+#include <validation.h>
 
 #include <stdint.h>
 

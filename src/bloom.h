@@ -10,8 +10,7 @@
 #ifndef CODECOIN_BLOOM_H
 #define CODECOIN_BLOOM_H
 
-#include "serialize.h"
-#include "primitives/transaction.h"
+#include <serialize.h>
 
 #include <vector>
 

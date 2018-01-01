@@ -7,10 +7,10 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "arith_uint256.h"
-#include "uintBIG.h"
-#include "version.h"
-#include "test/test_bitcoin.h"
+#include <arith_uint256.h>
+#include <uint256.h>
+#include <version.h>
+#include <test/test_bitcoin.h>
 
 #include <boost/test/unit_test.hpp>
 #include <stdint.h>

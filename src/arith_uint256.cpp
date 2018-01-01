@@ -3,11 +3,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "arith_uint256.h"
+#include <arith_uint256.h>
 
-#include "uintBIG.h"
-#include "utilstrencodings.h"
-#include "crypto/common.h"
+#include <uintBIG.h>
+#include <utilstrencodings.h>
+#include <crypto/common.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -175,9 +175,9 @@ unsigned int base_uint<BITS>::bits() const
 {
     for (int pos = WIDTH - 1; pos >= 0; pos--) {
         if (pn[pos]) {
-            for (int nbits = 31; nbits > 0; nbits--) {
-                if (pn[pos] & 1 << nbits)
-                    return 32 * pos + nbits + 1;
+            for (int bits = 31; bits > 0; bits--) {
+                if (pn[pos] & 1 << bits)
+                    return 32 * pos + bits + 1;
             }
             return 32 * pos + 1;
         }

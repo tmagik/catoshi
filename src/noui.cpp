@@ -6,10 +6,10 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "noui.h"
+#include <noui.h>
 
-#include "ui_interface.h"
-#include "util.h"
+#include <ui_interface.h>
+#include <util.h>
 
 #include <cstdio>
 #include <stdint.h>
