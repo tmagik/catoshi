@@ -10,13 +10,13 @@
 #ifndef CODECOIN_DBWRAPPER_H
 #define CODECOIN_DBWRAPPER_H
 
-#include "clientversion.h"
-#include "fs.h"
-#include "serialize.h"
-#include "streams.h"
-#include "util.h"
-#include "utilstrencodings.h"
-#include "version.h"
+#include <clientversion.h>
+#include <fs.h>
+#include <serialize.h>
+#include <streams.h>
+#include <util.h>
+#include <utilstrencodings.h>
+#include <version.h>
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
@@ -37,7 +37,7 @@ static const size_t DBWRAPPER_PREALLOC_VALUE_SIZE = 1024;
 class dbwrapper_error : public std::runtime_error
 {
 public:
-    dbwrapper_error(const std::string& msg) : std::runtime_error(msg) {}
+    explicit dbwrapper_error(const std::string& msg) : std::runtime_error(msg) {}
 };
 
 class CDBWrapper;
@@ -76,7 +76,7 @@ public:
     /**
      * @param[in] _parent   CDBWrapper that this batch is to be submitted to
      */
-    CDBBatch(const CDBWrapper &_parent) : parent(_parent), ssKey(SER_DISK, CLIENT_VERSION), ssValue(SER_DISK, CLIENT_VERSION), size_estimate(0) { };
+    explicit CDBBatch(const CDBWrapper &_parent) : parent(_parent), ssKey(SER_DISK, CLIENT_VERSION), ssValue(SER_DISK, CLIENT_VERSION), size_estimate(0) { };
 
     void Clear()
     {
@@ -145,7 +145,7 @@ public:
         parent(_parent), piter(_piter) { };
     ~CDBIterator();
 
-    bool Valid();
+    bool Valid() const;
 
     void SeekToFirst();
 
@@ -192,6 +192,9 @@ class CDBWrapper
 {
     friend const std::vector<unsigned char>& dbwrapper_private::GetObfuscateKey(const CDBWrapper &w);
 private:
+    //! custom environment this database is using (may be nullptr in case of default environment)
+    leveldb::Env* penv;
+
     //! database options used
     leveldb::Options options;
 
@@ -225,10 +228,10 @@ public:
     /**
      * @param[in] path        Location in the filesystem where leveldb data will be stored.
      * @param[in] nCacheSize  Configures various leveldb cache settings.
+     * @param[in] fMemory     If true, use leveldb's memory environment.
      * @param[in] fWipe       If true, remove all existing data.
      * @param[in] obfuscate   If true, store data obfuscated via simple XOR. If false, XOR
      *                        with a zero'd byte array.
-     * @param[in] penv        Pointer to (optional) DB_env type to allow things like in-memory
      */
     CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe = false, bool obfuscate = false, DB_env * penv = nullptr);
     ~CDBWrapper();
@@ -352,5 +355,5 @@ public:
 
 };
 
-#endif // BITCOIN_DBWRAPPER_H
+#endif // CODECOIN_DBWRAPPER_H
 

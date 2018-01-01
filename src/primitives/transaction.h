@@ -11,7 +11,6 @@
 #ifndef CODECOIN_PRIMITIVES_TRANSACTION_H
 #define CODECOIN_PRIMITIVES_TRANSACTION_H
 
-#include <codecoin.h>
 #include <stdint.h>
 #include <amount.h>
 #include <script/script.h>

@@ -1,18 +1,16 @@
 // Copyright (c) 2015-2016 The Bitcoin Core developers
+// Copyright (c) 2017 The Zcash developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Nu, Bit, Lite, PP, Peerunity, Solar, URO, Grant ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
-// Distributed under the Affero GNU General public license version 3
-// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "torcontrol.h"
-#include "utilstrencodings.h"
-#include "netbase.h"
-#include "net.h"
-#include "util.h"
-#include "crypto/hmac_sha256.h"
+#include <torcontrol.h>
+#include <utilstrencodings.h>
+#include <netbase.h>
+#include <net.h>
+#include <util.h>
+#include <crypto/hmac_sha256.h>
 
 #include <vector>
 #include <deque>
@@ -80,7 +78,7 @@ public:
 
     /** Create a new TorControlConnection.
      */
-    TorControlConnection(struct event_base *base);
+    explicit TorControlConnection(struct event_base *base);
     ~TorControlConnection();
 
     /**
@@ -125,7 +123,7 @@ private:
 };
 
 TorControlConnection::TorControlConnection(struct event_base *_base):
-    base(_base), b_conn(0)
+    base(_base), b_conn(nullptr)
 {
 }
 
@@ -231,7 +229,7 @@ bool TorControlConnection::Disconnect()
 {
     if (b_conn)
         bufferevent_free(b_conn);
-    b_conn = 0;
+    b_conn = nullptr;
     return true;
 }
 
@@ -480,7 +478,7 @@ TorController::~TorController()
 {
     if (reconnect_ev) {
         event_free(reconnect_ev);
-        reconnect_ev = 0;
+        reconnect_ev = nullptr;
     }
     if (service.IsValid()) {
         RemoveLocal(service);
@@ -774,7 +772,7 @@ void StopTorControl()
     if (gBase) {
         torControlThread.join();
         event_base_free(gBase);
-        gBase = 0;
+        gBase = nullptr;
     }
 }
 

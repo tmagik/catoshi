@@ -11,12 +11,12 @@
 #ifndef CODECOIN_HASH_H
 #define CODECOIN_HASH_H
 
-#include "crypto/ripemd160.h"
-#include "crypto/sha256.h"
-#include "prevector.h"
-#include "serialize.h"
-#include "uintBIG.h"
-#include "version.h"
+#include <crypto/ripemd160.h>
+#include <crypto/sha256.h>
+#include <prevector.h>
+#include <serialize.h>
+#include <uintBIG.h>
+#include <version.h>
 
 #include <vector>
 

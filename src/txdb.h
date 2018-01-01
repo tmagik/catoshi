@@ -11,9 +11,9 @@
 #ifndef CODECOIN_TXDB_H
 #define CODECOIN_TXDB_H
 
-#include "coins.h"
-#include "dbwrapper.h"
-#include "chain.h"
+#include <coins.h>
+#include <dbwrapper.h>
+#include <chain.h>
 
 #include <map>
 #include <string>
@@ -27,7 +27,11 @@ class uint256;
 //! No need to periodic flush if at least this much space still available.
 static constexpr int MAX_BLOCK_COINSDB_USAGE = 10;
 //! -dbcache default (MiB)
+#if defined(BRAND_bitcoin)
 static const int64_t nDefaultDbCache = 450;
+#else
+static const int64_t nDefaultDbCache = 300;
+#endif
 //! -dbbatchsize default (bytes)
 static const int64_t nDefaultDbBatchSize = 16 << 20;
 //! max. -dbcache (MiB)
@@ -69,7 +73,7 @@ struct CDiskTxPos : public CDiskBlockPos
 };
 
 /** CCoinsView backed by the coin database (chainstate/) */
-class CCoinsViewDB : public CCoinsView
+class CCoinsViewDB final : public CCoinsView
 {
 protected:
     CDBWrapper db;
@@ -115,7 +119,7 @@ private:
 class CBlockTreeDB : public CDBWrapper
 {
 public:
-    CBlockTreeDB(size_t nCacheSize, bool fWipe = false);
+    explicit CBlockTreeDB(size_t nCacheSize, bool fWipe = false);
 private:
     CBlockTreeDB(const CBlockTreeDB&);
     void operator=(const CBlockTreeDB&);
@@ -125,12 +129,12 @@ public:
     bool ReadBestInvalidWork(CBigNum& bnBestInvalidWork);
     bool WriteBestInvalidWork(const CBigNum& bnBestInvalidWork);
 #endif
-    bool ReadBlockFileInfo(int nFile, CBlockFileInfo &fileinfo);
+    bool ReadBlockFileInfo(int nFile, CBlockFileInfo &info);
     bool ReadLastBlockFile(int &nFile);
-    bool WriteReindexing(bool fReindex);
-    bool ReadReindexing(bool &fReindex);
+    bool WriteReindexing(bool fReindexing);
+    bool ReadReindexing(bool &fReindexing);
     bool ReadTxIndex(const uint256 &txid, CDiskTxPos &pos);
-    bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &list);
+    bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &vect);
     bool WriteFlag(const std::string &name, bool fValue);
     bool ReadFlag(const std::string &name, bool &fValue);
     bool LoadBlockIndexGuts(const Consensus::Params& consensusParams, std::function<CBlockIndex*(const uint256&)> insertBlockIndex);

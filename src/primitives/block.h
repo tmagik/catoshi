@@ -184,4 +184,4 @@ struct CBlockLocator
     }
 };
 
-#endif // BITCOIN_PRIMITIVES_BLOCK_H
+#endif // CODECOIN_PRIMITIVES_BLOCK_H

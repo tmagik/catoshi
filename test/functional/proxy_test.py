@@ -41,12 +41,9 @@ from test_framework.netutil import test_ipv6_local
 
 RANGE_BEGIN = PORT_MIN + 2 * PORT_RANGE  # Start after p2p and rpc ports
 
-
 class ProxyTest(BitcoinTestFramework):
-    def __init__(self):
-        super().__init__()
+    def set_test_params(self):
         self.num_nodes = 4
-        self.setup_clean_chain = False
 
     def setup_nodes(self):
         self.have_ipv6 = test_ipv6_local()
@@ -89,7 +86,8 @@ class ProxyTest(BitcoinTestFramework):
             ]
         if self.have_ipv6:
             args[3] = ['-listen', '-proxy=[%s]:%i' % (self.conf3.addr),'-proxyrandomize=0', '-noonion']
-        self.nodes = self.start_nodes(self.num_nodes, self.options.tmpdir, extra_args=args)
+        self.add_nodes(self.num_nodes, extra_args=args)
+        self.start_nodes()
 
     def node_test(self, node, proxies, auth, test_onion=True):
         rv = []
@@ -122,24 +120,24 @@ class ProxyTest(BitcoinTestFramework):
 
         if test_onion:
             # Test: outgoing onion connection through node
-            node.addnode("bitcoinostk4e4re.onion:9333", "onetry")
+            node.addnode("bitcoinostk4e4re.onion:8333", "onetry")
             cmd = proxies[2].queue.get()
             assert(isinstance(cmd, Socks5Command))
             assert_equal(cmd.atyp, AddressType.DOMAINNAME)
             assert_equal(cmd.addr, b"bitcoinostk4e4re.onion")
-            assert_equal(cmd.port, 9333)
+            assert_equal(cmd.port, 8333)
             if not auth:
                 assert_equal(cmd.username, None)
                 assert_equal(cmd.password, None)
             rv.append(cmd)
 
         # Test: outgoing DNS name connection through node
-        node.addnode("node.noumenon:9333", "onetry")
+        node.addnode("node.noumenon:8333", "onetry")
         cmd = proxies[3].queue.get()
         assert(isinstance(cmd, Socks5Command))
         assert_equal(cmd.atyp, AddressType.DOMAINNAME)
         assert_equal(cmd.addr, b"node.noumenon")
-        assert_equal(cmd.port, 9333)
+        assert_equal(cmd.port, 8333)
         if not auth:
             assert_equal(cmd.username, None)
             assert_equal(cmd.password, None)

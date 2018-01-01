@@ -7,14 +7,11 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
+#include <dbwrapper.h>
+#include <uint256.h>
+#include <random.h>
+#include <test/test_bitcoin.h>
 
-#include "dbwrapper.h"
-#include "uintBIG.h"
-#include "random.h"
-#include "test/test_bitcoin.h"
-
-#include <boost/assign/std/vector.hpp> // for 'operator+=()'
-#include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
 
 // Test if a string consists entirely of null characters

@@ -7,18 +7,18 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "paymentserver.h"
+#include <qt/paymentserver.h>
 
-#include "bitcoinunits.h"
-#include "guiutil.h"
-#include "optionsmodel.h"
+#include <qt/bitcoinunits.h>
+#include <qt/guiutil.h>
+#include <qt/optionsmodel.h>
 
-#include "base58.h"
-#include "chainparams.h"
-#include "policy/policy.h"
-#include "ui_interface.h"
-#include "util.h"
-#include "wallet/wallet.h"
+#include <base58.h>
+#include <chainparams.h>
+#include <policy/policy.h>
+#include <ui_interface.h>
+#include <util.h>
+#include <wallet/wallet.h>
 
 #include <cstdlib>
 
@@ -52,14 +52,16 @@
 #endif
 
 const int BITCOIN_IPC_CONNECT_TIMEOUT = 1000; // milliseconds
-const QString BITCOIN_IPC_PREFIX("litecoin:");
+const QString BITCOIN_IPC_PREFIX( BRAND_lower ":");
 // BIP70 payment protocol messages
 const char* BIP70_MESSAGE_PAYMENTACK = "PaymentACK";
 const char* BIP70_MESSAGE_PAYMENTREQUEST = "PaymentRequest";
 // BIP71 payment protocol media types
-const char* BIP71_MIMETYPE_PAYMENT = "application/litecoin-payment";
-const char* BIP71_MIMETYPE_PAYMENTACK = "application/litecoin-paymentack";
-const char* BIP71_MIMETYPE_PAYMENTREQUEST = "application/litecoin-paymentrequest";
+const char* BIP71_MIMETYPE_PAYMENT = "application/" BRAND_lower "-payment";
+const char* BIP71_MIMETYPE_PAYMENTACK = "application/" BRAND_lower "-paymentack";
+const char* BIP71_MIMETYPE_PAYMENTREQUEST = "application/" BRAND_lower "-paymentrequest";
+// BIP70 max payment request size in bytes (DoS protection)
+const qint64 BIP70_MAX_PAYMENTREQUEST_SIZE = 50000;
 
 struct X509StoreDeleter {
       void operator()(X509_STORE* b) {
@@ -83,7 +85,7 @@ namespace // Anon namespace
 //
 static QString ipcServerName()
 {
-    QString name("LitecoinQt");
+    QString name("CatoshiQt/" BRAND_upper);
 
     // Append a simple hash of the datadir
     // Note that GetDataDir(true) returns a different path
@@ -149,7 +151,7 @@ void PaymentServer::LoadRootCAs(X509_STORE* _store)
     int nRootCerts = 0;
     const QDateTime currentTime = QDateTime::currentDateTime();
 
-    for (const QSslCertificate& cert : certList) {
+    Q_FOREACH (const QSslCertificate& cert, certList) {
         // Don't log NULL certificates
         if (cert.isNull())
             continue;
@@ -223,17 +225,15 @@ void PaymentServer::ipcParseCommandLine(int argc, char* argv[])
             SendCoinsRecipient r;
             if (GUIUtil::parseBitcoinURI(arg, &r) && !r.address.isEmpty())
             {
-                CBitcoinAddress address(r.address.toStdString());
                 auto tempChainParams = CreateChainParams(CBaseChainParams::MAIN);
 
-                if (address.IsValid(*tempChainParams))
-                {
+                if (IsValidDestinationString(r.address.toStdString(), *tempChainParams)) {
                     SelectParams(CBaseChainParams::MAIN);
-                }
-                else {
+                } else {
                     tempChainParams = CreateChainParams(CBaseChainParams::TESTNET);
-                    if (address.IsValid(*tempChainParams))
+                    if (IsValidDestinationString(r.address.toStdString(), *tempChainParams)) {
                         SelectParams(CBaseChainParams::TESTNET);
+                    }
                 }
             }
         }
@@ -331,7 +331,7 @@ PaymentServer::PaymentServer(QObject* parent, bool startLocalServer) :
         if (!uriServer->listen(name)) {
             // constructor is called early in init, so don't use "Q_EMIT message()" here
             QMessageBox::critical(0, tr("Payment request error"),
-                tr("Cannot start litecoin: click-to-pay handler"));
+                tr("Cannot start bitcoin: click-to-pay handler"));
         }
         else {
             connect(uriServer, SIGNAL(newConnection()), this, SLOT(handleURIConnection()));
@@ -369,8 +369,7 @@ void PaymentServer::initNetManager()
 {
     if (!optionsModel)
         return;
-    if (netManager != nullptr)
-        delete netManager;
+    delete netManager;
 
     // netManager is used to fetch paymentrequests given in bitcoin: URIs
     netManager = new QNetworkAccessManager(this);
@@ -446,8 +445,7 @@ void PaymentServer::handleURIOrFile(const QString& s)
             SendCoinsRecipient recipient;
             if (GUIUtil::parseBitcoinURI(s, &recipient))
             {
-                CBitcoinAddress address(recipient.address.toStdString());
-                if (!address.IsValid()) {
+                if (!IsValidDestinationString(recipient.address.toStdString())) {
                     Q_EMIT message(tr("URI handling"), tr("Invalid payment address %1").arg(recipient.address),
                         CClientUIInterface::MSG_ERROR);
                 }
@@ -456,7 +454,7 @@ void PaymentServer::handleURIOrFile(const QString& s)
             }
             else
                 Q_EMIT message(tr("URI handling"),
-                    tr("URI cannot be parsed! This can be caused by an invalid Litecoin address or malformed URI parameters."),
+                    tr("URI cannot be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters."),
                     CClientUIInterface::ICON_WARNING);
 
             return;
@@ -565,7 +563,7 @@ bool PaymentServer::processPaymentRequest(const PaymentRequestPlus& request, Sen
         CTxDestination dest;
         if (ExtractDestination(sendingTo.first, dest)) {
             // Append destination address
-            addresses.append(QString::fromStdString(CBitcoinAddress(dest).ToString()));
+            addresses.append(QString::fromStdString(EncodeDestination(dest)));
         }
         else if (!recipient.authenticatedMerchant.isEmpty()) {
             // Unauthenticated payment requests to custom bitcoin addresses are not supported
@@ -625,7 +623,7 @@ void PaymentServer::fetchRequest(const QUrl& url)
     netManager->get(netRequest);
 }
 
-void PaymentServer::fetchPaymentACK(CWallet* wallet, SendCoinsRecipient recipient, QByteArray transaction)
+void PaymentServer::fetchPaymentACK(CWallet* wallet, const SendCoinsRecipient& recipient, QByteArray transaction)
 {
     const payments::PaymentDetails& details = recipient.paymentRequest.getDetails();
     if (!details.has_payment_url())

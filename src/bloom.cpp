@@ -8,14 +8,14 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 
-#include "bloom.h"
+#include <bloom.h>
 
-#include "primitives/transaction.h"
-#include "hash.h"
-#include "script/script.h"
-#include "script/standard.h"
-#include "random.h"
-#include "streams.h"
+#include <primitives/transaction.h>
+#include <hash.h>
+#include <script/script.h>
+#include <script/standard.h>
+#include <random.h>
+#include <streams.h>
 
 #include <math.h>
 #include <stdlib.h>

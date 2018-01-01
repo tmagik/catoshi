@@ -7,23 +7,23 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "clientmodel.h"
+#include <qt/clientmodel.h>
 
-#include "bantablemodel.h"
-#include "guiconstants.h"
-#include "guiutil.h"
-#include "peertablemodel.h"
+#include <qt/bantablemodel.h>
+#include <qt/guiconstants.h>
+#include <qt/guiutil.h>
+#include <qt/peertablemodel.h>
 
-#include "chain.h"
-#include "chainparams.h"
-#include "checkpoints.h"
-#include "clientversion.h"
-#include "validation.h"
-#include "net.h"
-#include "txmempool.h"
-#include "ui_interface.h"
-#include "util.h"
-#include "warnings.h"
+#include <chain.h>
+#include <chainparams.h>
+#include <checkpoints.h>
+#include <clientversion.h>
+#include <validation.h>
+#include <net.h>
+#include <txmempool.h>
+#include <ui_interface.h>
+#include <util.h>
+#include <warnings.h>
 
 #include <stdint.h>
 

@@ -2,15 +2,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "dbwrapper.h"
+#include <dbwrapper.h>
 
-#include "fs.h"
-#include "util.h"
-#include "random.h"
+#include <random.h>
 
 #include <leveldb/cache.h>
 #include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
+#include <memenv.h>
 #include <stdint.h>
 #include <algorithm>
 
@@ -18,7 +17,7 @@ class CBitcoinLevelDBLogger : public leveldb::Logger {
 public:
     // This code is adapted from posix_logger.h, which is why it is using vsprintf.
     // Please do not do this in normal code
-    virtual void Logv(const char * format, va_list ap) override {
+    void Logv(const char * format, va_list ap) override {
             if (!LogAcceptCategory(BCLog::LEVELDB)) {
                 return;
             }
@@ -63,7 +62,7 @@ public:
 
                 assert(p <= limit);
                 base[std::min(bufsize - 1, (int)(p - base))] = '\0';
-                LogPrintStr(base);
+                LogPrintf("leveldb: %s", base);
                 if (base != buffer) {
                     delete[] base;
                 }
@@ -89,8 +88,6 @@ static leveldb::Options GetOptions(size_t nCacheSize)
     return options;
 }
 
-
-
 CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe, bool obfuscate, DB_env* penv)
 {
     readoptions.verify_checksums = true;
@@ -112,6 +109,12 @@ CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe, bool
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
     dbwrapper_private::HandleError(status);
     LogPrintf("Opened LevelDB successfully\n");
+
+    if (gArgs.GetBoolArg("-forcecompactdb", false)) {
+        LogPrintf("Starting database compaction of %s\n", path.string());
+        pdb->CompactRange(nullptr, nullptr);
+        LogPrintf("Finished database compaction of %s\n", path.string());
+    }
 
     // The base-case obfuscation key, which is a noop.
     obfuscate_key = std::vector<unsigned char>(OBFUSCATE_KEY_NUM_BYTES, '\000');
@@ -181,7 +184,7 @@ bool CDBWrapper::IsEmpty()
 }
 
 CDBIterator::~CDBIterator() { delete piter; }
-bool CDBIterator::Valid() { return piter->Valid(); }
+bool CDBIterator::Valid() const { return piter->Valid(); }
 void CDBIterator::SeekToFirst() { piter->SeekToFirst(); }
 void CDBIterator::Next() { piter->Next(); }
 
@@ -206,4 +209,4 @@ const std::vector<unsigned char>& GetObfuscateKey(const CDBWrapper &w)
     return w.obfuscate_key;
 }
 
-};
+} // namespace dbwrapper_private

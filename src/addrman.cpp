@@ -8,11 +8,11 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "addrman.h"
+#include <addrman.h>
 
-#include "hash.h"
-#include "serialize.h"
-#include "streams.h"
+#include <hash.h>
+#include <serialize.h>
+#include <streams.h>
 
 int CAddrInfo::GetTriedBucket(const uint256& nKey) const
 {
@@ -395,9 +395,9 @@ int CAddrMan::Check_()
     if (vRandom.size() != nTried + nNew)
         return -7;
 
-    for (std::map<int, CAddrInfo>::iterator it = mapInfo.begin(); it != mapInfo.end(); it++) {
-        int n = (*it).first;
-        CAddrInfo& info = (*it).second;
+    for (const auto& entry : mapInfo) {
+        int n = entry.first;
+        const CAddrInfo& info = entry.second;
         if (info.fInTried) {
             if (!info.nLastSuccess)
                 return -1;
