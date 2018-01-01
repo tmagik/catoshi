@@ -10,7 +10,7 @@
 
 #include <hash.h>
 #include <sync.h>
-#include <uint256.h>
+#include <uintBIG.h>
 #include <random.h>
 #include <util.h>
 #include <utilstrencodings.h>

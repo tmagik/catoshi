@@ -1436,7 +1436,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 pcoinsTip.reset();
                 pcoinsdbview.reset();
                 pcoinscatcher.reset();
-                pblocktree.reset(new CBlockTreeDB(nBlockTreeDBCache, false, fReset));
+                pblocktree.reset(new CBlockTreeDB(nBlockTreeDBCache, fReset));
 
                 if (fReset) {
                     pblocktree->WriteReindexing(true);
@@ -1487,7 +1487,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 // At this point we're either in reindex or we've loaded a useful
                 // block tree into mapBlockIndex!
 
-                pcoinsdbview.reset(new CCoinsViewDB(nCoinDBCache, false, fReset || fReindexChainState));
+                pcoinsdbview.reset(new CCoinsViewDB(nCoinDBCache, fReset || fReindexChainState));
                 pcoinscatcher.reset(new CCoinsViewErrorCatcher(pcoinsdbview.get()));
 
                 // If necessary, upgrade from older database format.

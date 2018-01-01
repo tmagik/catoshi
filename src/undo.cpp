@@ -2,12 +2,12 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html#include "main.h"
 
-#include "validation.h"
-#include "undo.h"
-#include "hash.h"
-#include "util.h"
-#include "streams.h"
-#include "clientversion.h"
+#include <validation.h>
+#include <undo.h>
+#include <hash.h>
+#include <util.h>
+#include <streams.h>
+#include <clientversion.h>
 
 /** Undo information for a CBlock */
 /* Catoshi sez: We had a perfectly good CBlockUndo:: object, why did we throw it away? */

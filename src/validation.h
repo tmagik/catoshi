@@ -264,6 +264,8 @@ bool ProcessNewBlockHeaders(const std::vector<CBlockHeader>& block, CValidationS
 bool CheckDiskSpace(uint64_t nAdditionalBytes = 0);
 /** Open a block file (blk?????.dat) */
 FILE* OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
+/** Open an undo file (rev?????.dat) */
+FILE* OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 /** Translation to a filesystem path */
 fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
 /** Import blocks from an external file */
@@ -491,8 +493,7 @@ bool DumpMempool();
 bool LoadMempool();
 
 /** things in main.cpp that coin.cpp need **/
-bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false );
-
+bool FindBlockPos(CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false);
 
 /** *coin.cpp functions **/ 
 // FIXME DOXYGEN THIS

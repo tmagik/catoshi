@@ -9,7 +9,6 @@
 #include <leveldb/cache.h>
 #include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
-#include <memenv.h>
 #include <stdint.h>
 #include <algorithm>
 
@@ -101,11 +100,11 @@ CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe, bool
         leveldb::Status result = leveldb::DestroyDB(path.string(), options);
         dbwrapper_private::HandleError(result);
     }
+    TryCreateDirectories(path);
+    LogPrintf("Opening LevelDB in %s\n", path.string());
     if (penv) {
 	options.env = (leveldb::Env*)penv;
     }
-    TryCreateDirectory(path);
-    LogPrintf("Opening LevelDB in %s\n", path.string());
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
     dbwrapper_private::HandleError(status);
     LogPrintf("Opened LevelDB successfully\n");

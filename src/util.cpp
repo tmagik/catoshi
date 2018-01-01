@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2016 The Bitcoin developers
+// Copyright (c) 2009-2016 The Bitcoin Core developers
 // Copyright (c) 2009-2012 The *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -8,6 +8,7 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
+#include <codecoin.h>
 #include <util.h>
 
 #include <chainparamsbase.h>
@@ -34,6 +35,7 @@
 
 #endif // __linux__
 
+#include <inttypes.h>
 #include <algorithm>
 #include <fcntl.h>
 #include <sys/resource.h>
@@ -85,14 +87,6 @@
 
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
-
-    namespace program_options {
-        std::string to_internal(const std::string&);
-    }
-
-} // namespace boost
-
-using namespace std;
 
 const char * const BITCOIN_CONF_FILENAME = BRAND_lower ".conf";
 const char * const BITCOIN_PID_FILENAME = BRAND_lower ".pid";
@@ -337,7 +331,7 @@ static std::string LogTimestampStr(const std::string &str, std::atomic_bool *fSt
 	if (mocktime) {
 	    strStamped = strprintf("[ mocktime %" PRId64 "] ", mocktime);
         } else if (fLogTimeMicros){
-            int64_t nTimeMicros = GetLogTimeMicros();
+            int64_t nTimeMicros = GetTimeMicros();
             strStamped = strprintf("[%" PRId64 ".%06d] ",
 				nTimeMicros/1000000,
 				nTimeMicros%1000000);
