@@ -1,12 +1,20 @@
-// Copyright (c) 2012-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2012-2013 The Bitcoin Core developers
+// Copyright (c) 2009-2012 *coin developers
+// where * = (Nu, Bit, Lite, PP, Peerunity, Solar, URO, Grant ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 
 #include "dbwrapper.h"
-#include "uint256.h"
+#include "uintBIG.h"
 #include "random.h"
 #include "test/test_bitcoin.h"
 
+#include <boost/assign/std/vector.hpp> // for 'operator+=()'
+#include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
 
 // Test if a string consists entirely of null characters
@@ -26,7 +34,8 @@ BOOST_AUTO_TEST_CASE(dbwrapper)
     // Perform tests both obfuscated and non-obfuscated.
     for (bool obfuscate : {false, true}) {
         fs::path ph = fs::temp_directory_path() / fs::unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, obfuscate);
+	// Breaks abstraction, but contains memenv to this file
+        CDBWrapper dbw(ph, (1 << 20), false, obfuscate, NEW_MEM_ENV);
         char key = 'k';
         uint256 in = InsecureRand256();
         uint256 res;
@@ -82,7 +91,7 @@ BOOST_AUTO_TEST_CASE(dbwrapper_iterator)
     // Perform tests both obfuscated and non-obfuscated.
     for (bool obfuscate : {false, true}) {
         fs::path ph = fs::temp_directory_path() / fs::unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, obfuscate);
+        CDBWrapper dbw(ph, (1 << 20), false, obfuscate, NEW_MEM_ENV);
 
         // The two keys are intentionally chosen for ordering
         char key = 'j';

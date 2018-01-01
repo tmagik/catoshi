@@ -11,7 +11,6 @@
 #include <leveldb/cache.h>
 #include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
-#include <memenv.h>
 #include <stdint.h>
 #include <algorithm>
 
@@ -90,36 +89,29 @@ static leveldb::Options GetOptions(size_t nCacheSize)
     return options;
 }
 
-CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fMemory, bool fWipe, bool obfuscate)
+
+
+CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe, bool obfuscate, DB_env* penv)
 {
-    penv = nullptr;
     readoptions.verify_checksums = true;
     iteroptions.verify_checksums = true;
     iteroptions.fill_cache = false;
     syncoptions.sync = true;
     options = GetOptions(nCacheSize);
     options.create_if_missing = true;
-    if (fMemory) {
-        penv = leveldb::NewMemEnv(leveldb::Env::Default());
-        options.env = penv;
-    } else {
-        if (fWipe) {
-            LogPrintf("Wiping LevelDB in %s\n", path.string());
-            leveldb::Status result = leveldb::DestroyDB(path.string(), options);
-            dbwrapper_private::HandleError(result);
-        }
-        TryCreateDirectories(path);
-        LogPrintf("Opening LevelDB in %s\n", path.string());
+    if (fWipe) {
+        LogPrintf("Wiping LevelDB in %s\n", path.string());
+        leveldb::Status result = leveldb::DestroyDB(path.string(), options);
+        dbwrapper_private::HandleError(result);
     }
+    if (penv) {
+	options.env = (leveldb::Env*)penv;
+    }
+    TryCreateDirectory(path);
+    LogPrintf("Opening LevelDB in %s\n", path.string());
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
     dbwrapper_private::HandleError(status);
     LogPrintf("Opened LevelDB successfully\n");
-
-    if (gArgs.GetBoolArg("-forcecompactdb", false)) {
-        LogPrintf("Starting database compaction of %s\n", path.string());
-        pdb->CompactRange(nullptr, nullptr);
-        LogPrintf("Finished database compaction of %s\n", path.string());
-    }
 
     // The base-case obfuscation key, which is a noop.
     obfuscate_key = std::vector<unsigned char>(OBFUSCATE_KEY_NUM_BYTES, '\000');
@@ -151,7 +143,6 @@ CDBWrapper::~CDBWrapper()
     options.info_log = nullptr;
     delete options.block_cache;
     options.block_cache = nullptr;
-    delete penv;
     options.env = nullptr;
 }
 
@@ -215,4 +206,4 @@ const std::vector<unsigned char>& GetObfuscateKey(const CDBWrapper &w)
     return w.obfuscate_key;
 }
 
-} // namespace dbwrapper_private
+};

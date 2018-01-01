@@ -1,14 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2009-2016 The Bitcoin developers
+// Copyright (c) 2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_COMPAT_H
-#define BITCOIN_COMPAT_H
-
-#if defined(HAVE_CONFIG_H)
-#include "config/bitcoin-config.h"
-#endif
+#ifndef CODECOIN_COMPAT_H
+#define CODECOIN_COMPAT_H 1
 
 #ifdef WIN32
 #ifdef _WIN32_WINNT
@@ -31,7 +28,12 @@
 #include <mswsock.h>
 #include <windows.h>
 #include <ws2tcpip.h>
-#else
+#elif defined(OS_ANDROID)
+#include <fcntl.h>
+#include <netdb.h>
+#include <endian.h>
+#include <linux/rtnetlink.h>
+#else // Linux
 #include <sys/fcntl.h>
 #include <sys/mman.h>
 #include <sys/select.h>
@@ -72,9 +74,10 @@ typedef unsigned int SOCKET;
 #define MAX_PATH            1024
 #endif
 
-#if HAVE_DECL_STRNLEN == 0
-size_t strnlen( const char *start, size_t max_len);
-#endif // HAVE_DECL_STRNLEN
+// As Solaris does not have the MSG_NOSIGNAL flag for send(2) syscall, it is defined as 0
+#if !defined(HAVE_MSG_NOSIGNAL) && !defined(MSG_NOSIGNAL)
+#define MSG_NOSIGNAL 0
+#endif
 
 bool static inline IsSelectableSocket(const SOCKET& s) {
 #ifdef WIN32
@@ -84,4 +87,4 @@ bool static inline IsSelectableSocket(const SOCKET& s) {
 #endif
 }
 
-#endif // BITCOIN_COMPAT_H
+#endif // CODECOIN_COMPAT_H

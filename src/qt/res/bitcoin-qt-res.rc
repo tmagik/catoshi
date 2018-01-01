@@ -19,14 +19,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Litecoin"
-            VALUE "FileDescription",    PACKAGE_NAME " (GUI node for Litecoin)"
+            VALUE "CompanyName",        "Catoshi"
+            VALUE "FileDescription",    "Catoshi Core (OSS GUI client for *coin)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "litecoin-qt"
+            VALUE "InternalName",       "catoshi-qt"
             VALUE "LegalCopyright",     COPYRIGHT_STR
-            VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "litecoin-qt.exe"
-            VALUE "ProductName",        PACKAGE_NAME
+            VALUE "LegalTrademarks1",   "Distributed under the Affero GNU general public license version three, see the accompanying file COPYING or http://www.gnu.org/licenses/agpl-3.0.html."
+            VALUE "OriginalFilename",   "bitcoin-qt.exe"
+            VALUE "ProductName",        "Catoshi Core"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

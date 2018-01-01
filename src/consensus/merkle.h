@@ -10,7 +10,7 @@
 
 #include "primitives/transaction.h"
 #include "primitives/block.h"
-#include "uint256.h"
+#include "uintBIG.h"
 
 uint256 ComputeMerkleRoot(const std::vector<uint256>& leaves, bool* mutated = nullptr);
 std::vector<uint256> ComputeMerkleBranch(const std::vector<uint256>& leaves, uint32_t position);

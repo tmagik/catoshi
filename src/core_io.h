@@ -1,19 +1,26 @@
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
+// Copyright (c) 2009-2014 The *coin developers
+// where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
+// Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
+// Distributed under the Affero GNU General public license version 3
+// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_CORE_IO_H
-#define BITCOIN_CORE_IO_H
+
+#ifndef CODECOIN_CORE_IO_H
+#define CODECOIN_CORE_IO_H
 
 #include "amount.h"
 
 #include <string>
 #include <vector>
 
-class CBlock;
+//class CBlock;
+#include "primitives/block.h"
 class CScript;
-class CTransaction;
-struct CMutableTransaction;
+//class CTransaction;
+#include "primitives/transaction.h"
 class uint256;
 class UniValue;
 
@@ -33,4 +40,4 @@ std::string EncodeHexTx(const CTransaction& tx, const int serializeFlags = 0);
 void ScriptPubKeyToUniv(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry, bool include_hex = true, int serialize_flags = 0);
 
-#endif // BITCOIN_CORE_IO_H
+#endif // CODECOIN_CORE_IO_H

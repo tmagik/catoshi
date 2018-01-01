@@ -10,6 +10,13 @@ License: Expat
 Comment: The Bitcoin Core Developers encompasses the current developers listed on bitcoin.org,
          as well as the numerous contributors to the project.
 
+Files: * (and Catoshi repo merge metadata)
+Copyright: 2014-2017 7 Elements LLC & Troy Benjegerdes
+License: AGPLv3
+Comment: Multi-coin support and merge metadata is AGPLv3, and commercial use
+        license exceptions are available from the author(s) and Bloq, Inc.
+
+
 Files: debian/*
 Copyright: 2010-2011, Jonas Smedegaard <dr@jones.dk>
            2011, Matt Corallo <matt@bluematt.me>
@@ -134,5 +141,30 @@ Comment:
  You should have received a copy of the GNU General Public License along
  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-License: public-domain
+License: LGPL
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+Comment:
+ On Debian systems the GNU Lesser General Public License (LGPL) is
+ located in '/usr/share/common-licenses/LGPL'.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+License: AGPLv3
+ The GNU Affero General Public License is a free, copyleft license for
+ software and other kinds of works, specifically designed to ensure
+ cooperation with the community in the case of network server software.
+Comment:
+ See the file COPYING in the top level of this software, or 
+ https://www.gnu.org/licenses/agpl-3.0.en.html
+
+License: PUB-DOM
  This work is in the public domain.
