@@ -19,6 +19,7 @@ USE_IPV6:=1
 
 # Build wallet
 ENABLE_WALLET:=1
+ENABLE_WALLET:=0
 
 # Enable tests
 ENABLE_TESTS:=1
@@ -199,7 +200,6 @@ CRYPTO_OBJS = \
     $(OBJDIR)/crypto/sha1.o
 
 COMMON_OBJS = \
-    $(OBJDIR)/amount.o \
     $(OBJDIR)/arith_uint256.o \
     $(OBJDIR)/base58.o \
     $(OBJDIR)/$(COIN_BRAND)/params.o \

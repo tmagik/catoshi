@@ -15,7 +15,7 @@
 #include <crypto/sha256.h>
 #include <pubkey.h>
 #include <script/script.h>
-#include <uint256.h>
+#include <uintBIG.h>
 
 typedef std::vector<unsigned char> valtype;
 

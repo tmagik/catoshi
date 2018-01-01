@@ -14,7 +14,7 @@
 #include <hash.h>
 #include <random.h>
 #include <pow.h>
-#include <uint256.h>
+#include <uintBIG.h>
 #include <util.h>
 #include <ui_interface.h>
 #include <init.h>
@@ -59,9 +59,18 @@ struct CoinEntry {
 
 }
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe, true) 
+
+/* no penv options */
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fWipe, true) 
 {
 }
+
+#if 0
+/* replace fMemory with a memory PENV object to remove memenv.a linking requirement from anything but test code */
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, DB_env * penv) : db(GetDataDir() / "chainstate", nCacheSize, fWipe, true, penv) 
+{
+}
+#endif
 
 bool CCoinsViewDB::GetCoin(const COutPoint &outpoint, Coin &coin) const {
     return db.Read(CoinEntry(&outpoint), coin);
@@ -152,7 +161,7 @@ size_t CCoinsViewDB::EstimateSize() const
     return db.EstimateSize(DB_COIN, (char)(DB_COIN+1));
 }
 
-CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fMemory, fWipe) {
+CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fWipe) : CDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fWipe) {
 }
 
 bool CBlockTreeDB::ReadBlockFileInfo(int nFile, CBlockFileInfo &info) {

@@ -23,20 +23,9 @@
 #include <sys/time.h>
 #endif
 
-#error "fix for catoshi"
-#ifdef HAVE_SYS_GETRANDOM
+/* Catoshi: only support linux for now.. */
 #include <sys/syscall.h>
 #include <linux/random.h>
-#endif
-#if defined(HAVE_GETENTROPY) || (defined(HAVE_GETENTROPY_RAND) && defined(MAC_OSX))
-#include <unistd.h>
-#endif
-#if defined(HAVE_GETENTROPY_RAND) && defined(MAC_OSX)
-#include <sys/random.h>
-#endif
-#ifdef HAVE_SYSCTL_ARND
-#include <sys/sysctl.h>
-#endif
 
 #include <mutex>
 
@@ -202,18 +191,10 @@ void GetDevURandom(unsigned char *ent32)
 /** Get 32 bytes of system entropy. */
 void GetOSRand(unsigned char *ent32)
 {
-#if defined(WIN32)
-    HCRYPTPROV hProvider;
-    int ret = CryptAcquireContextW(&hProvider, nullptr, nullptr, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
-    if (!ret) {
-        RandFailure();
-    }
-    ret = CryptGenRandom(hProvider, NUM_OS_RANDOM_BYTES, ent32);
-    if (!ret) {
-        RandFailure();
-    }
-    CryptReleaseContext(hProvider, 0);
-#elif defined(HAVE_SYS_GETRANDOM)
+/*
+ * Catoshi sez: 
+ * keep this simple, readable, and TEST it
+ */
     /* Linux. From the getrandom(2) man page:
      * "If the urandom source has been initialized, reads of up to 256 bytes
      * will always return as many bytes as requested and will not be
@@ -231,44 +212,6 @@ void GetOSRand(unsigned char *ent32)
             RandFailure();
         }
     }
-#elif defined(HAVE_GETENTROPY) && defined(__OpenBSD__)
-    /* On OpenBSD this can return up to 256 bytes of entropy, will return an
-     * error if more are requested.
-     * The call cannot return less than the requested number of bytes.
-       getentropy is explicitly limited to openbsd here, as a similar (but not
-       the same) function may exist on other platforms via glibc.
-     */
-    if (getentropy(ent32, NUM_OS_RANDOM_BYTES) != 0) {
-        RandFailure();
-    }
-#elif defined(HAVE_GETENTROPY_RAND) && defined(MAC_OSX)
-    // We need a fallback for OSX < 10.12
-    if (&getentropy != nullptr) {
-        if (getentropy(ent32, NUM_OS_RANDOM_BYTES) != 0) {
-            RandFailure();
-        }
-    } else {
-        GetDevURandom(ent32);
-    }
-#elif defined(HAVE_SYSCTL_ARND)
-    /* FreeBSD and similar. It is possible for the call to return less
-     * bytes than requested, so need to read in a loop.
-     */
-    static const int name[2] = {CTL_KERN, KERN_ARND};
-    int have = 0;
-    do {
-        size_t len = NUM_OS_RANDOM_BYTES - have;
-        if (sysctl(name, ARRAYLEN(name), ent32 + have, &len, nullptr, 0) != 0) {
-            RandFailure();
-        }
-        have += len;
-    } while (have < NUM_OS_RANDOM_BYTES);
-#else
-    /* Fall back to /dev/urandom if there is no specific method implemented to
-     * get system entropy for this OS.
-     */
-    GetDevURandom(ent32);
-#endif
 }
 
 void GetRandBytes(unsigned char* buf, int num)
