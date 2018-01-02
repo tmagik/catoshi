@@ -43,7 +43,7 @@ COIN_BRAND:=litecoin
 DEFS=-DBOOST_SPIRIT_THREADSAFE -D_FILE_OFFSET_BITS=64 -DBRAND_$(COIN_BRAND)
 
 #debian jessie libboost-filesystem1.55 needs this
-DEFS += -DBOOST_NO_CXX11_SCOPED_ENUMS
+#DEFS += -DBOOST_NO_CXX11_SCOPED_ENUMS
 
 OBJDIR = obj/$(COIN_BRAND)
 TESTDIR = $(OBJDIR)/test
@@ -174,17 +174,19 @@ STAKE_OBJS = \
     $(OBJDIR)/kernelrecord.o
 
 UTIL_OBJS= \
+    $(OBJDIR)/support/lockedpool.o \
     $(OBJDIR)/chainbaseparams.o \
     $(OBJDIR)/clientversion.o \
     $(OBJDIR)/compat/glibc_sanity.o \
     $(OBJDIR)/compat/glibcxx_sanity.o \
     $(OBJDIR)/compat/strnlen.o \
+    $(OBJDIR)/fs.o \
     $(OBJDIR)/random.o \
     $(OBJDIR)/rpc/protocol.o \
     $(OBJDIR)/support/cleanse.o \
-    $(OBJDIR)/support/lockedpool.o \
     $(OBJDIR)/sync.o \
     $(OBJDIR)/uint256.o \
+    $(OBJDIR)/threadinterrupt.o \
     $(OBJDIR)/util.o \
     $(OBJDIR)/utilmoneystr.o \
     $(OBJDIR)/utilstrencodings.o \
@@ -192,6 +194,7 @@ UTIL_OBJS= \
 
 CRYPTO_OBJS = \
     $(OBJDIR)/crypto/aes.o \
+    $(OBJDIR)/crypto/chacha20.o \
     $(OBJDIR)/crypto/hmac_sha256.o \
     $(OBJDIR)/crypto/hmac_sha512.o \
     $(OBJDIR)/crypto/ripemd160.o \
@@ -202,6 +205,7 @@ CRYPTO_OBJS = \
 COMMON_OBJS = \
     $(OBJDIR)/arith_uint256.o \
     $(OBJDIR)/base58.o \
+    $(OBJDIR)/bech32.o \
     $(OBJDIR)/$(COIN_BRAND)/params.o \
     $(OBJDIR)/coins.o \
     $(OBJDIR)/compressor.o \
@@ -213,6 +217,7 @@ COMMON_OBJS = \
     $(OBJDIR)/keystore.o \
     $(OBJDIR)/netaddress.o \
     $(OBJDIR)/netbase.o \
+    $(OBJDIR)/policy/feerate.o \
     $(OBJDIR)/primitives/block.o \
     $(OBJDIR)/primitives/transaction.o \
     $(OBJDIR)/protocol.o \
@@ -222,7 +227,8 @@ COMMON_OBJS = \
     $(OBJDIR)/script/script.o \
     $(OBJDIR)/script/script_error.o \
     $(OBJDIR)/script/sign.o \
-    $(OBJDIR)/script/standard.o
+    $(OBJDIR)/script/standard.o \
+    $(OBJDIR)/warnings.o
 
 
 #put the longest compiling things first for parallel make
@@ -238,6 +244,7 @@ D_OBJS= \
     $(OBJDIR)/blockencodings.o \
     $(OBJDIR)/chain.o \
     $(OBJDIR)/checkpoints.o \
+    $(OBJDIR)/consensus/tx_verify.o \
     $(OBJDIR)/dbwrapper.o \
     $(OBJDIR)/httprpc.o \
     $(OBJDIR)/httpserver.o \
@@ -247,11 +254,15 @@ D_OBJS= \
     $(OBJDIR)/noui.o \
     $(OBJDIR)/policy/fees.o \
     $(OBJDIR)/policy/policy.o \
+    $(OBJDIR)/policy/rbf.o \
     $(OBJDIR)/pow.o \
     $(OBJDIR)/rest.o \
     $(OBJDIR)/rpc/blockchain.o \
     $(OBJDIR)/rpc/misc.o \
     $(OBJDIR)/rpc/net.o \
+    $(OBJDIR)/rpc/rawtransaction.o \
+    $(OBJDIR)/rpc/safemode.o \
+    $(OBJDIR)/rpc/server.o \
     $(OBJDIR)/rpc/rawtransaction.o \
     $(OBJDIR)/script/bitcoinconsensus.o \
     $(OBJDIR)/script/sigcache.o \
@@ -339,7 +350,11 @@ endif
 
 TX_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) bitcoin-tx.cpp
 # should just use crypto_objs but only CSHA512 is used
-CLI_OBJS= $(UTIL_OBJS) crypto/sha512.cpp rpc/client.cpp bitcoin-cli.cpp
+CLI_OBJS= $(UTIL_OBJS) \
+	  $(OBJDIR)/crypto/chacha20.o \
+	  $(OBJDIR)/crypto/sha512.o \
+	  $(OBJDIR)/rpc/client.o \
+	  $(OBJDIR)/bitcoin-cli.o
 
 all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d $(COIN_BRAND)-cli $(COIN_BRAND)-tx
 

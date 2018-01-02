@@ -912,3 +912,8 @@ int GetNumCores()
     return boost::thread::hardware_concurrency();
 #endif
 }
+
+int64_t GetStartupTime()
+{
+    return nStartupTime;
+}
