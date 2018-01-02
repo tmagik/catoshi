@@ -376,6 +376,8 @@ void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime,
 
 const std::string strMessageMagic = "Bitcoin Signed Message:\n";
 
+const std::string CURRENCY_UNIT = "BTC";
+
 #if 0 /* FIXME later */
 CAmount Bitcoin_PoWReward(int nHeight, const CAmount& nFees)
 {
