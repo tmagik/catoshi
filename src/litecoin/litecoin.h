@@ -1,16 +1,23 @@
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// This file is part of the Catoshi Codecoin financial cryptography software
+// Copyright (c) 2014-2018 7 Elements LLC
 // Distributed under the Affero GNU General public license version 3
-// file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+// see the file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+
 #ifndef CODECOIN_litecoin_H
 #define CODECOIN_litecoin_H
 
 #include "litecoin/consensus.h"
-#include<cstdint>
 
 static const int RPC_PORT = 9332;
 static const int RPC_PORT_TESTNET = 19332;
 static const int P2P_PORT = 9333;
 static const int P2P_PORT_TESTNET = 19333;
+
+/* from net.h */
+/** Maximum length of incoming protocol messages (no message over 4 MB is currently acceptable). */
+static const unsigned int MAX_PROTOCOL_MESSAGE_LENGTH = 4 * 1000 * 1000;
+
+#include <cstdint>
 
 // TODO: objectize this. as of 0.10.x is in amount.h
 static const int64_t COIN = 100000000;
