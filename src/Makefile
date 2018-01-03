@@ -3,7 +3,8 @@
 # where * = (Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 # Previously distributed under the MIT/X11 software license, see the
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-# Copyright (c) 2014-2015 Troy Benjegerdes, under AGPLv3
+# This file is part of the Catoshi Codecoin financial cryptography software
+# Copyright (c) 2014-2018 7 Elements LLC AGPLv3
 # Distributed under the Affero GNU General public license version 3
 # file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
@@ -19,7 +20,6 @@ USE_IPV6:=1
 
 # Build wallet
 ENABLE_WALLET:=1
-ENABLE_WALLET:=0
 
 # Enable tests
 ENABLE_TESTS:=1
@@ -288,10 +288,14 @@ WALLET_OBJS = \
     $(OBJDIR)/wallet/db.o \
     $(OBJDIR)/wallet/wallet.o \
     $(OBJDIR)/wallet/walletdb.o \
-    $(OBJDIR)/script/ismine.o \
+    $(OBJDIR)/wallet/walletutil.o \
+    $(OBJDIR)/wallet/feebumper.o \
+    $(OBJDIR)/wallet/fees.o \
+    $(OBJDIR)/wallet/init.o \
     $(OBJDIR)/wallet/rpcdump.o \
     $(OBJDIR)/wallet/rpcwallet.o \
-    $(OBJDIR)/policy/rbf.o
+    $(OBJDIR)/policy/rbf.o \
+    $(OBJDIR)/script/ismine.o 
 
 X11_OBJS = \
     $(OBJDIR)/cubehash.o \

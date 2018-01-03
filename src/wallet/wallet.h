@@ -4,7 +4,7 @@
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-// Copyright (c) 2014-2017 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2014-2018 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
@@ -51,6 +51,8 @@ static const CAmount DEFAULT_TRANSACTION_FEE = 0;
 #if defined(BRAND_bitcoin)
 //! -fallbackfee default
 static const CAmount DEFAULT_FALLBACK_FEE = 20000;
+//! -m_discard_rate default
+static const CAmount DEFAULT_DISCARD_FEE = 10000;
 //! -mintxfee default
 static const CAmount DEFAULT_TRANSACTION_MINFEE = 1000;
 #elif defined(BRAND_litecoin)
