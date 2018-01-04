@@ -17,7 +17,7 @@ static const int RPC_PORT_TESTNET = 18332;
 /** Maximum length of incoming protocol messages (no message over 4 MB is currently acceptable). */
 static const unsigned int MAX_PROTOCOL_MESSAGE_LENGTH = 4 * 1000 * 1000;
 
-#include<cstdint>
+#include <cstdint>
 
 // TODO: objectize this. as of 0.10.x is in amount.h
 static const int64_t COIN = 100000000;
