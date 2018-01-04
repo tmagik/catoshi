@@ -7,8 +7,8 @@
 
 /* Litecoin consensus defines, following Bitcoin's consensus.h */
 
-#ifndef CATOSHI_LITECOIN_CONSENSUS_H
-#define CATOSHI_LITECOIN_CONSENSUS_H
+#ifndef CODECOIN_LITECOIN_CONSENSUS_H
+#define CODECOIN_LITECOIN_CONSENSUS_H
 
 #include <stdlib.h>
 #include <stdint.h>

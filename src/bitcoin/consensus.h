@@ -1,10 +1,14 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// This file is part of the Catoshi Codecoin financial cryptography software
+// Copyright (c) 2014-2018 7 Elements LLC
+// Distributed under the Affero GNU General public license version 3
+// see the file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#ifndef BITCOIN_CONSENSUS_CONSENSUS_H
-#define BITCOIN_CONSENSUS_CONSENSUS_H
+/* Bitcoin consensus defines, following Bitcoin's consensus.h */
+
+#ifndef CODECOIN_BITCOIN_CONSENSUS_H
+#define CODECOIN_BITCOIN_CONSENSUS_H
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -29,4 +33,4 @@ static constexpr unsigned int LOCKTIME_VERIFY_SEQUENCE = (1 << 0);
 /** Use GetMedianTimePast() instead of nTime for end point timestamp. */
 static constexpr unsigned int LOCKTIME_MEDIAN_TIME_PAST = (1 << 1);
 
-#endif // BITCOIN_CONSENSUS_CONSENSUS_H
+#endif // CODECOIN_BITCOIN_CONSENSUS_H
