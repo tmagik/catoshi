@@ -226,14 +226,20 @@ private:
 
 public:
     /**
-     * @param[in] path        Location in the filesystem where leveldb data will be stored.
-     * @param[in] nCacheSize  Configures various leveldb cache settings.
-     * @param[in] fMemory     If true, use leveldb's memory environment.
-     * @param[in] fWipe       If true, remove all existing data.
-     * @param[in] obfuscate   If true, store data obfuscated via simple XOR. If false, XOR
-     *                        with a zero'd byte array.
+     * @param[in] path          Location in the filesystem where leveldb data will be stored.
+     * @param[in] nCacheSize    Configures various leveldb cache settings.
+     * @param[in] fWipe         If true, remove all existing data.
+     * @param[in] obfuscate     If true, store data obfuscated via simple XOR. If false, XOR
+     *                          with a zero'd byte array.
+     * @param[in] * penv        Pointer to a LevelDB DB_env to allow memenv if needed
+     * @param[in] compression   Enable snappy compression for the database (only if FEATURE_INDEX)
+     * @param[in] maxOpenFiles  The maximum number of open files for the database (only if FEATURE_INDEX)
      */
+#if defined(FEATURE_INDEX)
+    CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe = false, bool obfuscate = false, DB_env * penv = nullptr, bool compression = false, int maxOpenFiles = 64);
+#else
     CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe = false, bool obfuscate = false, DB_env * penv = nullptr);
+#endif
     ~CDBWrapper();
 
     template <typename K, typename V>

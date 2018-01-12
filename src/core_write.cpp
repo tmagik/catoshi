@@ -15,6 +15,9 @@
 #include <util.h>
 #include <utilmoneystr.h>
 #include <utilstrencodings.h>
+#if defined(FEATURE_INDEX)
+#include <index.h>
+#endif
 
 UniValue ValueFromAmount(const CAmount& amount)
 {
@@ -183,6 +186,20 @@ void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry,
                 }
                 in.pushKV("txinwitness", txinwitness);
             }
+#if defined(FEATURE_INDEX)
+            // Add address and value info if spentindex enabled
+            CSpentIndexValue spentInfo;
+            CSpentIndexKey spentKey(txin.prevout.hash, txin.prevout.n);
+            if (GetSpentIndex(spentKey, spentInfo)) {
+                in.push_back(Pair("value", ValueFromAmount(spentInfo.satoshis)));
+                in.push_back(Pair("valueSat", spentInfo.satoshis));
+                if (spentInfo.addressType == 1) {
+                    in.push_back(Pair("address", EncodeDestination(CKeyID(spentInfo.addressHash))));
+                } else if (spentInfo.addressType == 2)  {
+                    in.push_back(Pair("address", EncodeDestination(CScriptID(spentInfo.addressHash))));
+                }
+            }
+#endif
         }
         in.pushKV("sequence", (int64_t)txin.nSequence);
         vin.push_back(in);
@@ -196,6 +213,9 @@ void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry,
         UniValue out(UniValue::VOBJ);
 
         out.pushKV("value", ValueFromAmount(txout.nValue));
+#if defined(FEATURE_INDEX)
+        out.pushKV("valueSat", txout.nValue);
+#endif
         out.pushKV("n", (int64_t)i);
 
         UniValue o(UniValue::VOBJ);

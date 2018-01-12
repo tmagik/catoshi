@@ -22,27 +22,29 @@ extern bool fAddressIndex;
 extern bool fSpentIndex;
 extern bool fTimestampIndex;
 
+// Address index
+
 struct CAddressUnspentKey {
-    unsigned int type;
+    unsigned int type;  //TODO: bounds check?? (serializes to 8 bits)
     uint160 hashBytes;
     uint256 txhash;
     size_t index;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize() const {
         return 57;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata8(s, type);
-        hashBytes.Serialize(s, nType, nVersion);
-        txhash.Serialize(s, nType, nVersion);
+        hashBytes.Serialize(s);
+        txhash.Serialize(s);
         ser_writedata32(s, index);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         type = ser_readdata8(s);
-        hashBytes.Unserialize(s, nType, nVersion);
-        txhash.Unserialize(s, nType, nVersion);
+        hashBytes.Unserialize(s);
+        txhash.Unserialize(s);
         index = ser_readdata32(s);
     }
 
@@ -73,7 +75,7 @@ struct CAddressUnspentValue {
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(satoshis);
         READWRITE(*(CScriptBase*)(&script));
         READWRITE(blockHeight);
@@ -109,28 +111,28 @@ struct CAddressIndexKey {
     size_t index;
     bool spending;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize() const {
         return 66;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata8(s, type);
-        hashBytes.Serialize(s, nType, nVersion);
+        hashBytes.Serialize(s);
         // Heights are stored big-endian for key sorting in LevelDB
         ser_writedata32be(s, blockHeight);
         ser_writedata32be(s, txindex);
-        txhash.Serialize(s, nType, nVersion);
+        txhash.Serialize(s);
         ser_writedata32(s, index);
         char f = spending;
         ser_writedata8(s, f);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         type = ser_readdata8(s);
-        hashBytes.Unserialize(s, nType, nVersion);
+        hashBytes.Unserialize(s);
         blockHeight = ser_readdata32be(s);
         txindex = ser_readdata32be(s);
-        txhash.Unserialize(s, nType, nVersion);
+        txhash.Unserialize(s);
         index = ser_readdata32(s);
         char f = ser_readdata8(s);
         spending = f;
@@ -167,18 +169,18 @@ struct CAddressIndexIteratorKey {
     unsigned int type;
     uint160 hashBytes;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize() const {
         return 21;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata8(s, type);
-        hashBytes.Serialize(s, nType, nVersion);
+        hashBytes.Serialize(s);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         type = ser_readdata8(s);
-        hashBytes.Unserialize(s, nType, nVersion);
+        hashBytes.Unserialize(s);
     }
 
     CAddressIndexIteratorKey(unsigned int addressType, uint160 addressHash) {
@@ -201,19 +203,19 @@ struct CAddressIndexIteratorHeightKey {
     uint160 hashBytes;
     int blockHeight;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize() const {
         return 25;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata8(s, type);
-        hashBytes.Serialize(s, nType, nVersion);
+        hashBytes.Serialize(s);
         ser_writedata32be(s, blockHeight);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         type = ser_readdata8(s);
-        hashBytes.Unserialize(s, nType, nVersion);
+        hashBytes.Unserialize(s);
         blockHeight = ser_readdata32be(s);
     }
 
@@ -313,7 +315,7 @@ struct CSpentIndexKey {
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(txid);
         READWRITE(outputIndex);
     }
@@ -345,7 +347,7 @@ struct CSpentIndexValue {
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(txid);
         READWRITE(inputIndex);
         READWRITE(blockHeight);
@@ -397,15 +399,15 @@ struct CSpentIndexKeyCompare
 struct CTimestampIndexIteratorKey {
     unsigned int timestamp;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize() const {
         return 4;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata32be(s, timestamp);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         timestamp = ser_readdata32be(s);
     }
 
@@ -426,18 +428,18 @@ struct CTimestampIndexKey {
     unsigned int timestamp;
     uint256 blockHash;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize() const {
         return 36;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata32be(s, timestamp);
-        blockHash.Serialize(s, nType, nVersion);
+        blockHash.Serialize(s);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         timestamp = ser_readdata32be(s);
-        blockHash.Unserialize(s, nType, nVersion);
+        blockHash.Unserialize(s);
     }
 
     CTimestampIndexKey(unsigned int time, uint256 hash) {
@@ -458,18 +460,18 @@ struct CTimestampIndexKey {
 struct CTimestampBlockIndexKey {
     uint256 blockHash;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize() const {
         return 32;
     }
 
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
-        blockHash.Serialize(s, nType, nVersion);
+    void Serialize(Stream& s) const {
+        blockHash.Serialize(s);
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
-        blockHash.Unserialize(s, nType, nVersion);
+    void Unserialize(Stream& s) {
+        blockHash.Unserialize(s);
     }
 
     CTimestampBlockIndexKey(uint256 hash) {
@@ -487,17 +489,17 @@ struct CTimestampBlockIndexKey {
 
 struct CTimestampBlockIndexValue {
     unsigned int ltimestamp;
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize() const {
         return 4;
     }
 
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata32be(s, ltimestamp);
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         ltimestamp = ser_readdata32be(s);
     }
 
@@ -513,5 +515,15 @@ struct CTimestampBlockIndexValue {
         ltimestamp = 0;
     }
 };
+
+// Prototypes implemented in index.cpp
+bool GetTimestampIndex(const unsigned int &high, const unsigned int &low, const bool fActiveOnly, std::vector<std::pair<uint256, unsigned int> > &hashes);
+bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
+bool GetAddressIndex(uint160 addressHash, int type,
+                     std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,
+                     int start = 0, int end = 0);
+bool HashOnchainActive(const uint256 &hash);
+bool GetAddressUnspent(uint160 addressHash, int type,
+                       std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs);
 
 #endif // CODECOIN_INDEX_H
