@@ -202,6 +202,10 @@ CRYPTO_OBJS = \
     $(OBJDIR)/crypto/sha512.o \
     $(OBJDIR)/crypto/sha1.o
 
+INDEX_OBJS = \
+    $(OBJDIR)/index.o \
+    $(OBJDIR)/rpc/index.o
+
 COMMON_OBJS = \
     $(OBJDIR)/arith_uint256.o \
     $(OBJDIR)/base58.o \
@@ -317,6 +321,9 @@ ifeq ($(ENABLE_WALLET),1)
 DEFS+= -DENABLE_WALLET
 D_OBJS+= $(WALLET_OBJS)
 endif
+
+DEFS+= -DFEATURE_INDEX
+D_OBJS+=$(INDEX_OBJS)
 
 ifeq ($(USE_SSE2),1)
 DEFS += -DUSE_SSE2

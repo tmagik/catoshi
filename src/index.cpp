@@ -5,6 +5,19 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
+#include <validation.h>
+#include <amount.h>
+#include <chain.h>
+#include <index.h>
+#include <script/script.h>
+#include <txdb.h>
+#include <txmempool.h>
+#include <uintBIG.h>
+#include <util.h>
+
+// things in validation.cpp
+extern std::unique_ptr<CBlockTreeDB> pblocktree;
+
 bool fAddressIndex = false;
 bool fTimestampIndex = false;
 bool fSpentIndex = false;

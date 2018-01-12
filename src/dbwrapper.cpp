@@ -70,14 +70,23 @@ public:
     }
 };
 
+#if defined(FEATURE_INDEX)
+static leveldb::Options GetOptions(size_t nCacheSize, bool compression, int maxOpenFiles)
+#else
 static leveldb::Options GetOptions(size_t nCacheSize)
+#endif
 {
     leveldb::Options options;
     options.block_cache = leveldb::NewLRUCache(nCacheSize / 2);
     options.write_buffer_size = nCacheSize / 4; // up to two write buffers may be held in memory simultaneously
     options.filter_policy = leveldb::NewBloomFilterPolicy(10);
+#if defined(FEATURE_INDEX)
+    options.compression = compression ? leveldb::kSnappyCompression : leveldb::kNoCompression;
+    options.max_open_files = maxOpenFiles;
+#else
     options.compression = leveldb::kNoCompression;
     options.max_open_files = 64;
+#endif
     options.info_log = new CBitcoinLevelDBLogger();
     if (leveldb::kMajorVersion > 1 || (leveldb::kMajorVersion == 1 && leveldb::kMinorVersion >= 16)) {
         // LevelDB versions before 1.16 consider short writes to be corruption. Only trigger error
@@ -87,13 +96,21 @@ static leveldb::Options GetOptions(size_t nCacheSize)
     return options;
 }
 
+#if defined(FEATURE_INDEX)
+CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe, bool obfuscate, DB_env* penv, bool compression, int maxOpenFiles)
+#else
 CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe, bool obfuscate, DB_env* penv)
+#endif
 {
     readoptions.verify_checksums = true;
     iteroptions.verify_checksums = true;
     iteroptions.fill_cache = false;
     syncoptions.sync = true;
+#if defined(FEATURE_INDEX)
+    options = GetOptions(nCacheSize, compression, maxOpenFiles);
+#else
     options = GetOptions(nCacheSize);
+#endif
     options.create_if_missing = true;
     if (fWipe) {
         LogPrintf("Wiping LevelDB in %s\n", path.string());
