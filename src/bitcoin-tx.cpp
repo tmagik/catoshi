@@ -32,6 +32,14 @@ static bool fCreateBlank;
 static std::map<std::string,UniValue> registers;
 static const int CONTINUE_EXECUTION=-1;
 
+/* We have no mempool, but TxToUniv needs this, so return false */
+#if defined(FEATURE_INDEX)
+bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value)
+{
+    return false;
+}
+#endif
+
 //
 // This function returns either one of EXIT_ codes when it's expected to stop the process or
 // CONTINUE_EXECUTION when it's expected to continue further.
