@@ -8,6 +8,9 @@
 
 #include "litecoin/consensus.h"
 
+static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 5;
+static const unsigned int DUST_RELAY_TX_FEE = 3000;
+
 static const int RPC_PORT = 9332;
 static const int RPC_PORT_TESTNET = 19332;
 static const int P2P_PORT = 9333;

@@ -10,6 +10,20 @@
 
 /* ========= End defines from bitcoin@0.14/consensus/consensus.h  ========= */
 
+/* ========= Things migrated from ~bitcoin@.15/policy/policy.h    ========= */
+
+/** Default for -maxmempool, maximum megabytes of mempool memory usage */
+static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 500;
+
+/** Min feerate for defining dust. Historically this has been based on the
+ * minRelayTxFee, however changing the dust limit changes which transactions are
+ * standard and should be done with care and ideally rarely. It makes sense to
+ * only increase the dust limit after prior releases were already not creating
+ * outputs below the new threshold */
+static const unsigned int DUST_RELAY_TX_FEE = 3000;
+
+/* ========= End defines from bitcoin@0.14/policy/policy.h        ========= */
+
 static const int RPC_PORT = 8332;
 static const int RPC_PORT_TESTNET = 18332;
 

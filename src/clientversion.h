@@ -16,7 +16,7 @@
  */
 
 //! These need to be macros, as clientversion.cpp's and bitcoin*-res.rc's voodoo requires it
-#define CLIENT_VERSION_MAJOR 1
+#define CLIENT_VERSION_MAJOR 0
 #define CLIENT_VERSION_MINOR 15
 #define CLIENT_VERSION_REVISION 99
 #define CLIENT_VERSION_BUILD 0
@@ -28,7 +28,7 @@
  * Copyright year (2009-this)
  * Todo: update this when changing our copyright comments in the source
  */
-#define COPYRIGHT_YEAR 2017
+#define COPYRIGHT_YEAR 2018
 #define COPYRIGHT_HOLDERS "The Catoshi Developers"
 
 /**
