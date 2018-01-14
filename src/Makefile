@@ -485,7 +485,7 @@ TESTOBJS := $(patsubst test/%.cpp,$(OBJDIR)/test/%.o,$(wildcard test/*.cpp))
 testgen: $(patsubst test/data/%.json,$(OBJDIR)/test/data/%.json.h,$(wildcard $(JSON_TEST_FILES)))
 
 $(OBJDIR)/test/%.o: test/%.cpp
-	$(CXX) -c $(TESTDEFS) $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
+	$(V_CXX) $(CXX) -c $(TESTDEFS) $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
 	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
@@ -496,7 +496,9 @@ test_gen_$(COIN_BRAND): testgen test_$(COIN_BRAND)
 #yes this has extra cruft for scrypt. ugh.
 #filter for init.o is ugly too
 
-test_$(COIN_BRAND): $(filter-out $(OBJDIR)/init.o,$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)) \
+fltr = $(OBJDIR)/init.o $(OBJDIR)/torcontrol.o
+
+test_$(COIN_BRAND): $(filter-out $(fltr),$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)) \
 		$(WALLET_OBJS) $(TESTOBJS) \
 		$(OBJDIR)/rpc/client.o $(OBJDIR)/crypto/scrypt.o $(OBJS_SSE2)
 	$(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS) $(D_LIBS) $(BOOST_LIBS)

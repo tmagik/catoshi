@@ -28,6 +28,8 @@ static void microTask(CScheduler& s, boost::mutex& mutex, int& counter, int delt
 
 static void MicroSleep(uint64_t n)
 {
+/* Catoshi hack */
+#define HAVE_WORKING_BOOST_SLEEP_FOR
 #if defined(HAVE_WORKING_BOOST_SLEEP_FOR)
     boost::this_thread::sleep_for(boost::chrono::microseconds(n));
 #elif defined(HAVE_WORKING_BOOST_SLEEP)
@@ -111,6 +113,5 @@ BOOST_AUTO_TEST_CASE(manythreads)
     }
     BOOST_CHECK_EQUAL(counterSum, 200);
 }
-#endif
 
 BOOST_AUTO_TEST_SUITE_END()

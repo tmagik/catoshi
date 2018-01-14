@@ -97,7 +97,14 @@ static leveldb::Options GetOptions(size_t nCacheSize)
 }
 
 #if defined(FEATURE_INDEX)
-CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe, bool obfuscate, DB_env* penv, bool compression, int maxOpenFiles)
+CDBWrapper::CDBWrapper(
+	const fs::path& path,
+	size_t nCacheSize,
+	bool fWipe, 
+	bool obfuscate, 
+	DB_env* penv, 
+	bool compression, 
+	int maxOpenFiles)
 #else
 CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fWipe, bool obfuscate, DB_env* penv)
 #endif
