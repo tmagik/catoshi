@@ -119,6 +119,7 @@ public:
 /* Catoshi sez: We had a perfectly good CBlockUndo:: object, why did we throw it away? */
 
 class CDiskBlockPos;
+class CBlockIndex;
 class uint256;
 
 #include "protocol.h"

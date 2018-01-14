@@ -498,7 +498,7 @@ test_gen_$(COIN_BRAND): testgen test_$(COIN_BRAND)
 
 test_$(COIN_BRAND): $(filter-out $(OBJDIR)/init.o,$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)) \
 		$(WALLET_OBJS) $(TESTOBJS) \
-		$(OBJDIR)/rpcclient.o $(OBJDIR)/crypto/scrypt.o $(OBJS_SSE2)
+		$(OBJDIR)/rpc/client.o $(OBJDIR)/crypto/scrypt.o $(OBJS_SSE2)
 	$(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS) $(D_LIBS) $(BOOST_LIBS)
 endif
 
