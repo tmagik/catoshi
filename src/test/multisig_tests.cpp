@@ -10,7 +10,7 @@
 #include <script/interpreter.h>
 #include <script/sign.h>
 #include <script/ismine.h>
-#include <uint256.h>
+#include <uintBIG.h>
 #include <test/test_bitcoin.h>
 
 

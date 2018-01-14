@@ -8,7 +8,7 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include <dbwrapper.h>
-#include <uint256.h>
+#include <uintBIG.h>
 #include <random.h>
 #include <test/test_bitcoin.h>
 
@@ -51,8 +51,8 @@ BOOST_AUTO_TEST_CASE(dbwrapper_compression)
     // Perform tests both with compression and without
     for (int i = 0; i < 2; i++) {
         bool compression = (bool)i;
-        path ph = temp_directory_path() / unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, false, compression);
+        fs::path ph = fs::temp_directory_path() / fs::unique_path();
+        CDBWrapper dbw(ph, (1 << 20), false, false, NEW_MEM_ENV, compression);
         char key = 'k';
         uint256 in = GetRandHash();
         uint256 res;
@@ -65,8 +65,8 @@ BOOST_AUTO_TEST_CASE(dbwrapper_compression)
 
 BOOST_AUTO_TEST_CASE(dbwrapper_maxopenfiles_64)
 {
-    path ph = temp_directory_path() / unique_path();
-    CDBWrapper dbw(ph, (1 << 20), true, false, false, false, 64);
+    fs::path ph = fs::temp_directory_path() / fs::unique_path();
+    CDBWrapper dbw(ph, (1 << 20), false, false, NEW_MEM_ENV, false, 64);
     char key = 'k';
     uint256 in = GetRandHash();
     uint256 res;
@@ -78,8 +78,8 @@ BOOST_AUTO_TEST_CASE(dbwrapper_maxopenfiles_64)
 
 BOOST_AUTO_TEST_CASE(dbwrapper_maxopenfiles_1000)
 {
-    path ph = temp_directory_path() / unique_path();
-    CDBWrapper dbw(ph, (1 << 20), true, false, false, false, 1000);
+    fs::path ph = fs::temp_directory_path() / fs::unique_path();
+    CDBWrapper dbw(ph, (1 << 20), false, false, NEW_MEM_ENV, false, 1000);
     char key = 'k';
     uint256 in = GetRandHash();
     uint256 res;
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(dbwrapper_batch)
     // Perform tests both obfuscated and non-obfuscated.
     for (bool obfuscate : {false, true}) {
         fs::path ph = fs::temp_directory_path() / fs::unique_path();
-        CDBWrapper dbw(ph, (1 << 20), true, false, obfuscate);
+        CDBWrapper dbw(ph, (1 << 20), false, obfuscate, NEW_MEM_ENV);
 
         char key = 'i';
         uint256 in = InsecureRand256();
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(existing_data_no_obfuscate)
     create_directories(ph);
 
     // Set up a non-obfuscated wrapper to write some initial data.
-    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false, false);
+    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false);
     char key = 'k';
     uint256 in = InsecureRand256();
     uint256 res;
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(existing_data_no_obfuscate)
     dbw = nullptr;
 
     // Now, set up another wrapper that wants to obfuscate the same directory
-    CDBWrapper odbw(ph, (1 << 10), false, false, true);
+    CDBWrapper odbw(ph, (1 << 10), false, true);
 
     // Check that the key/val we wrote with unobfuscated wrapper exists and 
     // is readable.
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(existing_data_reindex)
     create_directories(ph);
 
     // Set up a non-obfuscated wrapper to write some initial data.
-    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false, false);
+    CDBWrapper* dbw = new CDBWrapper(ph, (1 << 10), false, false);
     char key = 'k';
     uint256 in = InsecureRand256();
     uint256 res;
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(existing_data_reindex)
     dbw = nullptr;
 
     // Simulate a -reindex by wiping the existing data store
-    CDBWrapper odbw(ph, (1 << 10), false, true, true);
+    CDBWrapper odbw(ph, (1 << 10), true, true);
 
     // Check that the key/val we wrote with unobfuscated wrapper doesn't exist
     uint256 res2;
@@ -249,7 +249,8 @@ BOOST_AUTO_TEST_CASE(existing_data_reindex)
 BOOST_AUTO_TEST_CASE(iterator_ordering)
 {
     fs::path ph = fs::temp_directory_path() / fs::unique_path();
-    CDBWrapper dbw(ph, (1 << 20), true, false, false);
+    // Breaks abstraction, but contains memenv to this file
+    CDBWrapper dbw(ph, (1 << 20), false, false, NEW_MEM_ENV);
     for (int x=0x00; x<256; ++x) {
         uint8_t key = x;
         uint32_t value = x*x;
@@ -315,7 +316,7 @@ BOOST_AUTO_TEST_CASE(iterator_string_ordering)
     char buf[10];
 
     fs::path ph = fs::temp_directory_path() / fs::unique_path();
-    CDBWrapper dbw(ph, (1 << 20), true, false, false);
+    CDBWrapper dbw(ph, (1 << 20), false, false, NEW_MEM_ENV);
     for (int x=0x00; x<10; ++x) {
         for (int y = 0; y < 10; y++) {
             snprintf(buf, sizeof(buf), "%d", x);

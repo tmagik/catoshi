@@ -4,7 +4,7 @@
 
 #include <coins.h>
 #include <script/standard.h>
-#include <uint256.h>
+#include <uintBIG.h>
 #include <undo.h>
 #include <utilstrencodings.h>
 #include <test/test_bitcoin.h>

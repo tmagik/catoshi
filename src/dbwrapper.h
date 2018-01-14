@@ -20,14 +20,15 @@
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
+#include <leveldb/env.h>
+typedef leveldb::Env DB_env;
 
 #if defined(TEST_DATA_DIR) /* hack, this is */
 #include <leveldb/helpers/memenv.h>
-//typedef leveldb::Env DB_env;
-typedef void DB_env;
+//typedef void DB_env;
 #define NEW_MEM_ENV leveldb::NewMemEnv(leveldb::Env::Default())
 #else
-typedef void DB_env;
+//typedef void DB_env;
 #define NEW_MEM_ENV nullptr
 #endif
 
