@@ -12,7 +12,7 @@
 # :=0 --> UPnP support turned off by default at runtime
 # :=1 --> UPnP support turned on by default at runtime
 # :=- --> No UPnP support - miniupnp not required
-USE_UPNP:=0
+USE_UPNP:=-
 
 # :=1 --> Enable IPv6 support
 # :=0 --> Disable IPv6 support
@@ -367,10 +367,18 @@ CLI_OBJS= $(UTIL_OBJS) \
 	  $(OBJDIR)/rpc/client.o \
 	  $(OBJDIR)/bitcoin-cli.o
 
-all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d $(COIN_BRAND)-cli $(COIN_BRAND)-tx
+#needed to create directories
+ALL_OBJS= $(STAKE_OBJS) $(UTIL_OBJS) $(CRYPTO_OBJS) $(INDEX_OBJS) $(COMMON_OBJS) $(D_OBJS) $(TX_OBJS) $(CLI_OBJS) 
 
-test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
-	./test_$(COIN_BRAND)
+MAN= obj/$(COIN_BRAND)d.1 obj/$(COIN_BRAND)-cli.1 obj/$(COIN_BRAND)-tx.1
+
+BINS= obj/$(COIN_BRAND)d obj/$(COIN_BRAND)-cli obj/$(COIN_BRAND)-tx
+	
+#tricksy: man pages require binaries
+all: $(MAN)
+
+test check: obj/test_$(COIN_BRAND) FORCE
+	./obj/test_$(COIN_BRAND)
 
 regression: test FORCE
 	$(MAKE) COIN_BRAND=litecoin test
@@ -381,11 +389,10 @@ regression: test FORCE
 #	$(MAKE) COIN_BRAND=kittycoin test
 	
 
-$(TESTDIR):
-	mkdir -p $(TESTDIR)
+$(TESTDIR) $(SUBDIRS):
+	mkdir -p $@
 
-$(SUBDIRS):
-	mkdir -p $(SUBDIRS)
+$(ALL_OBJS): | $(SUBDIRS)
 
 #
 # LevelDB support
@@ -401,14 +408,17 @@ ifeq ($(V),1)
 V_CXX=
 V_LINK=
 else
-V_CXX=@echo "   $(CXX)        $<" ;
-V_LINK=@echo "   $(LINK)       $<" ;
+V_CXX=@echo  "   CXX   $(CXX)    $<" ;
+V_LINK=@echo "   LINK  $(LINK)    $@" ;
 endif
 
 $(OBJDIR)/build.h: FORCE
 	/bin/sh ../share/genbuild.sh $(OBJDIR)/build.h
 clientversion.cpp: $(OBJDIR)/build.h
 DEFS += -DHAVE_BUILD_INFO -DHAVE_SYS_SELECT_H
+
+obj/%.1: obj/%
+	help2man $< > $@
 
 $(OBJDIR)/%-sse2.o: %-sse2.cpp
 	$(V_CXX) $(CXX) -c $(xCXXFLAGS) -msse2 -MMD -MF $(@:%.o=%.d) -o $@ $<
@@ -431,13 +441,13 @@ $(OBJDIR)/%.o: %.cpp
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-$(COIN_BRAND)d: $(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%) $(OBJDIR)/bitcoind.o
+obj/$(COIN_BRAND)d: $(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%) $(OBJDIR)/bitcoind.o
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(D_LIBS)
 
-$(COIN_BRAND)-tx: $(TX_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
+obj/$(COIN_BRAND)-tx: $(TX_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(TX_LIBS)
 
-$(COIN_BRAND)-cli: $(CLI_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
+obj/$(COIN_BRAND)-cli: $(CLI_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(CLI_LIBS)
 
 
@@ -487,19 +497,22 @@ $(OBJDIR)/test/%.o: test/%.cpp
 fltr = $(OBJDIR)/init.o $(OBJDIR)/torcontrol.o
 test_d_objs = $(filter-out $(fltr),$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
 
-test_$(COIN_BRAND): $(test_d_objs) \
+obj/test_$(COIN_BRAND): $(test_d_objs) \
 		$(WALLET_OBJS) $(TESTOBJS) \
 		$(OBJDIR)/rpc/client.o $(OBJDIR)/crypto/scrypt.o $(OBJS_SSE2)
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS) $(D_LIBS) $(BOOST_LIBS)
 endif
 
 clean:
-	-rm -f $(COIN_BRAND)d $(COIN_BRAND)-tx $(COIN_BRAND)-cli test_$(COIN_BRAND)
 	-rm -f $(OBJDIR)/*.o
 	-rm -f $(OBJDIR)/*/*.o
 	-rm -f $(OBJDIR)/*.P
 	-rm -f $(OBJDIR)/*/*.P
 	-rm -f $(OBJDIR)/build.h
+	-rm -f obj/$(COIN_BRAND)* obj/test_$(COIN_BRAND)
+
+realclean:
+	rm -rf obj
 
 FORCE:
 

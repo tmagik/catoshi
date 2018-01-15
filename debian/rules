@@ -25,11 +25,10 @@ FAKETMP = $(CURDIR)/debian/faketmp
 	dh $@ --parallel --sourcedirectory=src --with bash-completion
 
 override_dh_auto_clean:
-	rm -rf src/obj
-	cd src && make clean
+	cd src && make realclean
 
-override_dh_auto_test:
-	HOME=${FAKETMP} TMPDIR=${FAKETMP} dh_auto_test || ( cat src/test-suite.log && false )
+#override_dh_auto_test:
+#	HOME=${FAKETMP} TMPDIR=${FAKETMP} dh_auto_test || ( cat src/test-suite.log && false )
 
 get-orig-source:
 	#uscan --download-current-version
