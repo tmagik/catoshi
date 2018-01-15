@@ -38,12 +38,12 @@ endif
 
 LINK:=$(CXX)
 
-COIN_BRAND:=litecoin
+COIN_BRAND:=bitcoin
 
 DEFS=-DBOOST_SPIRIT_THREADSAFE -D_FILE_OFFSET_BITS=64 -DBRAND_$(COIN_BRAND)
 
 #debian jessie libboost-filesystem1.55 needs this
-#DEFS += -DBOOST_NO_CXX11_SCOPED_ENUMS
+DEFS += -DBOOST_NO_CXX11_SCOPED_ENUMS
 
 OBJDIR = obj/$(COIN_BRAND)
 TESTDIR = $(OBJDIR)/test
@@ -369,7 +369,7 @@ CLI_OBJS= $(UTIL_OBJS) \
 
 all: $(SUBDIRS) $(TESTDIR) $(COIN_BRAND)d $(COIN_BRAND)-cli $(COIN_BRAND)-tx
 
-test check: $(TESTDIR) test_gen_$(COIN_BRAND) FORCE
+test check: $(TESTDIR) test_$(COIN_BRAND) FORCE
 	./test_$(COIN_BRAND)
 
 regression: test FORCE
@@ -402,7 +402,7 @@ V_CXX=
 V_LINK=
 else
 V_CXX=@echo "   $(CXX)        $<" ;
-V_LNK=@echo "   $(LINK)       $<" ;
+V_LINK=@echo "   $(LINK)       $<" ;
 endif
 
 $(OBJDIR)/build.h: FORCE
@@ -470,19 +470,9 @@ $(OBJDIR)/%.json.h: %.json
 	@echo "};};" >> $@
 	@echo "Generated $@"
 
-$(OBJDIR)/%.raw.h: %.raw
-	@mkdir -p $(@D)
-	@echo "namespace alert_tests{" > $@
-	@echo "static unsigned const char $(*F)[] = {" >> $@
-	@$(HEXDUMP) -v -e '8/1 "0x%02x, "' -e '"\n"' $< | $(SED) -e 's/0x  ,//g' >> $@
-	@echo "};};" >> $@
-	@echo "Generated $@"
-
-
 TESTOBJS := $(patsubst test/%.cpp,$(OBJDIR)/test/%.o,$(wildcard test/*.cpp))
 
-.PHONY: testgen
-testgen: $(patsubst test/data/%.json,$(OBJDIR)/test/data/%.json.h,$(wildcard $(JSON_TEST_FILES)))
+$(TESTOBJS): $(patsubst test/data/%.json,$(OBJDIR)/test/data/%.json.h,$(wildcard $(JSON_TEST_FILES)))
 
 $(OBJDIR)/test/%.o: test/%.cpp
 	$(V_CXX) $(CXX) -c $(TESTDEFS) $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
@@ -491,17 +481,16 @@ $(OBJDIR)/test/%.o: test/%.cpp
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-test_gen_$(COIN_BRAND): testgen test_$(COIN_BRAND)
-
 #yes this has extra cruft for scrypt. ugh.
 #filter for init.o is ugly too
 
 fltr = $(OBJDIR)/init.o $(OBJDIR)/torcontrol.o
+test_d_objs = $(filter-out $(fltr),$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
 
-test_$(COIN_BRAND): $(filter-out $(fltr),$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)) \
+test_$(COIN_BRAND): $(test_d_objs) \
 		$(WALLET_OBJS) $(TESTOBJS) \
 		$(OBJDIR)/rpc/client.o $(OBJDIR)/crypto/scrypt.o $(OBJS_SSE2)
-	$(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS) $(D_LIBS) $(BOOST_LIBS)
+	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS) $(D_LIBS) $(BOOST_LIBS)
 endif
 
 clean:
@@ -511,7 +500,6 @@ clean:
 	-rm -f $(OBJDIR)/*.P
 	-rm -f $(OBJDIR)/*/*.P
 	-rm -f $(OBJDIR)/build.h
-	-cd leveldb && $(MAKE) clean || true
 
 FORCE:
 

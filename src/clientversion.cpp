@@ -8,10 +8,10 @@
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "clientversion.h"
+#include <clientversion.h>
 
-#include "tinyformat.h"
-#include "codecoin.h"
+#include <tinyformat.h>
+#include <codecoin.h>
 
 #include <string>
 

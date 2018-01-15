@@ -200,6 +200,7 @@ void GetOSRand(unsigned char *ent32)
      * will always return as many bytes as requested and will not be
      * interrupted by signals."
      */
+#if defined(SYS_getrandom)
     int rv = syscall(SYS_getrandom, ent32, NUM_OS_RANDOM_BYTES, 0);
     if (rv != NUM_OS_RANDOM_BYTES) {
         if (rv < 0 && errno == ENOSYS) {
@@ -212,6 +213,11 @@ void GetOSRand(unsigned char *ent32)
             RandFailure();
         }
     }
+#else
+#warning "SYS_getrandom not defined!!"
+    LogPrint(BCLog::RAND, "%s: fallback to GetDevURandom!", __func__);
+    GetDevURandom(ent32);
+#endif
 }
 
 void GetRandBytes(unsigned char* buf, int num)
