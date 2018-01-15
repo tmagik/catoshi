@@ -262,6 +262,8 @@ bool CDB::VerifyEnvironment(const std::string& walletFile, const fs::path& walle
     LogPrintf("Using BerkeleyDB version %s\n", DbEnv::version(0, 0, 0));
     LogPrintf("Using wallet %s\n", walletFile);
 
+    // Catoshi: Someday get rid of boost.. (and maybe BDB??)
+    // https://stackoverflow.com/questions/8520560/get-a-file-name-from-a-path#8520871
     // Wallet file must be a plain filename without a directory
     if (walletFile != fs::basename(walletFile) + fs::extension(walletFile))
     {

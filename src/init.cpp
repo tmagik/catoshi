@@ -538,8 +538,8 @@ std::string LicenseInfo()
                URL_SOURCE_CODE) +
            "\n" +
            "\n" +
-           _("This is experimental software.") + "\n" +
-           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING", "<https://opensource.org/licenses/MIT>") + "\n" +
+           _("This is HIGHLY experimental software.") + "\n" +
+           strprintf(_("Distributed under the Affero GNU General public license version 3, see the file %s or %s. If you would like to use this product under an alternative license, contact %s."), "COPYING", "<http://www.gnu.org/licenses/agpl-3.0.html>", "<sales@bloq.com> or <sales@7el.us>") + "\n" +
            "\n" +
            strprintf(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit %s and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard."), "<https://www.openssl.org>") +
            "\n";
