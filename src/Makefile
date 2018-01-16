@@ -40,6 +40,8 @@ LINK:=$(CXX)
 
 COIN_BRAND:=bitcoin
 
+prefix = /usr/
+
 DEFS=-DBOOST_SPIRIT_THREADSAFE -D_FILE_OFFSET_BITS=64 -DBRAND_$(COIN_BRAND)
 
 #debian jessie libboost-filesystem1.55 needs this
@@ -376,6 +378,10 @@ BINS= obj/$(COIN_BRAND)d obj/$(COIN_BRAND)-cli obj/$(COIN_BRAND)-tx
 	
 #tricksy: man pages require binaries
 all: $(MAN)
+
+install: $(BINS)
+	mkdir -p $(DESTDIR)$(prefix)/bin
+	install -D $^ $(DESTDIR)$(prefix)/bin/
 
 test check: obj/test_$(COIN_BRAND) FORCE
 	./obj/test_$(COIN_BRAND)

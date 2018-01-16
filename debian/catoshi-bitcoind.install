@@ -1,2 +1,2 @@
-src/obj/bitcoin-cli
-src/obj/bitcoind
+/usr/bin/bitcoin-cli
+/usr/bin/bitcoind
