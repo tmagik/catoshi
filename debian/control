@@ -28,7 +28,7 @@ Vcs-Git: https://bitbucket.org/tmagik/catoshi
 Vcs-Browser: https://bitbucket.org/tmagik/catoshi
 
 Package: catoshi-bitcoind
-Provides: bitcoind
+Provides: bitcoind, bitcoind-bitcore
 Replaces: bitcoind
 Architecture: any
 Depends:
