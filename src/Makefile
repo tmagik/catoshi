@@ -21,6 +21,9 @@ USE_IPV6:=1
 # Build wallet
 ENABLE_WALLET:=1
 
+# Enable ZMQ support
+ENABLE_ZMQ:=1
+
 # Enable tests
 ENABLE_TESTS:=1
 
@@ -59,6 +62,7 @@ SUBDIRS = \
 	$(OBJDIR)/policy \
 	$(OBJDIR)/support \
 	$(OBJDIR)/rpc \
+	$(OBJDIR)/zmq \
 	$(OBJDIR)/$(COIN_BRAND)
 
 DEFS += $(addprefix -I,$(CURDIR) $(CURDIR)/$(OBJDIR) $(BOOST_INCLUDE_PATH) $(BDB_INCLUDE_PATH) $(SECP256K1_INCLUDE_PATH))
@@ -303,6 +307,11 @@ WALLET_OBJS = \
     $(OBJDIR)/policy/rbf.o \
     $(OBJDIR)/script/ismine.o 
 
+ZMQ_OBJS = \
+    $(OBJDIR)/zmq/zmqabstractnotifier.o \
+    $(OBJDIR)/zmq/zmqnotificationinterface.o \
+    $(OBJDIR)/zmq/zmqpublishnotifier.o
+
 X11_OBJS = \
     $(OBJDIR)/cubehash.o \
     $(OBJDIR)/luffa.o \
@@ -322,6 +331,12 @@ SCRYPT_OBJS = $(OBJDIR)/crypto/scrypt.o
 ifeq ($(ENABLE_WALLET),1)
 DEFS+= -DENABLE_WALLET
 D_OBJS+= $(WALLET_OBJS)
+D_LIBS += -lzmq
+endif
+
+ifeq ($(ENABLE_ZMQ),1)
+DEFS+= -DENABLE_ZMQ
+D_OBJS+= $(ZMQ_OBJS)
 endif
 
 DEFS+= -DFEATURE_INDEX

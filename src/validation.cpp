@@ -971,6 +971,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
         // Store transaction in memory
         pool.addUnchecked(hash, entry, setAncestors, validForFeeEstimation);
 
+#if defined(FEATURE_INDEX)
         // Add memory address index
         if (fAddressIndex) {
             pool.addAddressIndex(entry, view);
@@ -980,6 +981,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
         if (fSpentIndex) {
             pool.addSpentIndex(entry, view);
         }
+#endif // FEATURE_INDEX
 
         // trim mempool and check if tx was trimmed
         if (!bypass_limits) {
