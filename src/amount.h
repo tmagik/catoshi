@@ -9,7 +9,7 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #ifndef CODECOIN_AMOUNT_H
-#define COCECOIN_AMOUNT_H
+#define CODECOIN_AMOUNT_H
 
 #include <stdint.h>
 

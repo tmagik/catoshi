@@ -9,7 +9,7 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #ifndef CODECOIN_VALIDATION_H
-#define CODECOIN_VALIDATOIN_H
+#define CODECOIN_VALIDATION_H
 
 #if defined(HAVE_CONFIG_H)
 #include <config/bitcoin-config.h>

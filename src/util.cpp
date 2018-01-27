@@ -77,8 +77,9 @@
 #include <malloc.h>
 #endif
 
+#ifdef _WIN32
 #include <boost/algorithm/string/case_conv.hpp> // for to_lower()
-#include <boost/algorithm/string/predicate.hpp> // for startswith() and endswith()
+#endif
 #include <boost/program_options/detail/config_file.hpp>
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
@@ -164,7 +165,7 @@ instance_of_cinit;
  * the mutex).
  */
 
-static boost::once_flag debugPrintInitFlag = BOOST_ONCE_INIT;
+static std::once_flag debugPrintInitFlag;
 
 /**
  * We use boost::call_once() to make sure mutexDebugLog and
@@ -203,7 +204,7 @@ fs::path GetDebugLogPath()
 
 bool OpenDebugLog()
 {
-    boost::call_once(&DebugPrintInit, debugPrintInitFlag);
+    std::call_once(debugPrintInitFlag, &DebugPrintInit);
     boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
 
     assert(fileout == nullptr);
@@ -365,7 +366,7 @@ int LogPrintStr(const std::string &str)
     }
     else if (fPrintToDebugLog)
     {
-        boost::call_once(&DebugPrintInit, debugPrintInitFlag);
+        std::call_once(debugPrintInitFlag, &DebugPrintInit);
         boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
 
         // buffer if we haven't opened the log yet

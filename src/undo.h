@@ -118,7 +118,7 @@ public:
 /** Undo information for a CBlock */
 /* Catoshi sez: We had a perfectly good CBlockUndo:: object, why did we throw it away? */
 
-class CDiskBlockPos;
+struct CDiskBlockPos;
 class CBlockIndex;
 class uint256;
 
