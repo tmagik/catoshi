@@ -23,9 +23,14 @@
 #include <sys/time.h>
 #endif
 
+#if defined(MAC_OSX)
+#include <unistd.h>
+#include <sys/random.h>
+#else /* MAC_OSX */
 /* Catoshi: only support linux for now.. */
 #include <sys/syscall.h>
 #include <linux/random.h>
+#endif
 
 #include <mutex>
 
