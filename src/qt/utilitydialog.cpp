@@ -9,9 +9,9 @@
 
 #include <qt/utilitydialog.h>
 
-#include <qt/forms/ui_helpmessagedialog.h>
+#include <ui_helpmessagedialog.h>
 
-#include <qt/bitcoingui.h>
+#include <qt/codecoingui.h>
 #include <qt/clientmodel.h>
 #include <qt/guiconstants.h>
 #include <qt/intro.h>

@@ -9,7 +9,9 @@
 
 #include "bitcoinamountfield.h"
 
-#include "codecoinunits.h"
+/* TODO nuke bitcoinunits later */
+//#include "codecoinunits.h"
+#include <qt/bitcoinunits.h>
 #include "guiconstants.h"
 #include "qvaluecombobox.h"
 
@@ -193,7 +195,7 @@ Q_SIGNALS:
     void valueChanged();
 };
 
-#include <qt/bitcoinamountfield.moc>
+#include <bitcoinamountfield.moc>
 
 BitcoinAmountField::BitcoinAmountField(QWidget *parent) :
     QWidget(parent),

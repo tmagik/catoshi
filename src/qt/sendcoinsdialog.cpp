@@ -8,7 +8,7 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include <qt/sendcoinsdialog.h>
-#include <qt/forms/ui_sendcoinsdialog.h>
+#include <ui_sendcoinsdialog.h>
 
 #include <qt/addresstablemodel.h>
 #include <qt/bitcoinunits.h>

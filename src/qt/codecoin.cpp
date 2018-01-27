@@ -12,19 +12,20 @@
 #include <endian.h>
 #endif
 
-#include "bitcoingui.h"
+#include <qt/codecoingui.h>
 
-#include "chainparams.h"
-#include "clientmodel.h"
-#include "guiconstants.h"
-#include "guiutil.h"
-#include "intro.h"
-#include "networkstyle.h"
-#include "optionsmodel.h"
-#include "platformstyle.h"
-#include "splashscreen.h"
-#include "utilitydialog.h"
-#include "winshutdownmonitor.h"
+#include <chainparams.h>
+#include <qt/clientmodel.h>
+#include <fs.h>
+#include <qt/guiconstants.h>
+#include <qt/guiutil.h>
+#include <qt/intro.h>
+#include <qt/networkstyle.h>
+#include <qt/optionsmodel.h>
+#include <qt/platformstyle.h>
+#include <qt/splashscreen.h>
+#include <qt/utilitydialog.h>
+#include <qt/winshutdownmonitor.h>
 
 #ifdef ENABLE_WALLET
 #include <qt/paymentserver.h>
@@ -266,7 +267,8 @@ private:
     void startThread();
 };
 
-#include <qt/bitcoin.moc>
+/* in build/moc , path provided by qmake */
+#include "codecoin.moc"
 
 BitcoinCore::BitcoinCore():
     QObject()

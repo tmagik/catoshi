@@ -1537,6 +1537,7 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
         uint256 hash = tx.GetHash();
         bool is_coinbase = tx.IsCoinBase();
 
+#if defined(FEATURE_INDEX)
 // Catoshi: FEATURE_INDEX {
         if (fAddressIndex) {
 
@@ -1569,6 +1570,7 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
 
         }
 // Catoshi: FEATURE_INDEX }
+#endif
 
         // Check that all outputs are available and match the outputs in the block itself
         // exactly.
@@ -1602,6 +1604,7 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
                 if (res == DISCONNECT_FAILED) return DISCONNECT_FAILED;
                 fClean = fClean && res != DISCONNECT_UNCLEAN;
 
+#if defined(FEATURE_INDEX)
 // Catoshi: FEATURE_INDEX {
                 const CTxIn input = tx.vin[j];
 
@@ -1636,6 +1639,7 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
                     }
                 }
 // Catoshi: FEATURE_INDEX }
+#endif
             }
             // At this point, all of txundo.vprevout should have been moved out.
         }
@@ -1644,6 +1648,7 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());
 
+#if defined(FEATURE_INDEX)
 // Catoshi: FEATURE_INDEX {
     if (fAddressIndex) {
         if (!pblocktree->EraseAddressIndex(addressIndex)) {
@@ -1656,6 +1661,7 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
         }
     }
 // Catoshi: FEATURE_INDEX }
+#endif
 
     return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;
 }
@@ -1997,6 +2003,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
                                  REJECT_INVALID, "bad-txns-nonfinal");
             }
 
+#if defined(FEATURE_INDEX)
 // Catoshi: FEATURE_INDEX {
             if (fAddressIndex || fSpentIndex)
             {
@@ -2034,6 +2041,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
             }
 // Catoshi: FEATURE_INDEX }
+#endif
         }
 
         // GetTransactionSigOpCost counts 3 types of sigops:
@@ -2056,6 +2064,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
             control.Add(vChecks);
         }
 
+#if defined(FEATURE_INDEX)
 // Catoshi: FEATURE_INDEX {
         if (fAddressIndex) {
             for (unsigned int k = 0; k < tx.vout.size(); k++) {
@@ -2086,6 +2095,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
             }
         }
 // Catoshi: FEATURE_INDEX }
+#endif
 
         CTxUndo undoDummy;
         if (i > 0) {
@@ -2122,6 +2132,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     if (!WriteTxIndexDataForBlock(block, state, pindex))
         return false;
 
+#if defined(FEATURE_INDEX)
 // Catoshi: FEATURE_INDEX {
     if (fAddressIndex) {
         if (!pblocktree->WriteAddressIndex(addressIndex)) {
@@ -2157,6 +2168,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
             return AbortNode(state, "Failed to write blockhash index");
     }
 // Catoshi: FEATURE_INDEX }
+#endif
 
     assert(pindex->phashBlock);
     // add this block to the view's block chain

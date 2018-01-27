@@ -8,7 +8,7 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include <qt/rpcconsole.h>
-#include <qt/forms/ui_debugwindow.h>
+#include <ui_debugwindow.h>
 
 #include <qt/bantablemodel.h>
 #include <qt/clientmodel.h>
@@ -124,7 +124,7 @@ public:
 };
 
 
-#include <qt/rpcconsole.moc>
+#include <rpcconsole.moc>
 
 /**
  * Split shell command line into a list of arguments and optionally execute the command(s).

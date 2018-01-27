@@ -8,7 +8,7 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include <qt/editaddressdialog.h>
-#include <qt/forms/ui_editaddressdialog.h>
+#include <ui_editaddressdialog.h>
 
 #include <qt/addresstablemodel.h>
 #include <qt/guiutil.h>

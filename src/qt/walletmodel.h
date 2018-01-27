@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2015 The Bitcoin Core developers
+// Copyright (c) 2011-2017 The Bitcoin Core developers
 // Copyright (c) 2009-2012 *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
 // Previously distributed under the MIT/X11 software license, see the
@@ -19,6 +19,8 @@
 #include <vector>
 
 #include <QObject>
+
+enum OutputType : int;
 
 class AddressTableModel;
 class OptionsModel;
@@ -218,6 +220,8 @@ public:
     static bool isWalletEnabled();
 
     bool hdEnabled() const;
+
+    OutputType getDefaultAddressType() const;
 
     int getDefaultConfirmTarget() const;
 
