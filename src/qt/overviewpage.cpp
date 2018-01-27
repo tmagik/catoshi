@@ -8,7 +8,7 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include <qt/overviewpage.h>
-#include <qt/forms/ui_overviewpage.h>
+#include <ui_overviewpage.h>
 
 #include <qt/bitcoinunits.h>
 #include <qt/clientmodel.h>
@@ -111,7 +111,7 @@ public:
     const PlatformStyle *platformStyle;
 
 };
-#include <qt/overviewpage.moc>
+#include <overviewpage.moc>
 
 OverviewPage::OverviewPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QWidget(parent),

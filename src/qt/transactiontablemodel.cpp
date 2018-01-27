@@ -21,7 +21,7 @@
 #include <core_io.h>
 #include <validation.h>
 #include <sync.h>
-#include <uint256.h>
+#include <uintBIG.h>
 #include <util.h>
 #include <wallet/wallet.h>
 

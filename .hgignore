@@ -17,6 +17,11 @@ src/obj-test/*
 *.patch
 .codecoin
 
+# QT qmake things
+src/build.h
+src/qt/paymentrequest.pb.cc
+src/qt/paymentrequest.pb.h
+
 # Compilation and Qt preprocessor part
 *.qm
 Makefile

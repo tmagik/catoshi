@@ -513,11 +513,12 @@ $(OBJDIR)/test/%.o: test/%.cpp
 #yes this has extra cruft for scrypt. ugh.
 #filter for init.o is ugly too
 
-fltr = $(OBJDIR)/init.o $(OBJDIR)/torcontrol.o
+fltr_d_ojbs = $(OBJDIR)/init.o $(OBJDIR)/torcontrol.o 
 test_d_objs = $(filter-out $(fltr),$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
+testobjs = $(filter-out $(OBJDIR)/test/test_bitcoin_fuzzy.o,$(TESTOBJS))
 
 obj/test_$(COIN_BRAND): $(test_d_objs) \
-		$(WALLET_OBJS) $(TESTOBJS) \
+		$(WALLET_OBJS) $(testobjs) \
 		$(OBJDIR)/rpc/client.o $(OBJDIR)/crypto/scrypt.o $(OBJS_SSE2)
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS) $(D_LIBS) $(BOOST_LIBS)
 endif

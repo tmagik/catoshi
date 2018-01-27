@@ -1,22 +1,27 @@
 TEMPLATE = app
-#TARGET = codecoin-qt
-#macx:TARGET = "codecoin-Qt"
-VERSION = 0.8.9
+VERSION = 0.15.42.1
 INCLUDEPATH += src src/json src/qt
 QT += core gui network
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE
 CONFIG += no_include_pwd
 CONFIG += thread
+CONFIG += c++11
 
 #may need below. cause arg
 #
 android:DEFINES += BOOST_NO_SCOPED_ENUMS BOOST_NO_CXX11_SCOPED_ENUMS __WORDSIZE=32
 
 isEmpty(COIN_BRAND){
-	COIN_BRAND=grantcoin
+        COIN_BRAND=litecoin
 }
-# use: qmake "COIN_BRAND=grantstake" for other than grantcoin
+# use: qmake "COIN_BRAND=grantcoin" for other than litecoin
+contains(COIN_BRAND, litecoin) {
+    message(Building for Litecoin)
+    DEFINES += BRAND_litecoin
+    HASHSCRYPT = 1
+    TARGET = litecoin
+} else {
 contains(COIN_BRAND, grantcoin) {
     message(Building for Grantcoin)
     DEFINES += BRAND_grantcoin
@@ -59,13 +64,6 @@ contains(COIN_BRAND, bluecoin) {
     HASHSCRYPT = 1
     HASHX11 = 1
 } else {
-contains(COIN_BRAND, cleanwatercoin) {
-    message(Building for cleanwatercoin)
-    DEFINES += BRAND_cleanwatercoin
-    TARGET = cleanwatercoin
-    STAKE = 1
-    HASHSCRYPT = 1
-} else {
     DEFINES += BRAND_codecoin
     TARGET = codecoin
 	warning ("Building GENERIC codecoin, probably will not work")
@@ -74,9 +72,9 @@ contains(COIN_BRAND, cleanwatercoin) {
 #Set up a symlink so QT designer doesn't get confused when editing UI files
 #will error on windows build without cygwin.
 #This is rather a hack. FIXME
-system("ln -sfT $$TARGET/codecoin.qrc src/qt/res/codecoin.qrc")
+#system("ln -sfT $$TARGET/codecoin.qrc src/qt/res/codecoin.qrc")
 #same thing for icons
-system("ln -sfT $$TARGET/icons src/qt/res/icons")
+#system("ln -sfT $$TARGET/icons src/qt/res/icons")
 
 # for boost 1.37, add -mt to the boost libraries
 # use: qmake BOOST_LIB_SUFFIX=-mt
@@ -104,8 +102,18 @@ win32 {
 }
 
 OBJECTS_DIR = build
-MOC_DIR = build
-UI_DIR = build
+MOC_DIR = build/moc
+UI_DIR = build/ui
+
+macx {
+    CONFIG += sdk
+    QMAKE_MAC_SDK = macosx10.13
+    BREW = /usr/local/opt
+    BOOST = boost\@1.57
+    BDB = berkeley-db\@53
+    SSL = openssl\@1.1
+    OS_INCLUDE_PATH += /usr/local/include
+}
 
 # use: qmake "RELEASE=1"
 contains(RELEASE, 1) {
@@ -189,33 +197,6 @@ contains(USE_IPV6, -) {
     DEFINES += USE_IPV6=$$USE_IPV6
 }
 
-#leveldb hacks.. Either use CONFIG for qt5, or c++11 flags for QT4
-#Don't do this for mac to avoid libc++ compatibility quagmire for now
-#macx:QMAKE_LFLAGS += -stdlib=libc++
-#macx:QMAKE_CXXFLAGS += -stdlib=libc++
-!macx{
-greaterThan(QT_MAJOR_VERSION, 4) {
-CONFIG += c++11
-} else {
-QMAKE_CXXFLAGS += -std=c++0x
-}}
-
-#Try to match platform leveldb build defines
-android:DEFINES += LEVELDB_PLATFORM_POSIX OS_ANDROID
-#unix:DEFINES += OS_LINUX LEVELDB_PLATFORM_POSIX NDEBUG
-#unix:DEFINES += OS_LINUX LEVELDB_PLATFORM_POSIX LEVELDB_ATOMIC_PRESENT NDEBUG
-# no scoped enums again..
-unix{
-DEFINES += LEVELDB_PLATFORM_POSIX BOOST_NO_SCOPED_ENUMS
-macx{
-DEFINES += OS_MACOSX
-} else {
-DEFINES += OS_LINUX LEVELDB_ATOMIC_PRESENT BOOST_NO_CXX11_SCOPED_ENUMS
-}}
-windows:DEFINES += LEVELDB_PLATFORM_WINDOWS OS_WINDOWS BOOST_NO_SCOPED_ENUMS BOOST_NO_CXX11_SCOPED_ENUMS
-
-INCLUDEPATH += src/leveldb/include src/leveldb/helpers src/leveldb
-
 contains(BITCOIN_NEED_QT_PLUGINS, 1) {
     DEFINES += BITCOIN_NEED_QT_PLUGINS
     QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs qtaccessiblewidgets
@@ -224,6 +205,7 @@ contains(BITCOIN_NEED_QT_PLUGINS, 1) {
 # regenerate src/build.h
 !win32|contains(USE_BUILD_INFO, 1) {
     genbuild.depends = FORCE
+#TODO: make this use the object build dir!
     genbuild.commands = cd $$PWD; /bin/sh share/genbuild.sh src/build.h
     genbuild.target = src/build.h
     PRE_TARGETDEPS += src/build.h
@@ -244,16 +226,12 @@ HEADERS += src/qt/codecoingui.h \
     src/qt/coincontroltreewidget.h \
     src/qt/addressbookpage.h \
     src/qt/signverifymessagedialog.h \
-    src/qt/aboutdialog.h \
     src/qt/editaddressdialog.h \
     src/qt/bitcoinaddressvalidator.h \
-    src/alert.h \
     src/addrman.h \
     src/base58.h \
-    src/bignum.h \
     src/checkpoints.h \
     src/codecoin.h \
-    src/coincontrol.h \
     src/compat.h \
     src/sync.h \
     src/util.h \
@@ -262,69 +240,62 @@ HEADERS += src/qt/codecoingui.h \
     src/kernel.h \
     src/pbkdf2.h \
     src/serialize.h \
-    src/main.h \
+    src/validation.h \
     src/undo.h \
     src/net.h \
     src/key.h \
-    src/db.h \
-    src/walletdb.h \
-    src/script.h \
+    src/dbwrapper.h \
+    src/wallet/walletdb.h \
+    src/script/script.h \
     src/init.h \
     src/bloom.h \
-    src/mruset.h \
     src/checkqueue.h \
-    src/json/json_spirit_writer_template.h \
-    src/json/json_spirit_writer.h \
-    src/json/json_spirit_value.h \
-    src/json/json_spirit_utils.h \
-    src/json/json_spirit_stream_reader.h \
-    src/json/json_spirit_reader_template.h \
-    src/json/json_spirit_reader.h \
-    src/json/json_spirit_error_position.h \
-    src/json/json_spirit.h \
     src/qt/clientmodel.h \
     src/qt/guiutil.h \
     src/qt/transactionrecord.h \
     src/qt/guiconstants.h \
     src/qt/optionsmodel.h \
-    src/qt/monitoreddatamapper.h \
     src/qt/transactiondesc.h \
     src/qt/transactiondescdialog.h \
     src/qt/bitcoinamountfield.h \
-    src/wallet.h \
+    src/wallet/coincontrol.h \
+    src/wallet/crypter.h \
+    src/wallet/db.h \
+    src/wallet/feebumper.h \
+    src/wallet/fees.h \
+    src/wallet/init.h \
+    src/wallet/rpcwallet.h \
+    src/wallet/walletdb.h \
+    src/wallet/walletutil.h \
     src/keystore.h \
     src/qt/transactionfilterproxy.h \
     src/qt/transactionview.h \
     src/qt/walletmodel.h \
-    src/codecoinrpc.h \
     src/qt/overviewpage.h \
     src/qt/csvmodelwriter.h \
-    src/crypter.h \
+    src/wallet/crypter.h \
     src/qt/sendcoinsentry.h \
     src/qt/qvalidatedlineedit.h \
-    src/qt/codecoinunits.h \
+    src/qt/bitcoinunits.h \
     src/qt/qvaluecombobox.h \
     src/qt/askpassphrasedialog.h \
     src/protocol.h \
     src/qt/notificator.h \
     src/qt/paymentserver.h \
-    src/allocators.h \
     src/ui_interface.h \
     src/qt/rpcconsole.h \
     src/qt/virtualkeyboard.h \
-    src/qt/multisigaddressentry.h \
-    src/qt/multisiginputentry.h \
-    src/qt/multisigdialog.h \
     src/version.h \
     src/netbase.h \
     src/clientversion.h \
     src/txdb.h \
-    src/leveldb.h \
     src/threadsafety.h \
     src/limitedmap.h \
     src/qt/macnotificationhandler.h \
     src/qt/splashscreen.h \
-    src/$${TARGET}.h \
+    src/$${TARGET}/consensus.h \
+    src/$${TARGET}/$${TARGET}.h \
+    src/$${TARGET}/seeds.h \
     src/build.h
 
 SOURCES += src/qt/codecoin.cpp \
@@ -337,56 +308,65 @@ SOURCES += src/qt/codecoin.cpp \
     src/qt/coincontroltreewidget.cpp \
     src/qt/addressbookpage.cpp \
     src/qt/signverifymessagedialog.cpp \
-    src/qt/aboutdialog.cpp \
     src/qt/editaddressdialog.cpp \
     src/qt/bitcoinaddressvalidator.cpp \
-    src/version.cpp \
     src/sync.cpp \
     src/util.cpp \
     src/hash.cpp \
     src/netbase.cpp \
     src/key.cpp \
-    src/script.cpp \
-    src/main.cpp \
+    src/script/bitcoinconsensus.cpp \
+    src/script/interpreter.cpp \
+    src/script/ismine.cpp \
+    src/script/script.cpp \
+    src/script/script_error.cpp \
+    src/script/sigcache.cpp \
+    src/script/standard.cpp \
+    src/validation.cpp \
     src/undo.cpp \
-    src/$${TARGET}.cpp \
+    src/$${TARGET}/params.cpp \
     src/init.cpp \
     src/net.cpp \
     src/bloom.cpp \
     src/checkpoints.cpp \
     src/addrman.cpp \
-    src/db.cpp \
-    src/walletdb.cpp \
-    src/json/json_spirit_writer.cpp \
-    src/json/json_spirit_value.cpp \
-    src/json/json_spirit_reader.cpp \
+    src/dbwrapper.cpp \
     src/qt/clientmodel.cpp \
     src/qt/guiutil.cpp \
     src/qt/transactionrecord.cpp \
     src/qt/optionsmodel.cpp \
-    src/qt/monitoreddatamapper.cpp \
     src/qt/transactiondesc.cpp \
     src/qt/transactiondescdialog.cpp \
     src/qt/codecoinstrings.cpp \
     src/qt/bitcoinamountfield.cpp \
-    src/wallet.cpp \
+    src/wallet/crypter.cpp \
+    src/wallet/db.cpp \
+    src/wallet/feebumper.cpp \
+    src/wallet/fees.cpp \
+    src/wallet/init.cpp \
+    src/wallet/rpcdump.cpp \
+    src/wallet/rpcwallet.cpp \
+    src/wallet/wallet.cpp \
+    src/wallet/walletdb.cpp \
+    src/wallet/walletutil.cpp \
     src/keystore.cpp \
     src/qt/transactionfilterproxy.cpp \
     src/qt/transactionview.cpp \
     src/qt/walletmodel.cpp \
-    src/codecoinrpc.cpp \
-    src/rpcdump.cpp \
-    src/rpcnet.cpp \
-    src/rpcmining.cpp \
-    src/rpcwallet.cpp \
-    src/rpcblockchain.cpp \
-    src/rpcrawtransaction.cpp \
+    src/rpc/blockchain.cpp \
+    src/rpc/client.cpp \
+    src/rpc/mining.cpp \
+    src/rpc/misc.cpp \
+    src/rpc/net.cpp \
+    src/rpc/protocol.cpp \
+    src/rpc/rawtransaction.cpp \
+    src/rpc/safemode.cpp \
+    src/rpc/server.cpp \
     src/qt/overviewpage.cpp \
     src/qt/csvmodelwriter.cpp \
-    src/crypter.cpp \
     src/qt/sendcoinsentry.cpp \
     src/qt/qvalidatedlineedit.cpp \
-    src/qt/codecoinunits.cpp \
+    src/qt/bitcoinunits.cpp \
     src/qt/qvaluecombobox.cpp \
     src/qt/askpassphrasedialog.cpp \
     src/protocol.cpp \
@@ -394,11 +374,8 @@ SOURCES += src/qt/codecoin.cpp \
     src/qt/paymentserver.cpp \
     src/qt/rpcconsole.cpp \
     src/qt/virtualkeyboard.cpp \
-    src/qt/multisigaddressentry.cpp \
-    src/qt/multisiginputentry.cpp \
-    src/qt/multisigdialog.cpp \
     src/noui.cpp \
-    src/leveldb.cpp \
+    src/dbwrapper.cpp \
     src/txdb.cpp \
     src/qt/splashscreen.cpp
 
@@ -422,43 +399,27 @@ SOURCES += src/cubehash.c src/luffa.c src/aes_helper.c \
 }
 
 contains(HASHSCRYPT, 1){
-HEADERS += src/scrypt.h
-SOURCES += src/scrypt.cpp
+HEADERS += src/crypto/scrypt.h
+SOURCES += src/crypto/scrypt.cpp
 }
 
-#leveldb sources
-SOURCES += src/leveldb/db/builder.cc src/leveldb/db/c.cc src/leveldb/db/dbformat.cc src/leveldb/db/db_impl.cc \
-    src/leveldb/db/db_iter.cc src/leveldb/db/filename.cc src/leveldb/db/log_reader.cc src/leveldb/db/log_writer.cc \
-    src/leveldb/db/memtable.cc src/leveldb/db/repair.cc src/leveldb/db/table_cache.cc src/leveldb/db/version_edit.cc \
-    src/leveldb/db/version_set.cc src/leveldb/db/write_batch.cc src/leveldb/table/block_builder.cc \
-    src/leveldb/table/block.cc src/leveldb/table/filter_block.cc src/leveldb/table/format.cc src/leveldb/table/iterator.cc \
-    src/leveldb/table/merger.cc src/leveldb/table/table_builder.cc src/leveldb/table/table.cc \
-    src/leveldb/table/two_level_iterator.cc src/leveldb/util/arena.cc \
-    src/leveldb/util/db_bloom.cc src/leveldb/util/cache.cc src/leveldb/util/coding.cc src/leveldb/util/comparator.cc \
-    src/leveldb/util/crc32c.cc src/leveldb/util/env.cc src/leveldb/util/env_posix.cc src/leveldb/util/env_win.cc \
-    src/leveldb/util/filter_policy.cc src/leveldb/util/db_hash.cc src/leveldb/util/histogram.cc src/leveldb/util/logging.cc \
-    src/leveldb/util/options.cc src/leveldb/util/status.cc 
-
-unix:SOURCES += src/leveldb/port/port_posix.cc
-windows:SOURCES += src/leveldb/port/port_win.cc
-
-#leveldb libmemv
-SOURCES += src/leveldb/helpers/memenv/memenv.cc
-
 # TODO: figure out how to dereference COIN_BRAND properly
-RESOURCES += src/qt/res/$$TARGET/codecoin.qrc
+RESOURCES += src/$$TARGET/qt/codecoin.qrc
 
 FORMS += src/qt/forms/sendcoinsdialog.ui \
     src/qt/forms/coincontroldialog.ui \
     src/qt/forms/addressbookpage.ui \
     src/qt/forms/signverifymessagedialog.ui \
-    src/qt/forms/aboutdialog.ui \
     src/qt/forms/editaddressdialog.ui \
     src/qt/forms/transactiondescdialog.ui \
     src/qt/forms/overviewpage.ui \
+    src/qt/forms/optionsdialog.ui \
     src/qt/forms/sendcoinsentry.ui \
     src/qt/forms/askpassphrasedialog.ui \
-    src/qt/forms/rpcconsole.ui \
+    src/qt/forms/debugwindow.ui
+
+#use sometime later?
+MULTISIG_FORMS = \
     src/qt/forms/multisigaddressentry.ui \
     src/qt/forms/multisiginputentry.ui \
     src/qt/forms/multisigdialog.ui
@@ -528,9 +489,15 @@ OTHER_FILES += README.md \
     src/qt/test/*.cpp \
     src/qt/test/*.h
 
+# this is probably brokeage, but its simple and mostly works
+# https://gist.github.com/buzzySmile/d46f537a810a7d97efc7
+# https://github.com/jmesmon/qmake-protobuf-example
+PROTOS = src/qt/paymentrequest.proto
+include(src/qt/protobuf.pri)
+
 # platform specific defaults, if not overridden on command line
 isEmpty(BOOST_LIB_SUFFIX) {
-#    macx:BOOST_LIB_SUFFIX = -mt
+    macx:BOOST_LIB_SUFFIX = -mt
     windows:BOOST_LIB_SUFFIX = -mgw44-mt-1_53
     android:BOOST_LIB_SUFFIX = -gcc-mt-1_53
 }
@@ -540,8 +507,8 @@ isEmpty(BOOST_THREAD_LIB_SUFFIX) {
 }
 
 isEmpty(BDB_LIB_PATH) {
-    !linux:BDB_LIB_PATH = deps/lib
-#    macx:BDB_LIB_PATH = /opt/local/lib/db53
+    windows:BDB_LIB_PATH = deps/lib
+    macx:BDB_LIB_PATH = ${BREW}/${BDB}/lib
     android:BDB_LIB_PATH = deps/lib
 }
 
@@ -550,17 +517,17 @@ isEmpty(BDB_LIB_SUFFIX) {
 }
 
 isEmpty(BDB_INCLUDE_PATH) {
-    !linux:BDB_INCLUDE_PATH = deps/include
-#    macx:BDB_INCLUDE_PATH = /opt/local/include/db53
+    windows:BDB_INCLUDE_PATH = deps/include
+    macx:BDB_INCLUDE_PATH = $${BREW}/$${BDB}/include
     android:BDB_INCLUDE_PATH = deps/include
 }
 
 isEmpty(BOOST_LIB_PATH) {
-#    macx:BOOST_LIB_PATH = /opt/local/lib
+    macx:BOOST_LIB_PATH = $${BREW}/$${BOOST}/lib
 }
 
 isEmpty(BOOST_INCLUDE_PATH) {
-#    macx:BOOST_INCLUDE_PATH = /opt/local/include
+    macx:BOOST_INCLUDE_PATH = $${BREW}/$${BOOST}/include
 }
 
 win32:DEFINES += WIN32
@@ -588,15 +555,15 @@ macx:HEADERS += src/qt/macdockiconhandler.h src/qt/macnotificationhandler.h
 macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm src/qt/macnotificationhandler.mm
 macx:LIBS += -framework Foundation -framework ApplicationServices -framework AppKit -framework CoreServices
 macx:DEFINES += MAC_OSX MSG_NOSIGNAL=0 HAVE_CXX_STDHEADERS
-macx:ICON = src/qt/res/$${TARGET}/icons/coin.icns
+macx:ICON = src/$${TARGET}/qt/icons/coin.icns
 macx:QMAKE_CFLAGS_THREAD += -pthread
 macx:QMAKE_LFLAGS_THREAD += -pthread
 macx:QMAKE_CXXFLAGS_THREAD += -pthread
-macx:QMAKE_INFO_PLIST = share/qt/Info.plist
-macx:OPENSSL_INCLUDE_PATH = /opt/local/include
+macx:QMAKE_INFO_PLIST = src/$${TARGET}/qt/Info.plist
+macx:OPENSSL_INCLUDE_PATH = $${BREW}/$${SSL}/include
 
 # Set libraries and includes at end, to use platform-defined defaults if not overridden
-INCLUDEPATH += $$BOOST_INCLUDE_PATH $$BDB_INCLUDE_PATH $$OPENSSL_INCLUDE_PATH $$QRENCODE_INCLUDE_PATH
+INCLUDEPATH += $$BOOST_INCLUDE_PATH $$BDB_INCLUDE_PATH $$OPENSSL_INCLUDE_PATH $$QRENCODE_INCLUDE_PATH $$OS_INCLUDE_PATH
 LIBS += $$join(BOOST_LIB_PATH,,-L,) $$join(BDB_LIB_PATH,,-L,) $$join(OPENSSL_LIB_PATH,,-L,) $$join(QRENCODE_LIB_PATH,,-L,)
 LIBS += -lssl -lcrypto -ldb_cxx$$BDB_LIB_SUFFIX
 # -lgdi32 has to happen after -lcrypto (see  #681)
@@ -614,8 +581,6 @@ contains(RELEASE, 1) {
         LIBS += -Wl,-Bdynamic
     }
 }
-
-system($$QMAKE_LRELEASE -silent $$TRANSLATIONS)
 
 #DISTFILES += \
 #    android/gradle/wrapper/gradle-wrapper.jar \

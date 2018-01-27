@@ -8,7 +8,7 @@
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
 #include <qt/sendcoinsentry.h>
-#include <qt/forms/ui_sendcoinsentry.h>
+#include <ui_sendcoinsentry.h>
 
 #include <qt/addressbookpage.h>
 #include <qt/addresstablemodel.h>

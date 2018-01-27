@@ -11,7 +11,7 @@
 #define TRANSACTIONRECORD_H
 
 #include <amount.h>
-#include <uint256.h>
+#include <uintBIG.h>
 
 #include <QList>
 #include <QString>
