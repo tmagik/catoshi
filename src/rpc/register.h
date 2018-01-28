@@ -27,7 +27,9 @@ static inline void RegisterAllCoreRPCCommands(CRPCTable &t)
     RegisterBlockchainRPCCommands(t);
     RegisterNetRPCCommands(t);
     RegisterMiscRPCCommands(t);
+#if defined(FEATURE_INDEX)
     RegisterIndexRPCCommands(t);
+#endif
     RegisterMiningRPCCommands(t);
     RegisterRawTransactionRPCCommands(t);
 }
