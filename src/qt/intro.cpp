@@ -60,7 +60,7 @@ private:
     Intro *intro;
 };
 
-#include <qt/intro.moc>
+#include <intro.moc>
 
 FreespaceChecker::FreespaceChecker(Intro *_intro)
 {
