@@ -152,7 +152,16 @@ win32:QMAKE_LFLAGS *= -Wl,--large-address-aware
 # i686-w64-mingw32
 win32:QMAKE_LFLAGS *= -static-libgcc -static-libstdc++
 
+# use: qmake "USE_WALLET=0" to turn off wallet
+USE_WALLET=1
+contains(USE_WALLET, 1) {
+    DEFINES += ENABLE_WALLET
+} else {
+    message(Building with wallet disabled)
+}
+
 # use: qmake "USE_QRCODE=1"
+USE_QRCODE=0
 # libqrencode (http://fukuchi.org/works/qrencode/index.en.html) must be installed for support
 contains(USE_QRCODE, 1) {
     message(Building with QRCode support)
@@ -448,7 +457,7 @@ QT_WALLET_CPP = \
     src/qt/walletmodeltransaction.cpp \
     src/qt/walletview.cpp
 
-QT_SRC = $$QT_BASE_CPP $$QT_WALLET_CPP
+QT_SRC = $$QT_BASE_CPP 
 
 MINER_SRC = \
     src/rpc/mining.cpp \
@@ -475,8 +484,13 @@ SOURCES += \
     $$UTIL_SRC \
     $$CRYPTO_SRC \
     $$COMMON_SRC \
-    $$QT_SRC \
-    $$WALLET_SRC \
+    $$QT_SRC
+
+contains(USE_WALLET, 1){
+SOURCES += $$WALLET_SRC $$QT_WALLET_CPP
+}
+
+SOURCES += \
     $$MINER_SRC \
     src/addrman.cpp \
     src/addrdb.cpp \
