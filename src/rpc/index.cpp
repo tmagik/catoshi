@@ -40,11 +40,11 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
     if (params[0].isStr()) {
         CTxDestination address = DecodeDestination(params[0].get_str());
         uint160 hashBytes;
-        int type = 0;
         if (!IsValidDestination(address)) {
+            LogPrintf("%s: Invalid address %s\n", __func__, params[0].get_str());
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
         }
-        addresses.push_back(std::make_pair(hashBytes, type));
+        addresses.push_back(std::make_pair(hashBytes, address.which()));
     } else if (params[0].isObject()) {
 
         UniValue addressValues = find_value(params[0].get_obj(), "addresses");
@@ -57,11 +57,11 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
         for (std::vector<UniValue>::iterator it = values.begin(); it != values.end(); ++it) {
             CTxDestination address = DecodeDestination(it->get_str());
             uint160 hashBytes;
-            int type = 0;
             if (!IsValidDestination(address)) {
+                LogPrintf("%s: Invalid address %s\n", __func__, params[0].get_str());
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
             }
-            addresses.push_back(std::make_pair(hashBytes, type));
+            addresses.push_back(std::make_pair(hashBytes, address.which()));
         }
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");

@@ -22,6 +22,11 @@ src/build.h
 src/qt/paymentrequest.pb.cc
 src/qt/paymentrequest.pb.h
 
+# test
+test/cache/*
+test/functional/__pycache__
+test/functional/test_framework/__pycache__
+
 # Compilation and Qt preprocessor part
 *.qm
 Makefile
