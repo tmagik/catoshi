@@ -128,7 +128,7 @@ D_LIBS+= \
 
 #TODO: simplify above
 TX_LIBS = $(LIBS) $(BOOST_LIBS) -lsecp256k1 -lssl -lcrypto -lpthread
-CLI_LIBS = $(LIBS) $(BOOST_LIBS) -lssl -lcrypto -levent
+CLI_LIBS = $(LIBS) $(BOOST_LIBS) -lsecp256k1 -lssl -lcrypto -levent
 
 # Hardening
 # Make some classes of vulnerabilities unexploitable in case one is discovered.
@@ -187,6 +187,7 @@ UTIL_OBJS= \
     $(OBJDIR)/fs.o \
     $(OBJDIR)/random.o \
     $(OBJDIR)/rpc/protocol.o \
+    $(OBJDIR)/rpc/util.o \
     $(OBJDIR)/support/cleanse.o \
     $(OBJDIR)/sync.o \
     $(OBJDIR)/uint256.o \
@@ -374,13 +375,12 @@ ifeq ($(COIN_BRAND),bluecoin)
 COMMON_OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
 endif
 
-TX_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) bitcoin-tx.cpp
-# should just use crypto_objs but only CSHA512 is used
-CLI_OBJS= $(UTIL_OBJS) \
-	  $(OBJDIR)/crypto/chacha20.o \
-	  $(OBJDIR)/crypto/sha512.o \
-	  $(OBJDIR)/rpc/client.o \
-	  $(OBJDIR)/bitcoin-cli.o
+TX_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) $(OBJDIR)/indexhack.o $(OBJDIR)/bitcoin-tx.o
+# should have just use CRYPTO_OBJS and COMMON_OBJS but let's keep it simple
+#CLI_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) $(OBJDIR)/rpc/client.o $(OBJDIR)/bitcoin-cli.o
+#ugh, index.
+CLI_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) \
+	  $(OBJDIR)/indexhack.o $(OBJDIR)/rpc/client.o $(OBJDIR)/bitcoin-cli.o
 
 #needed to create directories
 ALL_OBJS= $(STAKE_OBJS) $(UTIL_OBJS) $(CRYPTO_OBJS) $(INDEX_OBJS) $(COMMON_OBJS) $(D_OBJS) $(TX_OBJS) $(CLI_OBJS) 
@@ -417,7 +417,7 @@ $(ALL_OBJS): | $(SUBDIRS)
 # LevelDB support
 #
 MAKEOVERRIDES =
-D_LIBS += -lleveldb 
+D_LIBS += -lleveldb
 
 # auto-generated dependencies:
 -include $(OBJDIR)/*.P
