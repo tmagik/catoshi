@@ -1054,9 +1054,9 @@ bool AppInitParameterInteraction()
         nConnectTimeout = DEFAULT_CONNECT_TIMEOUT;
 
 #if defined(FEATURE_CFG_MAXFUTURE)
-	if (IsArgSet("-maxfuture"))
+	if (gArgs.IsArgSet("-maxfuture"))
 	{
-		int nNewFuture = GetArg("-maxfuture", 7200);
+		int nNewFuture = gArgs.GetArg("-maxfuture", 7200);
 		if (nNewFuture > 0 && nNewFuture < 20000){
 			nMaxFutureTime = nNewFuture;
 			InitWarning(strprintf(_("maxfuture (nMaxFutureTime) set to %d"), nMaxFutureTime));

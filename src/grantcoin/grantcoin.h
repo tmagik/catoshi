@@ -4,29 +4,21 @@
 #ifndef CODECOIN_grantcoin_H
 #define CODECOIN_grantcoin_H
 
-/* ========= Things defined in bitcoin@0.12/consensus/consensus.h  ========= */
+#include "grantcoin/consensus.h"
 
-/** The maximum allowed size for a serialized block, in bytes (network rule) */
-static const unsigned int MAX_BLOCK_SIZE =   1000000; // Segwit will move this around
-static const unsigned int MAX_BLOCK_SIZE_GEN = 1000000/2;
+/* ========= Things migrated from ~bitcoin@.15/policy/policy.h    ========= */
 
-/** The maximum allowed number of signature check operations in a block (network rule) */
-static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
+/** Default for -maxmempool, maximum megabytes of mempool memory usage */
+static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 500;
 
-/** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
-static const int COINBASE_MATURITY = 500;
+/** Min feerate for defining dust. Historically this has been based on the
+ * minRelayTxFee, however changing the dust limit changes which transactions are
+ * standard and should be done with care and ideally rarely. It makes sense to
+ * only increase the dust limit after prior releases were already not creating
+ * outputs below the new threshold */
+static const unsigned int DUST_RELAY_TX_FEE = 3000;
 
-/** Flags for nSequence and nLockTime locks */
-#warning "check validity for grantcoin"
-enum {
-    /* Interpret sequence numbers as relative lock-time constraints. */
-    LOCKTIME_VERIFY_SEQUENCE = (1 << 0),
-
-    /* Use GetMedianTimePast() instead of nTime for end point timestamp. */
-    LOCKTIME_MEDIAN_TIME_PAST = (1 << 1),
-};
-
-/* ========= End defines from bitcoin@0.12/consensus/consensus.h  ========= */
+/* ========= End defines from bitcoin@0.14/policy/policy.h        ========= */
 
 static const int RPC_PORT = 9983;
 static const int RPC_PORT_TESTNET = 9985;
@@ -39,14 +31,17 @@ static const int64_t CENT = 10000;
 static const int COIN_DECIMALS = 6; /* decimal places for coin */
 #define COIN_DECIMALS_FMT "06"
 
+/** Default for -minrelaytxfee, minimum relay fee for transactions */
+static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = CENT;
+
 /** No amount larger than this (in satoshi) is valid */
 static const int64_t MAX_MONEY = 50000000000 * COIN;
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 
 
-static const int STAKE_TARGET_SPACING = 1.5 * 60; // 90-second block spacing 
-static const unsigned int nStakeMinAge = 60 * 60 * 24; // minimum age for coin age (24 hours)
-static const unsigned int nStakeMaxAge = 60 * 60 * 24 * 90; // stake age of full weight
+//static const int STAKE_TARGET_SPACING = 1.5 * 60; // 90-second block spacing 
+//static const unsigned int nStakeMinAge = 60 * 60 * 24; // minimum age for coin age (24 hours)
+//static const unsigned int nStakeMaxAge = 60 * 60 * 24 * 90; // stake age of full weight
 //static const int64 START_BLOCK_PROOF_OF_STAKE = 250000; // PoS allowed starting at this block
 
 extern const unsigned int nMaxClockDrift;
@@ -70,6 +65,8 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 
 #define FEATURE_MONEYSUPPLY
 #define FEATURE_CFG_MAXFUTURE
+extern int32_t nMaxFutureTime;
+
 #define FEATURE_FUTURE_IS_HARDER
 
 #define BRAND "Grantcoin"
@@ -88,10 +85,14 @@ static const int64_t MINIMUM_BLOCK_SPACING = 60;	// Absolute minimum spacing
 /* primitives/<stuff> needs this */
 #define BITCOIN_COMPAT
 
-/* allow for overloads.. */
-#define CTransaction TransactionGRT
-#define CMutableTransaction MutableTransactionGRT
+/* overload the BITCOIN_COMPAT defines*/
+#define CTransaction StakeTx
+#define CMutableTransaction MutableStakeTx
+
 #define CBlockHeader BlockHeader
-#define CBlock BlockGRT
+
+/* TODO make BlockGRT (or StakeBlock??) later */
+//#define CBlock BlockGRT
+#define CBlock Block
 
 #endif

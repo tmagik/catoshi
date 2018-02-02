@@ -51,6 +51,12 @@
 #ifndef CBlockHeader
 #define CBlockHeader BlockHeader
 #endif
+#ifndef CTransaction
+#define CTransaction SegwitTx
+#endif
+#ifndef CMutableTransaction
+#define CMutableTransaction MutableSegwitTx
+#endif
 
 /* This used to be in configure's bitcoin_config.h */
 #define HAVE_DECL_DAEMON 1	/* linux/osx support for now */
