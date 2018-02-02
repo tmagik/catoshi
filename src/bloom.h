@@ -15,7 +15,8 @@
 #include <vector>
 
 class COutPoint;
-class Transaction;
+#include <codecoin.h>
+class CTransaction;
 class uint256;
 
 //! 20,000 items with fp rate < 0.1% or 10,000 items and <0.0001%
@@ -103,7 +104,7 @@ public:
     //! Also adds any outputs which match the filter to the filter (to match their spending txes)
     //bool IsRelevantAndUpdate(const CTransaction& tx);
     //! Codecoin TODO: finish migration from CTransaction to Transaction
-    bool IsRelevantAndUpdate(const Transaction& tx);
+    bool IsRelevantAndUpdate(const CTransaction& tx);
 
     //! Checks for empty and full filters to avoid wasting cpu
     void UpdateEmptyFull();

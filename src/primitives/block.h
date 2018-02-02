@@ -11,7 +11,7 @@
 #ifndef CODECOIN_PRIMITIVES_BLOCK_H
 #define CODECOIN_PRIMITIVES_BLOCK_H
 
-#include <codecoin.h>
+//#include <codecoin.h>
 #include <primitives/transaction.h>
 #include <serialize.h>
 #include <uintBIG.h>
@@ -78,7 +78,10 @@ public:
 
     uint256 GetHash() const;
 
-    uint256 GetPoWHash() const;
+    uint256 GetPoWHash() const
+    { 
+        return GetHash();
+    };
 
     int64_t GetBlockTime() const
     {
@@ -86,10 +89,15 @@ public:
     }
 };
 
+class ScryptBlockHeader : BlockHeader
+{
+    uint256 GetPoWHash() const;
+};
+
 
 /* below depends on BITCOIN_COMPAT magic */
 
-class CBlock : public BlockHeader
+class Block : public BlockHeader
 {
 public:
     // network and disk
@@ -102,12 +110,12 @@ public:
     // memory only
     mutable bool fChecked;
 
-    CBlock()
+    Block()
     {
         SetNull();
     }
 
-    CBlock(const BlockHeader &header)
+    Block(const BlockHeader &header)
     {
         SetNull();
         *((BlockHeader*)this) = header;
@@ -117,7 +125,7 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(*(CBlockHeader*)this);
+        READWRITE(*(BlockHeader*)this);
         READWRITE(vtx);
 #if defined(BRAND_grantcoin)
 	READWRITE(BlockSig);
@@ -136,9 +144,9 @@ public:
 
     /* There is probably some C++ way to handle this with templates better,
      * rather than depending on a #define of CBlockHeader. Fix later */
-    CBlockHeader GetBlockHeader() const
+    BlockHeader GetBlockHeader() const
     {
-        CBlockHeader block;
+        BlockHeader block;
         block.nVersion       = nVersion;
         block.hashPrevBlock  = hashPrevBlock;
         block.hashMerkleRoot = hashMerkleRoot;

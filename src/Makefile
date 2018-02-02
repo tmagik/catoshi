@@ -396,8 +396,6 @@ install: $(BINS)
 	mkdir -p $(DESTDIR)$(prefix)/bin
 	install -D $^ $(DESTDIR)$(prefix)/bin/
 
-test check: obj/test_$(COIN_BRAND) FORCE
-	./obj/test_$(COIN_BRAND)
 
 regression: test FORCE
 	$(MAKE) COIN_BRAND=litecoin test
@@ -489,6 +487,8 @@ JSON_TEST_FILES = \
   test/data/tx_valid.json \
   test/data/sighash.json
 
+JSON_TEST_H_FILES = $(patsubst test/data/%.json,$(OBJDIR)/test/data/%.json.h,$(wildcard $(JSON_TEST_FILES)))
+
 RAW_TEST_FILES = test/data/alertTests.raw
 
 $(OBJDIR)/%.json.h: %.json
@@ -499,9 +499,13 @@ $(OBJDIR)/%.json.h: %.json
 	@echo "};};" >> $@
 	@echo "Generated $@"
 
-TESTOBJS := $(patsubst test/%.cpp,$(OBJDIR)/test/%.o,$(wildcard test/*.cpp))
+TESTS := $(patsubst test/%.cpp,%,$(wildcard test/*_tests.cpp))
+TEST_OBJS := $(patsubst %,$(OBJDIR)/test/%.o,$(TESTS))
+TEST_EXTRA_OBJS = $(OBJDIR)/test/test_codecoin.o $(OBJDIR)/test/test_bitcoin_main.o
 
-$(TESTOBJS): $(patsubst test/data/%.json,$(OBJDIR)/test/data/%.json.h,$(wildcard $(JSON_TEST_FILES)))
+$(TEST_OBJS): $(JSON_TEST_H_FILES) $(TESTDIR)
+
+$(TEST_EXTRA_OBJS): $(TESTDIR)
 
 $(OBJDIR)/test/%.o: test/%.cpp
 	$(V_CXX) $(CXX) -c $(TESTDEFS) $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
@@ -513,23 +517,25 @@ $(OBJDIR)/test/%.o: test/%.cpp
 #yes this has extra cruft for scrypt. ugh.
 #filter for init.o is ugly too
 
-fltr_d_ojbs = $(OBJDIR)/init.o $(OBJDIR)/torcontrol.o 
-test_d_objs = $(filter-out $(fltr),$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
-testobjs = $(filter-out $(OBJDIR)/test/test_bitcoin_fuzzy.o,$(TESTOBJS))
+fltr_d_objs = $(OBJDIR)/init.o $(OBJDIR)/torcontrol.o 
+test_d_objs = $(filter-out $(fltr_d_objs),$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
 
-obj/test_$(COIN_BRAND): $(test_d_objs) \
-		$(WALLET_OBJS) $(testobjs) \
+$(TESTS): obj/test_$(COIN_BRAND) FORCE
+	./obj/test_$(COIN_BRAND) --run_test=$@
+
+test check: $(TESTS)
+
+obj/test_$(COIN_BRAND): $(test_d_objs) $(TEST_EXTRA_OBJS) \
+		$(WALLET_OBJS) $(TEST_OBJS) \
 		$(OBJDIR)/rpc/client.o $(OBJDIR)/crypto/scrypt.o $(OBJS_SSE2)
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS) $(D_LIBS) $(BOOST_LIBS)
 endif
 
 clean:
-	-rm -f $(OBJDIR)/*.o
-	-rm -f $(OBJDIR)/*/*.o
-	-rm -f $(OBJDIR)/*.P
-	-rm -f $(OBJDIR)/*/*.P
-	-rm -f $(OBJDIR)/build.h
-	-rm -f obj/$(COIN_BRAND)* obj/test_$(COIN_BRAND)
+	-rm -f $(OBJDIR)/*.o $(OBJDIR)/*/*.o
+	-rm -f $(OBJDIR)/*.P $(OBJDIR)/*/*.P
+	-rm -f $(OBJDIR)/build.h $(OBJDIR)/*/*/*.json.h
+	-rm -f $(MAN) $(BINS) obj/test_$(COIN_BRAND)
 
 realclean:
 	rm -rf obj

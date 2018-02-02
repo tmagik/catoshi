@@ -1,24 +1,23 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2014-2018 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 
-#include "chainparams.h"
-#include "consensus/merkle.h"
+/* Grantcoin/Manna Params */
 
-#include "tinyformat.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include <chainparams.h>
+#include <consensus/merkle.h>
+
+#include <tinyformat.h>
+#include <util.h>
+#include <utilstrencodings.h>
 
 #include <cinttypes>
 #include <assert.h>
 
-#include <boost/assign/list_of.hpp>
 
 #include "arith_uint256.h"
-
-//using namespace std;
 
 /**
  * Main network
@@ -29,16 +28,6 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "grantcoin";
-        /** 
-         * The message start string is designed to be unlikely to occur in normal data.
-         * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-         * a large 4-byte int at any alignment.
-         */
-        pchMessageStart[0] = 0xe2;
-        pchMessageStart[1] = 0xe7;
-        pchMessageStart[2] = 0xe1;
-        pchMessageStart[3] = 0xe4;
-        nDefaultPort = 9982; /* P2P_PORT */
         //consensus.powLimit = ~uint256S(0) >> 28; // Reduced initial difficulty from Peercoin's 32
         //consensus.powLimit = uint256S("0000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 	consensus.powLimit = ArithToUint256(~arith_uint256(0) >> 28); // TODO: implement operator= for this
@@ -49,6 +38,17 @@ public:
         consensus.nPowTargetSpacing = 1.5 * 60; // 1.5 minutes
         consensus.nMinerConfirmationWindow = 3360;
         consensus.nRuleChangeActivationThreshold = 3024; /* 90% of miners */
+
+        /** 
+         * The message start string is designed to be unlikely to occur in normal data.
+         * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
+         * a large 4-byte int at any alignment.
+         */
+        pchMessageStart[0] = 0xe2;
+        pchMessageStart[1] = 0xe7;
+        pchMessageStart[2] = 0xe1;
+        pchMessageStart[3] = 0xe4;
+        nDefaultPort = 9982; /* P2P_PORT */
 
         nMaxTipAge = 24 * 60 * 60;
 
@@ -93,30 +93,27 @@ public:
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = false;
 
-#if 0
-        checkpointData = (CCheckpointData) {
-            boost::assign::map_list_of
-	    (     0, uint256S("0000000f0483c7cc4433d89e321373d82d86ef5ba8157d8f7b9ef3449283421a"))
-//	    (33000, uint256S("0x"))
-	    1434870875, 	// * UNIX timestamp of last checkpoint block
-	    106400,		// * total number of transactions between genesis and last checkpoint
-				//	 (the tx=... number in the SetBestChain debug.log lines)
-	    1000.0		// * estimated number of transactions per day after checkpoint
+        checkpointData = {
+	{
+		{  11111, uint256S("00000005e6192125f526f1a8f24b47253282259d6c59adf2039157c523f5ef6c")},
+		{ 100000, uint256S("000000000000266c129bdcc8549e1517a2d3ec2a5c8aedad7f77ae12426be4d4")},
+		{ 200000, uint256S("00000000000019f86a0086b0d5acdf95a8c7a6da2e1cf9c052f8ed6a7a01957f")},
+		//  300000 00000000000019f86a0086b0d5acdf95a8c7a6da2e1cf9c052f8ed6a7a01957f	
+		// 400000 0000000000004937c23ec9c7e8b007370d99b18220624e12d27f9e80723080a0
+		// 500000 000000000000014c803fb1b57d8b05d70d1765ca2d932093b8ff1e00e35b15d3
+		// 600000 0000000000001b44b2e64698557c16224d37331c0d0b69442084dde82dfa9b78
+		// 700000 000000000000751463730a2ede3218249ee7917889a8cf7396ac881cadab5ac7
+		{ 800000, uint256S("00000000004add0b66dab5d4dadae283211f7de0dbd37d2ba6504b603c9b2599")},
+		{ 900000, uint256S("000000000008bef9e174e237d87c067a7f17b289647011465e1a6430fec7a40b")},
+		{ 994000, uint256S("0000000000003599eee46c88fa2d0a52d8b978dd4642f1787e4c465f43b7b2b2")},	
 	};
-#else
-        checkpointData = (CCheckpointData) {
-            boost::assign::map_list_of
-            ( 11111, uint256S("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d"))
-	};
-#endif
     }
 };
-static CMainParams mainParams;
 
 /**
  * Testnet (Grantcoin v1)
  */
-class CTestNetParams : public CMainParams {
+class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
@@ -158,7 +155,7 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("testseed.grantcoin.org", "testseed.grt.7el.us"));
+        vSeeds.emplace_back("testseed.grantcoin.org", "testseed.grt.7el.us");
 
         base58Prefixes[PUBKEY_ADDRESS] = { 65 };  // grantcoin test blockchain: addresses begin with 'T'
         base58Prefixes[SCRIPT_ADDRESS] = { 127 }; // grantcoin test blockchain: addresses begin with 't'
@@ -170,11 +167,101 @@ public:
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
         fMineBlocksOnDemand = false;
-        fTestnetToBeDeprecatedFieldRPC = true;
+
+#if 0
+        checkpointData = {
+            {
+                {546, uint256S("0")},
+            }
+        };
+
+	/* 			   Unix TS, total TX=, estimated transactions/sec */
+        chainTxData = ChainTxData{
+#error
+            1517526271, // Unix 
+            100000,
+            0.01
+        };
+#endif
     }
 };
 
-static CTestNetParams testNetParams;
+/**
+ * Regression test
+ */
+class CRegTestParams : public CChainParams {
+public:
+    CRegTestParams() {
+        strNetworkID = "regtest";
+        consensus.nSubsidyHalvingInterval = 150;
+        consensus.BIP16Height = 0; // always enforce P2SH BIP16 on regtest
+        consensus.BIP34Height = 100000000; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests)
+        consensus.BIP34Hash = uint256();
+        consensus.BIP65Height = 1351; // BIP65 activated on regtest (Used in rpc activation tests)
+        consensus.BIP66Height = 1251; // BIP66 activated on regtest (Used in rpc activation tests)
+        consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
+        consensus.nPowTargetSpacing = 10 * 60;
+        consensus.fPowAllowMinDifficultyBlocks = true;
+        consensus.fPowNoRetargeting = true;
+        consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
+        consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+
+        // The best chain should have at least this much work.
+        consensus.nMinimumChainWork = uint256S("0x00");
+
+        // By default assume that the signatures in ancestors of this block are valid.
+        consensus.defaultAssumeValid = uint256S("0x00");
+
+        pchMessageStart[0] = 0xfa;
+        pchMessageStart[1] = 0xbf;
+        pchMessageStart[2] = 0xb5;
+        pchMessageStart[3] = 0xda;
+        nDefaultPort = 18444;
+        nPruneAfterHeight = 1000;
+
+        genesis = CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, 50 * COIN);
+        consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256S("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+
+        vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
+        vSeeds.clear();      //!< Regtest mode doesn't have any DNS seeds.
+
+        fDefaultConsistencyChecks = true;
+        fRequireStandard = false;
+        fMineBlocksOnDemand = true;
+
+        checkpointData = {
+            {
+                {0, uint256S("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")},
+            }
+        };
+
+        chainTxData = ChainTxData{
+            0,
+            0,
+            0
+        };
+
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
+        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
+
+        bech32_hrp = "bcrt";
+    }
+};
 
 static CChainParams *pCurrentParams = 0;
 
@@ -207,6 +294,9 @@ void SelectParams(const std::string& network)
 
 using namespace std;
 using namespace boost;
+
+// GRT always has FEATURE_MAXFUTURE
+int32_t nMaxFutureTime = 0;
 
 // TODO: separate max clock drift from tx timestamp limits?
 const unsigned int nMaxClockDrift = 2*60*60;   // this is WAY to big..
