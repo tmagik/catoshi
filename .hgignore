@@ -1,0 +1,52 @@
+syntax: glob
+
+src/*.exe
+src/codecoin
+src/codecoind
+src/test_*
+src/catcoind
+src/grantcoind
+src/obj/*
+src/obj-test/*
+.*.swp
+*.*~*
+*.bak
+*.rej
+*.orig
+*.o
+*.patch
+.codecoin
+
+# QT qmake things
+src/build.h
+src/qt/paymentrequest.pb.cc
+src/qt/paymentrequest.pb.h
+
+# test
+test/cache/*
+test/functional/__pycache__
+test/functional/test_framework/__pycache__
+
+# Compilation and Qt preprocessor part
+*.qm
+Makefile
+codecoin-qt
+Codecoin-Qt.app
+grantcoin
+
+# Unit-tests
+Makefile.test
+codecoin-qt_test
+
+# Resources cpp
+qrc_*.cpp
+
+# Qt creator
+*.pro.user
+
+# Mac specific
+.DS_Store
+build
+
+# android stuff
+deps/*

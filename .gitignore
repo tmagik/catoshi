@@ -1,0 +1,70 @@
+src/*.exe
+src/catcoin
+src/catcoind
+src/test_catcoin
+src/ppcoin
+src/ppcoind
+src/grantcoind
+src/test_ppcoin
+src/build.h
+.*.swp
+*.*~*
+*.bak
+*.rej
+*.orig
+*.pyc
+*.o
+*.o-*
+*.patch
+*.a
+*.pb.cc
+*.pb.h
+
+*.log
+*.trs
+*.dmg
+
+*.json.h
+*.raw.h
+
+#libtool object files
+*.lo
+*.la
+
+# Compilation and Qt preprocessor part
+*.qm
+Makefile
+
+# Unit-tests
+Makefile.test
+bitcoin-qt_test
+src/test/buildenv.py
+
+# Resources cpp
+qrc_*.cpp
+
+# Mac specific
+.DS_Store
+build
+
+#lcov
+*.gcno
+*.gcda
+/*.info
+test_bitcoin.coverage/
+total.coverage/
+coverage_percent.txt
+
+#build tests
+linux-coverage-build
+linux-build
+win32-build
+qa/pull-tester/tests_config.py
+qa/cache/*
+
+!src/leveldb*/Makefile
+
+/doc/doxygen/
+
+libbitcoinconsensus.pc
+contrib/devtools/split-debug.sh
