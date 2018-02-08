@@ -78,10 +78,14 @@ public:
 
     uint256 GetHash() const;
 
+#if defined(LITECOIN_SCRYPT_POWHASH)
+    uint256 GetPoWHash() const;
+#else
     uint256 GetPoWHash() const
     { 
         return GetHash();
     };
+#endif
 
     int64_t GetBlockTime() const
     {
@@ -89,11 +93,14 @@ public:
     }
 };
 
-class ScryptBlockHeader : BlockHeader
+/* while it would be nice to do it this way, it causes problems with class Block 
+ * there is probably some sort of virtual function thingy that does this nicely
+class ScryptBlockHeader : public BlockHeader
 {
+public:
     uint256 GetPoWHash() const;
 };
-
+*/
 
 /* below depends on BITCOIN_COMPAT magic */
 

@@ -17,7 +17,8 @@
 
 #if defined(LITECOIN_SCRYPT_POWHASH)
 #include "crypto/scrypt.h"
-uint256 ScryptBlockHeader::GetPoWHash() const
+//uint256 ScryptBlockHeader::GetPoWHash() const
+uint256 BlockHeader::GetPoWHash() const
 {
     uint256 thash;
     scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
