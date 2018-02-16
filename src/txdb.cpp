@@ -176,7 +176,7 @@ size_t CCoinsViewDB::EstimateSize() const
 
 #if defined(FEATURE_INDEX)
 CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fWipe, bool compression, int maxOpenFiles) 
-	: CDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fWipe, /* obfuscate */ true, nullptr, compression, maxOpenFiles) 
+	: CDBWrapper(GetDataDir() / "blkindex", nCacheSize, fWipe, /* obfuscate */ true, nullptr, compression, maxOpenFiles) 
 {
 }
 #else
