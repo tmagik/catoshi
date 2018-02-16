@@ -110,7 +110,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     return result;
 }
 
-UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails)
+UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails, bool txHex)
 {
     AssertLockHeld(cs_main);
     UniValue result(UniValue::VOBJ);
@@ -130,13 +130,17 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     UniValue txs(UniValue::VARR);
     for(const auto& tx : block.vtx)
     {
-        if(txDetails)
-        {
+        if(txDetails) {
             UniValue objTx(UniValue::VOBJ);
             TxToUniv(*tx, uint256(), objTx, true, RPCSerializationFlags());
             txs.push_back(objTx);
-        }
-        else
+        } else if(txHex) {
+            UniValue objTx(UniValue::VOBJ);
+            objTx.pushKV("txid", tx->GetHash().GetHex());
+            objTx.pushKV("hash", tx->GetWitnessHash().GetHex());
+            objTx.pushKV("hex", EncodeHexTx(*tx, RPCSerializationFlags()));
+            txs.push_back(objTx);
+	} else 
             txs.push_back(tx->GetHash().GetHex());
     }
     result.push_back(Pair("tx", txs));
@@ -705,7 +709,11 @@ UniValue getblock(const JSONRPCRequest& request)
             "If verbosity is 2, returns an Object with information about block <hash> and information about each transaction. \n"
             "\nArguments:\n"
             "1. \"blockhash\"          (string, required) The block hash\n"
-            "2. verbosity              (numeric, optional, default=1) 0 for hex encoded data, 1 for a json object, and 2 for json object with transaction data\n"
+            "2. verbosity              (numeric, optional, default=1)\n"
+            "                          0 for hex encoded data,\n"
+            "                          1 for a json object,\n"
+            "                          2 for json object with verbose transaction data\n"
+            "                          3 for a json object with hex encoded transaction data\n"
             "\nResult (for verbosity = 0):\n"
             "\"data\"             (string) A string that is serialized, hex-encoded data for block 'hash'.\n"
             "\nResult (for verbosity = 1):\n"
@@ -783,7 +791,7 @@ UniValue getblock(const JSONRPCRequest& request)
         return strHex;
     }
 
-    return blockToJSON(block, pblockindex, verbosity >= 2);
+    return blockToJSON(block, pblockindex, verbosity == 2, verbosity == 3);
 }
 
 struct CCoinsStats
