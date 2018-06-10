@@ -62,17 +62,20 @@ std::string TxOut::ToString() const
 MutableTransaction::MutableTransaction() : nVersion(Transaction::CURRENT_VERSION), nLockTime(0) {}
 MutableTransaction::MutableTransaction(const Transaction& tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime) {}
 
+MutableSegwitTx::MutableSegwitTx() : MutableTransaction() {}
+MutableSegwitTx::MutableSegwitTx(const SegwitTx& tx) : MutableTransaction(tx) {}
+
 uint256 MutableTransaction::GetHash() const
 {
     return SerializeHash(*this, SER_GETHASH, SERIALIZE_TRANSACTION_NO_WITNESS);
 }
 
-uint256 CTransaction::ComputeHash() const
+uint256 Transaction::ComputeHash() const
 {
     return SerializeHash(*this, SER_GETHASH, SERIALIZE_TRANSACTION_NO_WITNESS);
 }
 
-uint256 Transaction::GetWitnessHash() const
+uint256 SegwitTx::GetWitnessHash() const
 {
     if (!HasWitness()) {
         return GetHash();
@@ -81,87 +84,56 @@ uint256 Transaction::GetWitnessHash() const
 }
 
 /* For backward compatibility, the hash is initialized to 0. TODO: remove the need for this default constructor entirely. */
-Transaction::Transaction() : nVersion(Transaction::CURRENT_VERSION), vin(), vout(), nLockTime(0), hash() {}
-Transaction::Transaction(const MutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), hash(ComputeHash()) {}
-Transaction::Transaction(MutableTransaction &&tx) : nVersion(tx.nVersion), vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), hash(ComputeHash()) {}
-
-#if defined(BRAND_grantcoin)
-TransactionGRT::TransactionGRT() : Transaction(), nTime(0) {}
-
-TransactionGRT::TransactionGRT(const MutableTransactionGRT &tx) : 
-	Transaction((MutableTransaction)tx, /* Update = */ false), nTime(tx.nTime) {
-    UpdateHash();
+/* TODO: init the hash when we actually ask for it */
+/* TODO: make templates of this boilerplate */
+Transaction::Transaction()
+	: vin(), vout(), nLockTime(0),
+	nVersion(Transaction::CURRENT_VERSION), hash() {}
+Transaction::Transaction(const MutableTransaction &tx, bool inithash) 
+	: vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
+	nVersion(tx.nVersion) {
+	if (inithash){ 
+#warning "this is probably evil and undefined"
+		uint256 *phash = const_cast <uint256*> (&hash);
+		*phash = ComputeHash();
+	}
+}
+Transaction::Transaction(MutableTransaction &&tx, bool inithash) 
+	: vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), 
+	nVersion(tx.nVersion) {
+	if (inithash) {
+		uint256 *phash = const_cast <uint256*> (&hash);
+		*phash = ComputeHash();
+	}
 }
 
-MutableTransactionGRT::MutableTransactionGRT() : MutableTransaction(), nTime(0) {}
-MutableTransactionGRT::MutableTransactionGRT(const TransactionGRT& tx) : 
-		MutableTransaction((MutableTransaction)tx), nTime(tx.nTime) {}
+/* Segwit transactions keep the same hash as legacy??? */
+/* Revisit this: can we do interesting things with object models here */
+SegwitTx::SegwitTx() : Transaction() {}
+SegwitTx::SegwitTx(const MutableSegwitTx &tx) : Transaction(tx, true) {}
+SegwitTx::SegwitTx(MutableSegwitTx &&tx) : Transaction(tx, true) {}
 
-/* Same as Transaction::UpdateHash() above, but different types.
- * This seems like a good job for a template */
-void TransactionGRT::UpdateHash() const
-{
-    *const_cast<uint256*>(&hash) = SerializeHash(*this);
+#if defined(BRAND_grantcoin)
+StakeTx::StakeTx() : Transaction(), Time(0) {}
+
+StakeTx::StakeTx(const MutableStakeTx &tx)
+	: Transaction(tx, false), Time(tx.Time){
+	uint256 *phash = const_cast <uint256*> (&hash);
+	*phash = ComputeHash();
+	//assert (hash == tx.hash);  /* extra sanity check, TODO remove later? */
+}
+StakeTx::StakeTx(MutableStakeTx &&tx)
+	: Transaction(tx, false), Time(tx.Time){
+	uint256 *phash = const_cast <uint256*> (&hash);
+	*phash = ComputeHash();
+	//assert (hash == tx.hash);  /* extra sanity check, TODO remove later? */
 }
 
 /* PPCoin/Grantcoin destroy the 0.01 COIN per kb fee to reduce money supply,
  * which does not quite line up with Bitcoin, so replicate the PPCoin code here */
 /* FIXME: nBytes is currently not used */
-int64_t TransactionGRT::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
-				enum GetMinFee_mode mode, unsigned int optnBytes) const
-{
-    // Base fee is either nMinTxFee or nMinRelayTxFee
-    int64_t nBaseFee = (mode == GMF_RELAY) ? nMinRelayTxFee : nMinTxFee;
+/* FIXME: figure if this is needed here or not */
 
-// here be dragons. put on fireproof regression tests before taunting this code
-#if defined(BRAND_cleanwatercoin)
-    unsigned int nBytes = optnBytes;
-#elif defined(BRAND_kittycoin)
-    unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
-#else
-#warning "hack for coincontroldialog.cpp that needs nBytes"
-    unsigned int nBytes = std::max(optnBytes,
-                ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION));
-#endif
-    unsigned int nNewBlockSize = nBlockSize + nBytes;
-    int64_t nMinFee = (1 + (int64_t)nBytes / 1000) * nBaseFee;
-
-#if defined(FEATURE_ALLOW_FREE_TX) /* likely safe to deprecate this */
-    if (fAllowFree)
-    {
-        // There is a free transaction area in blocks created by most miners,
-        // * If we are relaying we allow transactions up to DEFAULT_BLOCK_PRIORITY_SIZE - 1000
-        //   to be considered to fall into this category. We don't want to encourage sending
-        //   multiple transactions instead of one big transaction to avoid fees.
-        // * If we are creating a transaction we allow transactions up to 1,000 bytes
-        //   to be considered safe and assume they can likely make it into this section.
-        if (nBytes < (mode == GMF_SEND ? 1000 : (DEFAULT_BLOCK_PRIORITY_SIZE - 1000)))
-            nMinFee = 0;
-    }
-#endif
-
-    // This code can be removed after enough miners have upgraded to version 0.9.
-    // Until then, be safe when sending and require a fee if any output
-    // is less than CENT:
-    if (nMinFee < nBaseFee && mode == GMF_SEND)
-    {
-        for (const CTxOut& txout: vout)
-            if (txout.nValue < CENT)
-                nMinFee = nBaseFee;
-    }
-
-    // Raise the price as the block approaches full
-    if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN/2)
-    {
-        if (nNewBlockSize >= MAX_BLOCK_SIZE_GEN)
-            return MAX_MONEY;
-        nMinFee *= MAX_BLOCK_SIZE_GEN / (MAX_BLOCK_SIZE_GEN - nNewBlockSize);
-    }
-
-    if (!MoneyRange(nMinFee))
-        nMinFee = MAX_MONEY;
-    return nMinFee;
-}
 #endif /* BRAND_grantcoin */
 
 CAmount Transaction::GetValueOut() const
@@ -175,7 +147,7 @@ CAmount Transaction::GetValueOut() const
     return nValueOut;
 }
 
-unsigned int CTransaction::GetTotalSize() const
+unsigned int Transaction::GetTotalSize() const
 {
     return ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
 }

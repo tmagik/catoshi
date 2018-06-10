@@ -5,7 +5,6 @@ Maintainer: Bloq Debian Packaging Team <debian@bloq.com>
 Uploaders:
  Troy Benjegerdes <troy@bloq.com>,
 Build-Depends:
- autotools-dev,
  bash-completion,
  debhelper,
  dh-autoreconf,
@@ -72,3 +71,25 @@ Description: peer-to-peer network based digital currency - transaction tool
  .
  This package provides bitcoin-tx, a command line tool for creating,
  parsing, or modifying transactions.
+
+Package: catoshi-bitcoin-block
+Provides: bitcoin-block
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends}
+Description: peer-to-peer network based digital currency - transaction tool
+ Bitcoin is a free open source peer-to-peer electronic cash system that
+ is completely decentralized, without the need for a central server or
+ trusted parties.  Users hold the crypto keys to their own money and
+ transact directly with each other, with the help of a P2P network to
+ check for double-spending.
+ .
+ Unless pruning is enabled, full global transaction history is stored
+ locally at each client, which may require large amounts of disk space.
+ .
+ This package provides bitcoin-block, a command line tool for parsing
+ raw blocks into json without the overhead of rpc calls and locking.
+ This provides substantial performance and parallelism improvements for
+ higher level tools (such as indexers) by avoiding locking contention
+ and only providing data extractable from an archived binary block.
