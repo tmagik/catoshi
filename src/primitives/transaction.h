@@ -11,6 +11,7 @@
 #ifndef CODECOIN_PRIMITIVES_TRANSACTION_H
 #define CODECOIN_PRIMITIVES_TRANSACTION_H
 
+#include <codecoin.h>
 #include <stdint.h>
 #include <amount.h>
 #include <script/script.h>
@@ -184,7 +185,6 @@ public:
  * to eliminate duplicate code
  */
 
-class MutableTransaction;
 
 /**
  * Basic transaction serialization format:
@@ -192,8 +192,57 @@ class MutableTransaction;
  * - std::vector<CTxIn> vin
  * - std::vector<CTxOut> vout
  * - uint32_t nLockTime
- *
- * Extended transaction serialization format:
+ */
+
+template <typename Stream, typename TxType>
+inline void UnserializeTransaction(TxType &tx, Stream &s) {
+    s >> tx.nVersion;
+    tx.vin.clear();
+    tx.vout.clear();
+    s >> tx.vin;
+    s >> tx.vout;
+    s >> tx.nLockTime;
+}
+
+template <typename Stream, typename TxType>
+inline void SerializeTransaction(const TxType &tx, Stream &s) {
+    s << tx.nVersion;
+    s << tx.vin;
+    s << tx.vout;
+    s << tx.nLockTime;
+}
+
+/**
+ * Stake transaction serialization format:
+ * - int32_t nVersion
+ * - uint32_t nTime
+ * - std::vector<CTxIn> vin
+ * - std::vector<CTxOut> vout
+ * - uint32_t nLockTime
+ */
+
+template <typename Stream, typename TxType>
+inline void UnserializeStakeTx(TxType &tx, Stream &s) {
+    s >> tx.nVersion;
+    s >> tx.Time;
+    tx.vin.clear();
+    tx.vout.clear();
+    s >> tx.vin;
+    s >> tx.vout;
+    s >> tx.nLockTime;
+}
+
+template <typename Stream, typename TxType>
+inline void SerializeStakeTx(const TxType &tx, Stream &s) {
+    s << tx.nVersion;
+    s << tx.Time;
+    s << tx.vin;
+    s << tx.vout;
+    s << tx.nLockTime;
+}
+
+/**
+ * Extended transaction serialization format (class SegwitTx):
  * - int32_t nVersion
  * - unsigned char dummy = 0x00
  * - unsigned char flags (!= 0)
@@ -203,8 +252,9 @@ class MutableTransaction;
  *   - CTxWitness wit;
  * - uint32_t nLockTime
  */
+
 template<typename Stream, typename TxType>
-inline void UnserializeTransaction(TxType& tx, Stream& s) {
+inline void UnserializeSegwitTx(TxType& tx, Stream& s) {
     const bool fAllowWitness = !(s.GetVersion() & SERIALIZE_TRANSACTION_NO_WITNESS);
 
     s >> tx.nVersion;
@@ -239,7 +289,7 @@ inline void UnserializeTransaction(TxType& tx, Stream& s) {
 }
 
 template<typename Stream, typename TxType>
-inline void SerializeTransaction(const TxType& tx, Stream& s) {
+inline void SerializeSegwitTx(const TxType& tx, Stream& s) {
     const bool fAllowWitness = !(s.GetVersion() & SERIALIZE_TRANSACTION_NO_WITNESS);
 
     s << tx.nVersion;
@@ -267,6 +317,7 @@ inline void SerializeTransaction(const TxType& tx, Stream& s) {
     s << tx.nLockTime;
 }
 
+class MutableTransaction;
 
 /** The basic transaction that is broadcasted on the network and contained in
  * blocks.  A transaction can contain multiple inputs and outputs.
@@ -288,19 +339,16 @@ public:
     // actually immutable; deserialization and assignment are implemented,
     // and bypass the constness. This is safe, as they update the entire
     // structure, including the hash.
-    // Catoshi sez: There needs to be a darn good reason why these might
-    // not be in the same order here as they are in the wire protocol.
-    // Claims of size reduction without confirmation on multiple architectures (as in
-    // https://github.com/bitcoin/bitcoin/commit/59e17899a762c08ce9a9edd7f464e884edbe8654
-    // are not particularly usefull
-    const int32_t nVersion;
     const std::vector<TxIn> vin;
     const std::vector<TxOut> vout;
     const uint32_t nLockTime;
+    const int32_t nVersion;
 
-private:
+/* TODO figure this out later */
+protected:
     /** Memory only. */
     const uint256 hash;
+    //uint256 hash;
 
     uint256 ComputeHash() const;
 
@@ -309,8 +357,8 @@ public:
     Transaction();
 
     /** Convert a CMutableTransaction into a CTransaction. */
-    Transaction(const MutableTransaction &tx);
-    Transaction(MutableTransaction &&tx);
+    Transaction(const MutableTransaction &tx, bool inithash = true);
+    Transaction(MutableTransaction &&tx, bool inithash = true);
 
     template <typename Stream>
     inline void Serialize(Stream& s) const {
@@ -320,7 +368,7 @@ public:
     /** This deserializing constructor is provided instead of an Unserialize method.
      *  Unserialize is not possible, since it would require overwriting const fields. */
     template <typename Stream>
-    Transaction(deserialize_type, Stream& s) : Transaction(CMutableTransaction(deserialize, s)) {}
+    Transaction(deserialize_type, Stream& s) : Transaction(MutableTransaction(deserialize, s)) {}
 
     bool IsNull() const {
         return vin.empty() && vout.empty();
@@ -330,8 +378,6 @@ public:
         return hash;
     }
 
-    // Compute a hash that includes both transaction and witness data
-    uint256 GetWitnessHash() const;
 
     // Return sum of txouts.
     CAmount GetValueOut() const;
@@ -368,8 +414,33 @@ public:
 
     std::string ToString() const;
 
+};
+
+class MutableSegwitTx;
+
+class SegwitTx : public Transaction {
+public:
+    SegwitTx();
+
+    SegwitTx(const MutableSegwitTx &tx);
+    SegwitTx(MutableSegwitTx &&tx);
+    
+    template <typename Stream>
+    inline void Serialize(Stream& s) const {
+        SerializeSegwitTx(*this, s);
+    }
+
+    /** This deserializing constructor is provided instead of an Unserialize method.
+     *  Unserialize is not possible, since it would require overwriting const fields. */
+    template <typename Stream>
+    SegwitTx(deserialize_type, Stream& s) : SegwitTx(MutableSegwitTx(deserialize, s)) {}
+
+    // Compute a hash that includes both transaction and witness data
+    uint256 GetWitnessHash() const;
+
     bool HasWitness() const
     {
+	// TODO: for (TxIn &in : vin ){ 
         for (size_t i = 0; i < vin.size(); i++) {
             if (!vin[i].scriptWitness.IsNull()) {
                 return true;
@@ -380,54 +451,31 @@ public:
 };
 
 #if defined(BRAND_grantcoin) /* FIXME update this later */
-class MutableTransactionGRT;
+class MutableStakeTx;
 
-class TransactionGRT : public Transaction
+class StakeTx : public Transaction
 {
-private:
-	void UpdateHash() const;
-	
-	enum GetMinFee_mode
-	{
-		GMF_BLOCK,
-		GMF_RELAY,
-		GMF_SEND,
-	};
-
 public:
-/** TODO: this goes into src/policy/fees.cpp when latest bitcoin code is merged */
-/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
-	const static int64_t nMinTxFee = CENT;
-/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
-	const static int64_t nMinRelayTxFee = CENT;
-
-    uint32_t nTime; // FIXME just make this 'Time'  
+    const uint32_t Time; // FIXME just make this 'Time'  
 
     /** Construct a CTransaction that qualifies as IsNull() */
-    TransactionGRT();
+    StakeTx();
 
     /** Convert a CMutableTransaction into a CTransaction. */
-    TransactionGRT(const MutableTransactionGRT &tx);
+    StakeTx(const MutableStakeTx &tx);
+    StakeTx(MutableStakeTx &&tx);
 
-    /* must be replicated or serialization is pulled from base object */
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(*const_cast<int32_t*>(&this->nVersion));
-        nVersion = this->nVersion;
-        READWRITE(*const_cast<uint32_t*>(&this->nTime));
-        READWRITE(*const_cast<std::vector<TxIn>*>(&vin));
-        READWRITE(*const_cast<std::vector<TxOut>*>(&vout));
-        READWRITE(*const_cast<uint32_t*>(&nLockTime));
-        if (ser_action.ForRead())
-            UpdateHash();
+    template <typename Stream>
+    inline void Serialize(Stream& s) const {
+        SerializeStakeTx(*this, s);
     }
 
-	// Apply the effects of this transaction on the UTXO set represented by view
-	//void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash);
+    /** This deserializing constructor is provided instead of an Unserialize method.
+     *  Unserialize is not possible, since it would require overwriting const fields. */
+    template <typename Stream>
+    StakeTx(deserialize_type, Stream& s) : StakeTx(MutableStakeTx(deserialize, s)) {}
 
-	int64_t GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK, unsigned int nBytes=0) const;
+    uint256 ComputeHash() const;
 
     /* What stake (ppcoin derivatives, + grantcoin do */
     bool IsCoinBase() const
@@ -435,7 +483,17 @@ public:
         return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
     }
 
+    /* ugly compat for witness code. */
+    bool HasWitness() const
+    {
+        return false;
+    }
 
+    /* ugly compat for witness code. */
+    const uint256 GetWitnessHash() const
+    {
+	return GetHash();
+    }
 };
 #endif /* BRAND_grantcoin */
 
@@ -445,9 +503,6 @@ class MutableTransaction
 {
 public:
     int32_t nVersion;
-#if 0 && defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
-    uint32_t nTime;
-#endif
     std::vector<TxIn> vin;
     std::vector<TxOut> vout;
     uint32_t nLockTime;
@@ -476,9 +531,38 @@ public:
      */
     uint256 GetHash() const;
 
-    friend bool operator==(const MutableTransaction& a, const CMutableTransaction& b)
+    friend bool operator==(const MutableTransaction& a, const MutableTransaction& b)
     {
         return a.GetHash() == b.GetHash();
+    }
+
+    bool HasWitness() const
+    {
+        return false;
+    }
+};
+
+class MutableSegwitTx : public MutableTransaction
+{
+public:
+    MutableSegwitTx();
+    MutableSegwitTx(const Transaction& tx);
+    MutableSegwitTx(const SegwitTx& tx);
+
+    template <typename Stream>
+    inline void Serialize(Stream& s) const {
+        SerializeSegwitTx(*this, s);
+    }
+
+
+    template <typename Stream>
+    inline void Unserialize(Stream& s) {
+        UnserializeSegwitTx(*this, s);
+    }
+
+    template <typename Stream>
+    MutableSegwitTx(deserialize_type, Stream& s) {
+        Unserialize(s);
     }
 
     bool HasWitness() const
@@ -492,26 +576,31 @@ public:
     }
 };
 
+
 #if defined(BRAND_grantcoin) // FIXME later
-class MutableTransactionGRT: public MutableTransaction
+class MutableStakeTx: public MutableTransaction
 {
 public:
-	uint32_t nTime; // FIXME: evaluate if this should be signed or unsigned
+    uint32_t Time; // FIXME: evaluate if this should be signed or unsigned
 
-	MutableTransactionGRT();
-	MutableTransactionGRT(const TransactionGRT& tx);
+    MutableStakeTx();
+    MutableStakeTx(const StakeTx& tx);
 
-	template <typename Stream, typename Operation>
-	inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-		READWRITE(this->nVersion);
-		nVersion = this->nVersion;
-		READWRITE(nTime);
-		READWRITE(vin);
-		READWRITE(vout);
-		READWRITE(nLockTime);
-	}
+    template <typename Stream>
+    inline void Serialize(Stream& s) const {
+        SerializeStakeTx(*this, s);
+    }
 
-	uint256 GetHash() const;
+    template <typename Stream>
+    inline void Unserialize(Stream& s) {
+        UnserializeStakeTx(*this, s);
+    }
+
+    template <typename Stream>
+    MutableStakeTx(deserialize_type, Stream& s) {
+        Unserialize(s);
+    }
+
 };
 #endif
 

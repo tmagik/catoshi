@@ -128,6 +128,7 @@ D_LIBS+= \
 
 #TODO: simplify above
 TX_LIBS = $(LIBS) $(BOOST_LIBS) -lsecp256k1 -lssl -lcrypto -lpthread
+BLK_LIBS = $(LIBS) $(BOOST_LIBS) -lsecp256k1 -lssl -lcrypto -lpthread
 CLI_LIBS = $(LIBS) $(BOOST_LIBS) -lsecp256k1 -lssl -lcrypto -levent
 
 # Hardening
@@ -376,6 +377,7 @@ COMMON_OBJS += $(SCRYPT_OBJS) $(X11_OBJS) $(STAKE_OBJS)
 endif
 
 TX_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) $(OBJDIR)/indexhack.o $(OBJDIR)/bitcoin-tx.o
+BLK_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) $(OBJDIR)/indexhack.o $(OBJDIR)/coin-block.o
 # should have just use CRYPTO_OBJS and COMMON_OBJS but let's keep it simple
 #CLI_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) $(OBJDIR)/rpc/client.o $(OBJDIR)/bitcoin-cli.o
 #ugh, index.
@@ -385,9 +387,9 @@ CLI_OBJS= $(UTIL_OBJS) $(COMMON_OBJS) $(CRYPTO_OBJS) \
 #needed to create directories
 ALL_OBJS= $(STAKE_OBJS) $(UTIL_OBJS) $(CRYPTO_OBJS) $(INDEX_OBJS) $(COMMON_OBJS) $(D_OBJS) $(TX_OBJS) $(CLI_OBJS) 
 
-MAN= obj/$(COIN_BRAND)d.1 obj/$(COIN_BRAND)-cli.1 obj/$(COIN_BRAND)-tx.1
+MAN= obj/$(COIN_BRAND)d.1 obj/$(COIN_BRAND)-cli.1 obj/$(COIN_BRAND)-tx.1 obj/$(COIN_BRAND)-block
 
-BINS= obj/$(COIN_BRAND)d obj/$(COIN_BRAND)-cli obj/$(COIN_BRAND)-tx
+BINS= obj/$(COIN_BRAND)d obj/$(COIN_BRAND)-cli obj/$(COIN_BRAND)-tx obj/$(COIN_BRAND)-block
 	
 #tricksy: man pages require binaries
 all: $(MAN)
@@ -463,6 +465,9 @@ obj/$(COIN_BRAND)d: $(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%) $(OBJDIR)/bitcoind.o
 
 obj/$(COIN_BRAND)-tx: $(TX_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(TX_LIBS)
+
+obj/$(COIN_BRAND)-block: $(BLK_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
+	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(BLK_LIBS)
 
 obj/$(COIN_BRAND)-cli: $(CLI_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
 	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $^ $(xLDFLAGS) $(CLI_LIBS)

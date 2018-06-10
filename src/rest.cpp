@@ -197,7 +197,8 @@ static bool rest_headers(HTTPRequest* req,
 
 static bool rest_block(HTTPRequest* req,
                        const std::string& strURIPart,
-                       bool showTxDetails)
+                       bool showTxDetails,
+                       bool showTxHex)
 {
     if (!CheckWarmup(req))
         return false;
@@ -245,7 +246,7 @@ static bool rest_block(HTTPRequest* req,
         UniValue objBlock;
         {
             LOCK(cs_main);
-            objBlock = blockToJSON(block, pblockindex, showTxDetails);
+            objBlock = blockToJSON(block, pblockindex, showTxDetails, showTxHex);
         }
         std::string strJSON = objBlock.write() + "\n";
         req->WriteHeader("Content-Type", "application/json");
@@ -261,12 +262,17 @@ static bool rest_block(HTTPRequest* req,
 
 static bool rest_block_extended(HTTPRequest* req, const std::string& strURIPart)
 {
-    return rest_block(req, strURIPart, true);
+    return rest_block(req, strURIPart, true, false);
+}
+
+static bool rest_block_tx_hex(HTTPRequest* req, const std::string& strURIPart)
+{
+    return rest_block(req, strURIPart, false, true);
 }
 
 static bool rest_block_notxdetails(HTTPRequest* req, const std::string& strURIPart)
 {
-    return rest_block(req, strURIPart, false);
+    return rest_block(req, strURIPart, false, false);
 }
 
 // A bit of a hack - dependency on a function defined in rpc/blockchain.cpp
@@ -576,6 +582,7 @@ static const struct {
 } uri_prefixes[] = {
       {"/rest/tx/", rest_tx},
       {"/rest/block/notxdetails/", rest_block_notxdetails},
+      {"/rest/block/hex/", rest_block_tx_hex},
       {"/rest/block/", rest_block_extended},
       {"/rest/chaininfo", rest_chaininfo},
       {"/rest/mempool/info", rest_mempool_info},

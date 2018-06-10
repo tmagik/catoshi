@@ -1,10 +1,21 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Bitcoin
-Upstream-Contact: https://github.com/bitcoin/bitcoin/issues
- irc: #bitcoin@freenode.net
-Source: https://github.com/bitcoin/bitcoin
+Upstream-Name: Catoshi
+Upstream-Contact: http://bitbucket.org/tmagik/catoshi/issues
+ irc: #catoshi@freenode.net
+Source: http://bitbucket.org/tmagik/catoshi
 
 Files: *
+Copyright: 2009-2018 Troy Benjegerdes, 7 Elements LLC, and Bloq Inc
+License-Grant:
+ Distributed under the Affero GNU General public license version 3
+ file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
+Comment:
+ Upstream original(s) (Bitcoin, Litecoin, Peercoin, etc) are MIT/expat
+ license. Changes in http://bitbucket.org/tmagik/catoshi are licensed
+ under the AGPLv3, with commercial use GPL exception licensed for
+ customers of 7 Elements LLC and Bloq, Inc. Commercial of these changes
+ reverts to AGPLv3 on expiration of support contract(s)
+
 Copyright: 2009-2016, The Bitcoin Core developers
 License-Grant:
  Distributed under the MIT software license, see the accompanying file

@@ -41,8 +41,4 @@ inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MO
 #define LITECOIN_SCRYPT_POWHASH
 #define BITCOIN_COMPAT
 
-/* allow for overloads.. */
-#define CTransaction Transaction
-#define CMutableTransaction MutableTransaction
-
 #endif

@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto
+
 // Copyright (c) 2009-2016 The Bitcoin developers
 // Copyright (c) 2009-2012 The *coin developers
 // where * = (Bit, Lite, PP, Peerunity, Blu, Cat, Solar, URO, ...)
@@ -2199,6 +2199,7 @@ bool static FlushStateToDisk(const CChainParams& chainparams, CValidationState &
     bool fFlushForPrune = false;
     bool fDoFullFlush = false;
     int64_t nNow = 0;
+    //LogPrintf("%s: enter\n", __func__);
     try {
     {
         LOCK(cs_LastBlockFile);
@@ -2247,6 +2248,7 @@ bool static FlushStateToDisk(const CChainParams& chainparams, CValidationState &
             if (!CheckDiskSpace(0))
                 return state.Error("out of disk space");
             // First make sure all block and undo data is flushed to disk.
+            LogPrintf("%s: line %s\n", __func__, __LINE__);
             FlushBlockFile();
             // Then update all block file information (which may refer to block and undo files).
             {
@@ -2266,6 +2268,7 @@ bool static FlushStateToDisk(const CChainParams& chainparams, CValidationState &
                     return AbortNode(state, "Failed to write to block index database");
                 }
             }
+            LogPrintf("%s: line %s\n", __func__, __LINE__);
             // Finally remove any pruned files
             if (fFlushForPrune)
                 UnlinkPrunedFiles(setFilesToPrune);
@@ -2284,6 +2287,7 @@ bool static FlushStateToDisk(const CChainParams& chainparams, CValidationState &
             if (!pcoinsTip->Flush())
                 return AbortNode(state, "Failed to write to coin database");
             nLastFlush = nNow;
+            LogPrintf("%s: line %s\n", __func__, __LINE__);
         }
     }
     if (fDoFullFlush || ((mode == FLUSH_STATE_ALWAYS || mode == FLUSH_STATE_PERIODIC) && nNow > nLastSetChain + (int64_t)DATABASE_WRITE_INTERVAL * 1000000)) {

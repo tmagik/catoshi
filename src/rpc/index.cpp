@@ -35,33 +35,48 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
     return true;
 }
 
+/* in theory, these are just index keys, so 160 bits should suffice
+ * and this will all 'just work' without further hackery */
+/* TODO: test theory, and/or bring back CodecoinAddressVisitor */
+//inline 
+void CheckAddress(std::string addressStr, std::vector<std::pair<uint160, int> > &addresses)
+{
+        CTxDestination address = DecodeDestination(addressStr);
+        if (!IsValidDestination(address)) {
+            LogPrintf("%s: Invalid address %s\n", __func__, addressStr);
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+        }
+        uint160 hash160;
+	if (address.which() == 1){
+        	hash160 = boost::get<CKeyID>(address);
+	} else if(address.which() == 2){
+        	hash160 = boost::get<CScriptID>(address);
+#warning fix
+//	} else if(address.which() == 3){
+//        	hash160 = boost::get<WitnessV0ScriptHash>(address);
+	} else if(address.which() == 4){
+        	hash160 = boost::get<WitnessV0KeyHash>(address);
+	} else {
+		throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, 
+		"Unknown/unsupported address type: " + address.which());
+	}
+        addresses.push_back(std::make_pair(hash160, address.which()));
+}
+
 bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint160, int> > &addresses)
 {
     if (params[0].isStr()) {
-        CTxDestination address = DecodeDestination(params[0].get_str());
-        uint160 hashBytes;
-        if (!IsValidDestination(address)) {
-            LogPrintf("%s: Invalid address %s\n", __func__, params[0].get_str());
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
-        }
-        addresses.push_back(std::make_pair(hashBytes, address.which()));
+         CheckAddress(params[0].get_str(), addresses);
     } else if (params[0].isObject()) {
 
         UniValue addressValues = find_value(params[0].get_obj(), "addresses");
         if (!addressValues.isArray()) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Addresses is expected to be an array");
         }
-
         std::vector<UniValue> values = addressValues.getValues();
 
         for (std::vector<UniValue>::iterator it = values.begin(); it != values.end(); ++it) {
-            CTxDestination address = DecodeDestination(it->get_str());
-            uint160 hashBytes;
-            if (!IsValidDestination(address)) {
-                LogPrintf("%s: Invalid address %s\n", __func__, params[0].get_str());
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
-            }
-            addresses.push_back(std::make_pair(hashBytes, address.which()));
+            CheckAddress(it->get_str(), addresses);
         }
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");

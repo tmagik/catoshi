@@ -2,7 +2,7 @@ OS_DEFS=-DMAC_OSX
 
 BREW=/usr/local/opt
 
-BOOST=boost\@1.57
+BOOST=boost\@1.66
 BDB=berkeley-db\@53
 OPENSSL=openssl\@1.1
 
