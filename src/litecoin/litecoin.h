@@ -27,7 +27,7 @@ static const int64_t COIN = 100000000;
 static const int64_t CENT = 1000000;
 
 /** Default for -minrelaytxfee, minimum relay fee for transactions */
-static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 100000;
+static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 1000;
 
 /** No amount larger than this (in satoshi) is valid */
 static const int64_t MAX_MONEY = 84000000 * COIN;

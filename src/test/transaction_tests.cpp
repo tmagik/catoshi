@@ -2,8 +2,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <codecoin.h>
+#if defined(PPCOINSTAKE) || defined (BRAND_grantcoin)
+#include <test/data/ppc/tx_invalid.json.h>
+#include <test/data/ppc/tx_valid.json.h>
+#else
 #include <test/data/tx_invalid.json.h>
 #include <test/data/tx_valid.json.h>
+#endif
 #include <test/test_bitcoin.h>
 
 #include <clientversion.h>
@@ -691,14 +697,8 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
     BOOST_CHECK(IsStandardTx(t, reason));
 
     // Check dust with default relay fee:
-    CAmount nDustThreshold = 182 * dustRelayFee.GetFeePerK()/1000;
-#if defined(BRAND_bitcoin)
+    CAmount nDustThreshold = 182 *  minRelayTxFee.GetFeePerK()/1000 * 3;
     BOOST_CHECK_EQUAL(nDustThreshold, 546);
-#elif defined(BRAND_litecoin)
-    BOOST_CHECK_EQUAL(nDustThreshold, 54600);
-#else
-    #warning "Add correct BOOST_CHECK_EQUAL for coin" // TODO	
-#endif
     // dust:
     t.vout[0].nValue = nDustThreshold - 1;
     BOOST_CHECK(!IsStandardTx(t, reason));

@@ -12,6 +12,11 @@
 #include <script/interpreter.h>
 #include <consensus/validation.h>
 
+#if defined(PPCOINSTAKE)
+#include <kernel.h>
+#include <validation.h>
+#endif
+
 // TODO remove the following dependencies
 #include <chain.h>
 #include <coins.h>
@@ -174,14 +179,25 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
     CAmount nValueOut = 0;
     for (const auto& txout : tx.vout)
     {
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+        if (txout.IsEmpty() && (!tx.IsCoinBase()) && (!tx.IsCoinStake()))
+            return state.DoS(100, false, REJECT_INVALID, "empty-txout");
+#if defined (BRAND_grantcoin)
+        if ((!txout.IsEmpty()) && txout.nValue < CENT) // Cent || CTransaction::nMinTxFee
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-toosmall");
+#else
+// TODO: exampine peercoin v0.5 protocol 
+        // peercoin: enforce minimum output amount
+        // v0.5 protocol: zero amount allowed
+        if ((!txout.IsEmpty()) && txout.nValue < MIN_TXOUT_AMOUNT &&
+            !(IsProtocolV05(tx.nTime) && (txout.nValue == 0)))
+            return state.DoS(100, false, REJECT_INVALID, "txout.nValue below minimum");
+#endif
+#endif
         if (txout.nValue < 0)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-negative");
         if (txout.nValue > MAX_MONEY)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-toolarge");
-#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
-        if ((!txout.IsEmpty()) && txout.nValue < CENT) // Cent || CTransaction::nMinTxFee
-            return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-toosmall"));
-#endif
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge");
@@ -237,10 +253,10 @@ bool Consensus::CheckTxInputs(const CTransaction& tx, CValidationState& state, c
 #if defined(BRAND_grantcoin)
 	#warning "can't check previous tx timestamps without CCoins ppcoinstake structures"
 #endif
-			// peercoin: check transaction timestamp
-			if (coins.nTime > nTime)
-				return state.DoS(100, error("CheckInputs() : tx %s timestamp %d earlier than input tx timestamp %d",
-				GetHash().ToString().c_str(), nTime, coins.nTime));
+        // peercoin: check transaction timestamp
+        if (coins.nTime > nTime)
+            return state.DoS(100, error("CheckInputs() : tx %s timestamp %d earlier than input tx timestamp %d",
+        GetHash().ToString().c_str(), nTime, coins.nTime));
 #endif
 
         // Check for negative or overflow input values
@@ -249,28 +265,18 @@ bool Consensus::CheckTxInputs(const CTransaction& tx, CValidationState& state, c
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputvalues-outofrange");
         }
 #if defined(PPCOINSTAKE)
-		if (coin.IsCoinStake())
-		{
-			// ppcoin: coin stake tx earns reward instead of paying fee
-			uint64_t nCoinAge;
-			if (!GetCoinAge(state, inputs, nCoinAge))
-				return error("CheckInputs() : %s unable to get coin age for coinstake", GetHash().ToString().c_str());
-			int64_t nStakeReward = GetValueOut() - nValueIn;
-			CBlockIndex indexDummy;
-			indexDummy.nHeight = nSpendHeight; /* hack */
-			indexDummy.SetProofOfStake();  /* hack2 */
-#if defined(BRAND_cleanwatercoin)
-			#warning "check this further"
-			int64_t nStakeLimit = indexDummy.GetSeigniorage(0, nCoinAge);
-#else
-			int64_t nStakeLimit = indexDummy.GetSeigniorage(0, nCoinAge) - GetMinFee() + CTransaction::nMinTxFee;
-#endif
-			if (nStakeReward > nStakeLimit)
-				return state.DoS(100, error("CheckInputs() : %s stake reward %" PRId64 " exceeds limit %" PRId64 ,
-					GetHash().ToString().c_str(), nStakeReward, indexDummy.GetSeigniorage(0,nCoinAge) ));
-		}
-		else
-		{ // not needed? fix?
+    if (tx.IsCoinStake())
+    {
+        // peercoin: coin stake tx earns reward instead of paying fee
+        uint64_t nCoinAge;
+        if (!GetCoinAge(tx, inputs, nCoinAge))
+            return state.DoS(100, false, REJECT_INVALID, "unable to get coin age for coinstake");
+        CAmount nStakeReward = tx.GetValueOut() - nValueIn;
+        CAmount nCoinstakeCost = (GetMinFee(tx) < PERKB_TX_FEE) ? 0 : (GetMinFee(tx) - PERKB_TX_FEE);
+        if (nMoneySupply && nStakeReward > GetProofOfStakeReward(nCoinAge, tx.nTime, nMoneySupply) - nCoinstakeCost)
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-coinstake-too-large");
+        return true;
+    }
 #endif
     }
 
@@ -286,12 +292,35 @@ bool Consensus::CheckTxInputs(const CTransaction& tx, CValidationState& state, c
         return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-outofrange");
     }
 #if defined(PPCOINSTAKE) || defined (BRAND_grantcoin)
-        if (txfee_aux < tx.GetMinFee()) // CODECOIN
-            return state.DoS(100, error("CheckInputs() : %s TxFee not paying required fee=%s, paid=%s",
-	tx.GetHash().ToString(), FormatMoney(tx.GetMinFee()), FormatMoney(txfee_aux)),
-                             REJECT_INVALID, "bad-txns-fee-too-low");
+        if (txfee_aux < GetMinFee(tx)) // CODECOIN
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-too-low", false,
+                strprintf("CheckInputs() : %s TxFee not paying required fee=%s, paid=%s",
+	tx.GetHash().ToString(), FormatMoney(GetMinFee(tx)), FormatMoney(txfee_aux)));
 #endif
 
     txfee = txfee_aux;
     return true;
 }
+
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+CAmount GetMinFee(const CTransaction& tx)
+{
+    size_t nBytes = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+    return GetMinFee(nBytes, tx.Time);
+}
+
+CAmount GetMinFee(size_t nBytes, uint32_t nTime)
+{
+    CAmount nMinFee;
+#if !defined(BRAND_grantcoin)
+    if (IsProtocolV07(nTime)) // RFC-0007
+        nMinFee = (nBytes < 100) ? MIN_TX_FEE : (CAmount)(nBytes * (PERKB_TX_FEE / 1000));
+    else
+#endif
+        nMinFee = (1 + (CAmount)nBytes / 1000) * PERKB_TX_FEE;
+
+    if (!MoneyRange(nMinFee))
+        nMinFee = MAX_MONEY;
+    return nMinFee;
+}
+#endif

@@ -1676,11 +1676,13 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         pfrom->nTimeOffset = nTimeOffset;
         AddTimeData(pfrom->addr, nTimeOffset);
 
+#if !defined(FEATURE_ALERT)
         // If the peer is old enough to have the old alert system, send it the final alert.
         if (pfrom->nVersion <= 70012) {
             CDataStream finalAlert(ParseHex("60010000000000000000000000ffffff7f00000000ffffff7ffeffff7f01ffffff7f00000000ffffff7f00ffffff7f002f555247454e543a20416c657274206b657920636f6d70726f6d697365642c2075706772616465207265717569726564004630440220653febd6410f470f6bae11cad19c48413becb1ac2c17f908fd0fd53bdc3abd5202206d0e9c96fe88d4a0f01ed9dedae2b6f9e00da94cad0fecaae66ecf689bf71b50"), SER_NETWORK, PROTOCOL_VERSION);
             connman->PushMessage(pfrom, CNetMsgMaker(nSendVersion).Make("alert", finalAlert));
         }
+#endif
 
         // Feeler connections exist only to verify if address is online.
         if (pfrom->fFeeler) {
@@ -2580,9 +2582,35 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             return error("headers message size = %u", nCount);
         }
         headers.resize(nCount);
+#if defined(PPCOINSTAKE)
+	{
+        LOCK(cs_main);
+#endif
         for (unsigned int n = 0; n < nCount; n++) {
             vRecv >> headers[n];
             ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)  // TODO refactor this disaster
+            ReadCompactSize(vRecv); // needed for vchBlockSig.
+#endif
+#if defined(PPCOINSTAKE)
+            // peercoin: quick check to see if we should ban peers for PoS spam
+            // note: at this point we don't know if PoW headers are valid - we just assume they are
+            // so we need to update pfrom->nPoSTemperature once we actualy check them
+            bool fPoS = headers[n].nFlags & CBlockIndex::BLOCK_PROOF_OF_STAKE;
+            nTmpPoSTemperature += fPoS ? 1 : -POW_HEADER_COOLING;
+            // peer cannot cool himself by PoW headers from other branches
+            if (n == 0 && !fPoS && headers[n].hashPrevBlock != pfrom->lastAcceptedHeader)
+                nTmpPoSTemperature += POW_HEADER_COOLING;
+            nTmpPoSTemperature = std::max(nTmpPoSTemperature, 0);
+            if (nTmpPoSTemperature >= MAX_CONSECUTIVE_POS_HEADERS) {
+                nPoSTemperature = (MAX_CONSECUTIVE_POS_HEADERS*3)/4;
+                if (Params().NetworkIDString() != "test") {
+                    g_connman->Ban(pfrom->addr, BanReasonNodeMisbehaving, gArgs.GetArg("-bantime", DEFAULT_MISBEHAVING_BANTIME) * 7);
+                    return error("too many consecutive pos headers");
+                }
+            }
+        }
+#endif
         }
 
         // Headers received via a HEADERS message should be valid, and reflect

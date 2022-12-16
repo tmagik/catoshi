@@ -11,8 +11,12 @@
 #include <stdint.h>
 
 class CBlockHeader;
+class CValidationState;
 class CBlockIndex;
 class uint256;
+
+/* defined in $COIN/trust.cpp */
+bool AcceptBlockTimestamp(const CBlockHeader* pblock, CValidationState &state, const CBlockIndex* pindexPrev);
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params&);
 unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params&);

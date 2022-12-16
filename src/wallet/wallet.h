@@ -48,7 +48,7 @@ extern bool fWalletRbf;
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 1000;
 //! -paytxfee default
 static const CAmount DEFAULT_TRANSACTION_FEE = 0;
-#if defined(BRAND_bitcoin)
+#if defined(BRAND_bitcoin) || defined(BRAND_foodchain)
 //! -fallbackfee default
 static const CAmount DEFAULT_FALLBACK_FEE = 20000;
 //! -m_discard_rate default
@@ -56,6 +56,14 @@ static const CAmount DEFAULT_DISCARD_FEE = 10000;
 //! -mintxfee default
 static const CAmount DEFAULT_TRANSACTION_MINFEE = 1000;
 #elif defined(BRAND_litecoin)
+//! -fallbackfee default
+static const CAmount DEFAULT_FALLBACK_FEE = 2000000;
+//! -m_discard_rate default
+static const CAmount DEFAULT_DISCARD_FEE = 10000;
+//! -mintxfee default
+static const CAmount DEFAULT_TRANSACTION_MINFEE = 100000;
+#elif defined(BRAND_grantcoin)
+#warning "double-check this"
 //! -fallbackfee default
 static const CAmount DEFAULT_FALLBACK_FEE = 2000000;
 //! -m_discard_rate default

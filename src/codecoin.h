@@ -16,6 +16,8 @@
 #include "bitcoin/bitcoin.h"
 #elif defined(BRAND_grantcoin)
 #include "grantcoin/grantcoin.h"
+#elif defined(BRAND_foodchain)
+#include "foodchain/foodchain.h"
 #elif defined(BRAND_solarcoin)
 #include "solarcoin.h"
 #elif defined(BRAND_catcoin)

@@ -127,7 +127,12 @@ BOOST_AUTO_TEST_CASE(siphash)
     // and the test would be affected by default tx version bumps if not fixed.
     tx.nVersion = 1;
     ss << tx;
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+#warning "TODO: test all the different TX serializations (Transaction, SegwitTX, StakeTX)"
+    BOOST_CHECK_EQUAL(SipHashUint256(1, 2, ss.GetHash()), 0x1708BAA2A6B3C73ULL);
+#else
     BOOST_CHECK_EQUAL(SipHashUint256(1, 2, ss.GetHash()), 0x79751e980c2a0a35ULL);
+#endif
 
     // Check consistency between CSipHasher and SipHashUint256[Extra].
     FastRandomContext ctx;

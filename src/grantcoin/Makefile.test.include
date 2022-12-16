@@ -1,0 +1,7 @@
+
+JSON_TEST_FILES += \
+	test/data/base58_encode_decode.json \
+	test/data/grt/base58_keys_valid.json \
+	test/data/grt/base58_keys_invalid.json \
+	test/data/ppc/tx_invalid.json \
+	test/data/ppc/tx_valid.json

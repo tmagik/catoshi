@@ -27,7 +27,12 @@ namespace Consensus {
  * @param[out] txfee Set to the transaction fee if successful.
  * Preconditions: tx.IsCoinBase() is false.
  */
+#if defined(PPCOINSTAKE)
+struct Params;
+bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& inputs, int nSpendHeight, CAmount& txfee, const Consensus::Params& params, uint64_t nMoneySupply=0);
+#else
 bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& inputs, int nSpendHeight, CAmount& txfee);
+#endif
 } // namespace Consensus
 
 /** Auxiliary functions for transaction validation (ideally should not be exposed) */
@@ -77,5 +82,11 @@ bool EvaluateSequenceLocks(const CBlockIndex& block, std::pair<int, int64_t> loc
  * Consensus critical. Takes as input a list of heights at which tx's inputs (in order) confirmed.
  */
 bool SequenceLocks(const CTransaction &tx, int flags, std::vector<int>* prevHeights, const CBlockIndex& block);
+
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin)
+// peercoin: minimum fee for transaction to be accepted in a blockchain.
+CAmount GetMinFee(const CTransaction& tx);
+CAmount GetMinFee(size_t nBytes, uint32_t nTime);
+#endif
 
 #endif // BITCOIN_CONSENSUS_TX_VERIFY_H

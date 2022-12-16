@@ -114,7 +114,16 @@ SegwitTx::SegwitTx(const MutableSegwitTx &tx) : Transaction(tx, true) {}
 SegwitTx::SegwitTx(MutableSegwitTx &&tx) : Transaction(tx, true) {}
 
 #if defined(BRAND_grantcoin)
+MutableStakeTx::MutableStakeTx(): MutableTransaction(), Time(0) {}
+MutableStakeTx::MutableStakeTx(const StakeTx & tx): MutableTransaction(tx), Time(tx.Time) {}
+
 StakeTx::StakeTx() : Transaction(), Time(0) {}
+
+/* TODO: is this boilerplate really necessary to duplicate? */
+uint256 StakeTx::ComputeHash() const
+{
+    return SerializeHash(*this, SER_GETHASH, SERIALIZE_TRANSACTION_NO_WITNESS);
+}
 
 StakeTx::StakeTx(const MutableStakeTx &tx)
 	: Transaction(tx, false), Time(tx.Time){

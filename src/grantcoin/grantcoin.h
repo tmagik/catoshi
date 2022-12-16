@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Troy Benjegerdes, under AGPLv3
+// Copyright (c) 2014-2021 Troy Benjegerdes, under AGPLv3
 // Distributed under the Affero GNU General public license version 3
 // file COPYING or http://www.gnu.org/licenses/agpl-3.0.html
 #ifndef CODECOIN_grantcoin_H
@@ -23,11 +23,18 @@ static const unsigned int DUST_RELAY_TX_FEE = 3000;
 static const int RPC_PORT = 9983;
 static const int RPC_PORT_TESTNET = 9985;
 
-//static const int P2P_PORT = 9982; // deprecated, in params.cpp
-//static const int P2P_PORT_TESTNET = 9984; // deprecated, in params.cpp
+/* from net.h */
+/** Maximum length of incoming protocol messages (no message over 4 MB is currently accep    table). */
+static const unsigned int MAX_PROTOCOL_MESSAGE_LENGTH = 4 * 1000 * 1000;
+
+//! Follow bitcoin-core unles there is a really good reason
+// see version.h // static const int PROTOCOL_VERSION = 70012
+//! minimum version we will talk to
+static const int MIN_PEER_PROTO_VERSION = 60004;
 
 static const int64_t COIN = 1000000;
 static const int64_t CENT = 10000;
+static const int64_t PERKB_TX_FEE = CENT;
 static const int COIN_DECIMALS = 6; /* decimal places for coin */
 #define COIN_DECIMALS_FMT "06"
 
@@ -39,10 +46,10 @@ static const int64_t MAX_MONEY = 50000000000 * COIN;
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 
 
-//static const int STAKE_TARGET_SPACING = 1.5 * 60; // 90-second block spacing 
-//static const unsigned int nStakeMinAge = 60 * 60 * 24; // minimum age for coin age (24 hours)
-//static const unsigned int nStakeMaxAge = 60 * 60 * 24 * 90; // stake age of full weight
-//static const int64 START_BLOCK_PROOF_OF_STAKE = 250000; // PoS allowed starting at this block
+static const int STAKE_TARGET_SPACING = 1.5 * 60; // 90-second block spacing 
+static const unsigned int nStakeMinAge = 60 * 60 * 24; // minimum age for coin age (24 hours)
+static const unsigned int nStakeMaxAge = 60 * 60 * 24 * 90; // stake age of full weight
+static const uint64_t START_BLOCK_PROOF_OF_STAKE = 250000; // PoS allowed starting at this block
 
 extern const unsigned int nMaxClockDrift;
 

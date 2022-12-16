@@ -24,9 +24,11 @@
 typedef leveldb::Env DB_env;
 
 #if defined(TEST_DATA_DIR) /* hack, this is */
-#include <leveldb/helpers/memenv.h>
+//#include <leveldb/helpers/memenv.h>
 //typedef void DB_env;
-#define NEW_MEM_ENV leveldb::NewMemEnv(leveldb::Env::Default())
+//#define NEW_MEM_ENV leveldb::NewMemEnv(leveldb::Env::Default())
+#warning "fix leveldb/memenv for catoshi later"
+#define NEW_MEM_ENV nullptr
 #else
 //typedef void DB_env;
 #define NEW_MEM_ENV nullptr

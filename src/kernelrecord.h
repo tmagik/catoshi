@@ -1,7 +1,10 @@
-#ifndef KERNELRECORD_H
-#define KERNELRECORD_H
+// Copyright (c) 2012-2020 The Peercoin developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+#ifndef PEERCOIN_KERNELRECORD_H
+#define PEERCOIN_KERNELRECORD_H
 
-#include "uintBIG.h"
+#include <uint256.h>
 
 class CWallet;
 class CWalletTx;
@@ -21,9 +24,9 @@ public:
 
     KernelRecord(uint256 hash, int64_t nTime,
                  const std::string &address,
-                 int64_t nValue, bool spent, int64_t coinAge):
+                 int64_t nValue, int idx, bool spent, int64_t coinAge):
         hash(hash), nTime(nTime), address(address), nValue(nValue),
-        idx(0), spent(spent), coinAge(coinAge), prevMinutes(0), prevDifficulty(0), prevProbability(0)
+        idx(idx), spent(spent), coinAge(coinAge), prevMinutes(0), prevDifficulty(0), prevProbability(0)
     {
     }
 
@@ -49,4 +52,4 @@ protected:
     double prevProbability;
 };
 
-#endif // KERNELRECORD_H
+#endif // PEERCOIN_KERNELRECORD_H

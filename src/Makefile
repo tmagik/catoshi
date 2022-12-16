@@ -44,7 +44,8 @@ endif
 
 LINK:=$(CXX)
 
-COIN_BRAND:=bitcoin
+#COIN_BRAND:=bitcoin
+COIN_BRAND:=foodchain
 
 prefix = /usr/
 
@@ -107,7 +108,7 @@ D_LIBS = $(LIBS) $(BOOST_LIBS) \
 #   -l leveldb \
 #   -l memenv
 
-TESTLIBS += -lboost_unit_test_framework -lmemenv 
+TESTLIBS += -lboost_unit_test_framework$(BOOST_LIB_SUFFIX) -lmemenv 
 
 ifndef USE_UPNP
 	override USE_UPNP = -
@@ -266,6 +267,7 @@ D_OBJS= \
     $(OBJDIR)/policy/policy.o \
     $(OBJDIR)/policy/rbf.o \
     $(OBJDIR)/pow.o \
+    $(OBJDIR)/$(COIN_BRAND)/trust.o \
     $(OBJDIR)/rest.o \
     $(OBJDIR)/rpc/blockchain.o \
     $(OBJDIR)/rpc/misc.o \
@@ -398,14 +400,16 @@ install: $(BINS)
 	mkdir -p $(DESTDIR)$(prefix)/bin
 	install -D $^ $(DESTDIR)$(prefix)/bin/
 
-
-regression: test FORCE
+test_litecoin:
 	$(MAKE) COIN_BRAND=litecoin test
+
+test_bitcoin:	
 	$(MAKE) COIN_BRAND=bitcoin test
+
+test_grantcoin:
 	$(MAKE) COIN_BRAND=grantcoin test
-#	$(MAKE) COIN_BRAND=grantstake test
-#	$(MAKE) COIN_BRAND=hamburger test
-#	$(MAKE) COIN_BRAND=kittycoin test
+
+regression: test_litecoin test_bitcoin test_grantcoin FORCE
 	
 
 $(TESTDIR) $(SUBDIRS):
@@ -427,8 +431,8 @@ ifeq ($(V),1)
 V_CXX=
 V_LINK=
 else
-V_CXX=@echo  "   CXX   $(CXX)    $<" ;
-V_LINK=@echo "   LINK  $(LINK)    $@" ;
+V_CXX=@echo  "  CXX\t$(COIN_BRAND)\t$(CXX)    $<" ;
+V_LINK=@echo "  LINK\t$(COIN_BRAND)\t$(LINK)    $@" ;
 endif
 
 $(OBJDIR)/build.h: FORCE
@@ -448,6 +452,14 @@ $(OBJDIR)/%-sse2.o: %-sse2.cpp
 
 $(OBJDIR)/%.o: %.c
 	$(V_CXX) $(CXX) -c $(xCXXFLAGS) -fpermissive -MMD -MF $(@:%.o=%.d) -o $@ $<
+	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
+	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
+	  rm -f $(@:%.o=%.d)
+
+#must be before below rule...
+$(OBJDIR)/test/%.o: test/%.cpp
+	$(V_CXX) $(CXX) -c $(TESTDEFS) $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
 	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
@@ -474,66 +486,12 @@ obj/$(COIN_BRAND)-cli: $(CLI_OBJS:$(OBJDIR)/%=$(OBJDIR)/%)
 
 
 ifeq ($(ENABLE_TESTS),1)
-#maybe some other time..
-#need to set $(MKDIR_P)...
-#include Makefile.test.include
-#for now, copypasta:
-
 MKDIR_P := mkdir -p
 HEXDUMP := hexdump
 SED := sed
+include $(COIN_BRAND)/Makefile.test.include
+include Makefile.test.include
 
-JSON_TEST_FILES = \
-  test/data/script_tests.json \
-  test/data/base58_keys_valid.json \
-  test/data/base58_encode_decode.json \
-  test/data/base58_keys_invalid.json \
-  test/data/tx_invalid.json \
-  test/data/tx_valid.json \
-  test/data/sighash.json
-
-JSON_TEST_H_FILES = $(patsubst test/data/%.json,$(OBJDIR)/test/data/%.json.h,$(wildcard $(JSON_TEST_FILES)))
-
-RAW_TEST_FILES = test/data/alertTests.raw
-
-$(OBJDIR)/%.json.h: %.json
-	@mkdir -p $(@D)
-	@echo "namespace json_tests{" > $@
-	@echo "static unsigned const char $(*F)[] = {" >> $@
-	@$(HEXDUMP) -v -e '8/1 "0x%02x, "' -e '"\n"' $< | $(SED) -e 's/0x  ,//g' >> $@
-	@echo "};};" >> $@
-	@echo "Generated $@"
-
-TESTS := $(patsubst test/%.cpp,%,$(wildcard test/*_tests.cpp))
-TEST_OBJS := $(patsubst %,$(OBJDIR)/test/%.o,$(TESTS))
-TEST_EXTRA_OBJS = $(OBJDIR)/test/test_codecoin.o $(OBJDIR)/test/test_bitcoin_main.o
-
-$(TEST_OBJS): $(JSON_TEST_H_FILES) $(TESTDIR)
-
-$(TEST_EXTRA_OBJS): $(TESTDIR)
-
-$(OBJDIR)/test/%.o: test/%.cpp
-	$(V_CXX) $(CXX) -c $(TESTDEFS) $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
-	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
-	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
-	  rm -f $(@:%.o=%.d)
-
-#yes this has extra cruft for scrypt. ugh.
-#filter for init.o is ugly too
-
-fltr_d_objs = $(OBJDIR)/init.o $(OBJDIR)/torcontrol.o 
-test_d_objs = $(filter-out $(fltr_d_objs),$(D_OBJS:$(OBJDIR)/%=$(OBJDIR)/%))
-
-$(TESTS): obj/test_$(COIN_BRAND) FORCE
-	./obj/test_$(COIN_BRAND) --run_test=$@
-
-test check: $(TESTS)
-
-obj/test_$(COIN_BRAND): $(test_d_objs) $(TEST_EXTRA_OBJS) \
-		$(WALLET_OBJS) $(TEST_OBJS) \
-		$(OBJDIR)/rpc/client.o $(OBJDIR)/crypto/scrypt.o $(OBJS_SSE2)
-	$(V_LINK) $(LINK) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(xLDFLAGS) $(LIBS) $(D_LIBS) $(BOOST_LIBS)
 endif
 
 clean:

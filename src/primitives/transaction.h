@@ -166,6 +166,20 @@ public:
         return (nValue == -1);
     }
 
+#if defined(BRAND_grantcoin)
+    // TODO move this to StakeTxOut
+    void SetEmpty()
+    {
+        nValue = 0;
+        scriptPubKey.clear();
+    }
+
+    bool IsEmpty() const
+    {
+        return (nValue == 0 && scriptPubKey.empty());
+    }
+#endif
+
     friend bool operator==(const TxOut& a, const TxOut& b)
     {
         return (a.nValue       == b.nValue &&
@@ -326,14 +340,19 @@ class Transaction
 {
 public:
     // Default transaction version.
-    static const int32_t CURRENT_VERSION=2;
+#if defined(PPCOINSTAKE) || defined(BRAND_grantcoin) // hack for grantcoin/ppcoin
+    // TODO: fix this with proper initializers
+    static const int32_t CURRENT_VERSION=1;
+    static const int32_t MAX_STANDARD_VERSION=2;
 
+#else // bitcoin/litecoin
+    static const int32_t CURRENT_VERSION=2;
     // Changing the default transaction version requires a two step process: first
     // adapting relay policy by bumping MAX_STANDARD_VERSION, and then later date
     // bumping the default CURRENT_VERSION at which point both CURRENT_VERSION and
     // MAX_STANDARD_VERSION will be equal.
     static const int32_t MAX_STANDARD_VERSION=2;
-
+#endif
     // The local variables are made const to prevent unintended modification
     // without updating the cached hash value. However, CTransaction is not
     // actually immutable; deserialization and assignment are implemented,
@@ -453,6 +472,13 @@ public:
 #if defined(BRAND_grantcoin) /* FIXME update this later */
 class MutableStakeTx;
 
+enum GetMinFee_mode
+{       
+    GMF_BLOCK,
+    GMF_RELAY,
+    GMF_SEND,
+};
+
 class StakeTx : public Transaction
 {
 public:
@@ -481,6 +507,13 @@ public:
     bool IsCoinBase() const
     {
         return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+    }
+
+    bool IsCoinStake() const
+    {
+        // ppcoin: the coin stake transaction is marked with the first output empty
+        // givecoin: Do we want this, or something else?
+        return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
     }
 
     /* ugly compat for witness code. */
