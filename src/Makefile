@@ -441,6 +441,8 @@ clientversion.cpp: $(OBJDIR)/build.h
 DEFS += -DHAVE_BUILD_INFO -DHAVE_SYS_SELECT_H
 
 obj/%.1: obj/%
+	# run first so we see genesis block search output
+	$< -h > /dev/null
 	help2man $< > $@
 
 $(OBJDIR)/%-sse2.o: %-sse2.cpp

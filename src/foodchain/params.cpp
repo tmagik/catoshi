@@ -11,6 +11,8 @@
 #include <util.h>
 #include <utilstrencodings.h>
 
+#include <arith_uint256.h>
+
 #include <assert.h>
 
 #include <bitcoin/seeds.h>
@@ -118,13 +120,63 @@ public:
         pchMessageStart[1] = 0xbe;
         pchMessageStart[2] = 0xb4;
         pchMessageStart[3] = 0xd9;
-        nDefaultPort = 8333;
+        nDefaultPort = 4321;
         nPruneAfterHeight = 100000;
 
-        genesis = CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50 * COIN);
+      //genesis = CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1671322624, 2083236893, 0x1d07ffff, 1, 50 * COIN);
+	uint256 hashGenesisBlock = uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
+	uint256 hashMerkleRoot = uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+#if 1
+	arith_uint256 hash = UintToArith256(genesis.GetHash());
+	/*	
+	fprintf("%s\n", hash.ToString().c_str());
+	fprintf("%s\n", hashGenesisBlock.ToString().c_str());
+	fprintf(stderr, "%s\n", genesis.hashMerkleRoot.ToString().c_str());
+	fprintf("----\n");
+	*/
+	if (hash != UintToArith256(hashGenesisBlock))
+	{
+		fprintf(stderr, "Searching for genesis block...\n");
+
+		// This will figure out a valid hash and Nonce if you're
+		// creating a different genesis block. Use of arith_uint256 is for ease of
+		// use not for performance.
+		arith_uint256 hashTarget;
+		arith_uint256 best = hash;
+		hashTarget.SetCompact(genesis.nBits);
+		// char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
+
+		while(true){
+			hash = UintToArith256(genesis.GetPoWHash());
+			if (hash <= hashTarget)
+				break;
+			if ((genesis.nNonce & 0x7FFFF) == 0){
+				fprintf(stderr, ".");
+				fflush(stderr);
+			}
+			if (hash <= best)
+			{
+				best = hash;
+				fprintf(stderr, "\nnonce %08X: hash = %s (target = %s)\n", genesis.nNonce, hash.ToString().c_str(), hashTarget.ToString().c_str());
+			}
+			++genesis.nNonce;
+			if (genesis.nNonce == 0)
+			{
+				fprintf(stderr, "NONCE WRAPPED, incrementing time\n");
+				++genesis.nTime;
+			}
+		}
+		fprintf(stderr, "\nnonce %08X: hash = %s (target = %s)\n", genesis.nNonce, hash.ToString().c_str(), hashTarget.ToString().c_str());
+		fprintf(stderr, "genesis.nTime = %u \n", genesis.nTime);
+		fprintf(stderr, "genesis.nNonce = %u \n", genesis.nNonce);
+		fprintf(stderr, "genesis.GetHash = %s\n", genesis.GetHash().ToString().c_str());
+		fprintf(stderr, "genesis.GetPoWHash = %s\n", genesis.GetPoWHash().ToString().c_str());
+	}
+#endif
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
-        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        assert(consensus.hashGenesisBlock == hashGenesisBlock);
+        assert(genesis.hashMerkleRoot == hashMerkleRoot);
 
         // Note that of those with the service bits flag, most only support a subset of possible options
         vSeeds.emplace_back("seed.7el.us", true); // 
@@ -135,7 +187,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x88, 0xB2, 0x1E};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x88, 0xAD, 0xE4};
 
-        bech32_hrp = "bc";
+        bech32_hrp = "fd";
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
