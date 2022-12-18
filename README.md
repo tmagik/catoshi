@@ -14,20 +14,26 @@ Copyright (c) 2015-2017 Troy Benjegerdes <hozer@hozed.org>
 Catoshi is a cat who sometimes lets me code a coin sometimes
 called Codecoin, which is a project to build multiple C++
 'Catoshi' clients from the same source tree. Default build is
-Litecoin. On linux, do this:
+FoodChain. On linux, do this:
 
     cd src
-    make                         # builds litecoin
-    make COIN_BRAND=kittycoin    # builds kittycoin
+    make                         # builds foodchain
+    make COIN_BRAND=bitcoin      # builds bitcoincoin
     make regression # builds & runs regression tests on multiple coins
 
 ### What is Grantcoin?
 [Grantcoin](http://www.grantcoin.org/) (abbreviated GRT) is the first [cryptocurrency](https://en.wikipedia.org/wiki/Cryptocurrency) distributed primarily as Proof-of-Participation grants according to a transparent business plan by a legally incorporated nonprofit organization. Grantcoin is based on [Peercoin](http://peercoin.net/) (PPCoin), the first digital currency using Proof-of-Stake consensus as a security model, which is more energy efficient than [Bitcoin](http://en.wikipedia.org/wiki/Bitcoin)'s Proof-of-Work mining system. Grantcoin will begin with several months of PoW until the currency is widely circulated, with further evolution determined by the foundation and community.
 
-### What is kittycoin?
+Note: the foundation rebranded as [Manna] (https://mannabase.com/), so GRT
+'Classic' still runs on the same original Catoshi client. Wild Grantcoin seed nodes
+may yet still run in the 'verse, so treat them with care, and unless someone like you
+cares a whole aweful lot, it's not going to get better, it's not.
 
-Kittycoin used to be a Catcoin-compatible cryptographic currency with
-scrypt N=1024 proof of work, with (mostly) the same blockchain parameters
+### What is FoodChain
+
+Food Chain is a work-in-progress (EXPECT MAJOR FORKAGE) experiment in how
+farmers can create money and give it to the world so we can actually make a
+profit selling better food. It currently has substantially the same parameters
 as Bitcoin:
  - 50 coins per block
  - 10 minutes block targets
@@ -36,8 +42,9 @@ as Bitcoin:
  - 1 block difficulty adjustment, with a PID ajustment.
 
 It is currently not particularly usefull except as a catbox for n00b
-developers. I mean, it's a developer sandbox that's a safe space to try
-things that would get you flamed on bitcointalk.
+developers. I mean, it's a developer sandbox that's a safe space to try things
+that would get you flamed on bitcointalk or evicted from your overpriced right
+or left coast apartment.
 
 ###Why the Catbox?
 
@@ -59,7 +66,7 @@ a hundred times faster.’
 
 ~~ Townes Duncan
 
-What do we do with Catcoin better than any other coin? 
+What do we do with Catoshi better than any other crypto?
 	make
 			mistakes
 					faster
@@ -67,7 +74,7 @@ And then land on our feet.
 
 ### License
 
-Kittycoin is released under the terms of the Affero GNU General Public License
+Catoshi is released under the terms of the Affero GNU General Public License
 version 3 (AGPLv3). See COPYRING for more information, or the GNU website at
 http://www.gnu.org/licenses/agpl-3.0.html
 
